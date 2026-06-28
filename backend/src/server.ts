@@ -4,6 +4,9 @@ import cors from 'cors';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { errorHandler } from './shared/middlewares/error-handler';
+import accountsRouter from './modules/accounts/accounts.routes';
+import categoriesRouter from './modules/categories/categories.routes';
+import settingsRouter from './modules/settings/settings.routes';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -14,6 +17,10 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/accounts', accountsRouter);
+app.use('/categories', categoriesRouter);
+app.use('/settings', settingsRouter);
 
 app.use(errorHandler);
 
