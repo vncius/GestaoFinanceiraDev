@@ -11,6 +11,8 @@ import {
 } from '../financial-transactions/financial-transactions.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { SettingsRepository } from '../settings/settings.repository';
+import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
+import { InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CashFlowResponse } from './cash-flow.types';
 import {
   CashFlowQuery,
@@ -25,6 +27,7 @@ export class CashFlowService {
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly accountsRepo: AccountsRepository,
     private readonly settingsRepo: SettingsRepository,
+    private readonly creditCardInvoicesRepo?: CreditCardInvoicesRepository,
   ) {}
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
@@ -32,13 +35,21 @@ export class CashFlowService {
   async getCashFlow(query: CashFlowQuery): Promise<CashFlowResponse> {
     const { month, year } = query;
 
-    const [receivablesForMonth, transactionsForMonth, allTransactions, settings] =
+    const [receivablesForMonth, transactionsForMonth, allTransactions, settings, allInvoices] =
       await Promise.all([
         this.receivablesRepo.findByMonth(month, year),
         this.transactionsRepo.findByMonth(month, year),
         this.transactionsRepo.findAll(),
         this.settingsRepo.get(),
+        this.creditCardInvoicesRepo?.findAll() ?? Promise.resolve([]),
       ]);
+
+    const monthInvoices = allInvoices.filter(
+      (inv) =>
+        inv.month === month &&
+        inv.year === year &&
+        inv.status !== InvoiceStatus.CANCELED,
+    );
 
     const entries = receivablesForMonth.filter(
       (r) => r.status !== ReceivableStatus.CANCELED,
@@ -83,13 +94,21 @@ export class CashFlowService {
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
+    const creditCardInvoicesTotal = monthInvoices.reduce(
+      (s, inv) => s + inv.totalAmount,
+      0,
+    );
+    const paidCreditCards = monthInvoices
+      .filter((inv) => inv.status === InvoiceStatus.PAID)
+      .reduce((s, inv) => s + inv.totalAmount, 0);
+
     return {
       month,
       year,
       entries,
       payments,
       extraExpenses,
-      creditCards: [], // preenchido na entrega 6
+      creditCards: monthInvoices,
       summary: {
         initialBalance,
         expectedIncome,
@@ -98,11 +117,19 @@ export class CashFlowService {
         paidPayments,
         expectedExtraExpenses,
         paidExtraExpenses,
-        creditCardInvoices: 0,
+        creditCardInvoices: creditCardInvoicesTotal,
         projectedBalance:
-          initialBalance + expectedIncome - expectedPayments - expectedExtraExpenses,
+          initialBalance +
+          expectedIncome -
+          expectedPayments -
+          expectedExtraExpenses -
+          creditCardInvoicesTotal,
         realizedBalance:
-          initialBalance + receivedIncome - paidPayments - paidExtraExpenses,
+          initialBalance +
+          receivedIncome -
+          paidPayments -
+          paidExtraExpenses -
+          paidCreditCards,
         mainAccountBalance,
         emergencyReserveBalance: reserveBalance,
       },
