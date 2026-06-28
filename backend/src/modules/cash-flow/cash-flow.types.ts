@@ -1,0 +1,27 @@
+import { Receivable } from '../receivables/receivables.types';
+import { FinancialTransaction } from '../financial-transactions/financial-transactions.types';
+
+export interface CashFlowSummary {
+  initialBalance: number;
+  expectedIncome: number;
+  receivedIncome: number;
+  expectedPayments: number;
+  paidPayments: number;
+  expectedExtraExpenses: number;
+  paidExtraExpenses: number;
+  creditCardInvoices: number;
+  projectedBalance: number;
+  realizedBalance: number;
+  mainAccountBalance: number;
+  emergencyReserveBalance: number;
+}
+
+export interface CashFlowResponse {
+  month: number;
+  year: number;
+  entries: Receivable[];
+  payments: FinancialTransaction[];
+  extraExpenses: FinancialTransaction[];
+  creditCards: unknown[];
+  summary: CashFlowSummary;
+}
