@@ -7,6 +7,7 @@ import { errorHandler } from './shared/middlewares/error-handler';
 import accountsRouter from './modules/accounts/accounts.routes';
 import categoriesRouter from './modules/categories/categories.routes';
 import settingsRouter from './modules/settings/settings.routes';
+import receivablesRouter from './modules/receivables/receivables.routes';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -21,6 +22,7 @@ app.get('/health', (_req, res) => {
 app.use('/accounts', accountsRouter);
 app.use('/categories', categoriesRouter);
 app.use('/settings', settingsRouter);
+app.use('/receivables', receivablesRouter);
 
 app.use(errorHandler);
 
