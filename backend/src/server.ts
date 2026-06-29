@@ -10,6 +10,7 @@ import settingsRouter from './modules/settings/settings.routes';
 import receivablesRouter from './modules/receivables/receivables.routes';
 import cashFlowRouter from './modules/cash-flow/cash-flow.routes';
 import creditCardsRouter from './modules/credit-cards/credit-cards.routes';
+import dashboardRouter from './modules/dashboard/dashboard.routes';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -27,6 +28,7 @@ app.use('/settings', settingsRouter);
 app.use('/receivables', receivablesRouter);
 app.use('/cash-flow', cashFlowRouter);
 app.use('/credit-cards', creditCardsRouter);
+app.use('/dashboard', dashboardRouter);
 
 app.use(errorHandler);
 

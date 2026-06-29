@@ -1,0 +1,380 @@
+import { ReceivablesRepository } from '../receivables/receivables.repository';
+import { ReceivableStatus } from '../receivables/receivables.types';
+import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
+import {
+  FinancialTransaction,
+  TransactionStatus,
+  TransactionType,
+} from '../financial-transactions/financial-transactions.types';
+import { AccountsRepository } from '../accounts/accounts.repository';
+import { Account } from '../accounts/accounts.types';
+import { SettingsRepository } from '../settings/settings.repository';
+import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
+import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
+import { InvoiceStatus } from '../credit-cards/credit-cards.types';
+import {
+  AlertSeverity,
+  AlertType,
+  DashboardAlert,
+  DashboardResponse,
+  DueType,
+  MonthlyEvolutionItem,
+  UpcomingDue,
+} from './dashboard.types';
+import { DashboardQuery } from './dashboard.schemas';
+
+export class DashboardService {
+  constructor(
+    private readonly receivablesRepo: ReceivablesRepository,
+    private readonly transactionsRepo: FinancialTransactionsRepository,
+    private readonly accountsRepo: AccountsRepository,
+    private readonly settingsRepo: SettingsRepository,
+    private readonly creditCardsRepo: CreditCardsRepository,
+    private readonly invoicesRepo: CreditCardInvoicesRepository,
+  ) {}
+
+  async getDashboard(query: DashboardQuery): Promise<DashboardResponse> {
+    const now = new Date();
+    const month = query.month ?? now.getMonth() + 1;
+    const year = query.year ?? now.getFullYear();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [allReceivables, allTransactions, allAccounts, settings, allCards, allInvoices] =
+      await Promise.all([
+        this.receivablesRepo.findAll(),
+        this.transactionsRepo.findAll(),
+        this.accountsRepo.findAll(),
+        this.settingsRepo.get(),
+        this.creditCardsRepo.findAll(),
+        this.invoicesRepo.findAll(),
+      ]);
+
+    const cardMap = new Map(allCards.map((c) => [c.id, c]));
+
+    // ── Account balances ────────────────────────────────────────────────────────
+    const mainAccount = settings?.mainAccountId
+      ? allAccounts.find((a) => a.id === settings.mainAccountId) ?? null
+      : null;
+    const reserveAccount = settings?.emergencyReserveAccountId
+      ? allAccounts.find((a) => a.id === settings.emergencyReserveAccountId) ?? null
+      : null;
+
+    const mainBalance = mainAccount
+      ? this.calcBalance(mainAccount, allTransactions)
+      : 0;
+    const reserveBalance = reserveAccount
+      ? this.calcBalance(reserveAccount, allTransactions)
+      : 0;
+
+    // ── Month data ──────────────────────────────────────────────────────────────
+    const monthStart = new Date(year, month - 1, 1);
+
+    const monthReceivables = allReceivables.filter((r) => {
+      if (r.status === ReceivableStatus.CANCELED) return false;
+      const d = new Date(r.expectedPaymentDate);
+      return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+
+    const monthTransactions = allTransactions.filter((t) => {
+      const d = new Date(t.expectedDate);
+      return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+
+    const monthInvoices = allInvoices.filter(
+      (inv) =>
+        inv.month === month &&
+        inv.year === year &&
+        inv.status !== InvoiceStatus.CANCELED,
+    );
+
+    const payments = monthTransactions.filter(
+      (t) => t.type === TransactionType.PAYMENT && !this.isExcluded(t),
+    );
+    const extraExpenses = monthTransactions.filter(
+      (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcluded(t),
+    );
+
+    const initialBalance = mainAccount
+      ? this.calcBalance(mainAccount, allTransactions, monthStart)
+      : 0;
+
+    const expectedIncome = monthReceivables.reduce((s, r) => s + r.netAmount, 0);
+    const receivedIncome = monthReceivables
+      .filter((r) => r.status === ReceivableStatus.RECEIVED)
+      .reduce((s, r) => s + r.netAmount, 0);
+    const expectedPayments = payments.reduce((s, t) => s + t.amount, 0);
+    const paidPayments = payments
+      .filter((t) => t.status === TransactionStatus.PAID)
+      .reduce((s, t) => s + t.amount, 0);
+    const expectedExtraExpenses = extraExpenses.reduce((s, t) => s + t.amount, 0);
+    const paidExtraExpenses = extraExpenses
+      .filter((t) => t.status === TransactionStatus.PAID)
+      .reduce((s, t) => s + t.amount, 0);
+    const creditCardInvoicesTotal = monthInvoices.reduce(
+      (s, inv) => s + inv.totalAmount,
+      0,
+    );
+    const paidCreditCards = monthInvoices
+      .filter((inv) => inv.status === InvoiceStatus.PAID)
+      .reduce((s, inv) => s + inv.totalAmount, 0);
+
+    const projectedBalance =
+      initialBalance +
+      expectedIncome -
+      expectedPayments -
+      expectedExtraExpenses -
+      creditCardInvoicesTotal;
+    const realizedBalance =
+      initialBalance +
+      receivedIncome -
+      paidPayments -
+      paidExtraExpenses -
+      paidCreditCards;
+
+    // ── Upcoming dues ───────────────────────────────────────────────────────────
+    const cutoff = new Date(
+      today.getTime() + query.upcomingDays * 24 * 60 * 60 * 1000,
+    );
+
+    const upcomingTxDues: UpcomingDue[] = allTransactions
+      .filter((t) => {
+        if (t.status !== TransactionStatus.PENDING) return false;
+        if (
+          t.type !== TransactionType.PAYMENT &&
+          t.type !== TransactionType.EXTRA_EXPENSE
+        )
+          return false;
+        const d = new Date(t.expectedDate);
+        return d >= today && d <= cutoff;
+      })
+      .map((t) => ({
+        type:
+          t.type === TransactionType.PAYMENT
+            ? DueType.PAYMENT
+            : DueType.EXTRA_EXPENSE,
+        id: t.id,
+        description: t.description,
+        dueDate: t.expectedDate,
+        amount: t.amount,
+        status: t.status,
+      }));
+
+    const upcomingInvoiceDues: UpcomingDue[] = allInvoices
+      .filter((inv) => {
+        if (
+          inv.status !== InvoiceStatus.OPEN &&
+          inv.status !== InvoiceStatus.OVERDUE
+        )
+          return false;
+        const d = new Date(inv.dueDate);
+        return d >= today && d <= cutoff;
+      })
+      .map((inv) => {
+        const card = cardMap.get(inv.creditCardId);
+        return {
+          type: DueType.CREDIT_CARD_INVOICE,
+          id: inv.id,
+          description: `Fatura ${card?.name ?? 'cartão'} ${inv.month}/${inv.year}`,
+          dueDate: inv.dueDate,
+          amount: inv.totalAmount,
+          status: inv.status,
+        };
+      });
+
+    const upcomingDues = [...upcomingTxDues, ...upcomingInvoiceDues].sort(
+      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+    );
+
+    // ── Alerts ──────────────────────────────────────────────────────────────────
+    const alerts: DashboardAlert[] = [];
+    const minBalance = settings?.minimumMainBalance ?? 0;
+
+    if (minBalance > 0 && projectedBalance < minBalance) {
+      alerts.push({
+        type: AlertType.LOW_BALANCE,
+        message: `Saldo projetado abaixo do mínimo desejado`,
+        severity: AlertSeverity.WARNING,
+      });
+    }
+
+    const overduePayments = allTransactions.filter(
+      (t) =>
+        t.status === TransactionStatus.PENDING &&
+        (t.type === TransactionType.PAYMENT ||
+          t.type === TransactionType.EXTRA_EXPENSE) &&
+        new Date(t.expectedDate) < today,
+    );
+    if (overduePayments.length > 0) {
+      alerts.push({
+        type: AlertType.OVERDUE_PAYMENT,
+        message: `${overduePayments.length} pagamento(s) vencido(s) sem baixa`,
+        severity: AlertSeverity.ERROR,
+      });
+    }
+
+    const overdueReceivables = allReceivables.filter(
+      (r) =>
+        r.status === ReceivableStatus.EXPECTED &&
+        new Date(r.expectedPaymentDate) < today,
+    );
+    if (overdueReceivables.length > 0) {
+      alerts.push({
+        type: AlertType.OVERDUE_RECEIVABLE,
+        message: `${overdueReceivables.length} recebimento(s) atrasado(s)`,
+        severity: AlertSeverity.WARNING,
+      });
+    }
+
+    const sevenDaysCutoff = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const invoicesDueSoon = allInvoices.filter((inv) => {
+      if (inv.status !== InvoiceStatus.OPEN) return false;
+      const d = new Date(inv.dueDate);
+      return d <= sevenDaysCutoff;
+    });
+    if (invoicesDueSoon.length > 0) {
+      alerts.push({
+        type: AlertType.INVOICE_DUE_SOON,
+        message: `${invoicesDueSoon.length} fatura(s) vencem nos próximos 7 dias`,
+        severity: AlertSeverity.WARNING,
+      });
+    }
+
+    // ── Annual summary ──────────────────────────────────────────────────────────
+    const annualLimit = settings?.annualRevenueLimit ?? 0;
+    const grossIncome = allReceivables
+      .filter((r) => {
+        if (r.status !== ReceivableStatus.RECEIVED) return false;
+        const d = new Date(r.actualPaymentDate ?? r.expectedPaymentDate);
+        return d.getFullYear() === year;
+      })
+      .reduce((s, r) => s + r.grossAmount, 0);
+
+    if (annualLimit > 0 && grossIncome >= annualLimit * 0.8) {
+      alerts.push({
+        type: AlertType.ANNUAL_LIMIT_WARNING,
+        message:
+          grossIncome >= annualLimit
+            ? `Limite anual de faturamento atingido`
+            : `Faturamento anual próximo do limite (${Math.round((grossIncome / annualLimit) * 100)}% utilizado)`,
+        severity:
+          grossIncome >= annualLimit ? AlertSeverity.ERROR : AlertSeverity.WARNING,
+      });
+    }
+
+    const limitUsedPercentage =
+      annualLimit > 0 ? Math.round((grossIncome / annualLimit) * 100) : 0;
+
+    // ── Monthly evolution ────────────────────────────────────────────────────────
+    const monthlyEvolution: MonthlyEvolutionItem[] = [];
+    for (let i = query.evolutionMonths - 1; i >= 0; i--) {
+      const d = new Date(year, month - 1 - i, 1);
+      const m = d.getMonth() + 1;
+      const y = d.getFullYear();
+
+      const mIncome = allReceivables
+        .filter((r) => {
+          if (r.status !== ReceivableStatus.RECEIVED) return false;
+          const date = new Date(r.actualPaymentDate ?? r.expectedPaymentDate);
+          return date.getMonth() + 1 === m && date.getFullYear() === y;
+        })
+        .reduce((s, r) => s + r.netAmount, 0);
+
+      const mExpenses = allTransactions
+        .filter((t) => {
+          if (t.status !== TransactionStatus.PAID) return false;
+          if (
+            t.type !== TransactionType.PAYMENT &&
+            t.type !== TransactionType.EXTRA_EXPENSE
+          )
+            return false;
+          const date = new Date(t.actualDate ?? t.expectedDate);
+          return date.getMonth() + 1 === m && date.getFullYear() === y;
+        })
+        .reduce((s, t) => s + t.amount, 0);
+
+      const mCreditCards = allInvoices
+        .filter(
+          (inv) =>
+            inv.status === InvoiceStatus.PAID &&
+            inv.month === m &&
+            inv.year === y,
+        )
+        .reduce((s, inv) => s + inv.totalAmount, 0);
+
+      const expenses = mExpenses + mCreditCards;
+      monthlyEvolution.push({ month: m, year: y, income: mIncome, expenses, net: mIncome - expenses });
+    }
+
+    return {
+      month,
+      year,
+      accounts: {
+        main: mainAccount
+          ? { id: mainAccount.id, name: mainAccount.name, balance: mainBalance }
+          : null,
+        emergencyReserve: reserveAccount
+          ? { id: reserveAccount.id, name: reserveAccount.name, balance: reserveBalance }
+          : null,
+        totalBalance: mainBalance + reserveBalance,
+      },
+      monthSummary: {
+        initialBalance,
+        expectedIncome,
+        receivedIncome,
+        expectedPayments,
+        paidPayments,
+        expectedExtraExpenses,
+        paidExtraExpenses,
+        creditCardInvoices: creditCardInvoicesTotal,
+        projectedBalance,
+        realizedBalance,
+      },
+      upcomingDues,
+      alerts,
+      annualSummary: {
+        grossIncome,
+        annualLimit,
+        limitUsedPercentage,
+      },
+      monthlyEvolution,
+    };
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────────
+
+  private calcBalance(
+    account: Account,
+    transactions: FinancialTransaction[],
+    beforeDate?: Date,
+  ): number {
+    let balance = account.initialBalance;
+
+    const confirmed = transactions.filter((t) => {
+      const ok =
+        t.status === TransactionStatus.RECEIVED ||
+        t.status === TransactionStatus.PAID;
+      if (!ok) return false;
+      if (beforeDate) {
+        return new Date(t.actualDate ?? t.expectedDate) < beforeDate;
+      }
+      return true;
+    });
+
+    balance += confirmed
+      .filter((t) => t.targetAccountId === account.id)
+      .reduce((s, t) => s + t.amount, 0);
+
+    balance -= confirmed
+      .filter((t) => t.sourceAccountId === account.id)
+      .reduce((s, t) => s + t.amount, 0);
+
+    return balance;
+  }
+
+  private isExcluded(t: FinancialTransaction): boolean {
+    return (
+      t.status === TransactionStatus.REVERSED ||
+      t.status === TransactionStatus.CANCELED
+    );
+  }
+}
