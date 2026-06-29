@@ -14,22 +14,25 @@ import {
   CreateCardEntryPayload,
 } from '../../services/credit-cards.service';
 import { CategoriesService } from '../../services/categories.service';
-import { Category, CreditCard } from '../../types';
+import { AccountsService } from '../../services/accounts.service';
+import { Category, CreditCard, CreditCardInvoice } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { invoiceStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, formatMonthYear, todayISO } from '../../utils/date';
 
 const INPUT =
-  'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+  'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-gray-600">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
       {children}
     </div>
   );
@@ -134,8 +137,12 @@ function EntryModal({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Valor total (R$) *">
-            <input type="number" step="0.01" min="0.01" className={INPUT} value={form.totalAmount} onChange={set('totalAmount')} required />
+          <Field label="Valor total *">
+            <CurrencyInput
+              className={INPUT}
+              value={form.totalAmount}
+              onChange={(v) => setForm((f) => ({ ...f, totalAmount: v }))}
+            />
           </Field>
           <Field label="Tipo *">
             <select
@@ -188,6 +195,7 @@ function CardDetail({
 }) {
   const qc = useQueryClient();
   const [showEntryModal, setShowEntryModal] = useState(false);
+  const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
 
   const flowKey = ['creditCards', 'flow', card.id, month, year] as const;
 
@@ -198,6 +206,11 @@ function CardDetail({
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: CategoriesService.findAll,
+    staleTime: Infinity,
+  });
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: AccountsService.findAll,
     staleTime: Infinity,
   });
 
@@ -217,8 +230,9 @@ function CardDetail({
     onSuccess: invalidate,
   });
   const payMut = useMutation({
-    mutationFn: (invoiceId: string) => CreditCardsService.payInvoice(card.id, invoiceId),
-    onSuccess: invalidate,
+    mutationFn: ({ invoiceId, accountId }: { invoiceId: string; accountId?: string }) =>
+      CreditCardsService.payInvoice(card.id, invoiceId, accountId ? { paymentAccountId: accountId } : undefined),
+    onSuccess: () => { invalidate(); setInvoicePayTarget(null); },
   });
   const revertMut = useMutation({
     mutationFn: (invoiceId: string) => CreditCardsService.revertInvoice(card.id, invoiceId),
@@ -236,17 +250,17 @@ function CardDetail({
   return (
     <div className="space-y-4">
       {/* Invoice header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-sm font-semibold text-gray-700">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Fatura — {formatMonthYear(month, year)}
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {card.name} · {card.bank}
             </p>
             {invoice?.dueDate && (
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 Vencimento: {formatDate(invoice.dueDate)}
               </p>
             )}
@@ -254,22 +268,22 @@ function CardDetail({
           <div>
             {invoice
               ? invoiceStatusBadge(invoice.status)
-              : <span className="text-xs text-gray-400">Sem fatura</span>}
+              : <span className="text-xs text-gray-400 dark:text-gray-500">Sem fatura</span>}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Total fatura</p>
-            <p className="text-lg font-bold text-gray-800">{formatCurrency(summary.invoiceTotal)}</p>
+          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total fatura</p>
+            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{formatCurrency(summary.invoiceTotal)}</p>
           </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Pago</p>
-            <p className="text-lg font-bold text-green-600">{formatCurrency(summary.paidAmount)}</p>
+          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Pago</p>
+            <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(summary.paidAmount)}</p>
           </div>
-          <div className="text-center p-3 bg-red-50 rounded-lg">
-            <p className="text-xs text-gray-400 mb-1">Em aberto</p>
-            <p className="text-lg font-bold text-red-500">{formatCurrency(summary.openAmount)}</p>
+          <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Em aberto</p>
+            <p className="text-lg font-bold text-red-500 dark:text-red-400">{formatCurrency(summary.openAmount)}</p>
           </div>
         </div>
 
@@ -279,7 +293,7 @@ function CardDetail({
               <Button
                 size="sm"
                 icon={<CheckCircle2 size={14} />}
-                onClick={() => payMut.mutate(invoice.id)}
+                onClick={() => setInvoicePayTarget(invoice)}
                 loading={payMut.isPending}
               >
                 Pagar fatura
@@ -301,9 +315,9 @@ function CardDetail({
       </div>
 
       {/* Installments table */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
             Lançamentos ({activeInstallments.length})
           </h3>
           <Button
@@ -325,7 +339,7 @@ function CardDetail({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
                   <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
                   <th className="text-left px-3 py-2.5 font-medium">Data compra</th>
@@ -334,28 +348,28 @@ function CardDetail({
                   <th className="px-3 py-2.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {activeInstallments.map((inst) => {
                   const entry = entryMap.get(inst.creditCardEntryId);
                   return (
-                    <tr key={inst.id} className="hover:bg-gray-50/50 group">
-                      <td className="px-5 py-3 font-medium text-gray-800">
+                    <tr key={inst.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
+                      <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">
                         {entry?.description ?? '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-500 text-xs">
+                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {entry ? (catMap.get(entry.expenseCategoryId) ?? '—') : '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-500">
+                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                         {entry ? formatDate(entry.purchaseDate) : '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-500 text-xs">
+                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {entry?.entryType === 'CASH'
                           ? 'À vista'
                           : entry?.entryType === 'FIXED'
                           ? 'Recorrente'
                           : `${inst.installmentNumber}/${inst.totalInstallments}`}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold text-gray-800">
+                      <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-gray-100">
                         {formatCurrency(inst.amount)}
                       </td>
                       <td className="px-3 py-3">
@@ -371,7 +385,7 @@ function CardDetail({
                                 )
                                   deleteEntryMut.mutate(entry.id);
                               }}
-                              className="p-1.5 text-red-400 hover:bg-red-50 rounded-md"
+                              className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -393,6 +407,18 @@ function CardDetail({
         categories={categories}
         onSave={(payload) => addEntryMut.mutate(payload)}
         isSaving={addEntryMut.isPending}
+      />
+
+      <PayInvoiceAccountModal
+        open={!!invoicePayTarget}
+        onClose={() => setInvoicePayTarget(null)}
+        accounts={accounts}
+        isPaying={payMut.isPending}
+        onConfirm={(accountId) => {
+          if (invoicePayTarget) {
+            payMut.mutate({ invoiceId: invoicePayTarget.id, accountId });
+          }
+        }}
       />
     </div>
   );
@@ -436,27 +462,27 @@ export default function CreditCards() {
             onClick={() => setSelectedCardId(card.id)}
             className={`w-full text-left p-4 rounded-xl border transition-all ${
               selectedCardId === card.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:bg-gray-50'
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">{card.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{card.bank}</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{card.name}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{card.bank}</p>
               </div>
-              <ChevronRight size={14} className="text-gray-300 shrink-0 mt-1" />
+              <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 shrink-0 mt-1" />
             </div>
             <div className="mt-3 space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Mês atual</span>
-                <span className="font-semibold text-red-500">
+                <span className="text-gray-400 dark:text-gray-500">Mês atual</span>
+                <span className="font-semibold text-red-500 dark:text-red-400">
                   {formatCurrency(card.currentMonthAmount)}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Limite</span>
-                <span className="text-gray-600">{formatCurrency(card.limit)}</span>
+                <span className="text-gray-400 dark:text-gray-500">Limite</span>
+                <span className="text-gray-600 dark:text-gray-300">{formatCurrency(card.limit)}</span>
               </div>
               {card.currentInvoice && (
                 <div className="pt-1">{invoiceStatusBadge(card.currentInvoice.status)}</div>

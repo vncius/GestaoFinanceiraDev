@@ -49,13 +49,13 @@ export function Modal({
         onClick={onClose}
       />
       <div
-        className={`relative bg-white rounded-xl shadow-xl w-full ${SIZE[size]} max-h-[90vh] flex flex-col`}
+        className={`relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full ${SIZE[size]} max-h-[90vh] flex flex-col`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
-          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+            className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
             aria-label="Fechar"
           >
             <X size={18} />
@@ -65,7 +65,7 @@ export function Modal({
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
 
         {footer && (
-          <div className="px-5 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl shrink-0 flex justify-end gap-3">
+          <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl shrink-0 flex justify-end gap-3">
             {footer}
           </div>
         )}

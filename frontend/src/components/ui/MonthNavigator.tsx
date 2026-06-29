@@ -9,20 +9,20 @@ export function MonthNavigator() {
     <div className="flex items-center gap-1">
       <button
         onClick={prevMonth}
-        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+        className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         aria-label="Mês anterior"
       >
-        <ChevronLeft size={16} />
+        <ChevronLeft size={18} />
       </button>
-      <span className="text-sm font-semibold text-gray-700 min-w-[148px] text-center select-none">
+      <span className="text-base font-bold text-gray-800 dark:text-gray-100 min-w-[172px] text-center select-none">
         {formatMonthYear(month, year)}
       </span>
       <button
         onClick={nextMonth}
-        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+        className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         aria-label="Próximo mês"
       >
-        <ChevronRight size={16} />
+        <ChevronRight size={18} />
       </button>
     </div>
   );

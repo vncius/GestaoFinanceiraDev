@@ -8,13 +8,13 @@ export function formatMonthYear(month: number, year: number): string {
 }
 
 export function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('pt-BR');
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
 }
 
 export function formatDateShort(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const [, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}`;
 }
 
 export function toInputDate(iso: string): string {
@@ -26,6 +26,6 @@ export function todayISO(): string {
 }
 
 export function monthYearFromDate(iso: string): { month: number; year: number } {
-  const d = new Date(iso);
-  return { month: d.getMonth() + 1, year: d.getFullYear() };
+  const parts = iso.slice(0, 10).split('-').map(Number);
+  return { month: parts[1], year: parts[0] };
 }

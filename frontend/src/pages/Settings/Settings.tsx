@@ -27,12 +27,12 @@ const TAB_LABELS: Record<SettingsTab, string> = {
 };
 
 const INPUT =
-  'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+  'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-gray-600">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
       {children}
     </div>
   );
@@ -40,9 +40,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h3>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -136,7 +136,7 @@ function GeneralTab({
               onChange={set('defaultReservePercentage')}
             />
           </Field>
-          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             <input
               type="checkbox"
               checked={form.applyReserveByDefault}
@@ -147,7 +147,7 @@ function GeneralTab({
             />
             Aplicar reserva por padrão em novos recebimentos
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             <input
               type="checkbox"
               checked={form.allowDisableReserve}
@@ -238,7 +238,7 @@ function GeneralTab({
           Salvar configurações
         </Button>
         {saved && (
-          <span className="flex items-center gap-1 text-sm text-green-600 font-medium">
+          <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
             <Check size={14} /> Salvo!
           </span>
         )}
@@ -384,13 +384,13 @@ function AccountsTab() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {accounts.length === 0 ? (
           <EmptyState title="Nenhuma conta cadastrada" />
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-5 py-3 font-medium">Nome</th>
                 <th className="text-left px-3 py-3 font-medium">Tipo</th>
                 <th className="text-right px-3 py-3 font-medium">Saldo inicial</th>
@@ -398,22 +398,22 @@ function AccountsTab() {
                 <th className="px-3 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {accounts.map((a) => (
-                <tr key={a.id} className={`hover:bg-gray-50/50 group ${!a.active ? 'opacity-50' : ''}`}>
-                  <td className="px-5 py-3 font-medium text-gray-800">{a.name}</td>
-                  <td className="px-3 py-3 text-gray-500 text-xs">
+                <tr key={a.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!a.active ? 'opacity-50' : ''}`}>
+                  <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{a.name}</td>
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {ACCOUNT_TYPE_LABELS[a.type] ?? a.type}
                   </td>
-                  <td className="px-3 py-3 text-right text-gray-700">
+                  <td className="px-3 py-3 text-right text-gray-700 dark:text-gray-300">
                     {formatCurrency(a.initialBalance)}
                   </td>
                   <td className="px-3 py-3">
                     <span
                       className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
                         a.active
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
+                          ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {a.active ? 'Ativa' : 'Inativa'}
@@ -424,7 +424,7 @@ function AccountsTab() {
                       <button
                         title="Editar"
                         onClick={() => setModal({ item: a })}
-                        className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md"
+                        className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                       >
                         <Pencil size={14} />
                       </button>
@@ -435,7 +435,7 @@ function AccountsTab() {
                             if (window.confirm('Desativar esta conta?'))
                               deleteMut.mutate(a.id);
                           }}
-                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-md"
+                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -552,16 +552,18 @@ function CategorySection({
 }) {
   const items = categories.filter((c) => c.type === type);
   const label = type === 'INCOME' ? 'Receitas' : 'Despesas';
-  const color = type === 'INCOME' ? 'text-green-700 bg-green-50' : 'text-red-600 bg-red-50';
+  const color = type === 'INCOME'
+    ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+    : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30';
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>
             {label}
           </span>
-          <span className="text-xs text-gray-400">({items.length})</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">({items.length})</span>
         </div>
         <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={() => onAdd(type)}>
           Nova
@@ -571,14 +573,16 @@ function CategorySection({
         <EmptyState title={`Nenhuma categoria de ${label.toLowerCase()} cadastrada`} />
       ) : (
         <table className="w-full text-sm">
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
             {items.map((c) => (
-              <tr key={c.id} className={`hover:bg-gray-50/50 group ${!c.active ? 'opacity-50' : ''}`}>
-                <td className="px-5 py-2.5 font-medium text-gray-800">{c.name}</td>
+              <tr key={c.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!c.active ? 'opacity-50' : ''}`}>
+                <td className="px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{c.name}</td>
                 <td className="px-3 py-2.5">
                   <span
                     className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                      c.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+                      c.active
+                        ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {c.active ? 'Ativa' : 'Inativa'}
@@ -589,7 +593,7 @@ function CategorySection({
                     <button
                       title="Editar"
                       onClick={() => onEdit(c)}
-                      className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md"
+                      className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                     >
                       <Pencil size={14} />
                     </button>
@@ -599,7 +603,7 @@ function CategorySection({
                         onClick={() => {
                           if (window.confirm('Desativar esta categoria?')) onDelete(c.id);
                         }}
-                        className="p-1.5 text-red-400 hover:bg-red-50 rounded-md"
+                        className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -850,13 +854,13 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
         </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {cards.length === 0 ? (
           <EmptyState title="Nenhum cartão cadastrado" />
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-5 py-3 font-medium">Nome</th>
                 <th className="text-left px-3 py-3 font-medium">Banco</th>
                 <th className="text-center px-3 py-3 font-medium">Fechamento</th>
@@ -867,24 +871,24 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                 <th className="px-3 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {cards.map((card) => (
                 <tr
                   key={card.id}
-                  className={`hover:bg-gray-50/50 group ${!card.active ? 'opacity-50' : ''}`}
+                  className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!card.active ? 'opacity-50' : ''}`}
                 >
-                  <td className="px-5 py-3 font-medium text-gray-800">{card.name}</td>
-                  <td className="px-3 py-3 text-gray-500">{card.bank}</td>
-                  <td className="px-3 py-3 text-center text-gray-500">
+                  <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">{card.name}</td>
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400">{card.bank}</td>
+                  <td className="px-3 py-3 text-center text-gray-500 dark:text-gray-400">
                     Dia {card.closingDay}
                   </td>
-                  <td className="px-3 py-3 text-center text-gray-500">
+                  <td className="px-3 py-3 text-center text-gray-500 dark:text-gray-400">
                     Dia {card.dueDay}
                   </td>
-                  <td className="px-3 py-3 text-right text-gray-700">
+                  <td className="px-3 py-3 text-right text-gray-700 dark:text-gray-300">
                     {formatCurrency(card.limit)}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 text-xs">
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {card.defaultPaymentAccountId
                       ? (accountMap.get(card.defaultPaymentAccountId) ?? '—')
                       : '—'}
@@ -893,8 +897,8 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                     <span
                       className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
                         card.active
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
+                          ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {card.active ? 'Ativo' : 'Inativo'}
@@ -905,7 +909,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                       <button
                         title="Editar"
                         onClick={() => setModal({ item: card })}
-                        className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md"
+                        className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                       >
                         <Pencil size={14} />
                       </button>
@@ -916,7 +920,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                             if (window.confirm('Desativar este cartão?'))
                               deleteMut.mutate(card.id);
                           }}
-                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-md"
+                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -963,15 +967,15 @@ export default function Settings() {
   return (
     <div className="space-y-5">
       {/* Tab navigation */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
         {(Object.keys(TAB_LABELS) as SettingsTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               tab === t
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             {TAB_LABELS[t]}

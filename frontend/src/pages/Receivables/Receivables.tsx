@@ -28,12 +28,12 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
 };
 
 const INPUT =
-  'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+  'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-gray-600">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
       {children}
     </div>
   );
@@ -148,7 +148,7 @@ function ReceivableModal({
             <input className={INPUT} value={form.customerName} onChange={set('customerName')} placeholder="Nome do cliente" />
           </Field>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
           <input
             type="checkbox"
             checked={form.separateReservePercentage}
@@ -158,14 +158,14 @@ function ReceivableModal({
           Separar reserva ({defaultReservePct}%)
         </label>
         {grossCents > 0 && (
-          <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1">
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
             <div className="flex justify-between">
               <span>Reserva ({pct}%)</span>
               <span>{formatCurrency(reserveCents)}</span>
             </div>
-            <div className="flex justify-between font-semibold text-gray-800">
+            <div className="flex justify-between font-semibold text-gray-800 dark:text-gray-100">
               <span>Valor líquido</span>
-              <span className="text-green-700">{formatCurrency(netCents)}</span>
+              <span className="text-green-700 dark:text-green-400">{formatCurrency(netCents)}</span>
             </div>
           </div>
         )}
@@ -267,7 +267,7 @@ export default function Receivables() {
               className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors ${
                 statusFilter === s
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               {STATUS_LABELS[s]}
@@ -281,7 +281,7 @@ export default function Receivables() {
         </div>
         <div className="flex items-center gap-2">
           <input
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm w-52 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Buscar descrição / cliente..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -293,7 +293,7 @@ export default function Receivables() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {sorted.length === 0 ? (
           <EmptyState
             title="Nenhum recebimento encontrado"
@@ -303,7 +303,7 @@ export default function Receivables() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="text-left px-5 py-3 font-medium">Descrição</th>
                   <th className="text-left px-3 py-3 font-medium">Cliente</th>
                   <th className="text-left px-3 py-3 font-medium">Categoria</th>
@@ -315,11 +315,11 @@ export default function Receivables() {
                   <th className="px-3 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {sorted.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 group">
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
                     <td
-                      className="px-5 py-3 font-medium text-gray-800 cursor-pointer hover:text-blue-600"
+                      className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
                       onClick={() => setModal({ item })}
                     >
                       {item.description}
@@ -329,22 +329,22 @@ export default function Receivables() {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 text-xs">
+                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                       {item.customerName ?? '—'}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 text-xs">
+                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                       {catMap.get(item.incomeCategoryId) ?? '—'}
                     </td>
-                    <td className="px-3 py-3 text-right text-gray-700">
+                    <td className="px-3 py-3 text-right text-gray-700 dark:text-gray-300">
                       {formatCurrency(item.grossAmount)}
                     </td>
-                    <td className="px-3 py-3 text-right font-semibold text-green-700">
+                    <td className="px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400">
                       {formatCurrency(item.netAmount)}
                     </td>
-                    <td className="px-3 py-3 text-gray-500">
+                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                       {formatDate(item.expectedPaymentDate)}
                     </td>
-                    <td className="px-3 py-3 text-gray-500">
+                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                       {item.actualPaymentDate ? formatDate(item.actualPaymentDate) : '—'}
                     </td>
                     <td className="px-3 py-3">{receivableStatusBadge(item.status)}</td>

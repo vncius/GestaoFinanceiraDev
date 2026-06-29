@@ -9,6 +9,8 @@ import {
   TrendingUp,
   TrendingDown,
   CreditCard,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import { CashFlowService, CreateTransactionPayload } from '../../services/cash-flow.service';
@@ -16,7 +18,9 @@ import { ReceivablesService, CreateReceivablePayload } from '../../services/rece
 import { CreditCardsService } from '../../services/credit-cards.service';
 import { CategoriesService } from '../../services/categories.service';
 import { SettingsService } from '../../services/settings.service';
+import { AccountsService } from '../../services/accounts.service';
 import {
+  Account,
   CashFlowSummary,
   Category,
   CreditCardInvoice,
@@ -28,6 +32,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Badge, receivableStatusBadge, transactionStatusBadge, invoiceStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, floatToCents, centsToFloat } from '../../utils/money';
 import { formatDate, toInputDate, todayISO } from '../../utils/date';
 
@@ -37,45 +43,76 @@ type ModalKind =
   | { type: 'receivable'; mode: 'create' | 'edit'; item?: Receivable }
   | { type: 'payment' | 'extra-expense'; mode: 'create' | 'edit'; item?: FinancialTransaction };
 
+// ── Shared form helpers ───────────────────────────────────────────────────────
+
+const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 // ── Summary Bar ───────────────────────────────────────────────────────────────
 
+type SummaryItem = { label: string; value: number; neutral?: boolean; positive?: boolean; bold?: boolean };
+
 function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
-  const items = [
+  const [expanded, setExpanded] = useState(false);
+
+  const collapsed: SummaryItem[] = [
+    { label: 'Recebidos', value: s.receivedIncome, positive: true },
+    { label: 'Pgtos. pagos', value: s.paidPayments },
+    { label: 'Saldo realizado', value: s.realizedBalance, bold: true },
+  ];
+
+  const extra: SummaryItem[] = [
     { label: 'Saldo inicial', value: s.initialBalance, neutral: true },
     { label: 'Entradas prev.', value: s.expectedIncome, positive: true },
-    { label: 'Entradas receb.', value: s.receivedIncome, positive: true },
-    { label: 'Pagamentos prev.', value: s.expectedPayments },
-    { label: 'Pagamentos pagos', value: s.paidPayments },
+    { label: 'Pgtos. prev.', value: s.expectedPayments },
     { label: 'Extras prev.', value: s.expectedExtraExpenses },
     { label: 'Extras pagos', value: s.paidExtraExpenses },
     { label: 'Faturas cartão', value: s.creditCardInvoices },
-    { label: 'Projetado', value: s.projectedBalance, bold: true },
-    { label: 'Realizado', value: s.realizedBalance, bold: true },
+    { label: 'Saldo projetado', value: s.projectedBalance, bold: true },
   ];
 
+  const display = expanded ? [...collapsed, ...extra] : collapsed;
+
   return (
-    <div className="sticky bottom-0 bg-white border-t border-gray-200 shadow-md z-10">
-      <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto">
-        {items.map(({ label, value, neutral, positive, bold }) => {
-          const color = neutral
-            ? 'text-gray-700'
-            : positive
-            ? 'text-green-600'
-            : value < 0
-            ? 'text-red-600'
-            : 'text-red-500';
-          return (
-            <div
-              key={label}
-              className="flex flex-col items-center shrink-0 px-3 border-r border-gray-100 last:border-r-0 min-w-[90px]"
-            >
-              <span className="text-[10px] text-gray-400 whitespace-nowrap">{label}</span>
-              <span className={`text-xs font-${bold ? 'bold' : 'semibold'} whitespace-nowrap ${color}`}>
-                {formatCurrency(value)}
-              </span>
-            </div>
-          );
-        })}
+    <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10">
+      <div className="flex items-center px-4 py-2">
+        <div className="flex items-center gap-1 flex-1 overflow-x-auto">
+          {display.map(({ label, value, neutral, positive, bold }) => {
+            const color = neutral
+              ? 'text-gray-700 dark:text-gray-300'
+              : positive
+              ? 'text-green-600 dark:text-green-400'
+              : value < 0
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-red-500 dark:text-red-400';
+            return (
+              <div
+                key={label}
+                className="flex flex-col items-center shrink-0 px-3 border-r border-gray-100 dark:border-gray-700 last:border-r-0 min-w-[90px]"
+              >
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">{label}</span>
+                <span className={`text-xs font-${bold ? 'bold' : 'semibold'} whitespace-nowrap ${color}`}>
+                  {formatCurrency(value)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          title={expanded ? 'Recolher' : 'Expandir detalhes'}
+        >
+          {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </button>
       </div>
     </div>
   );
@@ -95,11 +132,11 @@ function GridHeader({
   onAdd: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+    <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
       <div className="flex items-center gap-2">
         {icon}
-        <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
-        <span className="text-xs text-gray-400">({count})</span>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h3>
+        <span className="text-xs text-gray-400 dark:text-gray-500">({count})</span>
       </div>
       <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={onAdd}>
         Novo
@@ -152,7 +189,7 @@ function EntriesGrid({
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <GridHeader
         title="Entradas"
         icon={<TrendingUp size={16} className="text-green-500" />}
@@ -169,31 +206,39 @@ function EntriesGrid({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
                 <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
+                <th className="text-right px-3 py-2.5 font-medium">Valor Bruto</th>
+                <th className="text-right px-3 py-2.5 font-medium">Reserva</th>
                 <th className="text-right px-3 py-2.5 font-medium">Valor líquido</th>
                 <th className="text-left px-3 py-2.5 font-medium">Data prev.</th>
                 <th className="text-left px-3 py-2.5 font-medium">Status</th>
                 <th className="px-3 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 group">
+                <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
                   <td
-                    className="px-5 py-3 font-medium text-gray-800 cursor-pointer hover:text-blue-600"
+                    className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
                     onClick={() => onEdit(item)}
                   >
                     {item.description}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 text-xs">
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {catMap.get(item.incomeCategoryId) ?? '—'}
                   </td>
-                  <td className="px-3 py-3 text-right font-semibold text-green-700">
+                  <td className="px-3 py-3 text-right text-gray-600 dark:text-gray-300">
+                    {formatCurrency(item.grossAmount)}
+                  </td>
+                  <td className="px-3 py-3 text-right text-amber-600 dark:text-amber-400 text-xs">
+                    {item.reserveAmount > 0 ? formatCurrency(item.reserveAmount) : '—'}
+                  </td>
+                  <td className="px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400">
                     {formatCurrency(item.netAmount)}
                   </td>
-                  <td className="px-3 py-3 text-gray-500">
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                     {formatDate(item.expectedPaymentDate)}
                   </td>
                   <td className="px-3 py-3">{receivableStatusBadge(item.status)}</td>
@@ -203,7 +248,7 @@ function EntriesGrid({
                         <ActionBtn
                           title="Marcar como recebido"
                           onClick={() => onReceive(item.id)}
-                          className="text-green-600 hover:bg-green-50"
+                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
                         >
                           <CheckCircle2 size={16} />
                         </ActionBtn>
@@ -212,7 +257,7 @@ function EntriesGrid({
                         <ActionBtn
                           title="Reverter recebimento"
                           onClick={() => onRevert(item.id)}
-                          className="text-amber-600 hover:bg-amber-50"
+                          className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
                         >
                           <RotateCcw size={15} />
                         </ActionBtn>
@@ -220,7 +265,7 @@ function EntriesGrid({
                       <ActionBtn
                         title="Editar"
                         onClick={() => onEdit(item)}
-                        className="text-gray-500 hover:bg-gray-100"
+                        className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <Pencil size={14} />
                       </ActionBtn>
@@ -228,7 +273,7 @@ function EntriesGrid({
                         <ActionBtn
                           title="Excluir"
                           onClick={() => onDelete(item.id)}
-                          className="text-red-400 hover:bg-red-50"
+                          className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           <Trash2 size={14} />
                         </ActionBtn>
@@ -271,16 +316,16 @@ function TransactionGrid({
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <GridHeader title={title} icon={icon} count={items.length} onAdd={onAdd} />
 
       {items.length === 0 ? (
-        <EmptyState title={`Nenhum registro neste mês`} />
+        <EmptyState title="Nenhum registro neste mês" />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
                 <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
                 <th className="text-right px-3 py-2.5 font-medium">Valor</th>
@@ -289,22 +334,22 @@ function TransactionGrid({
                 <th className="px-3 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 group">
+                <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
                   <td
-                    className="px-5 py-3 font-medium text-gray-800 cursor-pointer hover:text-blue-600"
+                    className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
                     onClick={() => onEdit(item)}
                   >
                     {item.description}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 text-xs">
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {catMap.get(item.categoryId ?? '') ?? '—'}
                   </td>
-                  <td className="px-3 py-3 text-right font-semibold text-red-600">
+                  <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400">
                     {formatCurrency(item.amount)}
                   </td>
-                  <td className="px-3 py-3 text-gray-500">
+                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
                     {formatDate(item.expectedDate)}
                   </td>
                   <td className="px-3 py-3">{transactionStatusBadge(item.status)}</td>
@@ -314,7 +359,7 @@ function TransactionGrid({
                         <ActionBtn
                           title="Marcar como pago"
                           onClick={() => onPay(item.id)}
-                          className="text-green-600 hover:bg-green-50"
+                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
                         >
                           <CheckCircle2 size={16} />
                         </ActionBtn>
@@ -323,7 +368,7 @@ function TransactionGrid({
                         <ActionBtn
                           title="Reverter pagamento"
                           onClick={() => onRevert(item.id)}
-                          className="text-amber-600 hover:bg-amber-50"
+                          className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
                         >
                           <RotateCcw size={15} />
                         </ActionBtn>
@@ -332,7 +377,7 @@ function TransactionGrid({
                         <ActionBtn
                           title="Editar"
                           onClick={() => onEdit(item)}
-                          className="text-gray-500 hover:bg-gray-100"
+                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Pencil size={14} />
                         </ActionBtn>
@@ -341,7 +386,7 @@ function TransactionGrid({
                         <ActionBtn
                           title="Excluir"
                           onClick={() => onDelete(item.id)}
-                          className="text-red-400 hover:bg-red-50"
+                          className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           <Trash2 size={14} />
                         </ActionBtn>
@@ -374,16 +419,16 @@ function CreditCardsGrid({
   if (items.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
         <CreditCard size={16} className="text-purple-500" />
-        <h3 className="text-sm font-semibold text-gray-700">Cartões de Crédito</h3>
-        <span className="text-xs text-gray-400">({items.length})</span>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Cartões de Crédito</h3>
+        <span className="text-xs text-gray-400 dark:text-gray-500">({items.length})</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+            <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               <th className="text-left px-5 py-2.5 font-medium">Cartão</th>
               <th className="text-right px-3 py-2.5 font-medium">Valor fatura</th>
               <th className="text-left px-3 py-2.5 font-medium">Vencimento</th>
@@ -391,16 +436,16 @@ function CreditCardsGrid({
               <th className="px-3 py-2.5" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
             {items.map((inv) => (
-              <tr key={inv.id} className="hover:bg-gray-50/50 group">
-                <td className="px-5 py-3 font-medium text-gray-800">
+              <tr key={inv.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
+                <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">
                   {cardNames.get(inv.creditCardId) ?? 'Cartão'}
                 </td>
-                <td className="px-3 py-3 text-right font-semibold text-purple-700">
+                <td className="px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400">
                   {formatCurrency(inv.totalAmount)}
                 </td>
-                <td className="px-3 py-3 text-gray-500">{formatDate(inv.dueDate)}</td>
+                <td className="px-3 py-3 text-gray-500 dark:text-gray-400">{formatDate(inv.dueDate)}</td>
                 <td className="px-3 py-3">{invoiceStatusBadge(inv.status)}</td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -408,7 +453,7 @@ function CreditCardsGrid({
                       <ActionBtn
                         title="Pagar fatura"
                         onClick={() => onPay(inv)}
-                        className="text-green-600 hover:bg-green-50"
+                        className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
                       >
                         <CheckCircle2 size={16} />
                       </ActionBtn>
@@ -417,7 +462,7 @@ function CreditCardsGrid({
                       <ActionBtn
                         title="Reverter pagamento"
                         onClick={() => onRevert(inv)}
-                        className="text-amber-600 hover:bg-amber-50"
+                        className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
                       >
                         <RotateCcw size={15} />
                       </ActionBtn>
@@ -452,6 +497,7 @@ function ReceivableModal({
   defaultReservePct,
   onSave,
   isSaving,
+  onReceive,
 }: {
   open: boolean;
   onClose: () => void;
@@ -460,6 +506,7 @@ function ReceivableModal({
   defaultReservePct: number;
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
+  onReceive?: (id: string) => void;
 }) {
   const isEdit = !!item;
   const incomeCategories = categories.filter((c) => c.type === 'INCOME');
@@ -475,7 +522,6 @@ function ReceivableModal({
 
   const [form, setForm] = useState<ReceivableFormState>(init);
 
-  // reset when opening
   const [lastOpen, setLastOpen] = useState(false);
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
@@ -510,6 +556,15 @@ function ReceivableModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          {isEdit && item?.status === 'EXPECTED' && onReceive && (
+            <Button
+              variant="secondary"
+              icon={<CheckCircle2 size={14} />}
+              onClick={() => { onReceive(item!.id); onClose(); }}
+            >
+              Receber
+            </Button>
+          )}
           <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
         </>
       }
@@ -529,18 +584,14 @@ function ReceivableModal({
             <input type="date" className={INPUT} value={form.expectedPaymentDate} onChange={set('expectedPaymentDate')} required />
           </Field>
         </div>
-        <Field label="Valor bruto (R$) *">
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
+        <Field label="Valor bruto *">
+          <CurrencyInput
             className={INPUT}
             value={form.grossAmount}
-            onChange={set('grossAmount')}
-            required
+            onChange={(v) => setForm((f) => ({ ...f, grossAmount: v }))}
           />
         </Field>
-        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
           <input
             type="checkbox"
             checked={form.separateReservePercentage}
@@ -550,9 +601,9 @@ function ReceivableModal({
           Separar reserva ({defaultReservePct}%)
         </label>
         {grossCents > 0 && (
-          <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1">
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
             <div className="flex justify-between"><span>Reserva ({pct}%)</span><span className="font-medium">{formatCurrency(reserveCents)}</span></div>
-            <div className="flex justify-between font-semibold text-gray-800"><span>Valor líquido</span><span className="text-green-700">{formatCurrency(netCents)}</span></div>
+            <div className="flex justify-between font-semibold text-gray-800 dark:text-gray-100"><span>Valor líquido</span><span className="text-green-700 dark:text-green-400">{formatCurrency(netCents)}</span></div>
           </div>
         )}
         <Field label="Observações">
@@ -581,6 +632,7 @@ function TransactionModal({
   categories,
   onSave,
   isSaving,
+  onPay,
 }: {
   open: boolean;
   onClose: () => void;
@@ -589,6 +641,7 @@ function TransactionModal({
   categories: Category[];
   onSave: (data: CreateTransactionPayload) => void;
   isSaving: boolean;
+  onPay?: (id: string) => void;
 }) {
   const isEdit = !!item;
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
@@ -634,6 +687,15 @@ function TransactionModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          {isEdit && item?.status === 'PENDING' && onPay && (
+            <Button
+              variant="secondary"
+              icon={<CheckCircle2 size={14} />}
+              onClick={() => { onPay(item!.id); onClose(); }}
+            >
+              Pagar
+            </Button>
+          )}
           <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
         </>
       }
@@ -653,27 +715,18 @@ function TransactionModal({
             <input type="date" className={INPUT} value={form.expectedDate} onChange={set('expectedDate')} required />
           </Field>
         </div>
-        <Field label="Valor (R$) *">
-          <input type="number" step="0.01" min="0.01" className={INPUT} value={form.amount} onChange={set('amount')} required />
+        <Field label="Valor *">
+          <CurrencyInput
+            className={INPUT}
+            value={form.amount}
+            onChange={(v) => setForm((f) => ({ ...f, amount: v }))}
+          />
         </Field>
         <Field label="Observações">
           <textarea className={INPUT} rows={2} value={form.notes} onChange={set('notes')} />
         </Field>
       </form>
     </Modal>
-  );
-}
-
-// ── Shared form helpers ───────────────────────────────────────────────────────
-
-const INPUT = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="block text-xs font-medium text-gray-600">{label}</label>
-      {children}
-    </div>
   );
 }
 
@@ -709,11 +762,18 @@ export default function CashFlow() {
     staleTime: 60_000,
   });
 
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: AccountsService.findAll,
+    staleTime: Infinity,
+  });
+
   const cardNames = new Map(cards.map((c) => [c.id, c.name]));
 
   // ── Modal state ─────────────────────────────────────────────────────────────
   const [modal, setModal] = useState<ModalKind | null>(null);
   const closeModal = () => setModal(null);
+  const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
 
   // ── Receivable mutations ─────────────────────────────────────────────────────
   const createReceivable = useMutation({
@@ -786,9 +846,9 @@ export default function CashFlow() {
 
   // ── Invoice mutations ────────────────────────────────────────────────────────
   const payInvoice = useMutation({
-    mutationFn: ({ cardId, invoiceId }: { cardId: string; invoiceId: string }) =>
-      CreditCardsService.payInvoice(cardId, invoiceId),
-    onSuccess: invalidate,
+    mutationFn: ({ cardId, invoiceId, accountId }: { cardId: string; invoiceId: string; accountId?: string }) =>
+      CreditCardsService.payInvoice(cardId, invoiceId, accountId ? { paymentAccountId: accountId } : undefined),
+    onSuccess: () => { invalidate(); setInvoicePayTarget(null); },
   });
   const revertInvoice = useMutation({
     mutationFn: ({ cardId, invoiceId }: { cardId: string; invoiceId: string }) =>
@@ -817,6 +877,11 @@ export default function CashFlow() {
       if (isPayment) createPayment.mutate(payload);
       else createExtra.mutate(payload);
     }
+  }
+
+  function handleTxPay(id: string) {
+    if (modal?.type === 'payment') payPayment.mutate(id);
+    else if (modal?.type === 'extra-expense') payExtra.mutate(id);
   }
 
   function confirmDelete(fn: () => void) {
@@ -878,7 +943,7 @@ export default function CashFlow() {
         <CreditCardsGrid
           items={creditCards}
           cardNames={cardNames}
-          onPay={(inv) => payInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}
+          onPay={(inv) => setInvoicePayTarget(inv)}
           onRevert={(inv) => revertInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}
         />
       </div>
@@ -886,7 +951,7 @@ export default function CashFlow() {
       {/* Summary bar */}
       <SummaryBar summary={summary} />
 
-      {/* Modals */}
+      {/* Receivable Modal */}
       <ReceivableModal
         open={modal?.type === 'receivable'}
         onClose={closeModal}
@@ -895,8 +960,10 @@ export default function CashFlow() {
         defaultReservePct={defaultReservePct}
         onSave={saveReceivable}
         isSaving={rxSaving}
+        onReceive={(id) => { receiveItem.mutate(id); }}
       />
 
+      {/* Transaction Modal */}
       {(modal?.type === 'payment' || modal?.type === 'extra-expense') && (
         <TransactionModal
           open
@@ -906,8 +973,26 @@ export default function CashFlow() {
           categories={categories}
           onSave={saveTransaction}
           isSaving={txSaving}
+          onPay={handleTxPay}
         />
       )}
+
+      {/* Invoice payment account picker */}
+      <PayInvoiceAccountModal
+        open={!!invoicePayTarget}
+        onClose={() => setInvoicePayTarget(null)}
+        accounts={accounts as Account[]}
+        isPaying={payInvoice.isPending}
+        onConfirm={(accountId) => {
+          if (invoicePayTarget) {
+            payInvoice.mutate({
+              cardId: invoicePayTarget.creditCardId,
+              invoiceId: invoicePayTarget.id,
+              accountId,
+            });
+          }
+        }}
+      />
     </div>
   );
 }

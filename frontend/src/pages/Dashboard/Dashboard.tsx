@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
   PiggyBank,
@@ -30,9 +31,9 @@ import { formatDate, formatMonthYear } from '../../utils/date';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function balanceColor(amount: number) {
-  if (amount > 0) return 'text-green-700';
-  if (amount < 0) return 'text-red-600';
-  return 'text-gray-900';
+  if (amount > 0) return 'text-green-700 dark:text-green-400';
+  if (amount < 0) return 'text-red-600 dark:text-red-400';
+  return 'text-gray-900 dark:text-gray-50';
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -41,9 +42,9 @@ function AlertsBar({ alerts }: { alerts: DashboardAlert[] }) {
   if (alerts.length === 0) return null;
 
   const STYLE = {
-    ERROR: 'bg-red-50 border-red-200 text-red-700',
-    WARNING: 'bg-amber-50 border-amber-200 text-amber-700',
-    INFO: 'bg-blue-50 border-blue-200 text-blue-700',
+    ERROR: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400',
+    WARNING: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400',
+    INFO: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400',
   };
   const ICON = {
     ERROR: <AlertCircle size={15} className="shrink-0" />,
@@ -67,18 +68,27 @@ function AlertsBar({ alerts }: { alerts: DashboardAlert[] }) {
 }
 
 function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
+  const navigate = useNavigate();
+  const { setMonthYear } = useMonth();
+
   const TYPE_ICON: Record<string, React.ReactNode> = {
     PAYMENT: <CreditCard size={14} className="text-orange-500" />,
     EXTRA_EXPENSE: <TrendingDown size={14} className="text-red-500" />,
     CREDIT_CARD_INVOICE: <CreditCard size={14} className="text-purple-500" />,
   };
 
+  function handleDueClick(due: UpcomingDue) {
+    const parts = due.dueDate.slice(0, 10).split('-').map(Number);
+    setMonthYear(parts[1], parts[0]);
+    navigate('/cash-flow');
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Calendar size={16} className="text-gray-400" />
-        <h3 className="text-sm font-semibold text-gray-700">Próximos Vencimentos</h3>
-        <span className="ml-auto text-xs text-gray-400">15 dias</span>
+        <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Próximos Vencimentos</h3>
+        <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">15 dias</span>
       </div>
 
       {dues.length === 0 ? (
@@ -87,15 +97,20 @@ function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
           icon={<CheckCircle2 size={20} className="text-green-500" />}
         />
       ) : (
-        <ul className="divide-y divide-gray-100">
+        <ul className="divide-y divide-gray-100 dark:divide-gray-700">
           {dues.map((due) => (
-            <li key={due.id} className="flex items-center gap-3 py-2.5">
+            <li
+              key={due.id}
+              onClick={() => handleDueClick(due)}
+              className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+              title="Ir para o fluxo de caixa deste mês"
+            >
               <div className="shrink-0">{TYPE_ICON[due.type]}</div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-gray-800 truncate">{due.description}</p>
-                <p className="text-xs text-gray-400">{formatDate(due.dueDate)}</p>
+                <p className="text-sm text-gray-800 dark:text-gray-100 truncate">{due.description}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(due.dueDate)}</p>
               </div>
-              <span className="text-sm font-semibold text-gray-800 shrink-0">
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 shrink-0">
                 {formatCurrency(due.amount)}
               </span>
             </li>
@@ -116,16 +131,16 @@ function AnnualSummaryCard({
     pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-green-500';
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Target size={16} className="text-gray-400" />
-        <h3 className="text-sm font-semibold text-gray-700">Faturamento Anual</h3>
+        <Target size={16} className="text-gray-400 dark:text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Faturamento Anual</h3>
       </div>
 
       <div className="space-y-4">
         <div>
-          <p className="text-xs text-gray-500 mb-1">Faturamento bruto recebido no ano</p>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Faturamento bruto recebido no ano</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
             {formatCurrency(data.grossIncome)}
           </p>
         </div>
@@ -133,17 +148,17 @@ function AnnualSummaryCard({
         {data.annualLimit > 0 ? (
           <>
             <div>
-              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
                 <span>Utilização do limite</span>
                 <span
                   className={
-                    pct >= 80 ? 'font-semibold text-amber-600' : 'text-gray-600'
+                    pct >= 80 ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-300'
                   }
                 >
                   {pct}%
                 </span>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${barColor}`}
                   style={{ width: `${Math.min(pct, 100)}%` }}
@@ -151,14 +166,14 @@ function AnnualSummaryCard({
               </div>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Limite anual configurado</span>
-              <span className="font-medium text-gray-700">
+              <span className="text-gray-400 dark:text-gray-500">Limite anual configurado</span>
+              <span className="font-medium text-gray-700 dark:text-gray-200">
                 {formatCurrency(data.annualLimit)}
               </span>
             </div>
           </>
         ) : (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             Configure um limite anual em Parametrizações para acompanhar a utilização.
           </p>
         )}
@@ -174,13 +189,13 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-5">
-        <BarChart3 size={16} className="text-gray-400" />
-        <h3 className="text-sm font-semibold text-gray-700">
+        <BarChart3 size={16} className="text-gray-400 dark:text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
           Evolução dos Últimos Meses
         </h3>
-        <div className="ml-auto flex items-center gap-4 text-xs text-gray-400">
+        <div className="ml-auto flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-green-400 inline-block" />
             Entradas
@@ -216,7 +231,7 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
                 title={`Saídas: ${formatCurrency(item.expenses)}`}
               />
             </div>
-            <span className="text-xs text-gray-400 text-center leading-tight">
+            <span className="text-xs text-gray-400 dark:text-gray-500 text-center leading-tight">
               {String(item.month).padStart(2, '0')}/
               {String(item.year).slice(2)}
             </span>
@@ -224,14 +239,14 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-100 grid gap-3"
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 grid gap-3"
         style={{ gridTemplateColumns: `repeat(${evolution.length}, minmax(0, 1fr))` }}
       >
         {evolution.map((item) => (
           <p
             key={`net-${item.month}-${item.year}`}
             className={`text-center text-xs font-semibold truncate ${
-              item.net >= 0 ? 'text-green-600' : 'text-red-500'
+              item.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
             }`}
             title={`Resultado: ${formatCurrency(item.net)}`}
           >
@@ -286,7 +301,7 @@ export default function Dashboard() {
 
       {/* Saldos das contas */}
       <section>
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
           Saldos Atuais
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -294,7 +309,7 @@ export default function Dashboard() {
             label="Conta Principal"
             value={formatCurrency(accounts.main?.balance ?? 0)}
             icon={<Wallet size={18} className="text-blue-600" />}
-            iconBg="bg-blue-50"
+            iconBg="bg-blue-50 dark:bg-blue-900/30"
             valueColor={balanceColor(accounts.main?.balance ?? 0)}
             sub={accounts.main?.name}
           />
@@ -302,7 +317,7 @@ export default function Dashboard() {
             label="Reserva de Emergência"
             value={formatCurrency(accounts.emergencyReserve?.balance ?? 0)}
             icon={<PiggyBank size={18} className="text-green-600" />}
-            iconBg="bg-green-50"
+            iconBg="bg-green-50 dark:bg-green-900/30"
             valueColor={balanceColor(accounts.emergencyReserve?.balance ?? 0)}
             sub={accounts.emergencyReserve?.name}
           />
@@ -310,7 +325,7 @@ export default function Dashboard() {
             label="Total Geral"
             value={formatCurrency(accounts.totalBalance)}
             icon={<DollarSign size={18} className="text-purple-600" />}
-            iconBg="bg-purple-50"
+            iconBg="bg-purple-50 dark:bg-purple-900/30"
             valueColor={balanceColor(accounts.totalBalance)}
           />
         </div>
@@ -318,7 +333,7 @@ export default function Dashboard() {
 
       {/* Resumo do mês */}
       <section>
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
           Resumo de {formatMonthYear(month, year)}
         </h2>
 
@@ -339,14 +354,14 @@ export default function Dashboard() {
             label="Entradas"
             value={formatCurrency(s.expectedIncome)}
             icon={<TrendingUp size={16} className="text-green-600" />}
-            iconBg="bg-green-50"
+            iconBg="bg-green-50 dark:bg-green-900/30"
             sub={`${formatCurrency(s.receivedIncome)} recebido`}
           />
           <StatCard
             label="Saídas Previstas"
             value={formatCurrency(totalOutgoing)}
             icon={<TrendingDown size={16} className="text-red-500" />}
-            iconBg="bg-red-50"
+            iconBg="bg-red-50 dark:bg-red-900/30"
             sub={`${formatCurrency(totalPaid)} pago`}
           />
         </div>
@@ -360,15 +375,15 @@ export default function Dashboard() {
           ].map(({ label, expected, paid }) => (
             <div
               key={label}
-              className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between gap-2"
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between gap-2"
             >
-              <span className="text-xs text-gray-500 shrink-0">{label}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{label}</span>
               <div className="text-right">
-                <span className="text-sm font-semibold text-gray-800">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                   {formatCurrency(expected)}
                 </span>
                 {paid !== null && (
-                  <span className="text-xs text-gray-400 ml-1.5">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-1.5">
                     / {formatCurrency(paid)} pago
                   </span>
                 )}
