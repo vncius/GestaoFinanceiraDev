@@ -344,22 +344,26 @@ export class CashFlowService {
 
     let balance = account.initialBalance;
 
+    // Derive "YYYY-MM" string for the month boundary (local time).
+    // String comparison of ISO year-month is timezone-safe and avoids the
+    // UTC-vs-local offset that Date objects introduce (e.g. "2026-06-01T00:00Z"
+    // parses to May 31 21:00 in UTC-3, so Date comparison would wrongly include
+    // June 1 transactions in the May carry-over).
+    const beforeYM = beforeDate
+      ? `${beforeDate.getFullYear()}-${String(beforeDate.getMonth() + 1).padStart(2, '0')}`
+      : null;
+
     const confirmed = transactions.filter((t) => {
       const isConfirmed =
         t.status === TransactionStatus.RECEIVED ||
         t.status === TransactionStatus.PAID;
       if (!isConfirmed) return false;
-      if (beforeDate) {
-        // For income/reserve entries the canonical month is expectedDate
-        // (= receivable.expectedPaymentDate), which is the same basis used
-        // by receivedIncome. Using actualDate here would double-count income
-        // received early (e.g. expected May, paid April → counted in both
-        // April's initialBalance carry-over AND May's receivedIncome).
-        const txDate =
-          t.type === TransactionType.INCOME || t.type === TransactionType.RESERVE
-            ? new Date(t.expectedDate)
-            : new Date(t.actualDate ?? t.expectedDate);
-        return txDate < beforeDate;
+      if (beforeYM) {
+        // Use expectedDate for ALL types so that initialBalance is consistent
+        // with how paidPayments / receivedIncome track months (both use
+        // expectedDate / expectedPaymentDate). This ensures that
+        // initialBalance_June == realizedBalance_May.
+        return t.expectedDate.slice(0, 7) < beforeYM;
       }
       return true;
     });
