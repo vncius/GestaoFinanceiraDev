@@ -84,13 +84,24 @@ export class CashFlowService {
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
       .reduce((s, r) => s + r.netAmount, 0);
 
-    const expectedPayments = payments.reduce((s, t) => s + t.amount, 0);
-    const paidPayments = payments
+    // Pagamentos da reserva de emergência são excluídos dos indicadores do fluxo
+    // de caixa principal: o saldo da reserva já é calculado separadamente via
+    // calcAccountBalance, então contabilizá-los aqui causaria dupla penalização
+    // no projectedBalance/realizedBalance.
+    const paymentsForFlow = reserveId
+      ? payments.filter((t) => t.sourceAccountId !== reserveId)
+      : payments;
+    const extraExpensesForFlow = reserveId
+      ? extraExpenses.filter((t) => t.sourceAccountId !== reserveId)
+      : extraExpenses;
+
+    const expectedPayments = paymentsForFlow.reduce((s, t) => s + t.amount, 0);
+    const paidPayments = paymentsForFlow
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
-    const expectedExtraExpenses = extraExpenses.reduce((s, t) => s + t.amount, 0);
-    const paidExtraExpenses = extraExpenses
+    const expectedExtraExpenses = extraExpensesForFlow.reduce((s, t) => s + t.amount, 0);
+    const paidExtraExpenses = extraExpensesForFlow
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
