@@ -59,62 +59,66 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 // ── Summary Bar ───────────────────────────────────────────────────────────────
 
-type SummaryItem = { label: string; value: number; neutral?: boolean; positive?: boolean; bold?: boolean };
+function SummaryCell({
+  label,
+  value,
+  color,
+  bold = false,
+  border = true,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  bold?: boolean;
+  border?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center shrink-0 px-4 min-w-[100px] ${border ? 'border-r border-gray-100 dark:border-gray-700' : ''}`}
+    >
+      <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">{label}</span>
+      <span className={`text-xs whitespace-nowrap ${bold ? 'font-bold' : 'font-semibold'} ${color}`}>
+        {formatCurrency(value)}
+      </span>
+    </div>
+  );
+}
 
 function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
   const [expanded, setExpanded] = useState(false);
 
-  const totalPaidExpenses = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
-  const totalExpectedExpenses = s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
+  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
+  const totalExpected = s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
 
-  const collapsed: SummaryItem[] = [
-    { label: 'Recebimentos', value: s.receivedIncome, positive: true },
-    { label: 'Despesas Pagas', value: totalPaidExpenses },
-    { label: 'Saldo Realizado', value: s.realizedBalance, bold: true },
-  ];
-
-  const extra: SummaryItem[] = [
-    { label: 'Caixa Anterior', value: s.initialBalance, neutral: true },
-    { label: 'Entradas Previstas', value: s.expectedIncome, positive: true },
-    { label: 'Despesas Previstas', value: totalExpectedExpenses },
-    { label: 'Saldo Projetado', value: s.projectedBalance, bold: true },
-  ];
-
-  const display = expanded ? [...collapsed, ...extra] : collapsed;
+  const saldoColor = s.realizedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
+  const prevSaldoColor = s.projectedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
 
   return (
-    <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10">
+    <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
       <div className="flex items-center px-4 py-2">
-        <div className="flex items-center gap-1 flex-1 overflow-x-auto">
-          {display.map(({ label, value, neutral, positive, bold }) => {
-            const color = neutral
-              ? 'text-gray-700 dark:text-gray-300'
-              : positive
-              ? 'text-green-600 dark:text-green-400'
-              : value < 0
-              ? 'text-red-600 dark:text-red-400'
-              : 'text-red-500 dark:text-red-400';
-            return (
-              <div
-                key={label}
-                className="flex flex-col items-center shrink-0 px-3 border-r border-gray-100 dark:border-gray-700 last:border-r-0 min-w-[90px]"
-              >
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">{label}</span>
-                <span className={`text-xs font-${bold ? 'bold' : 'semibold'} whitespace-nowrap ${color}`}>
-                  {formatCurrency(value)}
-                </span>
-              </div>
-            );
-          })}
+        <div className="flex items-center flex-1">
+          <SummaryCell label="Entradas" value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
+          <SummaryCell label="Saídas" value={totalPaid} color="text-red-500 dark:text-red-400" />
+          <SummaryCell label="Saldo" value={s.realizedBalance} color={saldoColor} bold border={false} />
         </div>
         <button
           onClick={() => setExpanded((e) => !e)}
           className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title={expanded ? 'Recolher' : 'Expandir detalhes'}
+          title={expanded ? 'Recolher' : 'Ver previstos'}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
       </div>
+
+      {expanded && (
+        <div className="flex items-center px-4 py-2 ">
+          <div className="flex items-center flex-1">
+            <SummaryCell label="Prev. Entradas" value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
+            <SummaryCell label="Prev. Saídas" value={totalExpected} color="text-red-500 dark:text-red-400" />
+            <SummaryCell label="Prev. Saldo" value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
