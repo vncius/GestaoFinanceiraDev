@@ -350,7 +350,15 @@ export class CashFlowService {
         t.status === TransactionStatus.PAID;
       if (!isConfirmed) return false;
       if (beforeDate) {
-        const txDate = new Date(t.actualDate ?? t.expectedDate);
+        // For income/reserve entries the canonical month is expectedDate
+        // (= receivable.expectedPaymentDate), which is the same basis used
+        // by receivedIncome. Using actualDate here would double-count income
+        // received early (e.g. expected May, paid April → counted in both
+        // April's initialBalance carry-over AND May's receivedIncome).
+        const txDate =
+          t.type === TransactionType.INCOME || t.type === TransactionType.RESERVE
+            ? new Date(t.expectedDate)
+            : new Date(t.actualDate ?? t.expectedDate);
         return txDate < beforeDate;
       }
       return true;
