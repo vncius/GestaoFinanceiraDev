@@ -33,6 +33,7 @@ import { Badge, receivableStatusBadge, transactionStatusBadge, invoiceStatusBadg
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { DateInput } from '../../components/ui/DateInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, floatToCents, centsToFloat } from '../../utils/money';
 import { formatDate, toInputDate, todayISO, firstDayOfMonthISO } from '../../utils/date';
@@ -581,7 +582,7 @@ function ReceivableModal({
             </select>
           </Field>
           <Field label="Data prevista *">
-            <input type="date" className={INPUT} value={form.expectedPaymentDate} onChange={set('expectedPaymentDate')} required />
+            <DateInput className={INPUT} value={form.expectedPaymentDate} onChange={(v) => setForm((f) => ({ ...f, expectedPaymentDate: v }))} required />
           </Field>
         </div>
         <Field label="Valor bruto *">
@@ -724,7 +725,7 @@ function TransactionModal({
             </select>
           </Field>
           <Field label="Data de lançamento *">
-            <input type="date" className={INPUT} value={form.expectedDate} onChange={set('expectedDate')} required />
+            <DateInput className={INPUT} value={form.expectedDate} onChange={(v) => setForm((f) => ({ ...f, expectedDate: v }))} required />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">

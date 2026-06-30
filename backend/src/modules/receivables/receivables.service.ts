@@ -176,10 +176,7 @@ export class ReceivablesService {
         400,
       );
     }
-    await this.receivablesRepo.update(id, {
-      status: ReceivableStatus.CANCELED,
-      updatedAt: nowISO(),
-    });
+    await this.receivablesRepo.delete(id);
   }
 
   async receive(id: string, input: ReceiveActionInput): Promise<Receivable> {

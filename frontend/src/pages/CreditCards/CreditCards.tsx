@@ -23,6 +23,7 @@ import { invoiceStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { DateInput } from '../../components/ui/DateInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, formatMonthYear, firstDayOfMonthISO, toInputDate } from '../../utils/date';
@@ -163,7 +164,7 @@ function EntryModal({
             </select>
           </Field>
           <Field label="Data de lançamento *">
-            <input type="date" className={INPUT} value={form.purchaseDate} onChange={set('purchaseDate')} required />
+            <DateInput className={INPUT} value={form.purchaseDate} onChange={(v) => setForm((f) => ({ ...f, purchaseDate: v }))} required />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">

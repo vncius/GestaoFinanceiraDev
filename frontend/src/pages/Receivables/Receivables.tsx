@@ -16,6 +16,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, toInputDate, todayISO } from '../../utils/date';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { DateInput } from '../../components/ui/DateInput';
 
 // ── Types & constants ─────────────────────────────────────────────────────────
 
@@ -138,7 +139,7 @@ function ReceivableModal({
             </select>
           </Field>
           <Field label="Data prevista *">
-            <input type="date" className={INPUT} value={form.expectedPaymentDate} onChange={set('expectedPaymentDate')} required />
+            <DateInput className={INPUT} value={form.expectedPaymentDate} onChange={(v) => setForm((f) => ({ ...f, expectedPaymentDate: v }))} required />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
