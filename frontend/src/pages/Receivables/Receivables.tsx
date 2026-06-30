@@ -387,7 +387,7 @@ export default function Receivables() {
                             <Pencil size={14} />
                           </button>
                         )}
-                        {item.status === 'EXPECTED' && (
+                        {(item.status === 'EXPECTED' || item.status === 'CANCELED') && (
                           <button
                             title="Excluir"
                             onClick={() => {

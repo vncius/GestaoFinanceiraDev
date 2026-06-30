@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useRef } from 'react';
+import { CalendarDays } from 'lucide-react';
 
 interface DateInputProps {
   value: string; // YYYY-MM-DD
@@ -14,49 +15,27 @@ function isoToDisplay(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function digitsToISO(digits: string): string {
-  if (digits.length < 8) return '';
-  return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
-}
-
-export function DateInput({ value, onChange, className, required }: DateInputProps) {
-  const [text, setText] = useState(() => isoToDisplay(value));
-
-  useEffect(() => {
-    setText(isoToDisplay(value));
-  }, [value]);
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    let digits = e.target.value.replace(/\D/g, '');
-    if (digits.length > 8) digits = digits.slice(0, 8);
-
-    let formatted = digits;
-    if (digits.length > 2) formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    if (digits.length > 4) formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-
-    setText(formatted);
-
-    if (digits.length === 8) {
-      const iso = digitsToISO(digits);
-      if (iso) onChange(iso);
-    }
-  }
-
-  function handleBlur() {
-    if (text.replace(/\D/g, '').length < 8) setText(isoToDisplay(value));
-  }
+export function DateInput({ value, onChange, className = '', required }: DateInputProps) {
+  const ref = useRef<HTMLInputElement>(null);
 
   return (
-    <input
-      type="text"
-      inputMode="numeric"
-      className={className}
-      value={text}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      placeholder="dd/mm/aaaa"
-      maxLength={10}
-      required={required}
-    />
+    <div
+      className={`relative flex items-center gap-2 cursor-pointer ${className} focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent`}
+    >
+      <span className="flex-1 select-none pointer-events-none">
+        {isoToDisplay(value) || (
+          <span className="text-gray-400 dark:text-gray-500">dd/mm/aaaa</span>
+        )}
+      </span>
+      <CalendarDays size={14} className="text-gray-400 dark:text-gray-500 shrink-0 pointer-events-none" />
+      <input
+        ref={ref}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+      />
+    </div>
   );
 }
