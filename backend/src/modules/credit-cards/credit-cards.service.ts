@@ -450,7 +450,7 @@ export class CreditCardsService {
       null;
 
     const now = nowISO();
-    const paymentDate = input?.paymentDate ?? now;
+    const paymentDate = input?.paymentDate ?? invoice.dueDate;
 
     await this.transactionsRepo.create({
       id: generateId(),
@@ -458,8 +458,8 @@ export class CreditCardsService {
       description: `Pagamento fatura ${card.name} ${invoice.month}/${invoice.year}`,
       categoryId: null,
       amount: invoice.totalAmount,
-      expectedDate: invoice.dueDate,
-      actualDate: paymentDate,
+      expectedDate: paymentDate,
+      actualDate: now,
       status: TransactionStatus.PAID,
       sourceAccountId: paymentAccountId,
       targetAccountId: null,

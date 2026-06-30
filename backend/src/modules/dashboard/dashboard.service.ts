@@ -244,8 +244,7 @@ export class DashboardService {
     const grossIncome = allReceivables
       .filter((r) => {
         if (r.status !== ReceivableStatus.RECEIVED) return false;
-        const d = new Date(r.actualPaymentDate ?? r.expectedPaymentDate);
-        return d.getFullYear() === year;
+        return r.expectedPaymentDate.slice(0, 4) === String(year);
       })
       .reduce((s, r) => s + r.grossAmount, 0);
 
@@ -271,11 +270,12 @@ export class DashboardService {
       const m = d.getMonth() + 1;
       const y = d.getFullYear();
 
+      const mYM = `${y}-${String(m).padStart(2, '0')}`;
+
       const mIncome = allReceivables
         .filter((r) => {
           if (r.status !== ReceivableStatus.RECEIVED) return false;
-          const date = new Date(r.actualPaymentDate ?? r.expectedPaymentDate);
-          return date.getMonth() + 1 === m && date.getFullYear() === y;
+          return r.expectedPaymentDate.slice(0, 7) === mYM;
         })
         .reduce((s, r) => s + r.netAmount, 0);
 
@@ -287,8 +287,7 @@ export class DashboardService {
             t.type !== TransactionType.EXTRA_EXPENSE
           )
             return false;
-          const date = new Date(t.actualDate ?? t.expectedDate);
-          return date.getMonth() + 1 === m && date.getFullYear() === y;
+          return t.expectedDate.slice(0, 7) === mYM;
         })
         .reduce((s, t) => s + t.amount, 0);
 
@@ -349,13 +348,17 @@ export class DashboardService {
   ): number {
     let balance = account.initialBalance;
 
+    const beforeYM = beforeDate
+      ? `${beforeDate.getFullYear()}-${String(beforeDate.getMonth() + 1).padStart(2, '0')}`
+      : null;
+
     const confirmed = transactions.filter((t) => {
       const ok =
         t.status === TransactionStatus.RECEIVED ||
         t.status === TransactionStatus.PAID;
       if (!ok) return false;
-      if (beforeDate) {
-        return new Date(t.actualDate ?? t.expectedDate) < beforeDate;
+      if (beforeYM) {
+        return t.expectedDate.slice(0, 7) < beforeYM;
       }
       return true;
     });

@@ -122,8 +122,6 @@ export class ReceivablesService {
         }
       }
 
-      const paymentDate = existing.actualPaymentDate ?? existing.expectedPaymentDate;
-
       // Cria nova entrada principal
       await this.transactionsRepo.create({
         id: generateId(),
@@ -132,7 +130,7 @@ export class ReceivablesService {
         categoryId: updated.incomeCategoryId,
         amount: netAmount,
         expectedDate: updated.expectedPaymentDate,
-        actualDate: paymentDate,
+        actualDate: now,
         status: TransactionStatus.RECEIVED,
         sourceAccountId: null,
         targetAccountId: settings.mainAccountId,
@@ -152,7 +150,7 @@ export class ReceivablesService {
           categoryId: null,
           amount: reserveAmount,
           expectedDate: updated.expectedPaymentDate,
-          actualDate: paymentDate,
+          actualDate: now,
           status: TransactionStatus.RECEIVED,
           sourceAccountId: null,
           targetAccountId: settings.emergencyReserveAccountId,
@@ -198,7 +196,7 @@ export class ReceivablesService {
     }
 
     const now = nowISO();
-    const paymentDate = input?.actualPaymentDate ?? receivable.expectedPaymentDate;
+    const effectiveDate = input?.actualPaymentDate ?? receivable.expectedPaymentDate;
 
     // prepara as movimentações antes de gravar qualquer coisa
     const transactions: FinancialTransaction[] = [];
@@ -209,8 +207,8 @@ export class ReceivablesService {
       description: `Recebimento: ${receivable.description}`,
       categoryId: receivable.incomeCategoryId,
       amount: receivable.netAmount,
-      expectedDate: receivable.expectedPaymentDate,
-      actualDate: paymentDate,
+      expectedDate: effectiveDate,
+      actualDate: now,
       status: TransactionStatus.RECEIVED,
       sourceAccountId: null,
       targetAccountId: settings.mainAccountId,
@@ -228,8 +226,8 @@ export class ReceivablesService {
         description: `Reserva: ${receivable.description}`,
         categoryId: null,
         amount: receivable.reserveAmount,
-        expectedDate: receivable.expectedPaymentDate,
-        actualDate: paymentDate,
+        expectedDate: effectiveDate,
+        actualDate: now,
         status: TransactionStatus.RECEIVED,
         sourceAccountId: null,
         targetAccountId: settings.emergencyReserveAccountId,
@@ -244,7 +242,7 @@ export class ReceivablesService {
     // grava em sequência controlada
     await this.receivablesRepo.update(id, {
       status: ReceivableStatus.RECEIVED,
-      actualPaymentDate: paymentDate,
+      actualPaymentDate: now,
       updatedAt: now,
     });
 

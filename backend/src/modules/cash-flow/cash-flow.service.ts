@@ -286,12 +286,13 @@ export class CashFlowService {
     }
 
     const now = nowISO();
-    const actualDate = input?.actualDate ?? now;
+    const effectiveDate = input?.actualDate ?? tx.expectedDate;
     const amountPaid = input?.amountPaid ?? tx.amount;
 
     return this.transactionsRepo.update(id, {
       status: TransactionStatus.PAID,
-      actualDate,
+      expectedDate: effectiveDate,
+      actualDate: now,
       amount: amountPaid,
       updatedAt: now,
     });
