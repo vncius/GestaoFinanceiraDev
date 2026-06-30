@@ -267,6 +267,7 @@ export interface DashboardResponse {
     expectedExtraExpenses: number;
     paidExtraExpenses: number;
     creditCardInvoices: number;
+    paidCreditCards: number;
     projectedBalance: number;
     realizedBalance: number;
   };

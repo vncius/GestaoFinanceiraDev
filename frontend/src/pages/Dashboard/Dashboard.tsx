@@ -290,9 +290,7 @@ export default function Dashboard() {
     monthlyEvolution,
   } = data;
 
-  const totalOutgoing =
-    s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
-  const totalPaid = s.paidPayments + s.paidExtraExpenses;
+  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCards;
 
   return (
     <div className="space-y-6">
@@ -339,55 +337,46 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
           <StatCard
-            label="Saldo Projetado"
-            value={formatCurrency(s.projectedBalance)}
-            valueColor={balanceColor(s.projectedBalance)}
-            sub="Saldo inicial + previstos"
+            label="Saldo Inicial"
+            value={formatCurrency(s.initialBalance)}
+            valueColor={balanceColor(s.initialBalance)}
+            sub="Antes do mês"
           />
           <StatCard
-            label="Saldo Realizado"
+            label="Saldo do Mês"
             value={formatCurrency(s.realizedBalance)}
             valueColor={balanceColor(s.realizedBalance)}
-            sub="Saldo inicial + efetivados"
+            sub="Consolidado"
           />
           <StatCard
             label="Entradas"
-            value={formatCurrency(s.expectedIncome)}
+            value={formatCurrency(s.receivedIncome)}
             icon={<TrendingUp size={16} className="text-green-600" />}
             iconBg="bg-green-50 dark:bg-green-900/30"
-            sub={`${formatCurrency(s.receivedIncome)} recebido`}
           />
           <StatCard
-            label="Saídas Previstas"
-            value={formatCurrency(totalOutgoing)}
+            label="Saídas"
+            value={formatCurrency(totalPaid)}
             icon={<TrendingDown size={16} className="text-red-500" />}
             iconBg="bg-red-50 dark:bg-red-900/30"
-            sub={`${formatCurrency(totalPaid)} pago`}
           />
         </div>
 
-        {/* Breakdown de saídas */}
+        {/* Breakdown de saídas consolidadas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Pagamentos', expected: s.expectedPayments, paid: s.paidPayments },
-            { label: 'Gastos Extras', expected: s.expectedExtraExpenses, paid: s.paidExtraExpenses },
-            { label: 'Faturas Cartão', expected: s.creditCardInvoices, paid: null },
-          ].map(({ label, expected, paid }) => (
+            { label: 'Pagamentos', value: s.paidPayments },
+            { label: 'Gastos Extras', value: s.paidExtraExpenses },
+            { label: 'Faturas Cartão', value: s.paidCreditCards },
+          ].map(({ label, value }) => (
             <div
               key={label}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between gap-2"
             >
               <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{label}</span>
-              <div className="text-right">
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                  {formatCurrency(expected)}
-                </span>
-                {paid !== null && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-1.5">
-                    / {formatCurrency(paid)} pago
-                  </span>
-                )}
-              </div>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                {formatCurrency(value)}
+              </span>
             </div>
           ))}
         </div>

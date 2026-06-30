@@ -68,16 +68,15 @@ export class DashboardService {
 
     // ── Month data ──────────────────────────────────────────────────────────────
     const monthStart = new Date(year, month - 1, 1);
+    const mYM = `${year}-${String(month).padStart(2, '0')}`;
 
     const monthReceivables = allReceivables.filter((r) => {
       if (r.status === ReceivableStatus.CANCELED) return false;
-      const d = new Date(r.expectedPaymentDate);
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
+      return r.expectedPaymentDate.slice(0, 7) === mYM;
     });
 
     const monthTransactions = allTransactions.filter((t) => {
-      const d = new Date(t.expectedDate);
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
+      return t.expectedDate.slice(0, 7) === mYM;
     });
 
     const monthInvoices = allInvoices.filter(
@@ -325,6 +324,7 @@ export class DashboardService {
         expectedExtraExpenses,
         paidExtraExpenses,
         creditCardInvoices: creditCardInvoicesTotal,
+        paidCreditCards,
         projectedBalance,
         realizedBalance,
       },
