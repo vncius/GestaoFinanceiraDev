@@ -25,6 +25,10 @@ export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export function firstDayOfMonthISO(month: number, year: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
 export function monthYearFromDate(iso: string): { month: number; year: number } {
   const parts = iso.slice(0, 10).split('-').map(Number);
   return { month: parts[1], year: parts[0] };

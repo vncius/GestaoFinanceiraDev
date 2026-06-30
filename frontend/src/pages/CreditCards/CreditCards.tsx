@@ -25,7 +25,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
-import { formatDate, formatMonthYear, todayISO, toInputDate } from '../../utils/date';
+import { formatDate, formatMonthYear, firstDayOfMonthISO, toInputDate } from '../../utils/date';
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -62,6 +62,8 @@ function EntryModal({
   onClose,
   categories,
   item,
+  month,
+  year,
   onSave,
   isSaving,
 }: {
@@ -69,6 +71,8 @@ function EntryModal({
   onClose: () => void;
   categories: Category[];
   item?: CreditCardEntry;
+  month: number;
+  year: number;
   onSave: (data: CreateCardEntryPayload | Parameters<typeof CreditCardsService.updateEntry>[2]) => void;
   isSaving: boolean;
 }) {
@@ -79,7 +83,7 @@ function EntryModal({
     description: item?.description ?? '',
     expenseCategoryId: item?.expenseCategoryId ?? (expenseCats[0]?.id ?? ''),
     totalAmount: item ? String(centsToFloat(item.totalAmount)) : '',
-    purchaseDate: item ? toInputDate(item.purchaseDate) : todayISO(),
+    purchaseDate: item ? toInputDate(item.purchaseDate) : firstDayOfMonthISO(month, year),
     entryType: (item?.entryType as EntryFormState['entryType']) ?? 'CASH',
     installmentsCount: item ? String(item.installmentsCount) : '2',
     notes: item?.notes ?? '',
@@ -158,7 +162,7 @@ function EntryModal({
               ))}
             </select>
           </Field>
-          <Field label="Data da compra *">
+          <Field label="Data de lançamento *">
             <input type="date" className={INPUT} value={form.purchaseDate} onChange={set('purchaseDate')} required />
           </Field>
         </div>
@@ -375,7 +379,7 @@ function CardDetail({
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
                   <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
-                  <th className="text-left px-3 py-2.5 font-medium">Data compra</th>
+                  <th className="text-left px-3 py-2.5 font-medium">Data lanç.</th>
                   <th className="text-left px-3 py-2.5 font-medium">Parcela</th>
                   <th className="text-right px-3 py-2.5 font-medium">Valor</th>
                   <th className="px-3 py-2.5" />
@@ -443,6 +447,8 @@ function CardDetail({
         open={showEntryModal}
         onClose={() => setShowEntryModal(false)}
         categories={categories}
+        month={month}
+        year={year}
         onSave={(payload) => addEntryMut.mutate(payload as CreateCardEntryPayload)}
         isSaving={addEntryMut.isPending}
       />
@@ -452,6 +458,8 @@ function CardDetail({
         onClose={() => setEntryToEdit(undefined)}
         categories={categories}
         item={entryToEdit}
+        month={month}
+        year={year}
         onSave={(payload) => updateEntryMut.mutate(payload as Parameters<typeof CreditCardsService.updateEntry>[2])}
         isSaving={updateEntryMut.isPending}
       />

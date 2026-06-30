@@ -35,7 +35,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, floatToCents, centsToFloat } from '../../utils/money';
-import { formatDate, toInputDate, todayISO } from '../../utils/date';
+import { formatDate, toInputDate, todayISO, firstDayOfMonthISO } from '../../utils/date';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -329,7 +329,7 @@ function TransactionGrid({
                 <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
                 <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
                 <th className="text-right px-3 py-2.5 font-medium">Valor</th>
-                <th className="text-left px-3 py-2.5 font-medium">Data prev.</th>
+                <th className="text-left px-3 py-2.5 font-medium">Data lanç.</th>
                 <th className="text-left px-3 py-2.5 font-medium">Status</th>
                 <th className="px-3 py-2.5" />
               </tr>
@@ -633,6 +633,8 @@ function TransactionModal({
   categories,
   accounts,
   mainAccountId,
+  month,
+  year,
   onSave,
   isSaving,
   onPay,
@@ -644,6 +646,8 @@ function TransactionModal({
   categories: Category[];
   accounts: Account[];
   mainAccountId: string | null;
+  month: number;
+  year: number;
   onSave: (data: CreateTransactionPayload) => void;
   isSaving: boolean;
   onPay?: (id: string) => void;
@@ -659,7 +663,7 @@ function TransactionModal({
     description: item?.description ?? '',
     categoryId: item?.categoryId ?? (expenseCategories[0]?.id ?? ''),
     amount: item ? String(centsToFloat(item.amount)) : '',
-    expectedDate: item ? toInputDate(item.expectedDate) : todayISO(),
+    expectedDate: item ? toInputDate(item.expectedDate) : firstDayOfMonthISO(month, year),
     accountId: item?.sourceAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
   });
@@ -719,7 +723,7 @@ function TransactionModal({
               {expenseCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="Data prevista *">
+          <Field label="Data de lançamento *">
             <input type="date" className={INPUT} value={form.expectedDate} onChange={set('expectedDate')} required />
           </Field>
         </div>
@@ -998,6 +1002,8 @@ export default function CashFlow() {
           categories={categories}
           accounts={accounts as Account[]}
           mainAccountId={settings?.mainAccountId ?? null}
+          month={month}
+          year={year}
           onSave={saveTransaction}
           isSaving={txSaving}
           onPay={handleTxPay}
