@@ -118,6 +118,7 @@ export class CashFlowService {
         expectedExtraExpenses,
         paidExtraExpenses,
         creditCardInvoices: creditCardInvoicesTotal,
+        paidCreditCardInvoices: paidCreditCards,
         projectedBalance:
           initialBalance +
           expectedIncome -

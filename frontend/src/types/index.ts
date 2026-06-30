@@ -193,6 +193,7 @@ export interface CashFlowSummary {
   expectedExtraExpenses: number;
   paidExtraExpenses: number;
   creditCardInvoices: number;
+  paidCreditCardInvoices: number;
   projectedBalance: number;
   realizedBalance: number;
   mainAccountBalance: number;

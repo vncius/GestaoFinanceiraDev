@@ -63,16 +63,19 @@ type SummaryItem = { label: string; value: number; neutral?: boolean; positive?:
 function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
   const [expanded, setExpanded] = useState(false);
 
+  const totalPaidExpenses = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
+  const totalExpectedExpenses = s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
+
   const collapsed: SummaryItem[] = [
     { label: 'Recebimentos', value: s.receivedIncome, positive: true },
-    { label: 'Despesas Pagas', value: s.paidPayments },
+    { label: 'Despesas Pagas', value: totalPaidExpenses },
     { label: 'Saldo Realizado', value: s.realizedBalance, bold: true },
   ];
 
   const extra: SummaryItem[] = [
     { label: 'Caixa Anterior', value: s.initialBalance, neutral: true },
     { label: 'Entradas Previstas', value: s.expectedIncome, positive: true },
-    { label: 'Pagamentos Previstos', value: s.expectedPayments },
+    { label: 'Despesas Previstas', value: totalExpectedExpenses },
     { label: 'Saldo Projetado', value: s.projectedBalance, bold: true },
   ];
 
