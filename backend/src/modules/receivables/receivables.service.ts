@@ -122,7 +122,7 @@ export class ReceivablesService {
         }
       }
 
-      const paymentDate = existing.actualPaymentDate ?? now;
+      const paymentDate = existing.actualPaymentDate ?? existing.expectedPaymentDate;
 
       // Cria nova entrada principal
       await this.transactionsRepo.create({
@@ -198,7 +198,7 @@ export class ReceivablesService {
     }
 
     const now = nowISO();
-    const paymentDate = input?.actualPaymentDate ?? now;
+    const paymentDate = input?.actualPaymentDate ?? receivable.expectedPaymentDate;
 
     // prepara as movimentações antes de gravar qualquer coisa
     const transactions: FinancialTransaction[] = [];
