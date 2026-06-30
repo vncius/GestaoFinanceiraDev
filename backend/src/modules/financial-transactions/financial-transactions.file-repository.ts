@@ -37,8 +37,8 @@ export class FinancialTransactionsFileRepository
   async findByMonth(month: number, year: number): Promise<FinancialTransaction[]> {
     const all = await this.store.findAll();
     return all.filter((t) => {
-      const date = new Date(t.expectedDate);
-      return date.getMonth() + 1 === month && date.getFullYear() === year;
+      const [y, m] = t.expectedDate.slice(0, 10).split('-').map(Number);
+      return m === month && y === year;
     });
   }
 

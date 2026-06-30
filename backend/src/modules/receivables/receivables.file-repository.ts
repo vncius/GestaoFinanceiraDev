@@ -28,8 +28,8 @@ export class ReceivablesFileRepository implements ReceivablesRepository {
   async findByMonth(month: number, year: number): Promise<Receivable[]> {
     const all = await this.store.findAll();
     return all.filter((r) => {
-      const date = new Date(r.expectedPaymentDate);
-      return date.getMonth() + 1 === month && date.getFullYear() === year;
+      const [y, m] = r.expectedPaymentDate.slice(0, 10).split('-').map(Number);
+      return m === month && y === year;
     });
   }
 
