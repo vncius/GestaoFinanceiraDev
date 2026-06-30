@@ -15,6 +15,7 @@ import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, toInputDate, todayISO } from '../../utils/date';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 
 // ── Types & constants ─────────────────────────────────────────────────────────
 
@@ -142,7 +143,11 @@ function ReceivableModal({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Valor bruto (R$) *">
-            <input type="number" step="0.01" min="0.01" className={INPUT} value={form.grossAmount} onChange={set('grossAmount')} required />
+            <CurrencyInput
+              className={INPUT}
+              value={form.grossAmount}
+              onChange={(v) => setForm((f) => ({ ...f, grossAmount: v }))}
+            />
           </Field>
           <Field label="Cliente">
             <input className={INPUT} value={form.customerName} onChange={set('customerName')} placeholder="Nome do cliente" />
@@ -207,7 +212,11 @@ export default function Receivables() {
 
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
   const defaultReservePct = settings?.defaultReservePercentage ?? 30;
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['receivables'] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['receivables'] });
+    qc.invalidateQueries({ queryKey: ['cashFlow'] });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+  };
 
   const createMut = useMutation({
     mutationFn: ReceivablesService.create,
@@ -231,7 +240,10 @@ export default function Receivables() {
     onSuccess: invalidate,
   });
 
+  const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
+
   function save(payload: CreateReceivablePayload) {
+    if (modal?.item?.status === 'RECEIVED' && !window.confirm(EFFECTED_CONFIRM)) return;
     if (modal?.item) {
       updateMut.mutate({ id: modal.item.id, data: payload });
     } else {
@@ -317,11 +329,8 @@ export default function Receivables() {
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {sorted.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
-                    <td
-                      className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                      onClick={() => setModal({ item })}
-                    >
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer" onClick={() => setModal({ item })}>
+                    <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">
                       {item.description}
                       {item.invoiceNumber && (
                         <span className="ml-1.5 text-xs text-gray-400 font-normal">
@@ -348,7 +357,7 @@ export default function Receivables() {
                       {item.actualPaymentDate ? formatDate(item.actualPaymentDate) : '—'}
                     </td>
                     <td className="px-3 py-3">{receivableStatusBadge(item.status)}</td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         {item.status === 'EXPECTED' && (
                           <button

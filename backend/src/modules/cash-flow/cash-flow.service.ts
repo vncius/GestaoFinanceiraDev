@@ -228,16 +228,15 @@ export class CashFlowService {
   ): Promise<FinancialTransaction> {
     const tx = await this.getTransactionChecked(id, type);
 
-    if (tx.status === TransactionStatus.PAID) {
-      throw new AppError(
-        'Lançamentos já pagos não podem ser editados. Reverta primeiro.',
-        400,
-      );
-    }
     if (tx.status === TransactionStatus.CANCELED) {
       throw new AppError('Lançamentos cancelados não podem ser editados.', 400);
     }
+    if (tx.status === TransactionStatus.REVERSED) {
+      throw new AppError('Lançamentos revertidos não podem ser editados.', 400);
+    }
 
+    // Para transações já pagas, a própria transação é o impacto financeiro.
+    // Atualizar seus campos (amount, sourceAccountId, etc.) recalcula saldos automaticamente.
     return this.transactionsRepo.update(id, { ...input, updatedAt: nowISO() });
   }
 

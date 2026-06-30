@@ -31,8 +31,8 @@ export interface PayInvoicePayload {
 }
 
 export const CreditCardsService = {
-  findAll: (): Promise<CreditCard[]> =>
-    api.get<CreditCard[]>('/credit-cards').then((r) => r.data),
+  findAll: (month?: number, year?: number): Promise<CreditCard[]> =>
+    api.get<CreditCard[]>('/credit-cards', { params: month && year ? { month, year } : undefined }).then((r) => r.data),
 
   create: (payload: CreateCreditCardPayload): Promise<CreditCard> =>
     api.post<CreditCard>('/credit-cards', payload).then((r) => r.data),
@@ -55,7 +55,15 @@ export const CreditCardsService = {
   updateEntry: (
     cardId: string,
     entryId: string,
-    payload: { description?: string; expenseCategoryId?: string; notes?: string | null },
+    payload: {
+      description?: string;
+      expenseCategoryId?: string;
+      totalAmount?: number;
+      purchaseDate?: string;
+      entryType?: 'CASH' | 'FIXED' | 'INSTALLMENT';
+      installmentsCount?: number;
+      notes?: string | null;
+    },
   ): Promise<CreditCardEntry> =>
     api.put<CreditCardEntry>(`/credit-cards/${cardId}/entries/${entryId}`, payload).then((r) => r.data),
 

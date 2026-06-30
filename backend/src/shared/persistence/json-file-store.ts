@@ -21,7 +21,8 @@ export class JsonFileStore<T extends { id: string }> {
 
   private async readAll(): Promise<T[]> {
     await this.ensureFile();
-    const content = await fs.readFile(this.filePath, 'utf-8');
+    const raw = await fs.readFile(this.filePath, 'utf-8');
+    const content = raw.replace(/^﻿/, '');
     if (!content.trim()) return [];
     return JSON.parse(content) as T[];
   }

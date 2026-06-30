@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   RotateCcw,
   Plus,
+  Pencil,
   Trash2,
   ChevronRight,
   CreditCard as CreditCardIcon,
@@ -15,7 +16,7 @@ import {
 } from '../../services/credit-cards.service';
 import { CategoriesService } from '../../services/categories.service';
 import { AccountsService } from '../../services/accounts.service';
-import { Category, CreditCard, CreditCardInvoice } from '../../types';
+import { Category, CreditCard, CreditCardEntry, CreditCardInvoice } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { invoiceStatusBadge } from '../../components/ui/Badge';
@@ -24,7 +25,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
-import { formatDate, formatMonthYear, todayISO } from '../../utils/date';
+import { formatDate, formatMonthYear, todayISO, toInputDate } from '../../utils/date';
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -60,25 +61,28 @@ function EntryModal({
   open,
   onClose,
   categories,
+  item,
   onSave,
   isSaving,
 }: {
   open: boolean;
   onClose: () => void;
   categories: Category[];
-  onSave: (data: CreateCardEntryPayload) => void;
+  item?: CreditCardEntry;
+  onSave: (data: CreateCardEntryPayload | Parameters<typeof CreditCardsService.updateEntry>[2]) => void;
   isSaving: boolean;
 }) {
   const expenseCats = categories.filter((c) => c.type === 'EXPENSE' && c.active);
+  const isEdit = !!item;
 
   const init = (): EntryFormState => ({
-    description: '',
-    expenseCategoryId: expenseCats[0]?.id ?? '',
-    totalAmount: '',
-    purchaseDate: todayISO(),
-    entryType: 'CASH',
-    installmentsCount: '2',
-    notes: '',
+    description: item?.description ?? '',
+    expenseCategoryId: item?.expenseCategoryId ?? (expenseCats[0]?.id ?? ''),
+    totalAmount: item ? String(centsToFloat(item.totalAmount)) : '',
+    purchaseDate: item ? toInputDate(item.purchaseDate) : todayISO(),
+    entryType: (item?.entryType as EntryFormState['entryType']) ?? 'CASH',
+    installmentsCount: item ? String(item.installmentsCount) : '2',
+    notes: item?.notes ?? '',
   });
 
   const [form, setForm] = useState<EntryFormState>(init);
@@ -95,27 +99,49 @@ function EntryModal({
     e.preventDefault();
     const cents = floatToCents(parseFloat(form.totalAmount) || 0);
     if (!cents || !form.description || !form.expenseCategoryId) return;
-    onSave({
-      description: form.description,
-      expenseCategoryId: form.expenseCategoryId,
-      totalAmount: cents,
-      purchaseDate: new Date(form.purchaseDate).toISOString(),
-      entryType: form.entryType,
-      installmentsCount:
-        form.entryType === 'INSTALLMENT' ? parseInt(form.installmentsCount) : undefined,
-      notes: form.notes || null,
-    });
+
+    if (isEdit) {
+      const willRecreate =
+        cents !== item!.totalAmount ||
+        new Date(form.purchaseDate).toISOString() !== item!.purchaseDate ||
+        form.entryType !== item!.entryType ||
+        (form.entryType === 'INSTALLMENT' && parseInt(form.installmentsCount) !== item!.installmentsCount);
+
+      if (willRecreate && !window.confirm(
+        'Alterar valor, data, tipo ou parcelas irá recriar todas as parcelas e pode reverter faturas pagas. Deseja continuar?'
+      )) return;
+
+      onSave({
+        description: form.description,
+        expenseCategoryId: form.expenseCategoryId,
+        totalAmount: cents,
+        purchaseDate: new Date(form.purchaseDate).toISOString(),
+        entryType: form.entryType,
+        installmentsCount: form.entryType === 'INSTALLMENT' ? parseInt(form.installmentsCount) : undefined,
+        notes: form.notes || null,
+      });
+    } else {
+      onSave({
+        description: form.description,
+        expenseCategoryId: form.expenseCategoryId,
+        totalAmount: cents,
+        purchaseDate: new Date(form.purchaseDate).toISOString(),
+        entryType: form.entryType,
+        installmentsCount: form.entryType === 'INSTALLMENT' ? parseInt(form.installmentsCount) : undefined,
+        notes: form.notes || null,
+      } as CreateCardEntryPayload);
+    }
   }
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Adicionar Lançamento"
+      title={isEdit ? 'Editar Lançamento' : 'Adicionar Lançamento'}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>Adicionar</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{isEdit ? 'Salvar' : 'Adicionar'}</Button>
         </>
       }
     >
@@ -195,6 +221,7 @@ function CardDetail({
 }) {
   const qc = useQueryClient();
   const [showEntryModal, setShowEntryModal] = useState(false);
+  const [entryToEdit, setEntryToEdit] = useState<CreditCardEntry | undefined>(undefined);
   const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
 
   const flowKey = ['creditCards', 'flow', card.id, month, year] as const;
@@ -218,12 +245,18 @@ function CardDetail({
     qc.invalidateQueries({ queryKey: flowKey });
     qc.invalidateQueries({ queryKey: ['creditCards'] });
     qc.invalidateQueries({ queryKey: ['cashFlow'] });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
 
   const addEntryMut = useMutation({
     mutationFn: (payload: CreateCardEntryPayload) =>
       CreditCardsService.createEntry(card.id, payload),
     onSuccess: () => { invalidate(); setShowEntryModal(false); },
+  });
+  const updateEntryMut = useMutation({
+    mutationFn: (payload: Parameters<typeof CreditCardsService.updateEntry>[2]) =>
+      CreditCardsService.updateEntry(card.id, entryToEdit!.id, payload),
+    onSuccess: () => { invalidate(); setEntryToEdit(undefined); },
   });
   const deleteEntryMut = useMutation({
     mutationFn: (entryId: string) => CreditCardsService.deleteEntry(card.id, entryId),
@@ -373,16 +406,21 @@ function CardDetail({
                         {formatCurrency(inst.amount)}
                       </td>
                       <td className="px-3 py-3">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {entry?.active && (
+                            <button
+                              title="Editar lançamento"
+                              onClick={() => { setEntryToEdit(entry); }}
+                              className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          )}
                           {entry?.active && (
                             <button
                               title="Cancelar lançamento"
                               onClick={() => {
-                                if (
-                                  window.confirm(
-                                    'Cancelar este lançamento e todas as suas parcelas?'
-                                  )
-                                )
+                                if (window.confirm('Cancelar este lançamento e todas as suas parcelas?'))
                                   deleteEntryMut.mutate(entry.id);
                               }}
                               className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
@@ -405,8 +443,17 @@ function CardDetail({
         open={showEntryModal}
         onClose={() => setShowEntryModal(false)}
         categories={categories}
-        onSave={(payload) => addEntryMut.mutate(payload)}
+        onSave={(payload) => addEntryMut.mutate(payload as CreateCardEntryPayload)}
         isSaving={addEntryMut.isPending}
+      />
+
+      <EntryModal
+        open={!!entryToEdit}
+        onClose={() => setEntryToEdit(undefined)}
+        categories={categories}
+        item={entryToEdit}
+        onSave={(payload) => updateEntryMut.mutate(payload as Parameters<typeof CreditCardsService.updateEntry>[2])}
+        isSaving={updateEntryMut.isPending}
       />
 
       <PayInvoiceAccountModal
@@ -431,8 +478,8 @@ export default function CreditCards() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   const { data: cards = [], isLoading } = useQuery({
-    queryKey: ['creditCards'],
-    queryFn: CreditCardsService.findAll,
+    queryKey: ['creditCards', month, year],
+    queryFn: () => CreditCardsService.findAll(month, year),
   });
 
   const activeCards = cards.filter((c) => c.active);

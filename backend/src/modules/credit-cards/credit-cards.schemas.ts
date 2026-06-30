@@ -35,6 +35,10 @@ export const createCardEntrySchema = z
 export const updateCardEntrySchema = z.object({
   description: z.string().min(1).optional(),
   expenseCategoryId: z.string().uuid().optional(),
+  totalAmount: z.number().int().positive().optional(),
+  purchaseDate: z.string().optional(),
+  entryType: z.nativeEnum(CardEntryType).optional(),
+  installmentsCount: z.number().int().min(2).optional(),
   notes: z.string().nullable().optional(),
 });
 

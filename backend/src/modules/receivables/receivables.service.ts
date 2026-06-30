@@ -81,12 +81,6 @@ export class ReceivablesService {
   async update(id: string, input: UpdateReceivableInput): Promise<Receivable> {
     const existing = await this.findById(id);
 
-    if (existing.status === ReceivableStatus.RECEIVED) {
-      throw new AppError(
-        'Recebimentos já recebidos não podem ser editados. Reverta primeiro.',
-        400,
-      );
-    }
     if (existing.status === ReceivableStatus.CANCELED) {
       throw new AppError('Recebimentos cancelados não podem ser editados.', 400);
     }
@@ -102,13 +96,76 @@ export class ReceivablesService {
       settings?.defaultReservePercentage ?? 30,
     );
 
-    return this.receivablesRepo.update(id, {
+    const now = nowISO();
+
+    const updated = await this.receivablesRepo.update(id, {
       ...input,
       reservePercentageApplied: reservePercentage,
       reserveAmount,
       netAmount,
-      updatedAt: nowISO(),
+      updatedAt: now,
     });
+
+    if (existing.status === ReceivableStatus.RECEIVED) {
+      if (!settings?.mainAccountId) {
+        throw new AppError('Conta principal não configurada nas parametrizações.', 400);
+      }
+
+      // Estorna movimentações antigas
+      const linked = await this.transactionsRepo.findByOrigin(OriginType.RECEIVABLE, id);
+      for (const tx of linked) {
+        if (tx.status !== TransactionStatus.REVERSED) {
+          await this.transactionsRepo.update(tx.id, {
+            status: TransactionStatus.REVERSED,
+            updatedAt: now,
+          });
+        }
+      }
+
+      const paymentDate = existing.actualPaymentDate ?? now;
+
+      // Cria nova entrada principal
+      await this.transactionsRepo.create({
+        id: generateId(),
+        type: TransactionType.INCOME,
+        description: `Recebimento: ${updated.description}`,
+        categoryId: updated.incomeCategoryId,
+        amount: netAmount,
+        expectedDate: updated.expectedPaymentDate,
+        actualDate: paymentDate,
+        status: TransactionStatus.RECEIVED,
+        sourceAccountId: null,
+        targetAccountId: settings.mainAccountId,
+        originType: OriginType.RECEIVABLE,
+        originId: id,
+        notes: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Cria nova reserva (se aplicável)
+      if (reserveAmount > 0 && settings.emergencyReserveAccountId) {
+        await this.transactionsRepo.create({
+          id: generateId(),
+          type: TransactionType.RESERVE,
+          description: `Reserva: ${updated.description}`,
+          categoryId: null,
+          amount: reserveAmount,
+          expectedDate: updated.expectedPaymentDate,
+          actualDate: paymentDate,
+          status: TransactionStatus.RECEIVED,
+          sourceAccountId: null,
+          targetAccountId: settings.emergencyReserveAccountId,
+          originType: OriginType.RECEIVABLE,
+          originId: id,
+          notes: null,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return updated;
   }
 
   async delete(id: string): Promise<void> {

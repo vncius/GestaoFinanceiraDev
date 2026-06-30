@@ -66,7 +66,7 @@ export class CreditCardsService {
 
   // ─── Cards CRUD ───────────────────────────────────────────────────────────────
 
-  async findAll(): Promise<CreditCardWithSummary[]> {
+  async findAll(month?: number, year?: number): Promise<CreditCardWithSummary[]> {
     const [cards, allEntries, allInstallments, allInvoices] = await Promise.all([
       this.cardsRepo.findActive(),
       this.entriesRepo.findAll(),
@@ -75,8 +75,8 @@ export class CreditCardsService {
     ]);
 
     const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
+    const currentMonth = month ?? (now.getMonth() + 1);
+    const currentYear = year ?? now.getFullYear();
 
     return cards.map((card) => {
       const cardEntries = allEntries.filter(
@@ -280,7 +280,122 @@ export class CreditCardsService {
   ): Promise<CreditCardEntry> {
     const entry = await this.getEntryChecked(cardId, entryId);
     if (!entry.active) throw new AppError('Lançamento inativo.', 400);
-    return this.entriesRepo.update(entryId, { ...input, updatedAt: nowISO() });
+
+    const now = nowISO();
+
+    const needsRecreate =
+      (input.totalAmount !== undefined && input.totalAmount !== entry.totalAmount) ||
+      (input.purchaseDate !== undefined && input.purchaseDate !== entry.purchaseDate) ||
+      (input.entryType !== undefined && input.entryType !== entry.entryType) ||
+      (input.installmentsCount !== undefined && input.installmentsCount !== entry.installmentsCount);
+
+    if (!needsRecreate) {
+      return this.entriesRepo.update(entryId, {
+        description: input.description ?? entry.description,
+        expenseCategoryId: input.expenseCategoryId ?? entry.expenseCategoryId,
+        notes: input.notes !== undefined ? input.notes : entry.notes,
+        updatedAt: now,
+      });
+    }
+
+    const card = await this.findById(cardId);
+
+    // 1. Cancela parcelas existentes e coleta faturas afetadas
+    const existingInstallments = await this.installmentsRepo.findByEntryId(entryId);
+    const affectedInvoiceIds = new Set<string>();
+
+    for (const inst of existingInstallments) {
+      if (inst.status !== InstallmentStatus.CANCELED) {
+        if (inst.creditCardInvoiceId) affectedInvoiceIds.add(inst.creditCardInvoiceId);
+        await this.installmentsRepo.update(inst.id, {
+          status: InstallmentStatus.CANCELED,
+          updatedAt: now,
+        });
+      }
+    }
+
+    // 2. Estorna pagamentos de faturas pagas e volta status para OPEN
+    for (const invoiceId of affectedInvoiceIds) {
+      const invoice = await this.invoicesRepo.findById(invoiceId);
+      if (!invoice) continue;
+      if (invoice.status === InvoiceStatus.PAID) {
+        const linked = await this.transactionsRepo.findByOrigin(
+          OriginType.CREDIT_CARD_INVOICE,
+          invoiceId,
+        );
+        for (const tx of linked) {
+          if (tx.status !== TransactionStatus.REVERSED) {
+            await this.transactionsRepo.update(tx.id, {
+              status: TransactionStatus.REVERSED,
+              updatedAt: now,
+            });
+          }
+        }
+        await this.invoicesRepo.update(invoiceId, {
+          status: InvoiceStatus.OPEN,
+          paymentDate: null,
+          paymentAccountId: null,
+          updatedAt: now,
+        });
+      }
+      await this.recalcInvoiceTotal(invoiceId);
+    }
+
+    // 3. Determina novos valores
+    const newTotalAmount = input.totalAmount ?? entry.totalAmount;
+    const newPurchaseDate = input.purchaseDate ?? entry.purchaseDate;
+    const newEntryType = (input.entryType ?? entry.entryType) as CardEntryType;
+
+    let count: number;
+    if (newEntryType === CardEntryType.CASH) {
+      count = 1;
+    } else if (newEntryType === CardEntryType.FIXED) {
+      count = 12;
+    } else {
+      count = input.installmentsCount ?? entry.installmentsCount;
+    }
+
+    // 4. Atualiza o lançamento
+    const updatedEntry = await this.entriesRepo.update(entryId, {
+      description: input.description ?? entry.description,
+      expenseCategoryId: input.expenseCategoryId ?? entry.expenseCategoryId,
+      totalAmount: newTotalAmount,
+      purchaseDate: newPurchaseDate,
+      entryType: newEntryType,
+      installmentsCount: count,
+      notes: input.notes !== undefined ? input.notes : entry.notes,
+      updatedAt: now,
+    });
+
+    // 5. Recria parcelas
+    const purchaseDateObj = new Date(newPurchaseDate);
+    const firstMonth = this.getInvoiceMonth(purchaseDateObj, card.closingDay);
+    const base = Math.floor(newTotalAmount / count);
+    const remainder = newTotalAmount - base * count;
+
+    for (let i = 0; i < count; i++) {
+      const { month, year } = this.addMonths(firstMonth.month, firstMonth.year, i);
+      const amount = base + (i === 0 ? remainder : 0);
+      const invoice = await this.findOrCreateInvoice(cardId, month, year, card.dueDay);
+
+      await this.installmentsRepo.create({
+        id: generateId(),
+        creditCardEntryId: entryId,
+        installmentNumber: i + 1,
+        totalInstallments: count,
+        amount,
+        month,
+        year,
+        status: InstallmentStatus.OPEN,
+        creditCardInvoiceId: invoice.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await this.recalcInvoiceTotal(invoice.id);
+    }
+
+    return updatedEntry;
   }
 
   async deleteEntry(cardId: string, entryId: string): Promise<void> {

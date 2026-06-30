@@ -64,19 +64,16 @@ function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
   const [expanded, setExpanded] = useState(false);
 
   const collapsed: SummaryItem[] = [
-    { label: 'Recebidos', value: s.receivedIncome, positive: true },
-    { label: 'Pgtos. pagos', value: s.paidPayments },
-    { label: 'Saldo realizado', value: s.realizedBalance, bold: true },
+    { label: 'Recebimentos', value: s.receivedIncome, positive: true },
+    { label: 'Despesas Pagas', value: s.paidPayments },
+    { label: 'Saldo Realizado', value: s.realizedBalance, bold: true },
   ];
 
   const extra: SummaryItem[] = [
-    { label: 'Saldo inicial', value: s.initialBalance, neutral: true },
-    { label: 'Entradas prev.', value: s.expectedIncome, positive: true },
-    { label: 'Pgtos. prev.', value: s.expectedPayments },
-    { label: 'Extras prev.', value: s.expectedExtraExpenses },
-    { label: 'Extras pagos', value: s.paidExtraExpenses },
-    { label: 'Faturas cartão', value: s.creditCardInvoices },
-    { label: 'Saldo projetado', value: s.projectedBalance, bold: true },
+    { label: 'Caixa Anterior', value: s.initialBalance, neutral: true },
+    { label: 'Entradas Previstas', value: s.expectedIncome, positive: true },
+    { label: 'Pagamentos Previstos', value: s.expectedPayments },
+    { label: 'Saldo Projetado', value: s.projectedBalance, bold: true },
   ];
 
   const display = expanded ? [...collapsed, ...extra] : collapsed;
@@ -621,6 +618,7 @@ interface TxFormState {
   categoryId: string;
   amount: string;
   expectedDate: string;
+  accountId: string;
   notes: string;
 }
 
@@ -630,6 +628,8 @@ function TransactionModal({
   type,
   item,
   categories,
+  accounts,
+  mainAccountId,
   onSave,
   isSaving,
   onPay,
@@ -639,12 +639,15 @@ function TransactionModal({
   type: 'payment' | 'extra-expense';
   item?: FinancialTransaction;
   categories: Category[];
+  accounts: Account[];
+  mainAccountId: string | null;
   onSave: (data: CreateTransactionPayload) => void;
   isSaving: boolean;
   onPay?: (id: string) => void;
 }) {
   const isEdit = !!item;
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
+  const activeAccounts = accounts.filter((a) => a.active);
   const title = type === 'payment'
     ? (isEdit ? 'Editar Pagamento' : 'Novo Pagamento')
     : (isEdit ? 'Editar Gasto Extraordinário' : 'Novo Gasto Extraordinário');
@@ -654,6 +657,7 @@ function TransactionModal({
     categoryId: item?.categoryId ?? (expenseCategories[0]?.id ?? ''),
     amount: item ? String(centsToFloat(item.amount)) : '',
     expectedDate: item ? toInputDate(item.expectedDate) : todayISO(),
+    accountId: item?.sourceAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
   });
 
@@ -671,6 +675,7 @@ function TransactionModal({
       categoryId: form.categoryId,
       amount,
       expectedDate: new Date(form.expectedDate).toISOString(),
+      sourceAccountId: form.accountId || null,
       notes: form.notes || null,
     });
   }
@@ -715,13 +720,23 @@ function TransactionModal({
             <input type="date" className={INPUT} value={form.expectedDate} onChange={set('expectedDate')} required />
           </Field>
         </div>
-        <Field label="Valor *">
-          <CurrencyInput
-            className={INPUT}
-            value={form.amount}
-            onChange={(v) => setForm((f) => ({ ...f, amount: v }))}
-          />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Valor *">
+            <CurrencyInput
+              className={INPUT}
+              value={form.amount}
+              onChange={(v) => setForm((f) => ({ ...f, amount: v }))}
+            />
+          </Field>
+          <Field label="Conta de débito">
+            <select className={INPUT} value={form.accountId} onChange={set('accountId')}>
+              <option value="">Sem conta específica</option>
+              {activeAccounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
         <Field label="Observações">
           <textarea className={INPUT} rows={2} value={form.notes} onChange={set('notes')} />
         </Field>
@@ -737,7 +752,10 @@ export default function CashFlow() {
   const qc = useQueryClient();
 
   const cfKey = ['cashFlow', month, year] as const;
-  const invalidate = () => qc.invalidateQueries({ queryKey: cfKey });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: cfKey });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: cfKey,
@@ -758,7 +776,7 @@ export default function CashFlow() {
 
   const { data: cards = [] } = useQuery({
     queryKey: ['creditCards'],
-    queryFn: CreditCardsService.findAll,
+    queryFn: () => CreditCardsService.findAll(),
     staleTime: 60_000,
   });
 
@@ -858,8 +876,11 @@ export default function CashFlow() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
+  const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
+
   function saveReceivable(payload: CreateReceivablePayload) {
     if (modal?.type !== 'receivable') return;
+    if (modal.item?.status === 'RECEIVED' && !window.confirm(EFFECTED_CONFIRM)) return;
     if (modal.item) {
       updateReceivable.mutate({ id: modal.item.id, data: payload });
     } else {
@@ -870,6 +891,7 @@ export default function CashFlow() {
   function saveTransaction(payload: CreateTransactionPayload) {
     if (modal?.type !== 'payment' && modal?.type !== 'extra-expense') return;
     const isPayment = modal.type === 'payment';
+    if (modal.item?.status === 'PAID' && !window.confirm(EFFECTED_CONFIRM)) return;
     if (modal.item) {
       if (isPayment) updatePayment.mutate({ id: modal.item.id, data: payload });
       else updateExtra.mutate({ id: modal.item.id, data: payload });
@@ -971,6 +993,8 @@ export default function CashFlow() {
           type={modal.type}
           item={modal.item}
           categories={categories}
+          accounts={accounts as Account[]}
+          mainAccountId={settings?.mainAccountId ?? null}
           onSave={saveTransaction}
           isSaving={txSaving}
           onPay={handleTxPay}

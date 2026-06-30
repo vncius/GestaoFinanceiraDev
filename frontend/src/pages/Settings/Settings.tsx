@@ -818,7 +818,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['creditCards'],
-    queryFn: CreditCardsService.findAll,
+    queryFn: () => CreditCardsService.findAll(),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['creditCards'] });
