@@ -78,19 +78,30 @@ export class CashFlowService {
 
     const initialBalance = mainInitial;
 
-    // totais do mês
-    const expectedIncome = entries.reduce((s, r) => s + r.netAmount, 0);
-    const receivedIncome = entries
+    // Transações da conta reserva não afetam os totais da conta principal
+    const mainEntries = entries.filter(
+      (r) => !reserveId || r.targetAccountId !== reserveId,
+    );
+    const mainPayments = payments.filter(
+      (t) => !reserveId || t.sourceAccountId !== reserveId,
+    );
+    const mainExtraExpenses = extraExpenses.filter(
+      (t) => !reserveId || t.sourceAccountId !== reserveId,
+    );
+
+    // totais do mês (apenas conta principal)
+    const expectedIncome = mainEntries.reduce((s, r) => s + r.netAmount, 0);
+    const receivedIncome = mainEntries
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
       .reduce((s, r) => s + r.netAmount, 0);
 
-    const expectedPayments = payments.reduce((s, t) => s + t.amount, 0);
-    const paidPayments = payments
+    const expectedPayments = mainPayments.reduce((s, t) => s + t.amount, 0);
+    const paidPayments = mainPayments
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
-    const expectedExtraExpenses = extraExpenses.reduce((s, t) => s + t.amount, 0);
-    const paidExtraExpenses = extraExpenses
+    const expectedExtraExpenses = mainExtraExpenses.reduce((s, t) => s + t.amount, 0);
+    const paidExtraExpenses = mainExtraExpenses
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
@@ -104,7 +115,12 @@ export class CashFlowService {
 
     const reserveInflow = entries
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
-      .reduce((s, r) => s + r.reserveAmount, 0);
+      .reduce((s, r) => {
+        // Entrada com destino direto à reserva: valor líquido inteiro vai para reserva
+        if (reserveId && r.targetAccountId === reserveId) return s + r.netAmount;
+        // Entrada com split: apenas a parcela reserva vai para a reserva
+        return s + r.reserveAmount;
+      }, 0);
 
     const reserveOutflow = reserveId
       ? [...payments, ...extraExpenses]

@@ -782,7 +782,6 @@ function TransactionModal({
           </Field>
           <Field label="Conta de débito">
             <select className={INPUT} value={form.accountId} onChange={set('accountId')}>
-              <option value="">Sem conta específica</option>
               {activeAccounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
