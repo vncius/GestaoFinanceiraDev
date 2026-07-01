@@ -22,6 +22,7 @@ import {
   UpcomingDue,
 } from './dashboard.types';
 import { DashboardQuery } from './dashboard.schemas';
+import { CashFlowService } from '../cash-flow/cash-flow.service';
 
 export class DashboardService {
   constructor(
@@ -31,6 +32,7 @@ export class DashboardService {
     private readonly settingsRepo: SettingsRepository,
     private readonly creditCardsRepo: CreditCardsRepository,
     private readonly invoicesRepo: CreditCardInvoicesRepository,
+    private readonly cashFlowService: CashFlowService,
   ) {}
 
   async getDashboard(query: DashboardQuery): Promise<DashboardResponse> {
@@ -38,6 +40,10 @@ export class DashboardService {
     const month = query.month ?? now.getMonth() + 1;
     const year = query.year ?? now.getFullYear();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Resumo mensal centralizado no CashFlowService (fonte única de verdade)
+    const cashFlow = await this.cashFlowService.getCashFlow({ month, year });
+    const monthSummary = cashFlow.summary;
 
     const [allReceivables, allTransactions, allAccounts, settings, allCards, allInvoices] =
       await Promise.all([
@@ -51,7 +57,7 @@ export class DashboardService {
 
     const cardMap = new Map(allCards.map((c) => [c.id, c]));
 
-    // ── Account balances ────────────────────────────────────────────────────────
+    // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────
     const mainAccount = settings?.mainAccountId
       ? allAccounts.find((a) => a.id === settings.mainAccountId) ?? null
       : null;
@@ -65,70 +71,6 @@ export class DashboardService {
     const reserveBalance = reserveAccount
       ? this.calcBalance(reserveAccount, allTransactions)
       : 0;
-
-    // ── Month data ──────────────────────────────────────────────────────────────
-    const monthStart = new Date(year, month - 1, 1);
-    const mYM = `${year}-${String(month).padStart(2, '0')}`;
-
-    const monthReceivables = allReceivables.filter((r) => {
-      if (r.status === ReceivableStatus.CANCELED) return false;
-      return r.expectedPaymentDate.slice(0, 7) === mYM;
-    });
-
-    const monthTransactions = allTransactions.filter((t) => {
-      return t.expectedDate.slice(0, 7) === mYM;
-    });
-
-    const monthInvoices = allInvoices.filter(
-      (inv) =>
-        inv.month === month &&
-        inv.year === year &&
-        inv.status !== InvoiceStatus.CANCELED,
-    );
-
-    const payments = monthTransactions.filter(
-      (t) => t.type === TransactionType.PAYMENT && !this.isExcluded(t),
-    );
-    const extraExpenses = monthTransactions.filter(
-      (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcluded(t),
-    );
-
-    const initialBalance = mainAccount
-      ? this.calcBalance(mainAccount, allTransactions, monthStart)
-      : 0;
-
-    const expectedIncome = monthReceivables.reduce((s, r) => s + r.netAmount, 0);
-    const receivedIncome = monthReceivables
-      .filter((r) => r.status === ReceivableStatus.RECEIVED)
-      .reduce((s, r) => s + r.netAmount, 0);
-    const expectedPayments = payments.reduce((s, t) => s + t.amount, 0);
-    const paidPayments = payments
-      .filter((t) => t.status === TransactionStatus.PAID)
-      .reduce((s, t) => s + t.amount, 0);
-    const expectedExtraExpenses = extraExpenses.reduce((s, t) => s + t.amount, 0);
-    const paidExtraExpenses = extraExpenses
-      .filter((t) => t.status === TransactionStatus.PAID)
-      .reduce((s, t) => s + t.amount, 0);
-    const creditCardInvoicesTotal = monthInvoices.reduce(
-      (s, inv) => s + inv.totalAmount,
-      0,
-    );
-    const paidCreditCards = monthInvoices
-      .filter((inv) => inv.status === InvoiceStatus.PAID)
-      .reduce((s, inv) => s + inv.totalAmount, 0);
-
-    const projectedBalance =
-      initialBalance +
-      expectedIncome -
-      expectedPayments -
-      expectedExtraExpenses -
-      creditCardInvoicesTotal;
-    const realizedBalance =
-      initialBalance +
-      receivedIncome -
-      paidPayments -
-      paidExtraExpenses -
-      paidCreditCards;
 
     // ── Upcoming dues ───────────────────────────────────────────────────────────
     const cutoff = new Date(
@@ -188,7 +130,7 @@ export class DashboardService {
     const alerts: DashboardAlert[] = [];
     const minBalance = settings?.minimumMainBalance ?? 0;
 
-    if (minBalance > 0 && projectedBalance < minBalance) {
+    if (minBalance > 0 && monthSummary.projectedBalance < minBalance) {
       alerts.push({
         type: AlertType.LOW_BALANCE,
         message: `Saldo projetado abaixo do mínimo desejado`,
@@ -315,19 +257,7 @@ export class DashboardService {
           : null,
         totalBalance: mainBalance + reserveBalance,
       },
-      monthSummary: {
-        initialBalance,
-        expectedIncome,
-        receivedIncome,
-        expectedPayments,
-        paidPayments,
-        expectedExtraExpenses,
-        paidExtraExpenses,
-        creditCardInvoices: creditCardInvoicesTotal,
-        paidCreditCards,
-        projectedBalance,
-        realizedBalance,
-      },
+      monthSummary,
       upcomingDues,
       alerts,
       annualSummary: {
@@ -374,10 +304,4 @@ export class DashboardService {
     return balance;
   }
 
-  private isExcluded(t: FinancialTransaction): boolean {
-    return (
-      t.status === TransactionStatus.REVERSED ||
-      t.status === TransactionStatus.CANCELED
-    );
-  }
 }

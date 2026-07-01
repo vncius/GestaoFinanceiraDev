@@ -121,8 +121,9 @@ function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
           </div>
           <div className="flex items-center px-4 py-2 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center flex-1">
-              <SummaryCell label="Saldo Conta" value={s.mainAccountBalance} color="text-blue-600 dark:text-blue-400" />
-              <SummaryCell label="Saldo Reserva" value={s.emergencyReserveBalance} color="text-amber-600 dark:text-amber-400" border={false} />
+              <SummaryCell label="Entradas Reserva" value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
+              <SummaryCell label="Saídas Reserva" value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
+              <SummaryCell label="Saldo Reserva" value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
             </div>
           </div>
         </>

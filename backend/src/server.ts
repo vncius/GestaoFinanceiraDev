@@ -13,7 +13,7 @@ import creditCardsRouter from './modules/credit-cards/credit-cards.routes';
 import dashboardRouter from './modules/dashboard/dashboard.routes';
 
 const app = express();
-const PORT = process.env.PORT ?? 3001;
+const PORT = process.env.PORT ?? 3100;
 
 app.use(cors());
 app.use(express.json());

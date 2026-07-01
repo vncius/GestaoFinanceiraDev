@@ -290,7 +290,7 @@ export default function Dashboard() {
     monthlyEvolution,
   } = data;
 
-  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCards;
+  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
 
   return (
     <div className="space-y-6">
@@ -367,7 +367,7 @@ export default function Dashboard() {
           {[
             { label: 'Pagamentos', value: s.paidPayments },
             { label: 'Gastos Extras', value: s.paidExtraExpenses },
-            { label: 'Faturas Cartão', value: s.paidCreditCards },
+            { label: 'Faturas Cartão', value: s.paidCreditCardInvoices },
           ].map(({ label, value }) => (
             <div
               key={label}

@@ -1,3 +1,6 @@
+import { CashFlowSummary } from '../cash-flow/cash-flow.types';
+export type { CashFlowSummary };
+
 export enum AlertType {
   LOW_BALANCE = 'LOW_BALANCE',
   OVERDUE_PAYMENT = 'OVERDUE_PAYMENT',
@@ -55,19 +58,7 @@ export interface DashboardResponse {
     emergencyReserve: AccountBalance | null;
     totalBalance: number;
   };
-  monthSummary: {
-    initialBalance: number;
-    expectedIncome: number;
-    receivedIncome: number;
-    expectedPayments: number;
-    paidPayments: number;
-    expectedExtraExpenses: number;
-    paidExtraExpenses: number;
-    creditCardInvoices: number;
-    paidCreditCards: number;
-    projectedBalance: number;
-    realizedBalance: number;
-  };
+  monthSummary: CashFlowSummary;
   upcomingDues: UpcomingDue[];
   alerts: DashboardAlert[];
   annualSummary: {

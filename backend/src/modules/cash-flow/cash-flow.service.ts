@@ -66,17 +66,17 @@ export class CashFlowService {
     );
 
     const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 1); // primeiro dia do mês seguinte
     const mainId = settings?.mainAccountId ?? null;
     const reserveId = settings?.emergencyReserveAccountId ?? null;
 
-    const [mainAccountBalance, reserveBalance, initialBalance] =
+    const [mainInitial, reserveEndBalance] =
       await Promise.all([
-        mainId ? this.calcAccountBalance(mainId, allTransactions) : 0,
-        reserveId ? this.calcAccountBalance(reserveId, allTransactions) : 0,
-        mainId
-          ? this.calcAccountBalance(mainId, allTransactions, monthStart)
-          : 0,
+        mainId ? this.calcAccountBalance(mainId, allTransactions, monthStart) : 0,
+        reserveId ? this.calcAccountBalance(reserveId, allTransactions, monthEnd) : 0,
       ]);
+
+    const initialBalance = mainInitial;
 
     // totais do mês
     const expectedIncome = entries.reduce((s, r) => s + r.netAmount, 0);
@@ -84,24 +84,13 @@ export class CashFlowService {
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
       .reduce((s, r) => s + r.netAmount, 0);
 
-    // Pagamentos da reserva de emergência são excluídos dos indicadores do fluxo
-    // de caixa principal: o saldo da reserva já é calculado separadamente via
-    // calcAccountBalance, então contabilizá-los aqui causaria dupla penalização
-    // no projectedBalance/realizedBalance.
-    const paymentsForFlow = reserveId
-      ? payments.filter((t) => t.sourceAccountId !== reserveId)
-      : payments;
-    const extraExpensesForFlow = reserveId
-      ? extraExpenses.filter((t) => t.sourceAccountId !== reserveId)
-      : extraExpenses;
-
-    const expectedPayments = paymentsForFlow.reduce((s, t) => s + t.amount, 0);
-    const paidPayments = paymentsForFlow
+    const expectedPayments = payments.reduce((s, t) => s + t.amount, 0);
+    const paidPayments = payments
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
-    const expectedExtraExpenses = extraExpensesForFlow.reduce((s, t) => s + t.amount, 0);
-    const paidExtraExpenses = extraExpensesForFlow
+    const expectedExtraExpenses = extraExpenses.reduce((s, t) => s + t.amount, 0);
+    const paidExtraExpenses = extraExpenses
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
@@ -112,6 +101,16 @@ export class CashFlowService {
     const paidCreditCards = monthInvoices
       .filter((inv) => inv.status === InvoiceStatus.PAID)
       .reduce((s, inv) => s + inv.totalAmount, 0);
+
+    const reserveInflow = entries
+      .filter((r) => r.status === ReceivableStatus.RECEIVED)
+      .reduce((s, r) => s + r.reserveAmount, 0);
+
+    const reserveOutflow = reserveId
+      ? [...payments, ...extraExpenses]
+          .filter((t) => t.status === TransactionStatus.PAID && t.sourceAccountId === reserveId)
+          .reduce((s, t) => s + t.amount, 0)
+      : 0;
 
     return {
       month,
@@ -142,8 +141,9 @@ export class CashFlowService {
           paidPayments -
           paidExtraExpenses -
           paidCreditCards,
-        mainAccountBalance,
-        emergencyReserveBalance: reserveBalance,
+        reserveInflow,
+        reserveOutflow,
+        reserveEndBalance,
       },
     };
   }

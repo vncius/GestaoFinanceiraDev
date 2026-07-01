@@ -196,8 +196,9 @@ export interface CashFlowSummary {
   paidCreditCardInvoices: number;
   projectedBalance: number;
   realizedBalance: number;
-  mainAccountBalance: number;
-  emergencyReserveBalance: number;
+  reserveInflow: number;
+  reserveOutflow: number;
+  reserveEndBalance: number;
 }
 
 export interface CashFlowResponse {
@@ -258,19 +259,7 @@ export interface DashboardResponse {
     emergencyReserve: AccountBalance | null;
     totalBalance: number;
   };
-  monthSummary: {
-    initialBalance: number;
-    expectedIncome: number;
-    receivedIncome: number;
-    expectedPayments: number;
-    paidPayments: number;
-    expectedExtraExpenses: number;
-    paidExtraExpenses: number;
-    creditCardInvoices: number;
-    paidCreditCards: number;
-    projectedBalance: number;
-    realizedBalance: number;
-  };
+  monthSummary: CashFlowSummary;
   upcomingDues: UpcomingDue[];
   alerts: DashboardAlert[];
   annualSummary: {

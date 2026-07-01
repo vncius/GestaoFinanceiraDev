@@ -14,8 +14,9 @@ export interface CashFlowSummary {
   paidCreditCardInvoices: number;
   projectedBalance: number;
   realizedBalance: number;
-  mainAccountBalance: number;
-  emergencyReserveBalance: number;
+  reserveInflow: number;
+  reserveOutflow: number;
+  reserveEndBalance: number;
 }
 
 export interface CashFlowResponse {
