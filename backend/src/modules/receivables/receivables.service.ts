@@ -73,6 +73,7 @@ export class ReceivablesService {
       competence: input.competence ?? null,
       workedHours: input.workedHours ?? null,
       hourlyRate: input.hourlyRate ?? null,
+      targetAccountId: input.targetAccountId ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -122,6 +123,8 @@ export class ReceivablesService {
         }
       }
 
+      const incomeTarget = updated.targetAccountId ?? settings.mainAccountId;
+
       // Cria nova entrada principal
       await this.transactionsRepo.create({
         id: generateId(),
@@ -133,7 +136,7 @@ export class ReceivablesService {
         actualDate: now,
         status: TransactionStatus.RECEIVED,
         sourceAccountId: null,
-        targetAccountId: settings.mainAccountId,
+        targetAccountId: incomeTarget,
         originType: OriginType.RECEIVABLE,
         originId: id,
         notes: null,
@@ -141,8 +144,12 @@ export class ReceivablesService {
         updatedAt: now,
       });
 
-      // Cria nova reserva (se aplicável)
-      if (reserveAmount > 0 && settings.emergencyReserveAccountId) {
+      // Cria nova reserva (se aplicável e destino não é a própria reserva)
+      if (
+        reserveAmount > 0 &&
+        settings.emergencyReserveAccountId &&
+        incomeTarget !== settings.emergencyReserveAccountId
+      ) {
         await this.transactionsRepo.create({
           id: generateId(),
           type: TransactionType.RESERVE,
@@ -201,6 +208,7 @@ export class ReceivablesService {
     // prepara as movimentações antes de gravar qualquer coisa
     const transactions: FinancialTransaction[] = [];
 
+    const incomeTarget = receivable.targetAccountId ?? settings.mainAccountId;
     transactions.push({
       id: generateId(),
       type: TransactionType.INCOME,
@@ -211,7 +219,7 @@ export class ReceivablesService {
       actualDate: now,
       status: TransactionStatus.RECEIVED,
       sourceAccountId: null,
-      targetAccountId: settings.mainAccountId,
+      targetAccountId: incomeTarget,
       originType: OriginType.RECEIVABLE,
       originId: receivable.id,
       notes: null,
@@ -219,7 +227,12 @@ export class ReceivablesService {
       updatedAt: now,
     });
 
-    if (receivable.reserveAmount > 0 && settings.emergencyReserveAccountId) {
+    // só cria transação de reserva se o destino não for a própria conta de reserva
+    if (
+      receivable.reserveAmount > 0 &&
+      settings.emergencyReserveAccountId &&
+      incomeTarget !== settings.emergencyReserveAccountId
+    ) {
       transactions.push({
         id: generateId(),
         type: TransactionType.RESERVE,

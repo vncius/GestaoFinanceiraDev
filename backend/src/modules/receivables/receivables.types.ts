@@ -26,6 +26,7 @@ export interface Receivable {
   competence: string | null;
   workedHours: number | null;
   hourlyRate: number | null;          // centavos por hora
+  targetAccountId: string | null;
   createdAt: string;
   updatedAt: string;
 }

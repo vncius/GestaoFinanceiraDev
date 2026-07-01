@@ -15,6 +15,7 @@ export interface CreateReceivablePayload {
   invoiceIssueDate?: string | null;
   competence?: string | null;
   workedHours?: number | null;
+  targetAccountId?: string | null;
 }
 
 export interface ReceivePayload {

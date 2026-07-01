@@ -500,6 +500,7 @@ interface ReceivableFormState {
   grossAmount: string;
   separateReservePercentage: boolean;
   incomeCategoryId: string;
+  targetAccountId: string;
   notes: string;
 }
 
@@ -508,6 +509,9 @@ function ReceivableModal({
   onClose,
   item,
   categories,
+  accounts,
+  mainAccountId,
+  reserveAccountId,
   defaultReservePct,
   onSave,
   isSaving,
@@ -517,6 +521,9 @@ function ReceivableModal({
   onClose: () => void;
   item?: Receivable;
   categories: Category[];
+  accounts: Account[];
+  mainAccountId: string | null;
+  reserveAccountId: string | null;
   defaultReservePct: number;
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
@@ -524,6 +531,9 @@ function ReceivableModal({
 }) {
   const isEdit = !!item;
   const incomeCategories = categories.filter((c) => c.type === 'INCOME');
+  const selectableAccounts = accounts.filter(
+    (a) => a.active && (a.id === mainAccountId || a.id === reserveAccountId),
+  );
 
   const init = (): ReceivableFormState => ({
     description: item?.description ?? '',
@@ -531,6 +541,7 @@ function ReceivableModal({
     grossAmount: item ? String(centsToFloat(item.grossAmount)) : '',
     separateReservePercentage: item?.separateReservePercentage ?? true,
     incomeCategoryId: item?.incomeCategoryId ?? (incomeCategories[0]?.id ?? ''),
+    targetAccountId: item?.targetAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
   });
 
@@ -541,7 +552,9 @@ function ReceivableModal({
   if (!open && lastOpen) setLastOpen(false);
 
   const grossCents = floatToCents(parseFloat(form.grossAmount) || 0);
-  const pct = form.separateReservePercentage ? defaultReservePct : 0;
+  const isReserveTarget = !!reserveAccountId && form.targetAccountId === reserveAccountId;
+  const effectiveSeparate = isReserveTarget ? false : form.separateReservePercentage;
+  const pct = effectiveSeparate ? defaultReservePct : 0;
   const reserveCents = Math.round((grossCents * pct) / 100);
   const netCents = grossCents - reserveCents;
 
@@ -552,8 +565,9 @@ function ReceivableModal({
       description: form.description,
       expectedPaymentDate: new Date(form.expectedPaymentDate).toISOString(),
       grossAmount: grossCents,
-      separateReservePercentage: form.separateReservePercentage,
+      separateReservePercentage: effectiveSeparate,
       incomeCategoryId: form.incomeCategoryId,
+      targetAccountId: form.targetAccountId || null,
       notes: form.notes || null,
     });
   }
@@ -598,22 +612,39 @@ function ReceivableModal({
             <DateInput className={INPUT} value={form.expectedPaymentDate} onChange={(v) => setForm((f) => ({ ...f, expectedPaymentDate: v }))} required />
           </Field>
         </div>
-        <Field label="Valor bruto *">
-          <CurrencyInput
-            className={INPUT}
-            value={form.grossAmount}
-            onChange={(v) => setForm((f) => ({ ...f, grossAmount: v }))}
-          />
-        </Field>
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.separateReservePercentage}
-            onChange={(e) => setForm((f) => ({ ...f, separateReservePercentage: e.target.checked }))}
-            className="rounded"
-          />
-          Separar reserva ({defaultReservePct}%)
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Valor bruto *">
+            <CurrencyInput
+              className={INPUT}
+              value={form.grossAmount}
+              onChange={(v) => setForm((f) => ({ ...f, grossAmount: v }))}
+            />
+          </Field>
+          {selectableAccounts.length > 0 && (
+            <Field label="Conta de destino">
+              <select
+                className={INPUT}
+                value={form.targetAccountId}
+                onChange={(e) => setForm((f) => ({ ...f, targetAccountId: e.target.value }))}
+              >
+                {selectableAccounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </Field>
+          )}
+        </div>
+        {!isReserveTarget && (
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.separateReservePercentage}
+              onChange={(e) => setForm((f) => ({ ...f, separateReservePercentage: e.target.checked }))}
+              className="rounded"
+            />
+            Separar reserva ({defaultReservePct}%)
+          </label>
+        )}
         {grossCents > 0 && (
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
             <div className="flex justify-between"><span>Reserva ({pct}%)</span><span className="font-medium">{formatCurrency(reserveCents)}</span></div>
@@ -1000,6 +1031,9 @@ export default function CashFlow() {
         onClose={closeModal}
         item={modal?.type === 'receivable' ? modal.item : undefined}
         categories={categories}
+        accounts={accounts as Account[]}
+        mainAccountId={settings?.mainAccountId ?? null}
+        reserveAccountId={settings?.emergencyReserveAccountId ?? null}
         defaultReservePct={defaultReservePct}
         onSave={saveReceivable}
         isSaving={rxSaving}

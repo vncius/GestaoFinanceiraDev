@@ -63,6 +63,7 @@ export interface Receivable {
   competence: string | null;
   workedHours: number | null;
   hourlyRate: number | null;
+  targetAccountId: string | null;
   createdAt: string;
   updatedAt: string;
 }

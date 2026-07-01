@@ -17,6 +17,7 @@ export const createReceivableSchema = z.object({
   competence: z.string().nullable().optional(),
   workedHours: z.number().positive().nullable().optional(),
   hourlyRate: z.number().int().positive().nullable().optional(),
+  targetAccountId: z.string().uuid().nullable().optional(),
 });
 
 export const updateReceivableSchema = createReceivableSchema.partial();
