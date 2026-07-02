@@ -204,9 +204,8 @@ export class CreditCardsService {
     input: CreateCardEntryInput,
   ): Promise<{ entry: CreditCardEntry; installments: CreditCardInstallment[] }> {
     const card = await this.findById(cardId);
-    const purchaseDate = new Date(input.purchaseDate);
 
-    const firstMonth = this.getInvoiceMonth(purchaseDate, card.closingDay);
+    const firstMonth = this.getInvoiceMonth(input.purchaseDate, card.closingDay);
 
     let count: number;
     if (input.entryType === CardEntryType.CASH) {
@@ -230,6 +229,7 @@ export class CreditCardsService {
       purchaseDate: input.purchaseDate,
       entryType: input.entryType,
       installmentsCount: count,
+      closingDayUsed: card.closingDay,
       notes: input.notes ?? null,
       active: true,
       createdAt: now,
@@ -367,9 +367,9 @@ export class CreditCardsService {
       updatedAt: now,
     });
 
-    // 5. Recria parcelas
-    const purchaseDateObj = new Date(newPurchaseDate);
-    const firstMonth = this.getInvoiceMonth(purchaseDateObj, card.closingDay);
+    // 5. Recria parcelas usando o fechamento vigente na criação do lançamento
+    // (não o closingDay atual do cartão, que pode ter mudado desde então)
+    const firstMonth = this.getInvoiceMonth(newPurchaseDate, entry.closingDayUsed);
     const base = Math.floor(newTotalAmount / count);
     const remainder = newTotalAmount - base * count;
 
@@ -515,23 +515,24 @@ export class CreditCardsService {
 
   // ─── Private helpers ──────────────────────────────────────────────────────────
 
+  // Extrai ano/mês/dia direto da string ISO (sem passar por Date/timezone local),
+  // para não sofrer o deslocamento de um dia em fusos com offset negativo (ex.: UTC-3).
   private getInvoiceMonth(
-    purchaseDate: Date,
+    purchaseDateISO: string,
     closingDay: number,
   ): { month: number; year: number } {
-    const day = purchaseDate.getDate();
+    const [yearStr, monthStr, dayStr] = purchaseDateISO.slice(0, 10).split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+
     if (day <= closingDay) {
-      return {
-        month: purchaseDate.getMonth() + 1,
-        year: purchaseDate.getFullYear(),
-      };
+      return { month, year };
     }
-    const next = new Date(
-      purchaseDate.getFullYear(),
-      purchaseDate.getMonth() + 1,
-      1,
-    );
-    return { month: next.getMonth() + 1, year: next.getFullYear() };
+    if (month === 12) {
+      return { month: 1, year: year + 1 };
+    }
+    return { month: month + 1, year };
   }
 
   private addMonths(

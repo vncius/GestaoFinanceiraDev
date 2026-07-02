@@ -136,6 +136,7 @@ export interface CreditCardEntry {
   purchaseDate: string;
   entryType: CardEntryType;
   installmentsCount: number;
+  closingDayUsed: number;
   notes: string | null;
   active: boolean;
   createdAt: string;

@@ -40,6 +40,7 @@ export interface CreditCardEntry {
   purchaseDate: string;                  // ISO
   entryType: CardEntryType;
   installmentsCount: number;             // 1 para à vista/fixo
+  closingDayUsed: number;                // dia de fechamento do cartão vigente na criação/recriação das parcelas
   notes: string | null;
   active: boolean;
   createdAt: string;
