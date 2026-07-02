@@ -7,6 +7,7 @@ import {
   updateCardEntrySchema,
   cardFlowQuerySchema,
   payInvoiceSchema,
+  deleteCardEntryQuerySchema,
 } from './credit-cards.schemas';
 
 export class CreditCardsController {
@@ -65,7 +66,8 @@ export class CreditCardsController {
   }
 
   async deleteEntry(req: Request, res: Response): Promise<void> {
-    await this.service.deleteEntry(req.params.id, req.params.entryId);
+    const { scope, month, year } = deleteCardEntryQuerySchema.parse(req.query);
+    await this.service.deleteEntry(req.params.id, req.params.entryId, scope, month, year);
     res.status(204).send();
   }
 

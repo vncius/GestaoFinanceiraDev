@@ -54,9 +54,16 @@ export const payInvoiceSchema = z
   })
   .optional();
 
+export const deleteCardEntryQuerySchema = z.object({
+  scope: z.enum(['CURRENT', 'CURRENT_AND_FUTURE']).optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(),
+  year: z.coerce.number().int().min(2000).optional(),
+});
+
 export type CreateCreditCardInput = z.infer<typeof createCreditCardSchema>;
 export type UpdateCreditCardInput = z.infer<typeof updateCreditCardSchema>;
 export type CreateCardEntryInput = z.infer<typeof createCardEntrySchema>;
 export type UpdateCardEntryInput = z.infer<typeof updateCardEntrySchema>;
 export type CardFlowQuery = z.infer<typeof cardFlowQuerySchema>;
 export type PayInvoiceInput = z.infer<typeof payInvoiceSchema>;
+export type DeleteCardEntryQuery = z.infer<typeof deleteCardEntryQuerySchema>;

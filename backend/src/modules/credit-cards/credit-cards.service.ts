@@ -67,16 +67,28 @@ export class CreditCardsService {
   // ─── Cards CRUD ───────────────────────────────────────────────────────────────
 
   async findAll(month?: number, year?: number): Promise<CreditCardWithSummary[]> {
-    const [cards, allEntries, allInstallments, allInvoices] = await Promise.all([
+    const [cards, allEntries] = await Promise.all([
       this.cardsRepo.findActive(),
       this.entriesRepo.findAll(),
-      this.installmentsRepo.findAll(),
-      this.invoicesRepo.findAll(),
     ]);
 
     const now = new Date();
     const currentMonth = month ?? (now.getMonth() + 1);
     const currentYear = year ?? now.getFullYear();
+
+    for (const card of cards) {
+      const fixedEntries = allEntries.filter(
+        (e) => e.creditCardId === card.id && e.active && e.entryType === CardEntryType.FIXED,
+      );
+      for (const entry of fixedEntries) {
+        await this.ensureFixedInstallments(entry, card, currentMonth, currentYear);
+      }
+    }
+
+    const [allInstallments, allInvoices] = await Promise.all([
+      this.installmentsRepo.findAll(),
+      this.invoicesRepo.findAll(),
+    ]);
 
     return cards.map((card) => {
       const cardEntries = allEntries.filter(
@@ -164,10 +176,17 @@ export class CreditCardsService {
   ): Promise<CardFlowResponse> {
     const card = await this.findById(cardId);
 
-    const [invoice, installments, allEntries] = await Promise.all([
+    const allEntries = await this.entriesRepo.findByCardId(cardId);
+    const fixedEntries = allEntries.filter(
+      (e) => e.active && e.entryType === CardEntryType.FIXED,
+    );
+    for (const entry of fixedEntries) {
+      await this.ensureFixedInstallments(entry, card, month, year);
+    }
+
+    const [invoice, installments] = await Promise.all([
       this.invoicesRepo.findByCardAndMonth(cardId, month, year),
       this.installmentsRepo.findByCardAndMonth(cardId, month, year),
-      this.entriesRepo.findByCardId(cardId),
     ]);
 
     const active = installments.filter(
@@ -211,7 +230,9 @@ export class CreditCardsService {
     if (input.entryType === CardEntryType.CASH) {
       count = 1;
     } else if (input.entryType === CardEntryType.FIXED) {
-      count = 12;
+      // Fixo é recorrente por tempo indeterminado: cria apenas a referência
+      // inicial aqui; as demais são geradas sob demanda (ver ensureFixedInstallments).
+      count = 1;
     } else {
       count = input.installmentsCount!;
     }
@@ -268,6 +289,11 @@ export class CreditCardsService {
 
       createdInstallments.push(installment);
       await this.recalcInvoiceTotal(invoice.id);
+    }
+
+    if (entry.entryType === CardEntryType.FIXED) {
+      const nowDate = new Date();
+      await this.ensureFixedInstallments(entry, card, nowDate.getMonth() + 1, nowDate.getFullYear());
     }
 
     return { entry, installments: createdInstallments };
@@ -350,7 +376,7 @@ export class CreditCardsService {
     if (newEntryType === CardEntryType.CASH) {
       count = 1;
     } else if (newEntryType === CardEntryType.FIXED) {
-      count = 12;
+      count = 1;
     } else {
       count = input.installmentsCount ?? entry.installmentsCount;
     }
@@ -395,12 +421,33 @@ export class CreditCardsService {
       await this.recalcInvoiceTotal(invoice.id);
     }
 
+    if (newEntryType === CardEntryType.FIXED) {
+      const nowDate = new Date();
+      await this.ensureFixedInstallments(updatedEntry, card, nowDate.getMonth() + 1, nowDate.getFullYear());
+    }
+
     return updatedEntry;
   }
 
-  async deleteEntry(cardId: string, entryId: string): Promise<void> {
+  async deleteEntry(
+    cardId: string,
+    entryId: string,
+    scope?: 'CURRENT' | 'CURRENT_AND_FUTURE',
+    referenceMonth?: number,
+    referenceYear?: number,
+  ): Promise<void> {
     const entry = await this.getEntryChecked(cardId, entryId);
     if (!entry.active) throw new AppError('Lançamento já está inativo.', 400);
+
+    if (entry.entryType === CardEntryType.FIXED) {
+      if (!scope || !referenceMonth || !referenceYear) {
+        throw new AppError(
+          'Informe se deseja excluir apenas a referência atual ou também as futuras.',
+          400,
+        );
+      }
+      return this.deleteFixedEntry(entry, scope, referenceMonth, referenceYear);
+    }
 
     const now = nowISO();
 
@@ -418,6 +465,45 @@ export class CreditCardsService {
     }
 
     await this.entriesRepo.update(entryId, { active: false, updatedAt: now });
+
+    for (const invoiceId of affectedInvoiceIds) {
+      await this.recalcInvoiceTotal(invoiceId);
+    }
+  }
+
+  // Lançamentos fixos são recorrentes por tempo indeterminado, então a exclusão
+  // precisa escolher um escopo: apenas a referência atual (mantém a recorrência
+  // ativa para os próximos meses) ou a atual + futuras (encerra a recorrência).
+  // O histórico (referências anteriores à escolhida) nunca é alterado.
+  private async deleteFixedEntry(
+    entry: CreditCardEntry,
+    scope: 'CURRENT' | 'CURRENT_AND_FUTURE',
+    referenceMonth: number,
+    referenceYear: number,
+  ): Promise<void> {
+    const now = nowISO();
+    const refKey = this.monthKey(referenceMonth, referenceYear);
+
+    const installments = await this.installmentsRepo.findByEntryId(entry.id);
+    const affectedInvoiceIds = new Set<string>();
+
+    const toCancel = installments.filter((i) => {
+      if (i.status === InstallmentStatus.CANCELED) return false;
+      const key = this.monthKey(i.month, i.year);
+      return scope === 'CURRENT' ? key === refKey : key >= refKey;
+    });
+
+    for (const inst of toCancel) {
+      if (inst.creditCardInvoiceId) affectedInvoiceIds.add(inst.creditCardInvoiceId);
+      await this.installmentsRepo.update(inst.id, {
+        status: InstallmentStatus.CANCELED,
+        updatedAt: now,
+      });
+    }
+
+    if (scope === 'CURRENT_AND_FUTURE') {
+      await this.entriesRepo.update(entry.id, { active: false, updatedAt: now });
+    }
 
     for (const invoiceId of affectedInvoiceIds) {
       await this.recalcInvoiceTotal(invoiceId);
@@ -542,6 +628,69 @@ export class CreditCardsService {
   ): { month: number; year: number } {
     const d = new Date(year, month - 1 + count, 1);
     return { month: d.getMonth() + 1, year: d.getFullYear() };
+  }
+
+  private monthKey(month: number, year: number): number {
+    return year * 12 + month;
+  }
+
+  // Lançamentos do tipo FIXED (ex.: assinaturas) são recorrentes por tempo
+  // indeterminado: em vez de criar todas as parcelas de uma vez, cada nova
+  // referência é gerada sob demanda, conforme o usuário navega até o mês
+  // (getCardFlow/findAll), até o limite do mês/ano solicitado.
+  private async ensureFixedInstallments(
+    entry: CreditCardEntry,
+    card: CreditCard,
+    targetMonth: number,
+    targetYear: number,
+  ): Promise<void> {
+    if (entry.entryType !== CardEntryType.FIXED || !entry.active) return;
+
+    const existing = await this.installmentsRepo.findByEntryId(entry.id);
+    if (existing.length === 0) return;
+
+    let lastMonth = 0;
+    let lastYear = 0;
+    let lastNumber = 0;
+    for (const i of existing) {
+      if (this.monthKey(i.month, i.year) > this.monthKey(lastMonth, lastYear)) {
+        lastMonth = i.month;
+        lastYear = i.year;
+      }
+      if (i.installmentNumber > lastNumber) lastNumber = i.installmentNumber;
+    }
+
+    if (this.monthKey(lastMonth, lastYear) >= this.monthKey(targetMonth, targetYear)) return;
+
+    const now = nowISO();
+    let cursor = this.addMonths(lastMonth, lastYear, 1);
+    let number = lastNumber;
+
+    while (this.monthKey(cursor.month, cursor.year) <= this.monthKey(targetMonth, targetYear)) {
+      number += 1;
+      const invoice = await this.findOrCreateInvoice(card.id, cursor.month, cursor.year, card.dueDay);
+
+      await this.installmentsRepo.create({
+        id: generateId(),
+        creditCardEntryId: entry.id,
+        installmentNumber: number,
+        totalInstallments: number,
+        amount: entry.totalAmount,
+        month: cursor.month,
+        year: cursor.year,
+        status: InstallmentStatus.OPEN,
+        creditCardInvoiceId: invoice.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await this.recalcInvoiceTotal(invoice.id);
+      cursor = this.addMonths(cursor.month, cursor.year, 1);
+    }
+
+    if (number !== entry.installmentsCount) {
+      await this.entriesRepo.update(entry.id, { installmentsCount: number, updatedAt: now });
+    }
   }
 
   private async findOrCreateInvoice(

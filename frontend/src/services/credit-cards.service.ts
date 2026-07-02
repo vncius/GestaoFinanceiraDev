@@ -67,8 +67,14 @@ export const CreditCardsService = {
   ): Promise<CreditCardEntry> =>
     api.put<CreditCardEntry>(`/credit-cards/${cardId}/entries/${entryId}`, payload).then((r) => r.data),
 
-  deleteEntry: (cardId: string, entryId: string): Promise<void> =>
-    api.delete(`/credit-cards/${cardId}/entries/${entryId}`).then(() => undefined),
+  deleteEntry: (
+    cardId: string,
+    entryId: string,
+    scopeParams?: { scope: 'CURRENT' | 'CURRENT_AND_FUTURE'; month: number; year: number },
+  ): Promise<void> =>
+    api
+      .delete(`/credit-cards/${cardId}/entries/${entryId}`, { params: scopeParams })
+      .then(() => undefined),
 
   payInvoice: (cardId: string, invoiceId: string, payload?: PayInvoicePayload): Promise<CreditCardInvoice> =>
     api.post<CreditCardInvoice>(`/credit-cards/${cardId}/invoices/${invoiceId}/pay`, payload ?? {}).then((r) => r.data),

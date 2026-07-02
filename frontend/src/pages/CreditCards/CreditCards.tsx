@@ -54,7 +54,7 @@ interface EntryFormState {
 
 const ENTRY_TYPE_LABELS: Record<string, string> = {
   CASH: 'À vista',
-  FIXED: 'Recorrente (12x)',
+  FIXED: 'Fixo (recorrente)',
   INSTALLMENT: 'Parcelado',
 };
 
@@ -228,6 +228,7 @@ function CardDetail({
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<CreditCardEntry | undefined>(undefined);
   const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
+  const [fixedDeleteTarget, setFixedDeleteTarget] = useState<CreditCardEntry | null>(null);
 
   const flowKey = ['creditCards', 'flow', card.id, month, year] as const;
 
@@ -264,8 +265,19 @@ function CardDetail({
     onSuccess: () => { invalidate(); setEntryToEdit(undefined); },
   });
   const deleteEntryMut = useMutation({
-    mutationFn: (entryId: string) => CreditCardsService.deleteEntry(card.id, entryId),
-    onSuccess: invalidate,
+    mutationFn: ({
+      entryId,
+      scope,
+    }: {
+      entryId: string;
+      scope?: 'CURRENT' | 'CURRENT_AND_FUTURE';
+    }) =>
+      CreditCardsService.deleteEntry(
+        card.id,
+        entryId,
+        scope ? { scope, month, year } : undefined,
+      ),
+    onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
   const payMut = useMutation({
     mutationFn: ({ invoiceId, accountId }: { invoiceId: string; accountId?: string }) =>
@@ -425,8 +437,11 @@ function CardDetail({
                             <button
                               title="Cancelar lançamento"
                               onClick={() => {
-                                if (window.confirm('Cancelar este lançamento e todas as suas parcelas?'))
-                                  deleteEntryMut.mutate(entry.id);
+                                if (entry.entryType === 'FIXED') {
+                                  setFixedDeleteTarget(entry);
+                                } else if (window.confirm('Cancelar este lançamento e todas as suas parcelas?')) {
+                                  deleteEntryMut.mutate({ entryId: entry.id });
+                                }
                               }}
                               className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                             >
@@ -464,6 +479,44 @@ function CardDetail({
         onSave={(payload) => updateEntryMut.mutate(payload as Parameters<typeof CreditCardsService.updateEntry>[2])}
         isSaving={updateEntryMut.isPending}
       />
+
+      <Modal
+        open={!!fixedDeleteTarget}
+        onClose={() => setFixedDeleteTarget(null)}
+        title="Excluir lançamento fixo"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setFixedDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="secondary"
+              loading={deleteEntryMut.isPending}
+              onClick={() =>
+                fixedDeleteTarget &&
+                deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT' })
+              }
+            >
+              Somente esta referência
+            </Button>
+            <Button
+              loading={deleteEntryMut.isPending}
+              onClick={() =>
+                fixedDeleteTarget &&
+                deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT_AND_FUTURE' })
+              }
+            >
+              Esta e as futuras
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          <strong>{fixedDeleteTarget?.description}</strong> é um lançamento fixo. Deseja excluir
+          apenas a referência de {formatMonthYear(month, year)}, ou esta e todas as futuras?
+          O histórico de referências já lançadas/pagas nunca é alterado.
+        </p>
+      </Modal>
 
       <PayInvoiceAccountModal
         open={!!invoicePayTarget}
