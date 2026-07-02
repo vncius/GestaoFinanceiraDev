@@ -3,6 +3,24 @@ import path from 'path';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
+// Serializa todas as operações por arquivo (entre todas as instâncias que
+// apontam para o mesmo caminho) para evitar leitura-modificação-escrita
+// concorrente sobrescrever alterações de outra requisição (lost update).
+const fileLocks = new Map<string, Promise<unknown>>();
+
+function withFileLock<R>(filePath: string, task: () => Promise<R>): Promise<R> {
+  const previous = fileLocks.get(filePath) ?? Promise.resolve();
+  const run = previous.then(task, task);
+  fileLocks.set(
+    filePath,
+    run.then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
+  return run;
+}
+
 export class JsonFileStore<T extends { id: string }> {
   private readonly filePath: string;
 
@@ -33,33 +51,41 @@ export class JsonFileStore<T extends { id: string }> {
   }
 
   async findAll(): Promise<T[]> {
-    return this.readAll();
+    return withFileLock(this.filePath, () => this.readAll());
   }
 
   async findById(id: string): Promise<T | null> {
-    const items = await this.readAll();
-    return items.find((item) => item.id === id) ?? null;
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      return items.find((item) => item.id === id) ?? null;
+    });
   }
 
   async create(data: T): Promise<T> {
-    const items = await this.readAll();
-    items.push(data);
-    await this.writeAll(items);
-    return data;
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      items.push(data);
+      await this.writeAll(items);
+      return data;
+    });
   }
 
   async update(id: string, data: Partial<T>): Promise<T> {
-    const items = await this.readAll();
-    const index = items.findIndex((item) => item.id === id);
-    if (index === -1) throw new Error(`Registro com id ${id} não encontrado`);
-    items[index] = { ...items[index], ...data };
-    await this.writeAll(items);
-    return items[index];
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      const index = items.findIndex((item) => item.id === id);
+      if (index === -1) throw new Error(`Registro com id ${id} não encontrado`);
+      items[index] = { ...items[index], ...data };
+      await this.writeAll(items);
+      return items[index];
+    });
   }
 
   async delete(id: string): Promise<void> {
-    const items = await this.readAll();
-    const filtered = items.filter((item) => item.id !== id);
-    await this.writeAll(filtered);
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      const filtered = items.filter((item) => item.id !== id);
+      await this.writeAll(filtered);
+    });
   }
 }
