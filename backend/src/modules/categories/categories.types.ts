@@ -8,6 +8,7 @@ export interface Category {
   name: string;
   type: CategoryType;
   active: boolean;
+  protected: boolean;
   createdAt: string;
   updatedAt: string;
 }

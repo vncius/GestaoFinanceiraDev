@@ -64,6 +64,7 @@ interface GeneralFormState {
   annualRevenueLimit: string;
   controlStartMonth: string;
   controlStartYear: string;
+  pjLimitControlEnabled: boolean;
 }
 
 function GeneralTab({
@@ -85,6 +86,7 @@ function GeneralTab({
     annualRevenueLimit: String(centsToFloat(s.annualRevenueLimit)),
     controlStartMonth: String(s.controlStartMonth),
     controlStartYear: String(s.controlStartYear),
+    pjLimitControlEnabled: s.pjLimitControlEnabled,
   });
 
   const [form, setForm] = useState<GeneralFormState>(() => initForm(settings));
@@ -98,6 +100,8 @@ function GeneralTab({
     mutationFn: SettingsService.update,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['settings'] });
+      qc.invalidateQueries({ queryKey: ['categories'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
@@ -119,6 +123,7 @@ function GeneralTab({
       annualRevenueLimit: floatToCents(parseFloat(form.annualRevenueLimit) || 0),
       controlStartMonth: parseInt(form.controlStartMonth) || 1,
       controlStartYear: parseInt(form.controlStartYear) || new Date().getFullYear(),
+      pjLimitControlEnabled: form.pjLimitControlEnabled,
     });
   }
 
@@ -200,39 +205,59 @@ function GeneralTab({
       </SectionCard>
 
       <SectionCard title="Limites e Período">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Limite anual de faturamento (R$)">
+        <div className="space-y-4">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             <input
-              type="number"
-              min="0"
-              step="0.01"
-              className={INPUT}
-              value={form.annualRevenueLimit}
-              onChange={set('annualRevenueLimit')}
+              type="checkbox"
+              checked={form.pjLimitControlEnabled}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, pjLimitControlEnabled: e.target.checked }))
+              }
+              className="rounded"
             />
-          </Field>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Mês início controle">
-              <input
-                type="number"
-                min="1"
-                max="12"
-                className={INPUT}
-                value={form.controlStartMonth}
-                onChange={set('controlStartMonth')}
-              />
-            </Field>
-            <Field label="Ano início">
-              <input
-                type="number"
-                min="2000"
-                max="2100"
-                className={INPUT}
-                value={form.controlStartYear}
-                onChange={set('controlStartYear')}
-              />
-            </Field>
-          </div>
+            Gerir Limites PJ
+          </label>
+
+          {form.pjLimitControlEnabled ? (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Limite anual de faturamento (R$)">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className={INPUT}
+                  value={form.annualRevenueLimit}
+                  onChange={set('annualRevenueLimit')}
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Mês início controle">
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    className={INPUT}
+                    value={form.controlStartMonth}
+                    onChange={set('controlStartMonth')}
+                  />
+                </Field>
+                <Field label="Ano início">
+                  <input
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    className={INPUT}
+                    value={form.controlStartYear}
+                    onChange={set('controlStartYear')}
+                  />
+                </Field>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Ative "Gerir Limites PJ" para configurar limite anual de faturamento e período de controle.
+            </p>
+          )}
         </div>
       </SectionCard>
 
@@ -587,7 +612,14 @@ function CategorySection({
           <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
             {items.map((c) => (
               <tr key={c.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!c.active ? 'opacity-50' : ''}`}>
-                <td className="px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{c.name}</td>
+                <td className="px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">
+                  {c.name}
+                  {c.protected && (
+                    <span className="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                      Fixa
+                    </span>
+                  )}
+                </td>
                 <td className="px-3 py-2.5">
                   <span
                     className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -608,7 +640,7 @@ function CategorySection({
                     >
                       <Pencil size={14} />
                     </button>
-                    {c.active && (
+                    {c.active && !c.protected && (
                       <button
                         title="Desativar"
                         onClick={async () => {

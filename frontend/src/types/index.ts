@@ -19,6 +19,7 @@ export interface Category {
   name: string;
   type: CategoryType;
   active: boolean;
+  protected: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +36,7 @@ export interface FinancialSettings {
   annualRevenueLimit: number;
   controlStartMonth: number;
   controlStartYear: number;
+  pjLimitControlEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -282,6 +284,7 @@ export interface DashboardResponse {
     grossIncome: number;
     annualLimit: number;
     limitUsedPercentage: number;
+    enabled: boolean;
   };
   monthlyEvolution: MonthlyEvolutionItem[];
   categoryBreakdown: {

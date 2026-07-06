@@ -127,7 +127,7 @@ function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
 function AnnualSummaryCard({
   data,
 }: {
-  data: { grossIncome: number; annualLimit: number; limitUsedPercentage: number };
+  data: { grossIncome: number; annualLimit: number; limitUsedPercentage: number; enabled: boolean };
 }) {
   const pct = data.limitUsedPercentage;
   const barColor =
@@ -521,10 +521,14 @@ export default function Dashboard() {
       </section>
 
       {/* Próximos vencimentos + Resumo anual */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {annualSummary.enabled ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <UpcomingDuesCard dues={upcomingDues} />
+          <AnnualSummaryCard data={annualSummary} />
+        </div>
+      ) : (
         <UpcomingDuesCard dues={upcomingDues} />
-        <AnnualSummaryCard data={annualSummary} />
-      </div>
+      )}
 
       {/* Evolução mensal */}
       <EvolutionChart evolution={monthlyEvolution} />

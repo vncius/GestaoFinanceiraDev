@@ -186,15 +186,20 @@ export class DashboardService {
     }
 
     // ── Annual summary ──────────────────────────────────────────────────────────
-    const annualLimit = settings?.annualRevenueLimit ?? 0;
-    const grossIncome = allReceivables
-      .filter((r) => {
-        if (r.status !== ReceivableStatus.RECEIVED) return false;
-        return r.expectedPaymentDate.slice(0, 4) === String(year);
-      })
-      .reduce((s, r) => s + r.grossAmount, 0);
+    const pjLimitControlEnabled = settings?.pjLimitControlEnabled ?? true;
+    const notaFiscalCategory = allCategories.find((c) => c.protected);
+    const annualLimit = pjLimitControlEnabled ? settings?.annualRevenueLimit ?? 0 : 0;
+    const grossIncome = pjLimitControlEnabled
+      ? allReceivables
+          .filter((r) => {
+            if (r.status !== ReceivableStatus.RECEIVED) return false;
+            if (!notaFiscalCategory || r.incomeCategoryId !== notaFiscalCategory.id) return false;
+            return r.expectedPaymentDate.slice(0, 4) === String(year);
+          })
+          .reduce((s, r) => s + r.grossAmount, 0)
+      : 0;
 
-    if (annualLimit > 0 && grossIncome >= annualLimit * 0.8) {
+    if (pjLimitControlEnabled && annualLimit > 0 && grossIncome >= annualLimit * 0.8) {
       alerts.push({
         type: AlertType.ANNUAL_LIMIT_WARNING,
         message:
@@ -207,7 +212,9 @@ export class DashboardService {
     }
 
     const limitUsedPercentage =
-      annualLimit > 0 ? Math.round((grossIncome / annualLimit) * 100) : 0;
+      pjLimitControlEnabled && annualLimit > 0
+        ? Math.round((grossIncome / annualLimit) * 100)
+        : 0;
 
     // ── Monthly evolution ────────────────────────────────────────────────────────
     const monthlyEvolution: MonthlyEvolutionItem[] = [];
@@ -334,6 +341,7 @@ export class DashboardService {
         grossIncome,
         annualLimit,
         limitUsedPercentage,
+        enabled: pjLimitControlEnabled,
       },
       monthlyEvolution,
       categoryBreakdown,

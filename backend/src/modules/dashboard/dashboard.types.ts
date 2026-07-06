@@ -72,6 +72,7 @@ export interface DashboardResponse {
     grossIncome: number;
     annualLimit: number;
     limitUsedPercentage: number;
+    enabled: boolean;
   };
   monthlyEvolution: MonthlyEvolutionItem[];
   categoryBreakdown: {

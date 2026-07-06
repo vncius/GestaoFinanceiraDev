@@ -28,18 +28,25 @@ export class CategoriesService {
       name: input.name,
       type: input.type,
       active: true,
+      protected: false,
       createdAt: now,
       updatedAt: now,
     });
   }
 
   async update(id: string, input: UpdateCategoryInput): Promise<Category> {
-    await this.findById(id);
+    const category = await this.findById(id);
+    if (category.protected && input.type && input.type !== category.type) {
+      throw new AppError('Não é possível alterar o tipo desta categoria', 400);
+    }
     return this.repo.update(id, { ...input, updatedAt: nowISO() });
   }
 
   async delete(id: string): Promise<void> {
-    await this.findById(id);
+    const category = await this.findById(id);
+    if (category.protected) {
+      throw new AppError('Esta categoria é gerenciada pelo sistema e não pode ser excluída', 400);
+    }
     await this.repo.update(id, { active: false, updatedAt: nowISO() });
   }
 }

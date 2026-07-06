@@ -94,6 +94,7 @@ async function seedCategories() {
       name,
       type: CategoryType.INCOME,
       active: true,
+      protected: name === 'Nota fiscal',
       createdAt: now,
       updatedAt: now,
     });
@@ -106,6 +107,7 @@ async function seedCategories() {
       name,
       type: CategoryType.EXPENSE,
       active: true,
+      protected: false,
       createdAt: now,
       updatedAt: now,
     });
