@@ -12,9 +12,11 @@ import { SettingsRepository } from '../settings/settings.repository';
 import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { InvoiceStatus } from '../credit-cards/credit-cards.types';
+import { CategoriesRepository } from '../categories/categories.repository';
 import {
   AlertSeverity,
   AlertType,
+  CategoryBreakdownItem,
   DashboardAlert,
   DashboardResponse,
   DueType,
@@ -33,6 +35,7 @@ export class DashboardService {
     private readonly creditCardsRepo: CreditCardsRepository,
     private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly cashFlowService: CashFlowService,
+    private readonly categoriesRepo: CategoriesRepository,
   ) {}
 
   async getDashboard(query: DashboardQuery): Promise<DashboardResponse> {
@@ -45,7 +48,7 @@ export class DashboardService {
     const cashFlow = await this.cashFlowService.getCashFlow({ month, year });
     const monthSummary = cashFlow.summary;
 
-    const [allReceivables, allTransactions, allAccounts, settings, allCards, allInvoices] =
+    const [allReceivables, allTransactions, allAccounts, settings, allCards, allInvoices, allCategories] =
       await Promise.all([
         this.receivablesRepo.findAll(),
         this.transactionsRepo.findAll(),
@@ -53,9 +56,11 @@ export class DashboardService {
         this.settingsRepo.get(),
         this.creditCardsRepo.findAll(),
         this.invoicesRepo.findAll(),
+        this.categoriesRepo.findAll(),
       ]);
 
     const cardMap = new Map(allCards.map((c) => [c.id, c]));
+    const categoryMap = new Map(allCategories.map((c) => [c.id, c]));
 
     // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────
     const mainAccount = settings?.mainAccountId
@@ -245,6 +250,71 @@ export class DashboardService {
       monthlyEvolution.push({ month: m, year: y, income: mIncome, expenses, net: mIncome - expenses });
     }
 
+    // ── Category breakdown (mês selecionado) ───────────────────────────────────
+    const currentYM = `${year}-${String(month).padStart(2, '0')}`;
+
+    const incomeByCategory = new Map<string, number>();
+    for (const r of allReceivables) {
+      if (r.status !== ReceivableStatus.RECEIVED) continue;
+      if (r.expectedPaymentDate.slice(0, 7) !== currentYM) continue;
+      const key = r.incomeCategoryId ?? '';
+      incomeByCategory.set(key, (incomeByCategory.get(key) ?? 0) + r.netAmount);
+    }
+
+    const expensesByCategory = new Map<string, number>();
+    for (const t of allTransactions) {
+      if (t.status !== TransactionStatus.PAID) continue;
+      if (
+        t.type !== TransactionType.PAYMENT &&
+        t.type !== TransactionType.EXTRA_EXPENSE
+      )
+        continue;
+      if (t.expectedDate.slice(0, 7) !== currentYM) continue;
+      const key = t.categoryId ?? '';
+      expensesByCategory.set(key, (expensesByCategory.get(key) ?? 0) + t.amount);
+    }
+
+    const monthInvoicesTotal = allInvoices
+      .filter(
+        (inv) =>
+          inv.status === InvoiceStatus.PAID &&
+          inv.month === month &&
+          inv.year === year,
+      )
+      .reduce((s, inv) => s + inv.totalAmount, 0);
+    if (monthInvoicesTotal > 0) {
+      expensesByCategory.set(
+        'CREDIT_CARD',
+        (expensesByCategory.get('CREDIT_CARD') ?? 0) + monthInvoicesTotal,
+      );
+    }
+
+    const toBreakdownItems = (
+      byCategory: Map<string, number>,
+      resolveName: (key: string) => string,
+    ): CategoryBreakdownItem[] => {
+      const total = [...byCategory.values()].reduce((s, v) => s + v, 0);
+      return [...byCategory.entries()]
+        .map(([key, amount]) => ({
+          categoryId: key === '' ? null : key,
+          categoryName: resolveName(key),
+          amount,
+          percentage: total > 0 ? Math.round((amount / total) * 100) : 0,
+        }))
+        .sort((a, b) => b.amount - a.amount);
+    };
+
+    const categoryBreakdown = {
+      income: toBreakdownItems(incomeByCategory, (key) =>
+        key === '' ? 'Sem categoria' : categoryMap.get(key)?.name ?? 'Sem categoria',
+      ),
+      expenses: toBreakdownItems(expensesByCategory, (key) => {
+        if (key === 'CREDIT_CARD') return 'Fatura Cartão de Crédito';
+        if (key === '') return 'Sem categoria';
+        return categoryMap.get(key)?.name ?? 'Sem categoria';
+      }),
+    };
+
     return {
       month,
       year,
@@ -266,6 +336,7 @@ export class DashboardService {
         limitUsedPercentage,
       },
       monthlyEvolution,
+      categoryBreakdown,
     };
   }
 

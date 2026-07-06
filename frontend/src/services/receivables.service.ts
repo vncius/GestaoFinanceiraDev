@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Receivable } from '../types';
+import { Receivable, RecurrenceType } from '../types';
 
 export interface CreateReceivablePayload {
   description: string;
@@ -16,10 +16,17 @@ export interface CreateReceivablePayload {
   competence?: string | null;
   workedHours?: number | null;
   targetAccountId?: string | null;
+  recurrence?: RecurrenceType;
 }
 
 export interface ReceivePayload {
   actualPaymentDate?: string;
+}
+
+export interface DeleteScopeParams {
+  scope: 'CURRENT' | 'CURRENT_AND_FUTURE';
+  month: number;
+  year: number;
 }
 
 export const ReceivablesService = {
@@ -35,8 +42,8 @@ export const ReceivablesService = {
   update: (id: string, payload: Partial<CreateReceivablePayload>): Promise<Receivable> =>
     api.put<Receivable>(`/receivables/${id}`, payload).then((r) => r.data),
 
-  remove: (id: string): Promise<void> =>
-    api.delete(`/receivables/${id}`).then(() => undefined),
+  remove: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
+    api.delete(`/receivables/${id}`, { params: scopeParams }).then(() => undefined),
 
   receive: (id: string, payload?: ReceivePayload): Promise<Receivable> =>
     api.post<Receivable>(`/receivables/${id}/receive`, payload ?? {}).then((r) => r.data),

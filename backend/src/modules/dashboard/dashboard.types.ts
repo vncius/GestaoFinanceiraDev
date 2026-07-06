@@ -50,6 +50,13 @@ export interface MonthlyEvolutionItem {
   net: number;
 }
 
+export interface CategoryBreakdownItem {
+  categoryId: string | null;
+  categoryName: string;
+  amount: number;
+  percentage: number;
+}
+
 export interface DashboardResponse {
   month: number;
   year: number;
@@ -67,4 +74,8 @@ export interface DashboardResponse {
     limitUsedPercentage: number;
   };
   monthlyEvolution: MonthlyEvolutionItem[];
+  categoryBreakdown: {
+    income: CategoryBreakdownItem[];
+    expenses: CategoryBreakdownItem[];
+  };
 }

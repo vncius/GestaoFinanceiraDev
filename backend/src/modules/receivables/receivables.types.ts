@@ -1,3 +1,7 @@
+import { RecurrenceType } from '../../shared/types/recurrence.types';
+
+export { RecurrenceType };
+
 export enum ReceivableStatus {
   EXPECTED = 'EXPECTED',
   RECEIVED = 'RECEIVED',
@@ -17,6 +21,11 @@ export interface Receivable {
   status: ReceivableStatus;
   incomeCategoryId: string;
   notes: string | null;
+  recurrence: RecurrenceType;
+  // id do registro raiz da série (== o próprio id quando é o primeiro); null quando UNIQUE
+  recurringGroupId: string | null;
+  // false quando o usuário encerrou a série ("esta e as futuras"); só relevante para FIXED
+  recurringActive: boolean;
   // campos opcionais de NF/projeto
   customerName: string | null;
   invoiceNumber: string | null;

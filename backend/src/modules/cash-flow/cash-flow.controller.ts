@@ -5,6 +5,7 @@ import {
   createTransactionSchema,
   updateTransactionSchema,
   payActionSchema,
+  deleteTransactionQuerySchema,
 } from './cash-flow.schemas';
 
 export class CashFlowController {
@@ -31,7 +32,8 @@ export class CashFlowController {
   }
 
   async deletePayment(req: Request, res: Response): Promise<void> {
-    await this.service.deletePayment(req.params.id);
+    const { scope, month, year } = deleteTransactionQuerySchema.parse(req.query);
+    await this.service.deletePayment(req.params.id, scope, month, year);
     res.status(204).send();
   }
 
@@ -61,7 +63,8 @@ export class CashFlowController {
   }
 
   async deleteExtraExpense(req: Request, res: Response): Promise<void> {
-    await this.service.deleteExtraExpense(req.params.id);
+    const { scope, month, year } = deleteTransactionQuerySchema.parse(req.query);
+    await this.service.deleteExtraExpense(req.params.id, scope, month, year);
     res.status(204).send();
   }
 

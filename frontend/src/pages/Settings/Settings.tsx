@@ -13,7 +13,10 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
+import { useDialog } from '../../contexts/DialogContext';
+import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -286,14 +289,17 @@ function AccountModal({
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
+  const { alert } = useDialog();
+
   const set =
     (k: keyof AccountFormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name) return;
+    const missing = getMissingFields([{ label: 'Nome', valid: !!form.name }]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       name: form.name,
       type: form.type,
@@ -347,6 +353,7 @@ function AccountModal({
 function AccountsTab() {
   const qc = useQueryClient();
   const [modal, setModal] = useState<{ item?: Account } | null>(null);
+  const { confirm } = useDialog();
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['accounts'],
@@ -431,8 +438,8 @@ function AccountsTab() {
                       {a.active && (
                         <button
                           title="Desativar"
-                          onClick={() => {
-                            if (window.confirm('Desativar esta conta?'))
+                          onClick={async () => {
+                            if (await confirm('Desativar esta conta?'))
                               deleteMut.mutate(a.id);
                           }}
                           className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
@@ -492,9 +499,12 @@ function CategoryModal({
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  const { alert } = useDialog();
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name) return;
+    const missing = getMissingFields([{ label: 'Nome', valid: !!form.name }]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({ name: form.name, type: form.type });
   }
 
@@ -550,6 +560,7 @@ function CategorySection({
   onEdit: (item: Category) => void;
   onDelete: (id: string) => void;
 }) {
+  const { confirm } = useDialog();
   const items = categories.filter((c) => c.type === type);
   const label = type === 'INCOME' ? 'Receitas' : 'Despesas';
   const color = type === 'INCOME'
@@ -600,8 +611,8 @@ function CategorySection({
                     {c.active && (
                       <button
                         title="Desativar"
-                        onClick={() => {
-                          if (window.confirm('Desativar esta categoria?')) onDelete(c.id);
+                        onClick={async () => {
+                          if (await confirm('Desativar esta categoria?')) onDelete(c.id);
                         }}
                         className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                       >
@@ -707,6 +718,7 @@ function CardSettingsModal({
   isSaving: boolean;
 }) {
   const activeAccounts = accounts.filter((a) => a.active);
+  const mainAccountId = accounts.find((a) => a.type === 'MAIN')?.id ?? '';
 
   const init = (): CardFormState => ({
     name: item?.name ?? '',
@@ -714,7 +726,7 @@ function CardSettingsModal({
     closingDay: item ? String(item.closingDay) : '10',
     dueDay: item ? String(item.dueDay) : '20',
     limit: item ? String(centsToFloat(item.limit)) : '',
-    defaultPaymentAccountId: item?.defaultPaymentAccountId ?? '',
+    defaultPaymentAccountId: item?.defaultPaymentAccountId ?? mainAccountId,
   });
 
   const [form, setForm] = useState<CardFormState>(init);
@@ -722,15 +734,22 @@ function CardSettingsModal({
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
+  const { alert } = useDialog();
+
   const set =
     (k: keyof CardFormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const limit = floatToCents(parseFloat(form.limit) || 0);
-    if (!form.name || !form.bank || !limit) return;
+    const missing = getMissingFields([
+      { label: 'Nome', valid: !!form.name },
+      { label: 'Banco', valid: !!form.bank },
+      { label: 'Limite', valid: !!limit },
+    ]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       name: form.name,
       bank: form.bank,
@@ -784,14 +803,10 @@ function CardSettingsModal({
             />
           </Field>
           <Field label="Limite (R$) *">
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
+            <CurrencyInput
               className={INPUT}
               value={form.limit}
-              onChange={set('limit')}
-              required
+              onChange={(v) => setForm((f) => ({ ...f, limit: v }))}
             />
           </Field>
         </div>
@@ -801,7 +816,6 @@ function CardSettingsModal({
             value={form.defaultPaymentAccountId}
             onChange={set('defaultPaymentAccountId')}
           >
-            <option value="">Nenhuma</option>
             {activeAccounts.map((a) => (
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
@@ -815,6 +829,7 @@ function CardSettingsModal({
 function CardsTab({ accounts }: { accounts: Account[] }) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<{ item?: CreditCard } | null>(null);
+  const { confirm } = useDialog();
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['creditCards'],
@@ -916,8 +931,8 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                       {card.active && (
                         <button
                           title="Desativar"
-                          onClick={() => {
-                            if (window.confirm('Desativar este cartão?'))
+                          onClick={async () => {
+                            if (await confirm('Desativar este cartão?'))
                               deleteMut.mutate(card.id);
                           }}
                           className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"

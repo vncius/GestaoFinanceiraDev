@@ -1,5 +1,5 @@
 import { api } from './api';
-import { CashFlowResponse, FinancialTransaction } from '../types';
+import { CashFlowResponse, FinancialTransaction, RecurrenceType } from '../types';
 
 export interface CreateTransactionPayload {
   description: string;
@@ -8,11 +8,18 @@ export interface CreateTransactionPayload {
   expectedDate: string;
   sourceAccountId?: string | null;
   notes?: string | null;
+  recurrence?: RecurrenceType;
 }
 
 export interface PayTransactionPayload {
   actualDate?: string;
   amountPaid?: number;
+}
+
+export interface DeleteScopeParams {
+  scope: 'CURRENT' | 'CURRENT_AND_FUTURE';
+  month: number;
+  year: number;
 }
 
 export const CashFlowService = {
@@ -26,8 +33,8 @@ export const CashFlowService = {
   updatePayment: (id: string, payload: Partial<CreateTransactionPayload>): Promise<FinancialTransaction> =>
     api.put<FinancialTransaction>(`/cash-flow/payments/${id}`, payload).then((r) => r.data),
 
-  deletePayment: (id: string): Promise<void> =>
-    api.delete(`/cash-flow/payments/${id}`).then(() => undefined),
+  deletePayment: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
+    api.delete(`/cash-flow/payments/${id}`, { params: scopeParams }).then(() => undefined),
 
   payPayment: (id: string, payload?: PayTransactionPayload): Promise<FinancialTransaction> =>
     api.post<FinancialTransaction>(`/cash-flow/payments/${id}/pay`, payload ?? {}).then((r) => r.data),
@@ -42,8 +49,8 @@ export const CashFlowService = {
   updateExtraExpense: (id: string, payload: Partial<CreateTransactionPayload>): Promise<FinancialTransaction> =>
     api.put<FinancialTransaction>(`/cash-flow/extra-expenses/${id}`, payload).then((r) => r.data),
 
-  deleteExtraExpense: (id: string): Promise<void> =>
-    api.delete(`/cash-flow/extra-expenses/${id}`).then(() => undefined),
+  deleteExtraExpense: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
+    api.delete(`/cash-flow/extra-expenses/${id}`, { params: scopeParams }).then(() => undefined),
 
   payExtraExpense: (id: string, payload?: PayTransactionPayload): Promise<FinancialTransaction> =>
     api.post<FinancialTransaction>(`/cash-flow/extra-expenses/${id}/pay`, payload ?? {}).then((r) => r.data),

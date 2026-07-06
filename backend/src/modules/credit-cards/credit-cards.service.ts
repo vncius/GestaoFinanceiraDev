@@ -5,6 +5,7 @@ import { SettingsRepository } from '../settings/settings.repository';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   OriginType,
+  RecurrenceType,
   TransactionStatus,
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
@@ -552,6 +553,9 @@ export class CreditCardsService {
       originType: OriginType.CREDIT_CARD_INVOICE,
       originId: invoice.id,
       notes: null,
+      recurrence: RecurrenceType.UNIQUE,
+      recurringGroupId: null,
+      recurringActive: true,
       createdAt: now,
       updatedAt: now,
     });

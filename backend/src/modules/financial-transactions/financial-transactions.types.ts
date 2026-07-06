@@ -1,3 +1,7 @@
+import { RecurrenceType } from '../../shared/types/recurrence.types';
+
+export { RecurrenceType };
+
 export enum TransactionType {
   INCOME = 'INCOME',
   PAYMENT = 'PAYMENT',
@@ -37,6 +41,11 @@ export interface FinancialTransaction {
   originType: OriginType | null;
   originId: string | null;
   notes: string | null;
+  recurrence: RecurrenceType;
+  // id do registro raiz da série (== o próprio id quando é o primeiro); null quando UNIQUE
+  recurringGroupId: string | null;
+  // false quando o usuário encerrou a série ("esta e as futuras"); só relevante para FIXED
+  recurringActive: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -41,6 +41,7 @@ export interface FinancialSettings {
 
 // ── Receivables ───────────────────────────────────────────────────────────────
 export type ReceivableStatus = 'EXPECTED' | 'RECEIVED' | 'CANCELED';
+export type RecurrenceType = 'UNIQUE' | 'FIXED';
 
 export interface Receivable {
   id: string;
@@ -64,6 +65,9 @@ export interface Receivable {
   workedHours: number | null;
   hourlyRate: number | null;
   targetAccountId: string | null;
+  recurrence: RecurrenceType;
+  recurringGroupId: string | null;
+  recurringActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -99,6 +103,9 @@ export interface FinancialTransaction {
   originType: string | null;
   originId: string | null;
   notes: string | null;
+  recurrence: RecurrenceType;
+  recurringGroupId: string | null;
+  recurringActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -253,6 +260,13 @@ export interface AccountBalance {
   balance: number;
 }
 
+export interface CategoryBreakdownItem {
+  categoryId: string | null;
+  categoryName: string;
+  amount: number;
+  percentage: number;
+}
+
 export interface DashboardResponse {
   month: number;
   year: number;
@@ -270,4 +284,8 @@ export interface DashboardResponse {
     limitUsedPercentage: number;
   };
   monthlyEvolution: MonthlyEvolutionItem[];
+  categoryBreakdown: {
+    income: CategoryBreakdownItem[];
+    expenses: CategoryBreakdownItem[];
+  };
 }

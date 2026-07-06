@@ -14,10 +14,13 @@ import {
   CheckCircle2,
   BarChart3,
   Target,
+  PieChart,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import { DashboardService } from '../../services/dashboard.service';
 import {
+  CashFlowSummary,
+  CategoryBreakdownItem,
   DashboardAlert,
   MonthlyEvolutionItem,
   UpcomingDue,
@@ -259,6 +262,120 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
   );
 }
 
+const CATEGORY_PALETTE = [
+  '#22c55e', '#3b82f6', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16',
+];
+
+function CategoryBreakdownCard({
+  title,
+  icon,
+  items,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: CategoryBreakdownItem[];
+}) {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        {icon}
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h3>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyState title="Sem lançamentos no período" />
+      ) : (
+        <ul className="space-y-3">
+          {items.map((item, i) => (
+            <li key={item.categoryId ?? 'none'}>
+              <div className="flex items-center justify-between gap-2 text-xs mb-1">
+                <span className="text-gray-600 dark:text-gray-300 truncate">{item.categoryName}</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-100 shrink-0">
+                  {formatCurrency(item.amount)}{' '}
+                  <span className="text-gray-400 dark:text-gray-500 font-normal">({item.percentage}%)</span>
+                </span>
+              </div>
+              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${item.percentage}%`,
+                    backgroundColor: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length],
+                  }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
+  const totalExpenses =
+    summary.paidPayments + summary.paidExtraExpenses + summary.paidCreditCardInvoices;
+
+  const segments = [
+    { label: 'Receitas', value: summary.receivedIncome, color: '#22c55e' },
+    { label: 'Gastos', value: totalExpenses, color: '#ef4444' },
+    { label: 'Reserva', value: summary.reserveInflow, color: '#3b82f6' },
+  ];
+  const total = segments.reduce((s, x) => s + x.value, 0);
+
+  let cursor = 0;
+  const gradientStops = segments
+    .filter((seg) => seg.value > 0)
+    .map((seg) => {
+      const pct = total > 0 ? (seg.value / total) * 100 : 0;
+      const start = cursor;
+      cursor += pct;
+      return `${seg.color} ${start}% ${cursor}%`;
+    })
+    .join(', ');
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <PieChart size={16} className="text-gray-400 dark:text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Visão Geral do Mês</h3>
+      </div>
+
+      <div className="flex items-center gap-5">
+        <div className="relative w-28 h-28 shrink-0">
+          <div
+            className="w-full h-full rounded-full"
+            style={{ background: total > 0 ? `conic-gradient(${gradientStops})` : '#e5e7eb' }}
+          />
+          <div className="absolute inset-2.5 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
+            <span className="text-[11px] font-bold text-gray-800 dark:text-gray-100 text-center px-1 leading-tight">
+              {formatCurrency(total)}
+            </span>
+          </div>
+        </div>
+
+        <ul className="flex-1 space-y-2 min-w-0">
+          {segments.map((seg) => (
+            <li key={seg.label} className="flex items-center justify-between gap-2 text-xs">
+              <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 truncate">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: seg.color }}
+                />
+                {seg.label}
+              </span>
+              <span className="font-semibold text-gray-800 dark:text-gray-100 shrink-0">
+                {formatCurrency(seg.value)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -288,6 +405,7 @@ export default function Dashboard() {
     alerts,
     annualSummary,
     monthlyEvolution,
+    categoryBreakdown,
   } = data;
 
   const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
@@ -379,6 +497,26 @@ export default function Dashboard() {
               </span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Análise por categoria */}
+      <section>
+        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+          Análise por Categoria
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <CategoryBreakdownCard
+            title="Receitas por Categoria"
+            icon={<TrendingUp size={16} className="text-green-500" />}
+            items={categoryBreakdown.income}
+          />
+          <CategoryBreakdownCard
+            title="Gastos por Categoria"
+            icon={<TrendingDown size={16} className="text-red-500" />}
+            items={categoryBreakdown.expenses}
+          />
+          <OverviewDonutCard summary={s} />
         </div>
       </section>
 

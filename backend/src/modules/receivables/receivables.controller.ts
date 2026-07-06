@@ -5,6 +5,7 @@ import {
   updateReceivableSchema,
   receivableQuerySchema,
   receiveActionSchema,
+  deleteReceivableQuerySchema,
 } from './receivables.schemas';
 
 export class ReceivablesController {
@@ -34,7 +35,8 @@ export class ReceivablesController {
   }
 
   async delete(req: Request, res: Response): Promise<void> {
-    await this.service.delete(req.params.id);
+    const { scope, month, year } = deleteReceivableQuerySchema.parse(req.query);
+    await this.service.delete(req.params.id, scope, month, year);
     res.status(204).send();
   }
 

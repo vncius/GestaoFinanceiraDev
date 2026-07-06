@@ -19,6 +19,7 @@ import { AccountsService } from '../../services/accounts.service';
 import { Category, CreditCard, CreditCardEntry, CreditCardInvoice } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { invoiceStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -27,6 +28,8 @@ import { DateInput } from '../../components/ui/DateInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, formatMonthYear, firstDayOfMonthISO, toInputDate } from '../../utils/date';
+import { useDialog } from '../../contexts/DialogContext';
+import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -100,10 +103,17 @@ function EntryModal({
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  function handleSubmit(e: React.FormEvent) {
+  const { alert, confirm } = useDialog();
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const cents = floatToCents(parseFloat(form.totalAmount) || 0);
-    if (!cents || !form.description || !form.expenseCategoryId) return;
+    const missing = getMissingFields([
+      { label: 'Descrição', valid: !!form.description },
+      { label: 'Categoria', valid: !!form.expenseCategoryId },
+      { label: 'Valor total', valid: !!cents },
+    ]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
 
     if (isEdit) {
       const willRecreate =
@@ -112,9 +122,9 @@ function EntryModal({
         form.entryType !== item!.entryType ||
         (form.entryType === 'INSTALLMENT' && parseInt(form.installmentsCount) !== item!.installmentsCount);
 
-      if (willRecreate && !window.confirm(
+      if (willRecreate && !(await confirm(
         'Alterar valor, data, tipo ou parcelas irá recriar todas as parcelas e pode reverter faturas pagas. Deseja continuar?'
-      )) return;
+      ))) return;
 
       onSave({
         description: form.description,
@@ -253,6 +263,8 @@ function CardDetail({
     qc.invalidateQueries({ queryKey: ['cashFlow'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
+
+  const { confirm } = useDialog();
 
   const addEntryMut = useMutation({
     mutationFn: (payload: CreateCardEntryPayload) =>
@@ -436,10 +448,10 @@ function CardDetail({
                           {entry?.active && (
                             <button
                               title="Cancelar lançamento"
-                              onClick={() => {
+                              onClick={async () => {
                                 if (entry.entryType === 'FIXED') {
                                   setFixedDeleteTarget(entry);
-                                } else if (window.confirm('Cancelar este lançamento e todas as suas parcelas?')) {
+                                } else if (await confirm('Cancelar este lançamento e todas as suas parcelas?')) {
                                   deleteEntryMut.mutate({ entryId: entry.id });
                                 }
                               }}
@@ -480,43 +492,27 @@ function CardDetail({
         isSaving={updateEntryMut.isPending}
       />
 
-      <Modal
+      <ScopedDeleteModal
         open={!!fixedDeleteTarget}
         onClose={() => setFixedDeleteTarget(null)}
         title="Excluir lançamento fixo"
-        footer={
+        loading={deleteEntryMut.isPending}
+        description={
           <>
-            <Button variant="secondary" onClick={() => setFixedDeleteTarget(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="secondary"
-              loading={deleteEntryMut.isPending}
-              onClick={() =>
-                fixedDeleteTarget &&
-                deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT' })
-              }
-            >
-              Somente esta referência
-            </Button>
-            <Button
-              loading={deleteEntryMut.isPending}
-              onClick={() =>
-                fixedDeleteTarget &&
-                deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT_AND_FUTURE' })
-              }
-            >
-              Esta e as futuras
-            </Button>
+            <strong>{fixedDeleteTarget?.description}</strong> é um lançamento fixo. Deseja excluir
+            apenas a referência de {formatMonthYear(month, year)}, ou esta e todas as futuras?
+            O histórico de referências já lançadas/pagas nunca é alterado.
           </>
         }
-      >
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          <strong>{fixedDeleteTarget?.description}</strong> é um lançamento fixo. Deseja excluir
-          apenas a referência de {formatMonthYear(month, year)}, ou esta e todas as futuras?
-          O histórico de referências já lançadas/pagas nunca é alterado.
-        </p>
-      </Modal>
+        onDeleteCurrent={() =>
+          fixedDeleteTarget &&
+          deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT' })
+        }
+        onDeleteFuture={() =>
+          fixedDeleteTarget &&
+          deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT_AND_FUTURE' })
+        }
+      />
 
       <PayInvoiceAccountModal
         open={!!invoicePayTarget}

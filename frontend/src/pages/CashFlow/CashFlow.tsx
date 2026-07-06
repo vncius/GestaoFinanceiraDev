@@ -26,9 +26,11 @@ import {
   CreditCardInvoice,
   FinancialTransaction,
   Receivable,
+  RecurrenceType,
 } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { Badge, receivableStatusBadge, transactionStatusBadge, invoiceStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -36,7 +38,14 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DateInput } from '../../components/ui/DateInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { formatCurrency, floatToCents, centsToFloat } from '../../utils/money';
-import { formatDate, toInputDate, todayISO, firstDayOfMonthISO } from '../../utils/date';
+import { formatDate, toInputDate, todayISO, firstDayOfMonthISO, monthYearFromDate } from '../../utils/date';
+import { useDialog } from '../../contexts/DialogContext';
+import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
+
+const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
+  UNIQUE: 'Único',
+  FIXED: 'Fixo (recorrente)',
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -198,7 +207,7 @@ function EntriesGrid({
   onEdit: (item: Receivable) => void;
   onReceive: (id: string) => void;
   onRevert: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (item: Receivable) => void;
 }) {
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
@@ -286,7 +295,7 @@ function EntriesGrid({
                       {item.status === 'EXPECTED' && (
                         <ActionBtn
                           title="Excluir"
-                          onClick={() => onDelete(item.id)}
+                          onClick={() => onDelete(item)}
                           className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           <Trash2 size={14} />
@@ -325,7 +334,7 @@ function TransactionGrid({
   onEdit: (item: FinancialTransaction) => void;
   onPay: (id: string) => void;
   onRevert: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (item: FinancialTransaction) => void;
 }) {
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
 
@@ -399,7 +408,7 @@ function TransactionGrid({
                       {item.status === 'PENDING' && (
                         <ActionBtn
                           title="Excluir"
-                          onClick={() => onDelete(item.id)}
+                          onClick={() => onDelete(item)}
                           className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           <Trash2 size={14} />
@@ -502,6 +511,7 @@ interface ReceivableFormState {
   incomeCategoryId: string;
   targetAccountId: string;
   notes: string;
+  recurrence: RecurrenceType;
 }
 
 function ReceivableModal({
@@ -543,6 +553,7 @@ function ReceivableModal({
     incomeCategoryId: item?.incomeCategoryId ?? (incomeCategories[0]?.id ?? ''),
     targetAccountId: item?.targetAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
+    recurrence: item?.recurrence ?? 'UNIQUE',
   });
 
   const [form, setForm] = useState<ReceivableFormState>(init);
@@ -558,9 +569,16 @@ function ReceivableModal({
   const reserveCents = Math.round((grossCents * pct) / 100);
   const netCents = grossCents - reserveCents;
 
-  function handleSubmit(e: React.FormEvent) {
+  const { alert } = useDialog();
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!grossCents || !form.description || !form.incomeCategoryId) return;
+    const missing = getMissingFields([
+      { label: 'Descrição', valid: !!form.description },
+      { label: 'Categoria', valid: !!form.incomeCategoryId },
+      { label: 'Valor bruto', valid: !!grossCents },
+    ]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       description: form.description,
       expectedPaymentDate: new Date(form.expectedPaymentDate).toISOString(),
@@ -569,6 +587,7 @@ function ReceivableModal({
       incomeCategoryId: form.incomeCategoryId,
       targetAccountId: form.targetAccountId || null,
       notes: form.notes || null,
+      recurrence: form.recurrence,
     });
   }
 
@@ -620,6 +639,21 @@ function ReceivableModal({
               onChange={(v) => setForm((f) => ({ ...f, grossAmount: v }))}
             />
           </Field>
+          {!isEdit && (
+            <Field label="Tipo de lançamento">
+              <select
+                className={INPUT}
+                value={form.recurrence}
+                onChange={(e) => setForm((f) => ({ ...f, recurrence: e.target.value as RecurrenceType }))}
+              >
+                {Object.entries(RECURRENCE_LABELS).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </Field>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           {selectableAccounts.length > 0 && (
             <Field label="Conta de destino">
               <select
@@ -668,6 +702,7 @@ interface TxFormState {
   expectedDate: string;
   accountId: string;
   notes: string;
+  recurrence: RecurrenceType;
 }
 
 function TransactionModal({
@@ -711,6 +746,7 @@ function TransactionModal({
     expectedDate: item ? toInputDate(item.expectedDate) : firstDayOfMonthISO(month, year),
     accountId: item?.sourceAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
+    recurrence: item?.recurrence ?? 'UNIQUE',
   });
 
   const [form, setForm] = useState<TxFormState>(init);
@@ -718,10 +754,17 @@ function TransactionModal({
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  const { alert } = useDialog();
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const amount = floatToCents(parseFloat(form.amount) || 0);
-    if (!amount || !form.description || !form.categoryId) return;
+    const missing = getMissingFields([
+      { label: 'Descrição', valid: !!form.description },
+      { label: 'Categoria', valid: !!form.categoryId },
+      { label: 'Valor', valid: !!amount },
+    ]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       description: form.description,
       categoryId: form.categoryId,
@@ -729,6 +772,7 @@ function TransactionModal({
       expectedDate: new Date(form.expectedDate).toISOString(),
       sourceAccountId: form.accountId || null,
       notes: form.notes || null,
+      recurrence: form.recurrence,
     });
   }
 
@@ -788,6 +832,19 @@ function TransactionModal({
             </select>
           </Field>
         </div>
+        {!isEdit && (
+          <Field label="Tipo de lançamento">
+            <select
+              className={INPUT}
+              value={form.recurrence}
+              onChange={(e) => setForm((f) => ({ ...f, recurrence: e.target.value as RecurrenceType }))}
+            >
+              {Object.entries(RECURRENCE_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field label="Observações">
           <textarea className={INPUT} rows={2} value={form.notes} onChange={set('notes')} />
         </Field>
@@ -801,6 +858,8 @@ function TransactionModal({
 export default function CashFlow() {
   const { month, year } = useMonth();
   const qc = useQueryClient();
+
+  const { confirm } = useDialog();
 
   const cfKey = ['cashFlow', month, year] as const;
   const invalidate = () => {
@@ -843,6 +902,11 @@ export default function CashFlow() {
   const [modal, setModal] = useState<ModalKind | null>(null);
   const closeModal = () => setModal(null);
   const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
+  const [fixedDeleteTarget, setFixedDeleteTarget] = useState<
+    | { kind: 'receivable'; item: Receivable }
+    | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction }
+    | null
+  >(null);
 
   // ── Receivable mutations ─────────────────────────────────────────────────────
   const createReceivable = useMutation({
@@ -863,8 +927,9 @@ export default function CashFlow() {
     onSuccess: invalidate,
   });
   const deleteReceivable = useMutation({
-    mutationFn: ReceivablesService.remove,
-    onSuccess: invalidate,
+    mutationFn: ({ id, scope, month: m, year: y }: { id: string; scope?: 'CURRENT' | 'CURRENT_AND_FUTURE'; month?: number; year?: number }) =>
+      ReceivablesService.remove(id, scope ? { scope, month: m!, year: y! } : undefined),
+    onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
 
   // ── Payment mutations ────────────────────────────────────────────────────────
@@ -886,8 +951,9 @@ export default function CashFlow() {
     onSuccess: invalidate,
   });
   const deletePayment = useMutation({
-    mutationFn: CashFlowService.deletePayment,
-    onSuccess: invalidate,
+    mutationFn: ({ id, scope, month: m, year: y }: { id: string; scope?: 'CURRENT' | 'CURRENT_AND_FUTURE'; month?: number; year?: number }) =>
+      CashFlowService.deletePayment(id, scope ? { scope, month: m!, year: y! } : undefined),
+    onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
 
   // ── Extra expense mutations ──────────────────────────────────────────────────
@@ -909,8 +975,9 @@ export default function CashFlow() {
     onSuccess: invalidate,
   });
   const deleteExtra = useMutation({
-    mutationFn: CashFlowService.deleteExtraExpense,
-    onSuccess: invalidate,
+    mutationFn: ({ id, scope, month: m, year: y }: { id: string; scope?: 'CURRENT' | 'CURRENT_AND_FUTURE'; month?: number; year?: number }) =>
+      CashFlowService.deleteExtraExpense(id, scope ? { scope, month: m!, year: y! } : undefined),
+    onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
 
   // ── Invoice mutations ────────────────────────────────────────────────────────
@@ -929,9 +996,9 @@ export default function CashFlow() {
 
   const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
 
-  function saveReceivable(payload: CreateReceivablePayload) {
+  async function saveReceivable(payload: CreateReceivablePayload) {
     if (modal?.type !== 'receivable') return;
-    if (modal.item?.status === 'RECEIVED' && !window.confirm(EFFECTED_CONFIRM)) return;
+    if (modal.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
     if (modal.item) {
       updateReceivable.mutate({ id: modal.item.id, data: payload });
     } else {
@@ -939,10 +1006,10 @@ export default function CashFlow() {
     }
   }
 
-  function saveTransaction(payload: CreateTransactionPayload) {
+  async function saveTransaction(payload: CreateTransactionPayload) {
     if (modal?.type !== 'payment' && modal?.type !== 'extra-expense') return;
     const isPayment = modal.type === 'payment';
-    if (modal.item?.status === 'PAID' && !window.confirm(EFFECTED_CONFIRM)) return;
+    if (modal.item?.status === 'PAID' && !(await confirm(EFFECTED_CONFIRM))) return;
     if (modal.item) {
       if (isPayment) updatePayment.mutate({ id: modal.item.id, data: payload });
       else updateExtra.mutate({ id: modal.item.id, data: payload });
@@ -957,8 +1024,34 @@ export default function CashFlow() {
     else if (modal?.type === 'extra-expense') payExtra.mutate(id);
   }
 
-  function confirmDelete(fn: () => void) {
-    if (window.confirm('Confirmar exclusão?')) fn();
+  async function confirmDelete(fn: () => void) {
+    if (await confirm('Confirmar exclusão?')) fn();
+  }
+
+  function handleDeleteReceivable(item: Receivable) {
+    if (item.recurrence === 'FIXED') setFixedDeleteTarget({ kind: 'receivable', item });
+    else confirmDelete(() => deleteReceivable.mutate({ id: item.id }));
+  }
+
+  function handleDeleteTransaction(kind: 'payment' | 'extra-expense', item: FinancialTransaction) {
+    if (item.recurrence === 'FIXED') setFixedDeleteTarget({ kind, item });
+    else confirmDelete(() => (kind === 'payment' ? deletePayment : deleteExtra).mutate({ id: item.id }));
+  }
+
+  function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+    if (!fixedDeleteTarget) return;
+    const { month: m, year: y } = monthYearFromDate(
+      fixedDeleteTarget.kind === 'receivable'
+        ? fixedDeleteTarget.item.expectedPaymentDate
+        : fixedDeleteTarget.item.expectedDate,
+    );
+    if (fixedDeleteTarget.kind === 'receivable') {
+      deleteReceivable.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
+    } else if (fixedDeleteTarget.kind === 'payment') {
+      deletePayment.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
+    } else {
+      deleteExtra.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
+    }
   }
 
   if (isLoading || !data) return <PageLoading />;
@@ -983,7 +1076,7 @@ export default function CashFlow() {
           onEdit={(item) => setModal({ type: 'receivable', mode: 'edit', item })}
           onReceive={(id) => receiveItem.mutate(id)}
           onRevert={(id) => revertReceivable.mutate(id)}
-          onDelete={(id) => confirmDelete(() => deleteReceivable.mutate(id))}
+          onDelete={handleDeleteReceivable}
         />
 
         {/* Pagamentos */}
@@ -996,7 +1089,7 @@ export default function CashFlow() {
           onEdit={(item) => setModal({ type: 'payment', mode: 'edit', item })}
           onPay={(id) => payPayment.mutate(id)}
           onRevert={(id) => revertPayment.mutate(id)}
-          onDelete={(id) => confirmDelete(() => deletePayment.mutate(id))}
+          onDelete={(item) => handleDeleteTransaction('payment', item)}
         />
 
         {/* Gastos Extraordinários */}
@@ -1009,7 +1102,7 @@ export default function CashFlow() {
           onEdit={(item) => setModal({ type: 'extra-expense', mode: 'edit', item })}
           onPay={(id) => payExtra.mutate(id)}
           onRevert={(id) => revertExtra.mutate(id)}
-          onDelete={(id) => confirmDelete(() => deleteExtra.mutate(id))}
+          onDelete={(item) => handleDeleteTransaction('extra-expense', item)}
         />
 
         {/* Cartões de Crédito */}
@@ -1056,6 +1149,23 @@ export default function CashFlow() {
           onPay={handleTxPay}
         />
       )}
+
+      {/* Scoped delete for fixed (recurring) entries */}
+      <ScopedDeleteModal
+        open={!!fixedDeleteTarget}
+        onClose={() => setFixedDeleteTarget(null)}
+        title="Excluir lançamento fixo"
+        loading={deleteReceivable.isPending || deletePayment.isPending || deleteExtra.isPending}
+        description={
+          <>
+            <strong>{fixedDeleteTarget?.item.description}</strong> é um lançamento fixo. Deseja excluir
+            apenas esta referência, ou esta e todas as futuras? O histórico de referências já
+            lançadas/pagas/recebidas nunca é alterado.
+          </>
+        }
+        onDeleteCurrent={() => runScopedDelete('CURRENT')}
+        onDeleteFuture={() => runScopedDelete('CURRENT_AND_FUTURE')}
+      />
 
       {/* Invoice payment account picker */}
       <PayInvoiceAccountModal

@@ -1,9 +1,9 @@
 import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
-import { nowISO } from '../../shared/utils/date.utils';
+import { nowISO, addMonths, monthKey, monthYearOf } from '../../shared/utils/date.utils';
 import { applyPercentage } from '../../shared/utils/money.utils';
 import { ReceivablesRepository } from './receivables.repository';
-import { Receivable, ReceivableStatus } from './receivables.types';
+import { Receivable, ReceivableStatus, RecurrenceType } from './receivables.types';
 import {
   CreateReceivableInput,
   UpdateReceivableInput,
@@ -18,6 +18,7 @@ import {
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
 import { SettingsRepository } from '../settings/settings.repository';
+import { DeleteScope } from '../../shared/types/recurrence.types';
 
 export class ReceivablesService {
   constructor(
@@ -28,6 +29,7 @@ export class ReceivablesService {
 
   async findAll(query: ReceivableQuery): Promise<Receivable[]> {
     if (query.month && query.year) {
+      await this.ensureFixedOccurrences(query.month, query.year);
       const byMonth = await this.receivablesRepo.findByMonth(query.month, query.year);
       return query.status ? byMonth.filter((r) => r.status === query.status) : byMonth;
     }
@@ -52,8 +54,13 @@ export class ReceivablesService {
     );
 
     const now = nowISO();
+    const id = generateId();
+    const recurrence = input.recurrence ?? RecurrenceType.UNIQUE;
     return this.receivablesRepo.create({
-      id: generateId(),
+      id,
+      recurrence,
+      recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,
+      recurringActive: true,
       description: input.description,
       expectedPaymentDate: input.expectedPaymentDate,
       actualPaymentDate: null,
@@ -140,6 +147,9 @@ export class ReceivablesService {
         originType: OriginType.RECEIVABLE,
         originId: id,
         notes: null,
+        recurrence: RecurrenceType.UNIQUE,
+        recurringGroupId: null,
+        recurringActive: true,
         createdAt: now,
         updatedAt: now,
       });
@@ -164,6 +174,9 @@ export class ReceivablesService {
           originType: OriginType.RECEIVABLE,
           originId: id,
           notes: null,
+          recurrence: RecurrenceType.UNIQUE,
+          recurringGroupId: null,
+          recurringActive: true,
           createdAt: now,
           updatedAt: now,
         });
@@ -173,7 +186,12 @@ export class ReceivablesService {
     return updated;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(
+    id: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
+  ): Promise<void> {
     const existing = await this.findById(id);
     if (existing.status === ReceivableStatus.RECEIVED) {
       throw new AppError(
@@ -181,7 +199,109 @@ export class ReceivablesService {
         400,
       );
     }
+
+    if (existing.recurrence === RecurrenceType.FIXED) {
+      if (!scope || !referenceMonth || !referenceYear) {
+        throw new AppError(
+          'Informe se deseja excluir apenas a referência atual ou também as futuras.',
+          400,
+        );
+      }
+      return this.deleteFixedReceivable(existing, scope, referenceMonth, referenceYear);
+    }
+
     await this.receivablesRepo.delete(id);
+  }
+
+  private async deleteFixedReceivable(
+    existing: Receivable,
+    scope: DeleteScope,
+    referenceMonth: number,
+    referenceYear: number,
+  ): Promise<void> {
+    const now = nowISO();
+    const refKey = monthKey(referenceMonth, referenceYear);
+    const groupId = existing.recurringGroupId ?? existing.id;
+    const all = await this.receivablesRepo.findAll();
+    const group = all.filter((r) => r.recurringGroupId === groupId);
+
+    const toCancel = group.filter((r) => {
+      if (r.status !== ReceivableStatus.EXPECTED) return false;
+      const key = monthKey(monthYearOf(r.expectedPaymentDate).month, monthYearOf(r.expectedPaymentDate).year);
+      return scope === 'CURRENT' ? key === refKey : key >= refKey;
+    });
+
+    for (const r of toCancel) {
+      await this.receivablesRepo.update(r.id, { status: ReceivableStatus.CANCELED, updatedAt: now });
+    }
+
+    // Encerra a série (impede geração de novos meses) sem alterar histórico já passado.
+    if (scope === 'CURRENT_AND_FUTURE') {
+      for (const r of group) {
+        if (r.recurringActive) {
+          await this.receivablesRepo.update(r.id, { recurringActive: false, updatedAt: now });
+        }
+      }
+    }
+  }
+
+  private async ensureFixedOccurrences(targetMonth: number, targetYear: number): Promise<void> {
+    const all = await this.receivablesRepo.findAll();
+    const fixed = all.filter((r) => r.recurrence === RecurrenceType.FIXED);
+    if (fixed.length === 0) return;
+
+    const groups = new Map<string, Receivable[]>();
+    for (const r of fixed) {
+      const gid = r.recurringGroupId ?? r.id;
+      const arr = groups.get(gid) ?? [];
+      arr.push(r);
+      groups.set(gid, arr);
+    }
+
+    const targetKey = monthKey(targetMonth, targetYear);
+    const now = nowISO();
+
+    for (const group of groups.values()) {
+      let latest = group[0];
+      let anchor = group[0];
+      for (const r of group) {
+        if (monthYearOf(r.expectedPaymentDate).year * 100 + monthYearOf(r.expectedPaymentDate).month >
+            monthYearOf(latest.expectedPaymentDate).year * 100 + monthYearOf(latest.expectedPaymentDate).month) {
+          latest = r;
+        }
+        if (r.expectedPaymentDate < anchor.expectedPaymentDate) anchor = r;
+      }
+
+      if (!latest.recurringActive) continue;
+
+      const latestMY = monthYearOf(latest.expectedPaymentDate);
+      if (monthKey(latestMY.month, latestMY.year) >= targetKey) continue;
+
+      const anchorDay = monthYearOf(anchor.expectedPaymentDate).day;
+      let cursorMonth = latestMY.month;
+      let cursorYear = latestMY.year;
+
+      while (monthKey(cursorMonth, cursorYear) < targetKey) {
+        const next = addMonths(cursorMonth, cursorYear, 1, anchorDay);
+        cursorMonth = next.month;
+        cursorYear = next.year;
+
+        const newDate = new Date(next.year, next.month - 1, next.day).toISOString();
+        const groupId = latest.recurringGroupId ?? latest.id;
+
+        await this.receivablesRepo.create({
+          ...latest,
+          id: generateId(),
+          expectedPaymentDate: newDate,
+          actualPaymentDate: null,
+          status: ReceivableStatus.EXPECTED,
+          recurringGroupId: groupId,
+          recurringActive: true,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    }
   }
 
   async receive(id: string, input: ReceiveActionInput): Promise<Receivable> {
@@ -223,6 +343,9 @@ export class ReceivablesService {
       originType: OriginType.RECEIVABLE,
       originId: receivable.id,
       notes: null,
+      recurrence: RecurrenceType.UNIQUE,
+      recurringGroupId: null,
+      recurringActive: true,
       createdAt: now,
       updatedAt: now,
     });
@@ -247,6 +370,9 @@ export class ReceivablesService {
         originType: OriginType.RECEIVABLE,
         originId: receivable.id,
         notes: null,
+        recurrence: RecurrenceType.UNIQUE,
+        recurringGroupId: null,
+        recurringActive: true,
         createdAt: now,
         updatedAt: now,
       });

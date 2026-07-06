@@ -7,16 +7,24 @@ import {
 } from '../../services/receivables.service';
 import { CategoriesService } from '../../services/categories.service';
 import { SettingsService } from '../../services/settings.service';
-import { Category, Receivable } from '../../types';
+import { Category, Receivable, RecurrenceType } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { receivableStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
-import { formatDate, toInputDate, todayISO } from '../../utils/date';
+import { formatDate, toInputDate, todayISO, monthYearFromDate } from '../../utils/date';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DateInput } from '../../components/ui/DateInput';
+import { useDialog } from '../../contexts/DialogContext';
+import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
+
+const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
+  UNIQUE: 'Único',
+  FIXED: 'Fixo (recorrente)',
+};
 
 // ── Types & constants ─────────────────────────────────────────────────────────
 
@@ -52,6 +60,7 @@ interface FormState {
   customerName: string;
   invoiceNumber: string;
   notes: string;
+  recurrence: RecurrenceType;
 }
 
 function ReceivableModal({
@@ -71,6 +80,7 @@ function ReceivableModal({
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
 }) {
+  const isEdit = !!item;
   const incomeCats = categories.filter((c) => c.type === 'INCOME' && c.active);
 
   const init = (): FormState => ({
@@ -82,6 +92,7 @@ function ReceivableModal({
     customerName: item?.customerName ?? '',
     invoiceNumber: item?.invoiceNumber ?? '',
     notes: item?.notes ?? '',
+    recurrence: item?.recurrence ?? 'UNIQUE',
   });
 
   const [form, setForm] = useState<FormState>(init);
@@ -99,9 +110,16 @@ function ReceivableModal({
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  function handleSubmit(e: React.FormEvent) {
+  const { alert } = useDialog();
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!grossCents || !form.description || !form.incomeCategoryId) return;
+    const missing = getMissingFields([
+      { label: 'Descrição', valid: !!form.description },
+      { label: 'Categoria', valid: !!form.incomeCategoryId },
+      { label: 'Valor bruto', valid: !!grossCents },
+    ]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       description: form.description,
       incomeCategoryId: form.incomeCategoryId,
@@ -111,6 +129,7 @@ function ReceivableModal({
       customerName: form.customerName || null,
       invoiceNumber: form.invoiceNumber || null,
       notes: form.notes || null,
+      recurrence: form.recurrence,
     });
   }
 
@@ -154,6 +173,19 @@ function ReceivableModal({
             <input className={INPUT} value={form.customerName} onChange={set('customerName')} placeholder="Nome do cliente" />
           </Field>
         </div>
+        {!isEdit && (
+          <Field label="Tipo de lançamento">
+            <select
+              className={INPUT}
+              value={form.recurrence}
+              onChange={(e) => setForm((f) => ({ ...f, recurrence: e.target.value as RecurrenceType }))}
+            >
+              {Object.entries(RECURRENCE_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </Field>
+        )}
         <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
           <input
             type="checkbox"
@@ -195,6 +227,7 @@ export default function Receivables() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState<{ item?: Receivable } | null>(null);
+  const [fixedDeleteTarget, setFixedDeleteTarget] = useState<Receivable | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['receivables'],
@@ -237,19 +270,37 @@ export default function Receivables() {
     onSuccess: invalidate,
   });
   const deleteMut = useMutation({
-    mutationFn: ReceivablesService.remove,
-    onSuccess: invalidate,
+    mutationFn: ({ id, scope, month, year }: { id: string; scope?: 'CURRENT' | 'CURRENT_AND_FUTURE'; month?: number; year?: number }) =>
+      ReceivablesService.remove(id, scope ? { scope, month: month!, year: year! } : undefined),
+    onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
+
+  const { confirm } = useDialog();
 
   const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
 
-  function save(payload: CreateReceivablePayload) {
-    if (modal?.item?.status === 'RECEIVED' && !window.confirm(EFFECTED_CONFIRM)) return;
+  async function save(payload: CreateReceivablePayload) {
+    if (modal?.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
     if (modal?.item) {
       updateMut.mutate({ id: modal.item.id, data: payload });
     } else {
       createMut.mutate(payload);
     }
+  }
+
+  function handleDelete(item: Receivable) {
+    if (item.recurrence === 'FIXED') { setFixedDeleteTarget(item); return; }
+    confirmDelete(item.id);
+  }
+
+  async function confirmDelete(id: string) {
+    if (await confirm('Confirmar exclusão?')) deleteMut.mutate({ id });
+  }
+
+  function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+    if (!fixedDeleteTarget) return;
+    const { month, year } = monthYearFromDate(fixedDeleteTarget.expectedPaymentDate);
+    deleteMut.mutate({ id: fixedDeleteTarget.id, scope, month, year });
   }
 
   const filtered = items
@@ -390,10 +441,7 @@ export default function Receivables() {
                         {(item.status === 'EXPECTED' || item.status === 'CANCELED') && (
                           <button
                             title="Excluir"
-                            onClick={() => {
-                              if (window.confirm('Confirmar exclusão?'))
-                                deleteMut.mutate(item.id);
-                            }}
+                            onClick={() => handleDelete(item)}
                             className="p-1.5 text-red-400 hover:bg-red-50 rounded-md"
                           >
                             <Trash2 size={14} />
@@ -417,6 +465,22 @@ export default function Receivables() {
         defaultReservePct={defaultReservePct}
         onSave={save}
         isSaving={createMut.isPending || updateMut.isPending}
+      />
+
+      <ScopedDeleteModal
+        open={!!fixedDeleteTarget}
+        onClose={() => setFixedDeleteTarget(null)}
+        title="Excluir lançamento fixo"
+        loading={deleteMut.isPending}
+        description={
+          <>
+            <strong>{fixedDeleteTarget?.description}</strong> é um lançamento fixo. Deseja excluir
+            apenas esta referência, ou esta e todas as futuras? O histórico de referências já
+            recebidas nunca é alterado.
+          </>
+        }
+        onDeleteCurrent={() => runScopedDelete('CURRENT')}
+        onDeleteFuture={() => runScopedDelete('CURRENT_AND_FUTURE')}
       />
     </div>
   );
