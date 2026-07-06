@@ -139,6 +139,7 @@ async function seedSettings(
     annualRevenueLimit: 0,
     controlStartMonth: today.getMonth() + 1,
     controlStartYear: today.getFullYear(),
+    pjLimitControlEnabled: true,
     createdAt: now,
     updatedAt: now,
   });
