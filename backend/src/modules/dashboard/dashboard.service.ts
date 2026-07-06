@@ -11,7 +11,9 @@ import { Account } from '../accounts/accounts.types';
 import { SettingsRepository } from '../settings/settings.repository';
 import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
-import { InvoiceStatus } from '../credit-cards/credit-cards.types';
+import { CreditCardEntriesRepository } from '../credit-cards/credit-cards.repository';
+import { CreditCardInstallmentsRepository } from '../credit-cards/credit-cards.repository';
+import { InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CategoriesRepository } from '../categories/categories.repository';
 import {
   AlertSeverity,
@@ -36,6 +38,8 @@ export class DashboardService {
     private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly cashFlowService: CashFlowService,
     private readonly categoriesRepo: CategoriesRepository,
+    private readonly cardEntriesRepo: CreditCardEntriesRepository,
+    private readonly installmentsRepo: CreditCardInstallmentsRepository,
   ) {}
 
   async getDashboard(query: DashboardQuery): Promise<DashboardResponse> {
@@ -48,19 +52,31 @@ export class DashboardService {
     const cashFlow = await this.cashFlowService.getCashFlow({ month, year });
     const monthSummary = cashFlow.summary;
 
-    const [allReceivables, allTransactions, allAccounts, settings, allCards, allInvoices, allCategories] =
-      await Promise.all([
-        this.receivablesRepo.findAll(),
-        this.transactionsRepo.findAll(),
-        this.accountsRepo.findAll(),
-        this.settingsRepo.get(),
-        this.creditCardsRepo.findAll(),
-        this.invoicesRepo.findAll(),
-        this.categoriesRepo.findAll(),
-      ]);
+    const [
+      allReceivables,
+      allTransactions,
+      allAccounts,
+      settings,
+      allCards,
+      allInvoices,
+      allCategories,
+      allCardEntries,
+      allInstallments,
+    ] = await Promise.all([
+      this.receivablesRepo.findAll(),
+      this.transactionsRepo.findAll(),
+      this.accountsRepo.findAll(),
+      this.settingsRepo.get(),
+      this.creditCardsRepo.findAll(),
+      this.invoicesRepo.findAll(),
+      this.categoriesRepo.findAll(),
+      this.cardEntriesRepo.findAll(),
+      this.installmentsRepo.findAll(),
+    ]);
 
     const cardMap = new Map(allCards.map((c) => [c.id, c]));
     const categoryMap = new Map(allCategories.map((c) => [c.id, c]));
+    const cardEntryMap = new Map(allCardEntries.map((e) => [e.id, e]));
 
     // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────
     const mainAccount = settings?.mainAccountId
@@ -281,19 +297,25 @@ export class DashboardService {
       expensesByCategory.set(key, (expensesByCategory.get(key) ?? 0) + t.amount);
     }
 
-    const monthInvoicesTotal = allInvoices
-      .filter(
-        (inv) =>
-          inv.status === InvoiceStatus.PAID &&
-          inv.month === month &&
-          inv.year === year,
-      )
-      .reduce((s, inv) => s + inv.totalAmount, 0);
-    if (monthInvoicesTotal > 0) {
-      expensesByCategory.set(
-        'CREDIT_CARD',
-        (expensesByCategory.get('CREDIT_CARD') ?? 0) + monthInvoicesTotal,
-      );
+    // Lançamentos de fatura de cartão são atribuídos à categoria do lançamento
+    // original (expenseCategoryId), não a um bucket genérico de "cartão".
+    const paidInvoiceIds = new Set(
+      allInvoices
+        .filter(
+          (inv) =>
+            inv.status === InvoiceStatus.PAID &&
+            inv.month === month &&
+            inv.year === year,
+        )
+        .map((inv) => inv.id),
+    );
+    for (const inst of allInstallments) {
+      if (!inst.creditCardInvoiceId || !paidInvoiceIds.has(inst.creditCardInvoiceId))
+        continue;
+      if (inst.status === InstallmentStatus.CANCELED) continue;
+      const entry = cardEntryMap.get(inst.creditCardEntryId);
+      const key = entry?.expenseCategoryId ?? '';
+      expensesByCategory.set(key, (expensesByCategory.get(key) ?? 0) + inst.amount);
     }
 
     const toBreakdownItems = (
@@ -315,11 +337,9 @@ export class DashboardService {
       income: toBreakdownItems(incomeByCategory, (key) =>
         key === '' ? 'Sem categoria' : categoryMap.get(key)?.name ?? 'Sem categoria',
       ),
-      expenses: toBreakdownItems(expensesByCategory, (key) => {
-        if (key === 'CREDIT_CARD') return 'Fatura Cartão de Crédito';
-        if (key === '') return 'Sem categoria';
-        return categoryMap.get(key)?.name ?? 'Sem categoria';
-      }),
+      expenses: toBreakdownItems(expensesByCategory, (key) =>
+        key === '' ? 'Sem categoria' : categoryMap.get(key)?.name ?? 'Sem categoria',
+      ),
     };
 
     return {

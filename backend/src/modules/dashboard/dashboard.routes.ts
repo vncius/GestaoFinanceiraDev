@@ -6,6 +6,8 @@ import { AccountsFileRepository } from '../accounts/accounts.file-repository';
 import { SettingsFileRepository } from '../settings/settings.file-repository';
 import { CreditCardsFileRepository } from '../credit-cards/credit-cards.file-repository';
 import { CreditCardInvoicesFileRepository } from '../credit-cards/credit-cards.file-repository';
+import { CreditCardEntriesFileRepository } from '../credit-cards/credit-cards.file-repository';
+import { CreditCardInstallmentsFileRepository } from '../credit-cards/credit-cards.file-repository';
 import { CategoriesFileRepository } from '../categories/categories.file-repository';
 import { CashFlowService } from '../cash-flow/cash-flow.service';
 import { DashboardService } from './dashboard.service';
@@ -31,6 +33,8 @@ const controller = new DashboardController(
     new CreditCardInvoicesFileRepository(),
     cashFlowService,
     new CategoriesFileRepository(),
+    new CreditCardEntriesFileRepository(),
+    new CreditCardInstallmentsFileRepository(),
   ),
 );
 
