@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -11,6 +11,7 @@ import {
   CreditCard,
   ChevronUp,
   ChevronDown,
+  Filter,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import { CashFlowService, CreateTransactionPayload } from '../../services/cash-flow.service';
@@ -52,6 +53,8 @@ const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
 type ModalKind =
   | { type: 'receivable'; mode: 'create' | 'edit'; item?: Receivable }
   | { type: 'payment' | 'extra-expense'; mode: 'create' | 'edit'; item?: FinancialTransaction };
+
+type CashFlowTypeFilter = 'ALL' | 'INCOME' | 'EXPENSE';
 
 // ── Shared form helpers ───────────────────────────────────────────────────────
 
@@ -853,6 +856,168 @@ function TransactionModal({
   );
 }
 
+// ── Filters ───────────────────────────────────────────────────────────────────
+
+function TypeFilterToggle({
+  value,
+  onChange,
+}: {
+  value: CashFlowTypeFilter;
+  onChange: (v: CashFlowTypeFilter) => void;
+}) {
+  const options: { value: CashFlowTypeFilter; label: string }[] = [
+    { value: 'ALL', label: 'Todos' },
+    { value: 'INCOME', label: 'Entradas' },
+    { value: 'EXPENSE', label: 'Saídas' },
+  ];
+  return (
+    <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+      {options.map((opt, i) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''
+          } ${
+            value === opt.value
+              ? 'bg-blue-600 text-white'
+              : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CategoryFilterPopover({
+  categories,
+  typeFilter,
+  excludedIds,
+  onToggle,
+  onSelectAll,
+  onClearAll,
+}: {
+  categories: Category[];
+  typeFilter: CashFlowTypeFilter;
+  excludedIds: Set<string>;
+  onToggle: (id: string) => void;
+  onSelectAll: () => void;
+  onClearAll: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const incomeCategories = categories.filter((c) => c.type === 'INCOME');
+  const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
+  const selectedCount = categories.length - excludedIds.size;
+
+  const renderGroup = (label: string, group: Category[]) =>
+    group.length > 0 && (
+      <div className="mb-2 last:mb-0">
+        <p className="px-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
+          {label}
+        </p>
+        {group.map((c) => (
+          <label
+            key={c.id}
+            className="flex items-center gap-2 px-1 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              className="rounded"
+              checked={!excludedIds.has(c.id)}
+              onChange={() => onToggle(c.id)}
+            />
+            {c.name}
+          </label>
+        ))}
+      </div>
+    );
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+      >
+        <Filter size={13} />
+        Categorias
+        <span className="text-gray-400 dark:text-gray-500">
+          ({selectedCount}/{categories.length})
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1 w-64 max-h-80 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2">
+          <div className="flex items-center justify-between px-1 pb-1.5 mb-1 border-b border-gray-100 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={onSelectAll}
+              className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Selecionar todas
+            </button>
+            <button
+              type="button"
+              onClick={onClearAll}
+              className="text-[11px] text-gray-500 dark:text-gray-400 hover:underline"
+            >
+              Limpar
+            </button>
+          </div>
+          {(typeFilter === 'ALL' || typeFilter === 'INCOME') && renderGroup('Entradas', incomeCategories)}
+          {(typeFilter === 'ALL' || typeFilter === 'EXPENSE') && renderGroup('Saídas', expenseCategories)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CashFlowFilterBar({
+  typeFilter,
+  onTypeChange,
+  categories,
+  excludedCategoryIds,
+  onToggleCategory,
+  onSelectAllCategories,
+  onClearCategories,
+}: {
+  typeFilter: CashFlowTypeFilter;
+  onTypeChange: (v: CashFlowTypeFilter) => void;
+  categories: Category[];
+  excludedCategoryIds: Set<string>;
+  onToggleCategory: (id: string) => void;
+  onSelectAllCategories: () => void;
+  onClearCategories: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3">
+      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Filtros:</span>
+      <TypeFilterToggle value={typeFilter} onChange={onTypeChange} />
+      <CategoryFilterPopover
+        categories={categories}
+        typeFilter={typeFilter}
+        excludedIds={excludedCategoryIds}
+        onToggle={onToggleCategory}
+        onSelectAll={onSelectAllCategories}
+        onClearAll={onClearCategories}
+      />
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CashFlow() {
@@ -897,6 +1062,17 @@ export default function CashFlow() {
   });
 
   const cardNames = new Map(cards.map((c) => [c.id, c.name]));
+
+  // ── Filter state ─────────────────────────────────────────────────────────────
+  const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');
+  const [excludedCategoryIds, setExcludedCategoryIds] = useState<Set<string>>(new Set());
+  const toggleCategoryFilter = (id: string) =>
+    setExcludedCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // ── Modal state ─────────────────────────────────────────────────────────────
   const [modal, setModal] = useState<ModalKind | null>(null);
@@ -1059,6 +1235,19 @@ export default function CashFlow() {
   const { entries, payments, extraExpenses, creditCards, summary } = data;
   const defaultReservePct = settings?.defaultReservePercentage ?? 30;
 
+  const showIncome = typeFilter === 'ALL' || typeFilter === 'INCOME';
+  const showExpense = typeFilter === 'ALL' || typeFilter === 'EXPENSE';
+  const filteredEntries = showIncome
+    ? entries.filter((item) => !excludedCategoryIds.has(item.incomeCategoryId))
+    : [];
+  const filterTransactions = (items: FinancialTransaction[]) =>
+    showExpense
+      ? items.filter((item) => !item.categoryId || !excludedCategoryIds.has(item.categoryId))
+      : [];
+  const filteredPayments = filterTransactions(payments);
+  const filteredExtraExpenses = filterTransactions(extraExpenses);
+  const filteredCreditCards = showExpense ? creditCards : [];
+
   const txSaving =
     createPayment.isPending || updatePayment.isPending ||
     createExtra.isPending || updateExtra.isPending;
@@ -1068,9 +1257,20 @@ export default function CashFlow() {
   return (
     <div className="flex flex-col min-h-full">
       <div className="flex-1 space-y-4 pb-4">
+        {/* Filtros */}
+        <CashFlowFilterBar
+          typeFilter={typeFilter}
+          onTypeChange={setTypeFilter}
+          categories={categories}
+          excludedCategoryIds={excludedCategoryIds}
+          onToggleCategory={toggleCategoryFilter}
+          onSelectAllCategories={() => setExcludedCategoryIds(new Set())}
+          onClearCategories={() => setExcludedCategoryIds(new Set(categories.map((c) => c.id)))}
+        />
+
         {/* Entradas */}
         <EntriesGrid
-          items={entries}
+          items={filteredEntries}
           categories={categories}
           onAdd={() => setModal({ type: 'receivable', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'receivable', mode: 'edit', item })}
@@ -1083,7 +1283,7 @@ export default function CashFlow() {
         <TransactionGrid
           title="Pagamentos"
           icon={<TrendingDown size={16} className="text-red-500" />}
-          items={payments}
+          items={filteredPayments}
           categories={categories}
           onAdd={() => setModal({ type: 'payment', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'payment', mode: 'edit', item })}
@@ -1096,7 +1296,7 @@ export default function CashFlow() {
         <TransactionGrid
           title="Gastos Extraordinários"
           icon={<TrendingDown size={16} className="text-orange-500" />}
-          items={extraExpenses}
+          items={filteredExtraExpenses}
           categories={categories}
           onAdd={() => setModal({ type: 'extra-expense', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'extra-expense', mode: 'edit', item })}
@@ -1107,7 +1307,7 @@ export default function CashFlow() {
 
         {/* Cartões de Crédito */}
         <CreditCardsGrid
-          items={creditCards}
+          items={filteredCreditCards}
           cardNames={cardNames}
           onPay={(inv) => setInvoicePayTarget(inv)}
           onRevert={(inv) => revertInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}
