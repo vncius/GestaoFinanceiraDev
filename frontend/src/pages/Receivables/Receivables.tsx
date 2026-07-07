@@ -158,7 +158,7 @@ function ReceivableModal({
       size="lg"
       footer={
         <>
-          {isEdit && (item!.status === 'EXPECTED' || item!.status === 'CANCELED') && onDelete && (
+          {isEdit && onDelete && (
             <button
               type="button"
               title="Excluir"
@@ -305,6 +305,7 @@ export default function Receivables() {
   const { confirm } = useDialog();
 
   const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
+  const EFFECTED_DELETE_CONFIRM = 'Este item já está recebido. Ao excluir, o recebimento será revertido e os saldos recalculados. Deseja continuar?';
 
   async function save(payload: CreateReceivablePayload) {
     if (modal?.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
@@ -315,18 +316,18 @@ export default function Receivables() {
     }
   }
 
-  function handleDelete(item: Receivable) {
+  async function handleDelete(item: Receivable) {
     if (item.recurrence === 'FIXED') { setFixedDeleteTarget(item); return; }
-    confirmDelete(item.id);
+    const isReceived = item.status === 'RECEIVED';
+    if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : 'Confirmar exclusão?'))) return;
+    if (isReceived) await revertMut.mutateAsync(item.id);
+    deleteMut.mutate({ id: item.id });
   }
 
-  async function confirmDelete(id: string) {
-    if (await confirm('Confirmar exclusão?')) deleteMut.mutate({ id });
-  }
-
-  function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+  async function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
     if (!fixedDeleteTarget) return;
     const { month, year } = monthYearFromDate(fixedDeleteTarget.expectedPaymentDate);
+    if (fixedDeleteTarget.status === 'RECEIVED') await revertMut.mutateAsync(fixedDeleteTarget.id);
     deleteMut.mutate({ id: fixedDeleteTarget.id, scope, month, year });
   }
 
@@ -454,15 +455,13 @@ export default function Receivables() {
                               <Pencil size={14} />
                             </button>
                           )}
-                          {(item.status === 'EXPECTED' || item.status === 'CANCELED') && (
-                            <button
-                              title="Excluir"
-                              onClick={() => handleDelete(item)}
-                              className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
+                          <button
+                            title="Excluir"
+                            onClick={() => handleDelete(item)}
+                            className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
                     </td>

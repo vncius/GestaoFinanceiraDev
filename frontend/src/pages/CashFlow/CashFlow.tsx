@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -339,7 +340,7 @@ function EntriesGrid({
                         >
                           <Pencil size={14} />
                         </ActionBtn>
-                        {item.status === 'EXPECTED' && (
+                        {item.status !== 'CANCELED' && (
                           <ActionBtn
                             title="Excluir"
                             onClick={() => onDelete(item)}
@@ -443,7 +444,7 @@ function TransactionGrid({
                             <Pencil size={14} />
                           </ActionBtn>
                         )}
-                        {item.status === 'PENDING' && (
+                        {(item.status === 'PENDING' || item.status === 'PAID') && (
                           <ActionBtn
                             title="Excluir"
                             onClick={() => onDelete(item)}
@@ -472,11 +473,13 @@ function CreditCardsGrid({
   cardNames,
   onPay,
   onRevert,
+  onOpenInvoice,
 }: {
   items: CreditCardInvoice[];
   cardNames: Map<string, string>;
   onPay: (invoice: CreditCardInvoice) => void;
   onRevert: (invoice: CreditCardInvoice) => void;
+  onOpenInvoice: (invoice: CreditCardInvoice) => void;
 }) {
   if (items.length === 0) return null;
 
@@ -499,15 +502,19 @@ function CreditCardsGrid({
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
             {items.map((inv) => (
-              <tr key={inv.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
-                <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[100px] sm:max-w-none truncate">
+              <tr
+                key={inv.id}
+                className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
+                onClick={() => onOpenInvoice(inv)}
+              >
+                <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 max-w-[100px] sm:max-w-none truncate">
                   {cardNames.get(inv.creditCardId) ?? 'Cartão'}
                 </td>
                 <td className="px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400 whitespace-nowrap">
                   {formatCurrency(inv.totalAmount)}
                 </td>
                 <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">{formatDate(inv.dueDate)}</td>
-                <td className="px-2 sm:px-3 py-3">
+                <td className="px-2 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-0.5">
                     {(inv.status === 'OPEN' || inv.status === 'OVERDUE' || inv.status === 'PAID') && (
                       <PaidToggle
@@ -518,6 +525,15 @@ function CreditCardsGrid({
                         unpaidTitle={inv.status === 'OVERDUE' ? 'Fatura vencida — pagar' : 'Pagar fatura'}
                       />
                     )}
+                    <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ActionBtn
+                        title="Abrir fatura"
+                        onClick={() => onOpenInvoice(inv)}
+                        className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <Pencil size={14} />
+                      </ActionBtn>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -632,7 +648,7 @@ function ReceivableModal({
       title={isEdit ? 'Editar Recebimento' : 'Novo Recebimento'}
       footer={
         <>
-          {isEdit && item?.status === 'EXPECTED' && onDelete && (
+          {isEdit && item?.status !== 'CANCELED' && onDelete && (
             <button
               type="button"
               title="Excluir"
@@ -829,7 +845,7 @@ function TransactionModal({
       title={title}
       footer={
         <>
-          {isEdit && item?.status === 'PENDING' && onDelete && (
+          {isEdit && (item?.status === 'PENDING' || item?.status === 'PAID') && onDelete && (
             <button
               type="button"
               title="Excluir"
@@ -1072,6 +1088,7 @@ function CashFlowFilterBar({
 export default function CashFlow() {
   const { month, year } = useMonth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { confirm } = useDialog();
 
@@ -1225,6 +1242,7 @@ export default function CashFlow() {
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
   const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
+  const EFFECTED_DELETE_CONFIRM = 'Este item já está pago/recebido. Ao excluir, o pagamento será revertido e os saldos recalculados. Deseja continuar?';
 
   async function saveReceivable(payload: CreateReceivablePayload) {
     if (modal?.type !== 'receivable') return;
@@ -1254,21 +1272,27 @@ export default function CashFlow() {
     else if (modal?.type === 'extra-expense') payExtra.mutate(id);
   }
 
-  async function confirmDelete(fn: () => void) {
-    if (await confirm('Confirmar exclusão?')) fn();
+  function handleOpenInvoice(inv: CreditCardInvoice) {
+    navigate('/credit-cards', { state: { cardId: inv.creditCardId } });
   }
 
-  function handleDeleteReceivable(item: Receivable) {
-    if (item.recurrence === 'FIXED') setFixedDeleteTarget({ kind: 'receivable', item });
-    else confirmDelete(() => deleteReceivable.mutate({ id: item.id }));
+  async function handleDeleteReceivable(item: Receivable) {
+    if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind: 'receivable', item }); return; }
+    const isReceived = item.status === 'RECEIVED';
+    if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : 'Confirmar exclusão?'))) return;
+    if (isReceived) await revertReceivable.mutateAsync(item.id);
+    deleteReceivable.mutate({ id: item.id });
   }
 
-  function handleDeleteTransaction(kind: 'payment' | 'extra-expense', item: FinancialTransaction) {
-    if (item.recurrence === 'FIXED') setFixedDeleteTarget({ kind, item });
-    else confirmDelete(() => (kind === 'payment' ? deletePayment : deleteExtra).mutate({ id: item.id }));
+  async function handleDeleteTransaction(kind: 'payment' | 'extra-expense', item: FinancialTransaction) {
+    if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind, item }); return; }
+    const isPaid = item.status === 'PAID';
+    if (!(await confirm(isPaid ? EFFECTED_DELETE_CONFIRM : 'Confirmar exclusão?'))) return;
+    if (isPaid) await (kind === 'payment' ? revertPayment : revertExtra).mutateAsync(item.id);
+    (kind === 'payment' ? deletePayment : deleteExtra).mutate({ id: item.id });
   }
 
-  function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+  async function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
     if (!fixedDeleteTarget) return;
     const { month: m, year: y } = monthYearFromDate(
       fixedDeleteTarget.kind === 'receivable'
@@ -1276,10 +1300,13 @@ export default function CashFlow() {
         : fixedDeleteTarget.item.expectedDate,
     );
     if (fixedDeleteTarget.kind === 'receivable') {
+      if (fixedDeleteTarget.item.status === 'RECEIVED') await revertReceivable.mutateAsync(fixedDeleteTarget.item.id);
       deleteReceivable.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
     } else if (fixedDeleteTarget.kind === 'payment') {
+      if (fixedDeleteTarget.item.status === 'PAID') await revertPayment.mutateAsync(fixedDeleteTarget.item.id);
       deletePayment.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
     } else {
+      if (fixedDeleteTarget.item.status === 'PAID') await revertExtra.mutateAsync(fixedDeleteTarget.item.id);
       deleteExtra.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
     }
   }
@@ -1365,6 +1392,7 @@ export default function CashFlow() {
           cardNames={cardNames}
           onPay={(inv) => setInvoicePayTarget(inv)}
           onRevert={(inv) => revertInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}
+          onOpenInvoice={handleOpenInvoice}
         />
       </div>
 

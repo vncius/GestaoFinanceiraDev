@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -533,7 +534,13 @@ function CardDetail({
 
 export default function CreditCards() {
   const { month, year } = useMonth();
+  const location = useLocation();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cardId = (location.state as { cardId?: string } | null)?.cardId;
+    if (cardId) setSelectedCardId(cardId);
+  }, [location.state]);
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['creditCards', month, year],
