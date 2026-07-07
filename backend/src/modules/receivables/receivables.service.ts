@@ -93,6 +93,17 @@ export class ReceivablesService {
       throw new AppError('Recebimentos cancelados não podem ser editados.', 400);
     }
 
+    let recurrencePatch: Partial<Receivable> = {};
+    if (input.recurrence !== undefined && input.recurrence !== existing.recurrence) {
+      if (existing.recurrence === RecurrenceType.FIXED) {
+        throw new AppError(
+          'Não é possível reverter um lançamento fixo para único. Use a exclusão com escopo para encerrar a recorrência.',
+          400,
+        );
+      }
+      recurrencePatch = { recurringGroupId: id, recurringActive: true };
+    }
+
     const settings = await this.settingsRepo.get();
     const grossAmount = input.grossAmount ?? existing.grossAmount;
     const separateReserve =
@@ -108,6 +119,7 @@ export class ReceivablesService {
 
     const updated = await this.receivablesRepo.update(id, {
       ...input,
+      ...recurrencePatch,
       reservePercentageApplied: reservePercentage,
       reserveAmount,
       netAmount,

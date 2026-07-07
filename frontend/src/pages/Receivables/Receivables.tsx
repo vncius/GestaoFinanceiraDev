@@ -200,7 +200,16 @@ function ReceivableModal({
             <input className={INPUT} value={form.customerName} onChange={set('customerName')} placeholder="Nome do cliente" />
           </Field>
         </div>
-        {!isEdit && (
+        {isEdit && item?.recurrence === 'FIXED' ? (
+          <Field label="Tipo de lançamento">
+            <div className={`${INPUT} bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400`}>
+              {RECURRENCE_LABELS.FIXED}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Para encerrar a recorrência, exclua "esta e as futuras".
+            </p>
+          </Field>
+        ) : (
           <Field label="Tipo de lançamento">
             <select
               className={INPUT}

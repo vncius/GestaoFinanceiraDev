@@ -332,9 +332,20 @@ export class CashFlowService {
       throw new AppError('Lançamentos revertidos não podem ser editados.', 400);
     }
 
+    let recurrencePatch: Partial<FinancialTransaction> = {};
+    if (input.recurrence !== undefined && input.recurrence !== tx.recurrence) {
+      if (tx.recurrence === RecurrenceType.FIXED) {
+        throw new AppError(
+          'Não é possível reverter um lançamento fixo para único. Use a exclusão com escopo para encerrar a recorrência.',
+          400,
+        );
+      }
+      recurrencePatch = { recurringGroupId: id, recurringActive: true };
+    }
+
     // Para transações já pagas, a própria transação é o impacto financeiro.
     // Atualizar seus campos (amount, sourceAccountId, etc.) recalcula saldos automaticamente.
-    return this.transactionsRepo.update(id, { ...input, updatedAt: nowISO() });
+    return this.transactionsRepo.update(id, { ...input, ...recurrencePatch, updatedAt: nowISO() });
   }
 
   private async deleteTransactionChecked(
