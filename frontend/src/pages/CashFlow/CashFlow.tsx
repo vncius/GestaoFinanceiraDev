@@ -86,9 +86,9 @@ function SummaryCell({
 }) {
   return (
     <div
-      className={`flex flex-col items-center shrink-0 px-4 min-w-[100px] ${border ? 'border-r border-gray-100 dark:border-gray-700' : ''}`}
+      className={`flex flex-col items-center justify-center text-center shrink-0 px-2 w-[150px] ${border ? 'border-r border-gray-100 dark:border-gray-700' : ''}`}
     >
-      <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">{label}</span>
+      <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{label}</span>
       <span className={`text-xs whitespace-nowrap ${bold ? 'font-bold' : 'font-semibold'} ${color}`}>
         {formatCurrency(value)}
       </span>
@@ -96,9 +96,15 @@ function SummaryCell({
   );
 }
 
-function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
-  const [expanded, setExpanded] = useState(false);
-
+function SummaryBar({
+  summary: s,
+  expanded,
+  onToggleExpanded,
+}: {
+  summary: CashFlowSummary;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+}) {
   const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
   const totalExpected = s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
 
@@ -116,7 +122,7 @@ function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
           <SummaryCell label="Saldo Final" value={s.realizedBalance} color={saldoColor} bold border={false} />
         </div>
         <button
-          onClick={() => setExpanded((e) => !e)}
+          onClick={onToggleExpanded}
           className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           title={expanded ? 'Recolher' : 'Ver previstos'}
         >
@@ -1067,6 +1073,11 @@ export default function CashFlow() {
 
   const cardNames = new Map(cards.map((c) => [c.id, c.name]));
 
+  // ── Summary bar state ────────────────────────────────────────────────────────
+  // Vive no componente da página (que não desmonta ao trocar de mês) para que
+  // o estado expandido/recolhido sobreviva à troca de referência.
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');
   const [excludedCategoryIds, setExcludedCategoryIds] = useState<Set<string>>(new Set());
@@ -1319,7 +1330,11 @@ export default function CashFlow() {
       </div>
 
       {/* Summary bar */}
-      <SummaryBar summary={summary} />
+      <SummaryBar
+        summary={summary}
+        expanded={summaryExpanded}
+        onToggleExpanded={() => setSummaryExpanded((e) => !e)}
+      />
 
       {/* Receivable Modal */}
       <ReceivableModal
