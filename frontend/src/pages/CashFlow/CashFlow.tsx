@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
-  RotateCcw,
+  ThumbsUp,
+  ThumbsDown,
   Pencil,
   Trash2,
   Plus,
@@ -32,7 +33,6 @@ import {
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
-import { Badge, receivableStatusBadge, transactionStatusBadge, invoiceStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -217,6 +217,36 @@ function ActionBtn({
   );
 }
 
+function PaidToggle({
+  paid,
+  urgent = false,
+  onToggle,
+  paidTitle,
+  unpaidTitle,
+}: {
+  paid: boolean;
+  urgent?: boolean;
+  onToggle: () => void;
+  paidTitle: string;
+  unpaidTitle: string;
+}) {
+  return (
+    <ActionBtn
+      title={paid ? paidTitle : unpaidTitle}
+      onClick={onToggle}
+      className={
+        paid
+          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
+          : urgent
+          ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
+          : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+      }
+    >
+      {paid ? <ThumbsUp size={16} /> : <ThumbsDown size={16} />}
+    </ActionBtn>
+  );
+}
+
 // ── Entries (Receivables) ─────────────────────────────────────────────────────
 
 function EntriesGrid({
@@ -263,17 +293,17 @@ function EntriesGrid({
                 <th className="hidden lg:table-cell text-right px-3 py-2.5 font-medium">Reserva</th>
                 <th className="text-right px-2 sm:px-3 py-2.5 font-medium">Valor líquido</th>
                 <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Data prev.</th>
-                <th className="text-left px-2 sm:px-3 py-2.5 font-medium">Status</th>
                 <th className="px-1 sm:px-3 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
-                  <td
-                    className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 max-w-[90px] sm:max-w-none truncate"
-                    onClick={() => onEdit(item)}
-                  >
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
+                  onClick={() => onEdit(item)}
+                >
+                  <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 max-w-[90px] sm:max-w-none truncate">
                     {item.description}
                   </td>
                   <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
@@ -291,43 +321,34 @@ function EntriesGrid({
                   <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                     {formatDate(item.expectedPaymentDate)}
                   </td>
-                  <td className="px-2 sm:px-3 py-3">{receivableStatusBadge(item.status)}</td>
-                  <td className="px-1 sm:px-3 py-3">
-                    <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      {item.status === 'EXPECTED' && (
-                        <ActionBtn
-                          title="Marcar como recebido"
-                          onClick={() => onReceive(item.id)}
-                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
-                        >
-                          <CheckCircle2 size={16} />
-                        </ActionBtn>
+                  <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-0 sm:gap-0.5">
+                      {item.status !== 'CANCELED' && (
+                        <PaidToggle
+                          paid={item.status === 'RECEIVED'}
+                          onToggle={() => (item.status === 'RECEIVED' ? onRevert(item.id) : onReceive(item.id))}
+                          paidTitle="Reverter recebimento"
+                          unpaidTitle="Marcar como recebido"
+                        />
                       )}
-                      {item.status === 'RECEIVED' && (
+                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <ActionBtn
-                          title="Reverter recebimento"
-                          onClick={() => onRevert(item.id)}
-                          className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                          title="Editar"
+                          onClick={() => onEdit(item)}
+                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                          <RotateCcw size={15} />
+                          <Pencil size={14} />
                         </ActionBtn>
-                      )}
-                      <ActionBtn
-                        title="Editar"
-                        onClick={() => onEdit(item)}
-                        className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <Pencil size={14} />
-                      </ActionBtn>
-                      {item.status === 'EXPECTED' && (
-                        <ActionBtn
-                          title="Excluir"
-                          onClick={() => onDelete(item)}
-                          className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                        >
-                          <Trash2 size={14} />
-                        </ActionBtn>
-                      )}
+                        {item.status === 'EXPECTED' && (
+                          <ActionBtn
+                            title="Excluir"
+                            onClick={() => onDelete(item)}
+                            className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                          >
+                            <Trash2 size={14} />
+                          </ActionBtn>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -380,17 +401,17 @@ function TransactionGrid({
                 <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
                 <th className="text-right px-3 py-2.5 font-medium">Valor</th>
                 <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Data lanç.</th>
-                <th className="text-left px-3 py-2.5 font-medium">Status</th>
                 <th className="px-2 sm:px-3 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
-                  <td
-                    className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 max-w-[120px] sm:max-w-none truncate"
-                    onClick={() => onEdit(item)}
-                  >
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
+                  onClick={() => onEdit(item)}
+                >
+                  <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 max-w-[120px] sm:max-w-none truncate">
                     {item.description}
                   </td>
                   <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
@@ -402,45 +423,36 @@ function TransactionGrid({
                   <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                     {formatDate(item.expectedDate)}
                   </td>
-                  <td className="px-3 py-3">{transactionStatusBadge(item.status)}</td>
-                  <td className="px-2 sm:px-3 py-3">
-                    <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      {item.status === 'PENDING' && (
-                        <ActionBtn
-                          title="Marcar como pago"
-                          onClick={() => onPay(item.id)}
-                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
-                        >
-                          <CheckCircle2 size={16} />
-                        </ActionBtn>
+                  <td className="px-2 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-0.5">
+                      {(item.status === 'PENDING' || item.status === 'PAID') && (
+                        <PaidToggle
+                          paid={item.status === 'PAID'}
+                          onToggle={() => (item.status === 'PAID' ? onRevert(item.id) : onPay(item.id))}
+                          paidTitle="Reverter pagamento"
+                          unpaidTitle="Marcar como pago"
+                        />
                       )}
-                      {item.status === 'PAID' && (
-                        <ActionBtn
-                          title="Reverter pagamento"
-                          onClick={() => onRevert(item.id)}
-                          className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                        >
-                          <RotateCcw size={15} />
-                        </ActionBtn>
-                      )}
-                      {item.status !== 'CANCELED' && item.status !== 'REVERSED' && (
-                        <ActionBtn
-                          title="Editar"
-                          onClick={() => onEdit(item)}
-                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <Pencil size={14} />
-                        </ActionBtn>
-                      )}
-                      {item.status === 'PENDING' && (
-                        <ActionBtn
-                          title="Excluir"
-                          onClick={() => onDelete(item)}
-                          className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                        >
-                          <Trash2 size={14} />
-                        </ActionBtn>
-                      )}
+                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {item.status !== 'CANCELED' && item.status !== 'REVERSED' && (
+                          <ActionBtn
+                            title="Editar"
+                            onClick={() => onEdit(item)}
+                            className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Pencil size={14} />
+                          </ActionBtn>
+                        )}
+                        {item.status === 'PENDING' && (
+                          <ActionBtn
+                            title="Excluir"
+                            onClick={() => onDelete(item)}
+                            className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                          >
+                            <Trash2 size={14} />
+                          </ActionBtn>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -482,7 +494,6 @@ function CreditCardsGrid({
               <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Cartão</th>
               <th className="text-right px-3 py-2.5 font-medium">Valor fatura</th>
               <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Vencimento</th>
-              <th className="text-left px-3 py-2.5 font-medium">Status</th>
               <th className="px-2 sm:px-3 py-2.5" />
             </tr>
           </thead>
@@ -496,26 +507,16 @@ function CreditCardsGrid({
                   {formatCurrency(inv.totalAmount)}
                 </td>
                 <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">{formatDate(inv.dueDate)}</td>
-                <td className="px-3 py-3">{invoiceStatusBadge(inv.status)}</td>
                 <td className="px-2 sm:px-3 py-3">
-                  <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    {(inv.status === 'OPEN' || inv.status === 'OVERDUE') && (
-                      <ActionBtn
-                        title="Pagar fatura"
-                        onClick={() => onPay(inv)}
-                        className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
-                      >
-                        <CheckCircle2 size={16} />
-                      </ActionBtn>
-                    )}
-                    {inv.status === 'PAID' && (
-                      <ActionBtn
-                        title="Reverter pagamento"
-                        onClick={() => onRevert(inv)}
-                        className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                      >
-                        <RotateCcw size={15} />
-                      </ActionBtn>
+                  <div className="flex items-center gap-0.5">
+                    {(inv.status === 'OPEN' || inv.status === 'OVERDUE' || inv.status === 'PAID') && (
+                      <PaidToggle
+                        paid={inv.status === 'PAID'}
+                        urgent={inv.status === 'OVERDUE'}
+                        onToggle={() => (inv.status === 'PAID' ? onRevert(inv) : onPay(inv))}
+                        paidTitle="Reverter pagamento"
+                        unpaidTitle={inv.status === 'OVERDUE' ? 'Fatura vencida — pagar' : 'Pagar fatura'}
+                      />
                     )}
                   </div>
                 </td>
@@ -553,6 +554,7 @@ function ReceivableModal({
   onSave,
   isSaving,
   onReceive,
+  onDelete,
 }: {
   open: boolean;
   onClose: () => void;
@@ -565,6 +567,7 @@ function ReceivableModal({
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
   onReceive?: (id: string) => void;
+  onDelete?: (item: Receivable) => void;
 }) {
   const isEdit = !!item;
   const incomeCategories = categories.filter((c) => c.type === 'INCOME');
@@ -629,6 +632,16 @@ function ReceivableModal({
       title={isEdit ? 'Editar Recebimento' : 'Novo Recebimento'}
       footer={
         <>
+          {isEdit && item?.status === 'EXPECTED' && onDelete && (
+            <button
+              type="button"
+              title="Excluir"
+              onClick={() => { onClose(); onDelete(item!); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
           {isEdit && item?.status === 'EXPECTED' && onReceive && (
             <Button
@@ -745,6 +758,7 @@ function TransactionModal({
   onSave,
   isSaving,
   onPay,
+  onDelete,
 }: {
   open: boolean;
   onClose: () => void;
@@ -758,6 +772,7 @@ function TransactionModal({
   onSave: (data: CreateTransactionPayload) => void;
   isSaving: boolean;
   onPay?: (id: string) => void;
+  onDelete?: (item: FinancialTransaction) => void;
 }) {
   const isEdit = !!item;
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
@@ -814,6 +829,16 @@ function TransactionModal({
       title={title}
       footer={
         <>
+          {isEdit && item?.status === 'PENDING' && onDelete && (
+            <button
+              type="button"
+              title="Excluir"
+              onClick={() => { onClose(); onDelete(item!); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
           {isEdit && item?.status === 'PENDING' && onPay && (
             <Button
@@ -1363,6 +1388,7 @@ export default function CashFlow() {
         onSave={saveReceivable}
         isSaving={rxSaving}
         onReceive={(id) => { receiveItem.mutate(id); }}
+        onDelete={handleDeleteReceivable}
       />
 
       {/* Transaction Modal */}
@@ -1380,6 +1406,7 @@ export default function CashFlow() {
           onSave={saveTransaction}
           isSaving={txSaving}
           onPay={handleTxPay}
+          onDelete={(item) => handleDeleteTransaction(modal.type, item)}
         />
       )}
 

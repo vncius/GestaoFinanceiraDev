@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, RotateCcw, Pencil, Trash2, Plus } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Pencil, Trash2, Plus } from 'lucide-react';
 import {
   ReceivablesService,
   CreateReceivablePayload,
@@ -11,7 +11,6 @@ import { Category, Receivable, RecurrenceType } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
-import { receivableStatusBadge } from '../../components/ui/Badge';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
@@ -49,6 +48,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function PaidToggle({ paid, onToggle }: { paid: boolean; onToggle: () => void }) {
+  return (
+    <button
+      title={paid ? 'Reverter recebimento' : 'Marcar como recebido'}
+      onClick={onToggle}
+      className={`p-1 sm:p-1.5 rounded-md transition-colors ${
+        paid
+          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
+          : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+      }`}
+    >
+      {paid ? <ThumbsUp size={16} /> : <ThumbsDown size={16} />}
+    </button>
+  );
+}
+
 // ── Receivable Modal ──────────────────────────────────────────────────────────
 
 interface FormState {
@@ -71,6 +86,7 @@ function ReceivableModal({
   defaultReservePct,
   onSave,
   isSaving,
+  onDelete,
 }: {
   open: boolean;
   onClose: () => void;
@@ -79,6 +95,7 @@ function ReceivableModal({
   defaultReservePct: number;
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
+  onDelete?: (item: Receivable) => void;
 }) {
   const isEdit = !!item;
   const incomeCats = categories.filter((c) => c.type === 'INCOME' && c.active);
@@ -141,6 +158,16 @@ function ReceivableModal({
       size="lg"
       footer={
         <>
+          {isEdit && (item!.status === 'EXPECTED' || item!.status === 'CANCELED') && onDelete && (
+            <button
+              type="button"
+              title="Excluir"
+              onClick={() => { onClose(); onDelete(item!); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
         </>
@@ -375,7 +402,6 @@ export default function Receivables() {
                   <th className="text-right px-2 sm:px-3 py-3 font-medium">Líquido</th>
                   <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Data prev.</th>
                   <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Recebido em</th>
-                  <th className="text-left px-2 sm:px-3 py-3 font-medium">Status</th>
                   <th className="px-1 sm:px-3 py-3" />
                 </tr>
               </thead>
@@ -408,45 +434,36 @@ export default function Receivables() {
                     <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                       {item.actualPaymentDate ? formatDate(item.actualPaymentDate) : '—'}
                     </td>
-                    <td className="px-2 sm:px-3 py-3">{receivableStatusBadge(item.status)}</td>
                     <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        {item.status === 'EXPECTED' && (
-                          <button
-                            title="Marcar como recebido"
-                            onClick={() => receiveMut.mutate(item.id)}
-                            className="p-1 sm:p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-md"
-                          >
-                            <CheckCircle2 size={16} />
-                          </button>
-                        )}
-                        {item.status === 'RECEIVED' && (
-                          <button
-                            title="Reverter recebimento"
-                            onClick={() => revertMut.mutate(item.id)}
-                            className="p-1 sm:p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-md"
-                          >
-                            <RotateCcw size={15} />
-                          </button>
-                        )}
+                      <div className="flex items-center gap-0 sm:gap-0.5">
                         {item.status !== 'CANCELED' && (
-                          <button
-                            title="Editar"
-                            onClick={() => setModal({ item })}
-                            className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                          >
-                            <Pencil size={14} />
-                          </button>
+                          <PaidToggle
+                            paid={item.status === 'RECEIVED'}
+                            onToggle={() =>
+                              item.status === 'RECEIVED' ? revertMut.mutate(item.id) : receiveMut.mutate(item.id)
+                            }
+                          />
                         )}
-                        {(item.status === 'EXPECTED' || item.status === 'CANCELED') && (
-                          <button
-                            title="Excluir"
-                            onClick={() => handleDelete(item)}
-                            className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+                        <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {item.status !== 'CANCELED' && (
+                            <button
+                              title="Editar"
+                              onClick={() => setModal({ item })}
+                              className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          )}
+                          {(item.status === 'EXPECTED' || item.status === 'CANCELED') && (
+                            <button
+                              title="Excluir"
+                              onClick={() => handleDelete(item)}
+                              className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -465,6 +482,7 @@ export default function Receivables() {
         defaultReservePct={defaultReservePct}
         onSave={save}
         isSaving={createMut.isPending || updateMut.isPending}
+        onDelete={handleDelete}
       />
 
       <ScopedDeleteModal
