@@ -105,15 +105,20 @@ export class CashFlowService {
     // O saldo inicial da projeção só precisa ser recalculado com um corte
     // diferente (início do mês atual) quando a referência é futura; nos
     // demais casos reaproveita o mesmo saldo do mês selecionado (initialBalance).
+    // Para a reserva, o corte em rangeStart já coincide com o início do mês
+    // selecionado quando a referência não é futura, então é sempre calculado
+    // diretamente (mesma lógica de acúmulo futuro dos demais campos previstos).
     const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
-    const [mainInitial, reserveEndBalance, futureRangeInitial] = await Promise.all([
-      mainId ? this.calcAccountBalance(mainId, allTransactions, monthStart) : 0,
-      reserveId ? this.calcAccountBalance(reserveId, allTransactions, monthEnd) : 0,
-      isFutureSelection && mainId ? this.calcAccountBalance(mainId, allTransactions, rangeStart) : null,
-    ]);
+    const [mainInitial, reserveEndBalance, futureRangeInitial, reserveProjectedInitialBalance] =
+      await Promise.all([
+        mainId ? this.calcAccountBalance(mainId, allTransactions, monthStart) : 0,
+        reserveId ? this.calcAccountBalance(reserveId, allTransactions, monthEnd) : 0,
+        isFutureSelection && mainId ? this.calcAccountBalance(mainId, allTransactions, rangeStart) : null,
+        reserveId ? this.calcAccountBalance(reserveId, allTransactions, rangeStart) : 0,
+      ]);
 
     const initialBalance = mainInitial;
-    const projectionInitialBalance = futureRangeInitial ?? initialBalance;
+    const projectedInitialBalance = futureRangeInitial ?? initialBalance;
 
     // Transações da conta reserva não afetam os totais da conta principal
     const mainEntries = entries.filter(
@@ -184,6 +189,7 @@ export class CashFlowService {
       creditCards: monthInvoices,
       summary: {
         initialBalance,
+        projectedInitialBalance,
         expectedIncome,
         receivedIncome,
         expectedPayments,
@@ -193,7 +199,7 @@ export class CashFlowService {
         creditCardInvoices: creditCardInvoicesTotal,
         paidCreditCardInvoices: paidCreditCards,
         projectedBalance:
-          projectionInitialBalance +
+          projectedInitialBalance +
           expectedIncome -
           expectedPayments -
           expectedExtraExpenses -
@@ -204,6 +210,7 @@ export class CashFlowService {
           paidPayments -
           paidExtraExpenses -
           paidCreditCards,
+        reserveProjectedInitialBalance,
         reserveInflow,
         reserveOutflow,
         reserveEndBalance,

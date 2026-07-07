@@ -4,6 +4,7 @@ import { CreditCardInvoice } from '../credit-cards/credit-cards.types';
 
 export interface CashFlowSummary {
   initialBalance: number;
+  projectedInitialBalance: number;
   expectedIncome: number;
   receivedIncome: number;
   expectedPayments: number;
@@ -14,6 +15,7 @@ export interface CashFlowSummary {
   paidCreditCardInvoices: number;
   projectedBalance: number;
   realizedBalance: number;
+  reserveProjectedInitialBalance: number;
   reserveInflow: number;
   reserveOutflow: number;
   reserveEndBalance: number;

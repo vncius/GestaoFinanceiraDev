@@ -104,14 +104,16 @@ function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
 
   const saldoColor = s.realizedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
   const prevSaldoColor = s.projectedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
+  const initialColor = 'text-gray-600 dark:text-gray-300';
 
   return (
     <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
       <div className="flex items-center px-4 py-2">
         <div className="flex items-center flex-1">
+          <SummaryCell label="Inicial" value={s.initialBalance} color={initialColor} />
           <SummaryCell label="Entradas" value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
           <SummaryCell label="Saídas" value={totalPaid} color="text-red-500 dark:text-red-400" />
-          <SummaryCell label="Saldo" value={s.realizedBalance} color={saldoColor} bold border={false} />
+          <SummaryCell label="Saldo Final" value={s.realizedBalance} color={saldoColor} bold border={false} />
         </div>
         <button
           onClick={() => setExpanded((e) => !e)}
@@ -126,6 +128,7 @@ function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
         <>
           <div className="flex items-center px-4 py-2">
             <div className="flex items-center flex-1">
+              <SummaryCell label="Saldo Inicial Previsto" value={s.projectedInitialBalance} color={initialColor} />
               <SummaryCell label="Prev. Entradas" value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
               <SummaryCell label="Prev. Saídas" value={totalExpected} color="text-red-500 dark:text-red-400" />
               <SummaryCell label="Prev. Saldo" value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
@@ -133,6 +136,7 @@ function SummaryBar({ summary: s }: { summary: CashFlowSummary }) {
           </div>
           <div className="flex items-center px-4 py-2 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center flex-1">
+              <SummaryCell label="Previsão Inicial Reserva" value={s.reserveProjectedInitialBalance} color={initialColor} />
               <SummaryCell label="Entradas Reserva" value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
               <SummaryCell label="Saídas Reserva" value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
               <SummaryCell label="Saldo Reserva" value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
