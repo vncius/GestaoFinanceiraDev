@@ -248,6 +248,16 @@ function PaidToggle({
   );
 }
 
+// Shared column widths so Categoria/Valor/Data/Ações line up across the
+// Entradas/Pagamentos/Gastos Extraordinários/Cartões grids, which each have a
+// different set of columns. Grids missing a column render an empty cell with
+// the same width/breakpoint instead of skipping it, so later columns stay aligned.
+const COL_CATEGORIA = 'hidden md:table-cell w-32';
+const COL_VALOR_SECUNDARIO = 'hidden lg:table-cell w-24'; // Valor Bruto / Reserva
+const COL_VALOR = 'w-28';
+const COL_DATA = 'hidden md:table-cell w-28';
+const COL_ACOES = 'w-24';
+
 // ── Entries (Receivables) ─────────────────────────────────────────────────────
 
 function EntriesGrid({
@@ -285,16 +295,16 @@ function EntriesGrid({
         />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
-                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
-                <th className="hidden lg:table-cell text-right px-3 py-2.5 font-medium">Valor Bruto</th>
-                <th className="hidden lg:table-cell text-right px-3 py-2.5 font-medium">Reserva</th>
-                <th className="text-right px-2 sm:px-3 py-2.5 font-medium">Valor líquido</th>
-                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Data prev.</th>
-                <th className="px-1 sm:px-3 py-2.5" />
+                <th className={`${COL_CATEGORIA} text-left px-3 py-2.5 font-medium`}>Categoria</th>
+                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>Valor Bruto</th>
+                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>Reserva</th>
+                <th className={`${COL_VALOR} text-right px-2 sm:px-3 py-2.5 font-medium`}>Valor líquido</th>
+                <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>Data prev.</th>
+                <th className={`${COL_ACOES} px-1 sm:px-3 py-2.5`} />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -304,26 +314,26 @@ function EntriesGrid({
                   className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
                   onClick={() => onEdit(item)}
                 >
-                  <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 max-w-[90px] sm:max-w-none truncate">
+                  <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                     {item.description}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                  <td className={`${COL_CATEGORIA} px-3 py-3 text-gray-500 dark:text-gray-400 text-xs truncate`}>
                     {catMap.get(item.incomeCategoryId) ?? '—'}
                   </td>
-                  <td className="hidden lg:table-cell px-3 py-3 text-right text-gray-600 dark:text-gray-300">
+                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3 text-right text-gray-600 dark:text-gray-300`}>
                     {formatCurrency(item.grossAmount)}
                   </td>
-                  <td className="hidden lg:table-cell px-3 py-3 text-right text-amber-600 dark:text-amber-400 text-xs">
+                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3 text-right text-amber-600 dark:text-amber-400 text-xs`}>
                     {item.reserveAmount > 0 ? formatCurrency(item.reserveAmount) : '—'}
                   </td>
-                  <td className="px-2 sm:px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
+                  <td className={`${COL_VALOR} px-2 sm:px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400 whitespace-nowrap`}>
                     {formatCurrency(item.netAmount)}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
+                  <td className={`${COL_DATA} px-3 py-3 text-gray-500 dark:text-gray-400`}>
                     {formatDate(item.expectedPaymentDate)}
                   </td>
-                  <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-0 sm:gap-0.5">
+                  <td className={`${COL_ACOES} px-1 sm:px-3 py-3`} onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-0 sm:gap-0.5">
                       {item.status !== 'CANCELED' && (
                         <PaidToggle
                           paid={item.status === 'RECEIVED'}
@@ -395,14 +405,16 @@ function TransactionGrid({
         <EmptyState title="Nenhum registro neste mês" />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
-                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
-                <th className="text-right px-3 py-2.5 font-medium">Valor</th>
-                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Data lanç.</th>
-                <th className="px-2 sm:px-3 py-2.5" />
+                <th className={`${COL_CATEGORIA} text-left px-3 py-2.5 font-medium`}>Categoria</th>
+                <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
+                <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
+                <th className={`${COL_VALOR} text-right px-3 py-2.5 font-medium`}>Valor</th>
+                <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>Data de vencimento</th>
+                <th className={`${COL_ACOES} px-2 sm:px-3 py-2.5`} />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -412,20 +424,22 @@ function TransactionGrid({
                   className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
                   onClick={() => onEdit(item)}
                 >
-                  <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 max-w-[120px] sm:max-w-none truncate">
+                  <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                     {item.description}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                  <td className={`${COL_CATEGORIA} px-3 py-3 text-gray-500 dark:text-gray-400 text-xs truncate`}>
                     {catMap.get(item.categoryId ?? '') ?? '—'}
                   </td>
-                  <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
+                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
+                  <td className={`${COL_VALOR} px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap`}>
                     {formatCurrency(item.amount)}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
+                  <td className={`${COL_DATA} px-3 py-3 text-gray-500 dark:text-gray-400`}>
                     {formatDate(item.expectedDate)}
                   </td>
-                  <td className="px-2 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-0.5">
+                  <td className={`${COL_ACOES} px-2 sm:px-3 py-3`} onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-0.5">
                       {(item.status === 'PENDING' || item.status === 'PAID') && (
                         <PaidToggle
                           paid={item.status === 'PAID'}
@@ -491,13 +505,16 @@ function CreditCardsGrid({
         <span className="text-xs text-gray-400 dark:text-gray-500">({items.length})</span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
           <thead>
             <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Cartão</th>
-              <th className="text-right px-3 py-2.5 font-medium">Valor fatura</th>
-              <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Vencimento</th>
-              <th className="px-2 sm:px-3 py-2.5" />
+              <th className={`${COL_CATEGORIA} px-3 py-2.5`} />
+              <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
+              <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
+              <th className={`${COL_VALOR} text-right px-3 py-2.5 font-medium`}>Valor fatura</th>
+              <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>Vencimento</th>
+              <th className={`${COL_ACOES} px-2 sm:px-3 py-2.5`} />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -507,15 +524,18 @@ function CreditCardsGrid({
                 className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
                 onClick={() => onOpenInvoice(inv)}
               >
-                <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 max-w-[100px] sm:max-w-none truncate">
+                <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                   {cardNames.get(inv.creditCardId) ?? 'Cartão'}
                 </td>
-                <td className="px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400 whitespace-nowrap">
+                <td className={`${COL_CATEGORIA} px-3 py-3`} />
+                <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
+                <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
+                <td className={`${COL_VALOR} px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400 whitespace-nowrap`}>
                   {formatCurrency(inv.totalAmount)}
                 </td>
-                <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">{formatDate(inv.dueDate)}</td>
-                <td className="px-2 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center gap-0.5">
+                <td className={`${COL_DATA} px-3 py-3 text-gray-500 dark:text-gray-400`}>{formatDate(inv.dueDate)}</td>
+                <td className={`${COL_ACOES} px-2 sm:px-3 py-3`} onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-0.5">
                     {(inv.status === 'OPEN' || inv.status === 'OVERDUE' || inv.status === 'PAID') && (
                       <PaidToggle
                         paid={inv.status === 'PAID'}
