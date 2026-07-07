@@ -343,14 +343,14 @@ export default function Receivables() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm w-52 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm w-full sm:w-52 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Buscar descrição / cliente..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Button icon={<Plus size={14} />} onClick={() => setModal({})}>
+          <Button icon={<Plus size={14} />} onClick={() => setModal({})} className="shrink-0">
             Novo
           </Button>
         </div>
@@ -368,21 +368,21 @@ export default function Receivables() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-5 py-3 font-medium">Descrição</th>
-                  <th className="text-left px-3 py-3 font-medium">Cliente</th>
-                  <th className="text-left px-3 py-3 font-medium">Categoria</th>
-                  <th className="text-right px-3 py-3 font-medium">Bruto</th>
-                  <th className="text-right px-3 py-3 font-medium">Líquido</th>
-                  <th className="text-left px-3 py-3 font-medium">Data prev.</th>
-                  <th className="text-left px-3 py-3 font-medium">Recebido em</th>
-                  <th className="text-left px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3" />
+                  <th className="text-left px-3 sm:px-5 py-3 font-medium">Descrição</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Cliente</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Categoria</th>
+                  <th className="hidden lg:table-cell text-right px-3 py-3 font-medium">Bruto</th>
+                  <th className="text-right px-2 sm:px-3 py-3 font-medium">Líquido</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Data prev.</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Recebido em</th>
+                  <th className="text-left px-2 sm:px-3 py-3 font-medium">Status</th>
+                  <th className="px-1 sm:px-3 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {sorted.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer" onClick={() => setModal({ item })}>
-                    <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">
+                    <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[110px] md:max-w-none truncate">
                       {item.description}
                       {item.invoiceNumber && (
                         <span className="ml-1.5 text-xs text-gray-400 font-normal">
@@ -390,32 +390,32 @@ export default function Receivables() {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                    <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                       {item.customerName ?? '—'}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                    <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                       {catMap.get(item.incomeCategoryId) ?? '—'}
                     </td>
-                    <td className="px-3 py-3 text-right text-gray-700 dark:text-gray-300">
+                    <td className="hidden lg:table-cell px-3 py-3 text-right text-gray-700 dark:text-gray-300">
                       {formatCurrency(item.grossAmount)}
                     </td>
-                    <td className="px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400">
+                    <td className="px-2 sm:px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
                       {formatCurrency(item.netAmount)}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
+                    <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                       {formatDate(item.expectedPaymentDate)}
                     </td>
-                    <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
+                    <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                       {item.actualPaymentDate ? formatDate(item.actualPaymentDate) : '—'}
                     </td>
-                    <td className="px-3 py-3">{receivableStatusBadge(item.status)}</td>
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-2 sm:px-3 py-3">{receivableStatusBadge(item.status)}</td>
+                    <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         {item.status === 'EXPECTED' && (
                           <button
                             title="Marcar como recebido"
                             onClick={() => receiveMut.mutate(item.id)}
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-md"
+                            className="p-1 sm:p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-md"
                           >
                             <CheckCircle2 size={16} />
                           </button>
@@ -424,7 +424,7 @@ export default function Receivables() {
                           <button
                             title="Reverter recebimento"
                             onClick={() => revertMut.mutate(item.id)}
-                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md"
+                            className="p-1 sm:p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-md"
                           >
                             <RotateCcw size={15} />
                           </button>
@@ -433,7 +433,7 @@ export default function Receivables() {
                           <button
                             title="Editar"
                             onClick={() => setModal({ item })}
-                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md"
+                            className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                           >
                             <Pencil size={14} />
                           </button>
@@ -442,7 +442,7 @@ export default function Receivables() {
                           <button
                             title="Excluir"
                             onClick={() => handleDelete(item)}
-                            className="p-1.5 text-red-400 hover:bg-red-50 rounded-md"
+                            className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                           >
                             <Trash2 size={14} />
                           </button>

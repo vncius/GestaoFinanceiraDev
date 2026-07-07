@@ -86,12 +86,20 @@ function SummaryCell({
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center text-center shrink-0 px-2 w-[150px] ${border ? 'border-r border-gray-100 dark:border-gray-700' : ''}`}
+      className={`flex flex-col items-center justify-center text-center px-2 py-1 lg:py-0 lg:w-[150px] lg:shrink-0 ${border ? 'lg:border-r border-gray-100 dark:border-gray-700' : ''}`}
     >
       <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{label}</span>
       <span className={`text-xs whitespace-nowrap ${bold ? 'font-bold' : 'font-semibold'} ${color}`}>
         {formatCurrency(value)}
       </span>
+    </div>
+  );
+}
+
+function SummaryRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-2 gap-y-1 lg:flex lg:items-center lg:justify-end lg:gap-0 flex-1">
+      {children}
     </div>
   );
 }
@@ -114,13 +122,13 @@ function SummaryBar({
 
   return (
     <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
-      <div className="flex items-center px-4 py-2">
-        <div className="flex items-center flex-1">
+      <div className="flex items-center px-2 sm:px-4 py-2">
+        <SummaryRow>
           <SummaryCell label="Inicial" value={s.initialBalance} color={initialColor} />
           <SummaryCell label="Entradas" value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
           <SummaryCell label="Saídas" value={totalPaid} color="text-red-500 dark:text-red-400" />
           <SummaryCell label="Saldo Final" value={s.realizedBalance} color={saldoColor} bold border={false} />
-        </div>
+        </SummaryRow>
         <button
           onClick={onToggleExpanded}
           className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -132,20 +140,26 @@ function SummaryBar({
 
       {expanded && (
         <>
-          <div className="flex items-center px-4 py-2">
-            <div className="flex items-center flex-1">
+          <div className="flex items-center px-2 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
+            <SummaryRow>
               <SummaryCell label="Saldo Inicial Previsto" value={s.projectedInitialBalance} color={initialColor} />
               <SummaryCell label="Prev. Entradas" value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
               <SummaryCell label="Prev. Saídas" value={totalExpected} color="text-red-500 dark:text-red-400" />
               <SummaryCell label="Prev. Saldo" value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
+            </SummaryRow>
+            <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
+              <ChevronDown size={14} />
             </div>
           </div>
-          <div className="flex items-center px-4 py-2 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center flex-1">
+          <div className="flex items-center px-2 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700">
+            <SummaryRow>
               <SummaryCell label="Previsão Inicial Reserva" value={s.reserveProjectedInitialBalance} color={initialColor} />
               <SummaryCell label="Entradas Reserva" value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
               <SummaryCell label="Saídas Reserva" value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
               <SummaryCell label="Saldo Reserva" value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
+            </SummaryRow>
+            <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
+              <ChevronDown size={14} />
             </div>
           </div>
         </>
@@ -196,7 +210,7 @@ function ActionBtn({
     <button
       title={title}
       onClick={onClick}
-      className={`p-1.5 rounded-md transition-colors ${className}`}
+      className={`p-1 sm:p-1.5 rounded-md transition-colors ${className}`}
     >
       {children}
     </button>
@@ -243,43 +257,43 @@ function EntriesGrid({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
-                <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
-                <th className="text-right px-3 py-2.5 font-medium">Valor Bruto</th>
-                <th className="text-right px-3 py-2.5 font-medium">Reserva</th>
-                <th className="text-right px-3 py-2.5 font-medium">Valor líquido</th>
-                <th className="text-left px-3 py-2.5 font-medium">Data prev.</th>
-                <th className="text-left px-3 py-2.5 font-medium">Status</th>
-                <th className="px-3 py-2.5" />
+                <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
+                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
+                <th className="hidden lg:table-cell text-right px-3 py-2.5 font-medium">Valor Bruto</th>
+                <th className="hidden lg:table-cell text-right px-3 py-2.5 font-medium">Reserva</th>
+                <th className="text-right px-2 sm:px-3 py-2.5 font-medium">Valor líquido</th>
+                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Data prev.</th>
+                <th className="text-left px-2 sm:px-3 py-2.5 font-medium">Status</th>
+                <th className="px-1 sm:px-3 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
                   <td
-                    className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                    className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 max-w-[90px] sm:max-w-none truncate"
                     onClick={() => onEdit(item)}
                   >
                     {item.description}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {catMap.get(item.incomeCategoryId) ?? '—'}
                   </td>
-                  <td className="px-3 py-3 text-right text-gray-600 dark:text-gray-300">
+                  <td className="hidden lg:table-cell px-3 py-3 text-right text-gray-600 dark:text-gray-300">
                     {formatCurrency(item.grossAmount)}
                   </td>
-                  <td className="px-3 py-3 text-right text-amber-600 dark:text-amber-400 text-xs">
+                  <td className="hidden lg:table-cell px-3 py-3 text-right text-amber-600 dark:text-amber-400 text-xs">
                     {item.reserveAmount > 0 ? formatCurrency(item.reserveAmount) : '—'}
                   </td>
-                  <td className="px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400">
+                  <td className="px-2 sm:px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
                     {formatCurrency(item.netAmount)}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
+                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                     {formatDate(item.expectedPaymentDate)}
                   </td>
-                  <td className="px-3 py-3">{receivableStatusBadge(item.status)}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-2 sm:px-3 py-3">{receivableStatusBadge(item.status)}</td>
+                  <td className="px-1 sm:px-3 py-3">
+                    <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       {item.status === 'EXPECTED' && (
                         <ActionBtn
                           title="Marcar como recebido"
@@ -362,35 +376,35 @@ function TransactionGrid({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
-                <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
+                <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
+                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
                 <th className="text-right px-3 py-2.5 font-medium">Valor</th>
-                <th className="text-left px-3 py-2.5 font-medium">Data lanç.</th>
+                <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Data lanç.</th>
                 <th className="text-left px-3 py-2.5 font-medium">Status</th>
-                <th className="px-3 py-2.5" />
+                <th className="px-2 sm:px-3 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
                   <td
-                    className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                    className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 max-w-[120px] sm:max-w-none truncate"
                     onClick={() => onEdit(item)}
                   >
                     {item.description}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                     {catMap.get(item.categoryId ?? '') ?? '—'}
                   </td>
-                  <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400">
+                  <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
                     {formatCurrency(item.amount)}
                   </td>
-                  <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
+                  <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                     {formatDate(item.expectedDate)}
                   </td>
                   <td className="px-3 py-3">{transactionStatusBadge(item.status)}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-2 sm:px-3 py-3">
+                    <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       {item.status === 'PENDING' && (
                         <ActionBtn
                           title="Marcar como pago"
@@ -465,26 +479,26 @@ function CreditCardsGrid({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              <th className="text-left px-5 py-2.5 font-medium">Cartão</th>
+              <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Cartão</th>
               <th className="text-right px-3 py-2.5 font-medium">Valor fatura</th>
-              <th className="text-left px-3 py-2.5 font-medium">Vencimento</th>
+              <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Vencimento</th>
               <th className="text-left px-3 py-2.5 font-medium">Status</th>
-              <th className="px-3 py-2.5" />
+              <th className="px-2 sm:px-3 py-2.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
             {items.map((inv) => (
               <tr key={inv.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
-                <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">
+                <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[100px] sm:max-w-none truncate">
                   {cardNames.get(inv.creditCardId) ?? 'Cartão'}
                 </td>
-                <td className="px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400">
+                <td className="px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400 whitespace-nowrap">
                   {formatCurrency(inv.totalAmount)}
                 </td>
-                <td className="px-3 py-3 text-gray-500 dark:text-gray-400">{formatDate(inv.dueDate)}</td>
+                <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">{formatDate(inv.dueDate)}</td>
                 <td className="px-3 py-3">{invoiceStatusBadge(inv.status)}</td>
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <td className="px-2 sm:px-3 py-3">
+                  <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     {(inv.status === 'OPEN' || inv.status === 'OVERDUE') && (
                       <ActionBtn
                         title="Pagar fatura"

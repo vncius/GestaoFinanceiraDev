@@ -14,7 +14,7 @@ export function MonthNavigator() {
       >
         <ChevronLeft size={18} />
       </button>
-      <span className="text-base font-bold text-gray-800 dark:text-gray-100 min-w-[172px] text-center select-none">
+      <span className="text-sm sm:text-base font-bold text-gray-800 dark:text-gray-100 min-w-[110px] sm:min-w-[172px] text-center select-none truncate">
         {formatMonthYear(month, year)}
       </span>
       <button

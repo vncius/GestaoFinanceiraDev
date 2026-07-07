@@ -420,7 +420,7 @@ export default function Dashboard() {
         <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
           Saldos Atuais
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <StatCard
             label="Conta Principal"
             value={formatCurrency(accounts.main?.balance ?? 0)}
@@ -481,7 +481,7 @@ export default function Dashboard() {
         </div>
 
         {/* Breakdown de saídas consolidadas */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {[
             { label: 'Pagamentos', value: s.paidPayments },
             { label: 'Gastos Extras', value: s.paidExtraExpenses },

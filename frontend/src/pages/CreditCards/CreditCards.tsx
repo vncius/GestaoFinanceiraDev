@@ -334,18 +334,18 @@ function CardDetail({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+          <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total fatura</p>
-            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{formatCurrency(summary.invoiceTotal)}</p>
+            <p className="text-sm lg:text-lg font-bold text-gray-800 dark:text-gray-100 truncate">{formatCurrency(summary.invoiceTotal)}</p>
           </div>
-          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          <div className="text-center p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Pago</p>
-            <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(summary.paidAmount)}</p>
+            <p className="text-sm lg:text-lg font-bold text-green-600 dark:text-green-400 truncate">{formatCurrency(summary.paidAmount)}</p>
           </div>
-          <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+          <div className="text-center p-2 sm:p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Em aberto</p>
-            <p className="text-lg font-bold text-red-500 dark:text-red-400">{formatCurrency(summary.openAmount)}</p>
+            <p className="text-sm lg:text-lg font-bold text-red-500 dark:text-red-400 truncate">{formatCurrency(summary.openAmount)}</p>
           </div>
         </div>
 
@@ -402,12 +402,12 @@ function CardDetail({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-5 py-2.5 font-medium">Descrição</th>
-                  <th className="text-left px-3 py-2.5 font-medium">Categoria</th>
-                  <th className="text-left px-3 py-2.5 font-medium">Data lanç.</th>
-                  <th className="text-left px-3 py-2.5 font-medium">Parcela</th>
+                  <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">Data lanç.</th>
+                  <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Parcela</th>
                   <th className="text-right px-3 py-2.5 font-medium">Valor</th>
-                  <th className="px-3 py-2.5" />
+                  <th className="px-1 sm:px-3 py-2.5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -415,32 +415,32 @@ function CardDetail({
                   const entry = entryMap.get(inst.creditCardEntryId);
                   return (
                     <tr key={inst.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
-                      <td className="px-5 py-3 font-medium text-gray-800 dark:text-gray-100">
+                      <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[110px] lg:max-w-none truncate">
                         {entry?.description ?? '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                      <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {entry ? (catMap.get(entry.expenseCategoryId) ?? '—') : '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400">
+                      <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                         {entry ? formatDate(entry.purchaseDate) : '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                      <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {entry?.entryType === 'CASH'
                           ? 'À vista'
                           : entry?.entryType === 'FIXED'
                           ? 'Recorrente'
                           : `${inst.installmentNumber}/${inst.totalInstallments}`}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-gray-100">
+                      <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
                         {formatCurrency(inst.amount)}
                       </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="px-1 sm:px-3 py-3">
+                        <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {entry?.active && (
                             <button
                               title="Editar lançamento"
                               onClick={() => { setEntryToEdit(entry); }}
-                              className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                              className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                             >
                               <Pencil size={14} />
                             </button>
@@ -455,7 +455,7 @@ function CardDetail({
                                   deleteEntryMut.mutate({ entryId: entry.id });
                                 }
                               }}
-                              className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                              className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -558,14 +558,14 @@ export default function CreditCards() {
   }
 
   return (
-    <div className="flex gap-5 h-full min-h-0">
+    <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0">
       {/* Card list */}
-      <div className="w-60 shrink-0 space-y-2 overflow-y-auto">
+      <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:w-60 lg:shrink-0 pb-1 lg:pb-0">
         {activeCards.map((card) => (
           <button
             key={card.id}
             onClick={() => setSelectedCardId(card.id)}
-            className={`w-full text-left p-4 rounded-xl border transition-all ${
+            className={`text-left p-4 rounded-xl border transition-all w-64 shrink-0 lg:w-full ${
               selectedCardId === card.id
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
                 : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
