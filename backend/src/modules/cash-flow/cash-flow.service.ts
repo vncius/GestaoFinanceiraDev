@@ -39,34 +39,62 @@ export class CashFlowService {
 
     await this.ensureFixedOccurrences(month, year);
 
-    const [receivablesForMonth, transactionsForMonth, allTransactions, settings, allInvoices] =
-      await Promise.all([
-        this.receivablesRepo.findByMonth(month, year),
-        this.transactionsRepo.findByMonth(month, year),
-        this.transactionsRepo.findAll(),
-        this.settingsRepo.get(),
-        this.creditCardInvoicesRepo?.findAll() ?? Promise.resolve([]),
-      ]);
+    // Uma única leitura de cada arquivo — os filtros por mês e por intervalo
+    // (usados pelas previsões) são feitos em memória sobre esses arrays,
+    // em vez de buscar novamente no repositório por período.
+    const [allReceivables, allTransactions, settings, allInvoices] = await Promise.all([
+      this.receivablesRepo.findAll(),
+      this.transactionsRepo.findAll(),
+      this.settingsRepo.get(),
+      this.creditCardInvoicesRepo?.findAll() ?? Promise.resolve([]),
+    ]);
+
+    // "Previsto" acumula do mês atual (real) até o mês de referência quando
+    // este está no futuro — ex.: hoje é 07 e a referência é 12, soma 07..12.
+    // Para mês de referência igual/anterior ao atual, o intervalo colapsa
+    // para o próprio mês, preservando o comportamento anterior.
+    const selectedKey = monthKey(month, year);
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const isFutureSelection = selectedKey > monthKey(currentMonth, currentYear);
+    const rangeStartMonth = isFutureSelection ? currentMonth : month;
+    const rangeStartYear = isFutureSelection ? currentYear : year;
+    const rangeStartKey = monthKey(rangeStartMonth, rangeStartYear);
+
+    const dateKey = (iso: string) => {
+      const { month: m, year: y } = monthYearOf(iso);
+      return monthKey(m, y);
+    };
+    const inSelectedMonth = (key: number) => key === selectedKey;
+    const inProjectionRange = (key: number) => key >= rangeStartKey && key <= selectedKey;
 
     const monthInvoices = allInvoices.filter(
-      (inv) =>
-        inv.month === month &&
-        inv.year === year &&
-        inv.status !== InvoiceStatus.CANCELED,
+      (inv) => inv.status !== InvoiceStatus.CANCELED && inSelectedMonth(monthKey(inv.month, inv.year)),
+    );
+    const rangeInvoices = allInvoices.filter(
+      (inv) => inv.status !== InvoiceStatus.CANCELED && inProjectionRange(monthKey(inv.month, inv.year)),
     );
 
-    const entries = receivablesForMonth.filter(
-      (r) => r.status !== ReceivableStatus.CANCELED,
+    const entries = allReceivables.filter(
+      (r) => r.status !== ReceivableStatus.CANCELED && inSelectedMonth(dateKey(r.expectedPaymentDate)),
+    );
+    const rangeEntries = allReceivables.filter(
+      (r) => r.status !== ReceivableStatus.CANCELED && inProjectionRange(dateKey(r.expectedPaymentDate)),
     );
 
-    const payments = transactionsForMonth.filter(
-      (t) =>
-        t.type === TransactionType.PAYMENT && !this.isExcludedFromFlow(t),
+    const payments = allTransactions.filter(
+      (t) => t.type === TransactionType.PAYMENT && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
+    );
+    const rangePayments = allTransactions.filter(
+      (t) => t.type === TransactionType.PAYMENT && !this.isExcludedFromFlow(t) && inProjectionRange(dateKey(t.expectedDate)),
     );
 
-    const extraExpenses = transactionsForMonth.filter(
-      (t) =>
-        t.type === TransactionType.EXTRA_EXPENSE && !this.isExcludedFromFlow(t),
+    const extraExpenses = allTransactions.filter(
+      (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
+    );
+    const rangeExtraExpenses = allTransactions.filter(
+      (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcludedFromFlow(t) && inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const monthStart = new Date(year, month - 1, 1);
@@ -74,13 +102,18 @@ export class CashFlowService {
     const mainId = settings?.mainAccountId ?? null;
     const reserveId = settings?.emergencyReserveAccountId ?? null;
 
-    const [mainInitial, reserveEndBalance] =
-      await Promise.all([
-        mainId ? this.calcAccountBalance(mainId, allTransactions, monthStart) : 0,
-        reserveId ? this.calcAccountBalance(reserveId, allTransactions, monthEnd) : 0,
-      ]);
+    // O saldo inicial da projeção só precisa ser recalculado com um corte
+    // diferente (início do mês atual) quando a referência é futura; nos
+    // demais casos reaproveita o mesmo saldo do mês selecionado (initialBalance).
+    const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
+    const [mainInitial, reserveEndBalance, futureRangeInitial] = await Promise.all([
+      mainId ? this.calcAccountBalance(mainId, allTransactions, monthStart) : 0,
+      reserveId ? this.calcAccountBalance(reserveId, allTransactions, monthEnd) : 0,
+      isFutureSelection && mainId ? this.calcAccountBalance(mainId, allTransactions, rangeStart) : null,
+    ]);
 
     const initialBalance = mainInitial;
+    const projectionInitialBalance = futureRangeInitial ?? initialBalance;
 
     // Transações da conta reserva não afetam os totais da conta principal
     const mainEntries = entries.filter(
@@ -93,29 +126,39 @@ export class CashFlowService {
       (t) => !reserveId || t.sourceAccountId !== reserveId,
     );
 
-    // totais do mês (apenas conta principal)
-    const expectedIncome = mainEntries.reduce((s, r) => s + r.netAmount, 0);
+    const rangeMainEntries = rangeEntries.filter(
+      (r) => !reserveId || r.targetAccountId !== reserveId,
+    );
+    const rangeMainPayments = rangePayments.filter(
+      (t) => !reserveId || t.sourceAccountId !== reserveId,
+    );
+    const rangeMainExtraExpenses = rangeExtraExpenses.filter(
+      (t) => !reserveId || t.sourceAccountId !== reserveId,
+    );
+
+    // realizado — sempre restrito ao mês selecionado
     const receivedIncome = mainEntries
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
       .reduce((s, r) => s + r.netAmount, 0);
 
-    const expectedPayments = mainPayments.reduce((s, t) => s + t.amount, 0);
     const paidPayments = mainPayments
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
-    const expectedExtraExpenses = mainExtraExpenses.reduce((s, t) => s + t.amount, 0);
     const paidExtraExpenses = mainExtraExpenses
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
-    const creditCardInvoicesTotal = monthInvoices.reduce(
-      (s, inv) => s + inv.totalAmount,
-      0,
-    );
     const paidCreditCards = monthInvoices
       .filter((inv) => inv.status === InvoiceStatus.PAID)
       .reduce((s, inv) => s + inv.totalAmount, 0);
+
+    // previsto — mês atual até o mês selecionado (colapsa para o próprio
+    // mês quando a referência não é futura)
+    const expectedIncome = rangeMainEntries.reduce((s, r) => s + r.netAmount, 0);
+    const expectedPayments = rangeMainPayments.reduce((s, t) => s + t.amount, 0);
+    const expectedExtraExpenses = rangeMainExtraExpenses.reduce((s, t) => s + t.amount, 0);
+    const creditCardInvoicesTotal = rangeInvoices.reduce((s, inv) => s + inv.totalAmount, 0);
 
     const reserveInflow = entries
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
@@ -150,7 +193,7 @@ export class CashFlowService {
         creditCardInvoices: creditCardInvoicesTotal,
         paidCreditCardInvoices: paidCreditCards,
         projectedBalance:
-          initialBalance +
+          projectionInitialBalance +
           expectedIncome -
           expectedPayments -
           expectedExtraExpenses -
