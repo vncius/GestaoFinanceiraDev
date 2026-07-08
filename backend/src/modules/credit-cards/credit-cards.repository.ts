@@ -25,6 +25,7 @@ export interface CreditCardInstallmentsRepository
     month: number,
     year: number,
   ): Promise<CreditCardInstallment[]>;
+  createMany(items: CreditCardInstallment[]): Promise<CreditCardInstallment[]>;
 }
 
 export interface CreditCardInvoicesRepository

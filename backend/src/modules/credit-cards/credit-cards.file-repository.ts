@@ -59,6 +59,7 @@ export class CreditCardInstallmentsFileRepository
   findAll() { return this.store.findAll(); }
   findById(id: string) { return this.store.findById(id); }
   create(data: CreditCardInstallment) { return this.store.create(data); }
+  createMany(items: CreditCardInstallment[]) { return this.store.createMany(items); }
   update(id: string, data: Partial<CreditCardInstallment>) { return this.store.update(id, data); }
   delete(id: string) { return this.store.delete(id); }
 

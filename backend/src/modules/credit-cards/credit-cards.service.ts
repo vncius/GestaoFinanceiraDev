@@ -258,7 +258,8 @@ export class CreditCardsService {
       updatedAt: now,
     });
 
-    const createdInstallments: CreditCardInstallment[] = [];
+    const installmentsToCreate: CreditCardInstallment[] = [];
+    const invoiceIdsToRecalc = new Set<string>();
 
     for (let i = 0; i < count; i++) {
       const { month, year } = this.addMonths(
@@ -274,7 +275,7 @@ export class CreditCardsService {
         card.dueDay,
       );
 
-      const installment = await this.installmentsRepo.create({
+      installmentsToCreate.push({
         id: generateId(),
         creditCardEntryId: entry.id,
         installmentNumber: i + 1,
@@ -287,10 +288,13 @@ export class CreditCardsService {
         createdAt: now,
         updatedAt: now,
       });
-
-      createdInstallments.push(installment);
-      await this.recalcInvoiceTotal(invoice.id);
+      invoiceIdsToRecalc.add(invoice.id);
     }
+
+    const createdInstallments = await this.installmentsRepo.createMany(
+      installmentsToCreate,
+    );
+    await this.recalcInvoiceTotals(invoiceIdsToRecalc);
 
     if (entry.entryType === CardEntryType.FIXED) {
       const nowDate = new Date();
@@ -365,8 +369,8 @@ export class CreditCardsService {
           updatedAt: now,
         });
       }
-      await this.recalcInvoiceTotal(invoiceId);
     }
+    await this.recalcInvoiceTotals(affectedInvoiceIds);
 
     // 3. Determina novos valores
     const newTotalAmount = input.totalAmount ?? entry.totalAmount;
@@ -400,12 +404,15 @@ export class CreditCardsService {
     const base = Math.floor(newTotalAmount / count);
     const remainder = newTotalAmount - base * count;
 
+    const installmentsToCreate: CreditCardInstallment[] = [];
+    const invoiceIdsToRecalc = new Set<string>();
+
     for (let i = 0; i < count; i++) {
       const { month, year } = this.addMonths(firstMonth.month, firstMonth.year, i);
       const amount = base + (i === 0 ? remainder : 0);
       const invoice = await this.findOrCreateInvoice(cardId, month, year, card.dueDay);
 
-      await this.installmentsRepo.create({
+      installmentsToCreate.push({
         id: generateId(),
         creditCardEntryId: entryId,
         installmentNumber: i + 1,
@@ -418,9 +425,11 @@ export class CreditCardsService {
         createdAt: now,
         updatedAt: now,
       });
-
-      await this.recalcInvoiceTotal(invoice.id);
+      invoiceIdsToRecalc.add(invoice.id);
     }
+
+    await this.installmentsRepo.createMany(installmentsToCreate);
+    await this.recalcInvoiceTotals(invoiceIdsToRecalc);
 
     if (newEntryType === CardEntryType.FIXED) {
       const nowDate = new Date();
@@ -467,9 +476,7 @@ export class CreditCardsService {
 
     await this.entriesRepo.update(entryId, { active: false, updatedAt: now });
 
-    for (const invoiceId of affectedInvoiceIds) {
-      await this.recalcInvoiceTotal(invoiceId);
-    }
+    await this.recalcInvoiceTotals(affectedInvoiceIds);
   }
 
   // Lançamentos fixos são recorrentes por tempo indeterminado, então a exclusão
@@ -506,9 +513,7 @@ export class CreditCardsService {
       await this.entriesRepo.update(entry.id, { active: false, updatedAt: now });
     }
 
-    for (const invoiceId of affectedInvoiceIds) {
-      await this.recalcInvoiceTotal(invoiceId);
-    }
+    await this.recalcInvoiceTotals(affectedInvoiceIds);
   }
 
   // ─── Invoice payment ──────────────────────────────────────────────────────────
@@ -670,11 +675,14 @@ export class CreditCardsService {
     let cursor = this.addMonths(lastMonth, lastYear, 1);
     let number = lastNumber;
 
+    const installmentsToCreate: CreditCardInstallment[] = [];
+    const invoiceIdsToRecalc = new Set<string>();
+
     while (this.monthKey(cursor.month, cursor.year) <= this.monthKey(targetMonth, targetYear)) {
       number += 1;
       const invoice = await this.findOrCreateInvoice(card.id, cursor.month, cursor.year, card.dueDay);
 
-      await this.installmentsRepo.create({
+      installmentsToCreate.push({
         id: generateId(),
         creditCardEntryId: entry.id,
         installmentNumber: number,
@@ -687,10 +695,12 @@ export class CreditCardsService {
         createdAt: now,
         updatedAt: now,
       });
-
-      await this.recalcInvoiceTotal(invoice.id);
+      invoiceIdsToRecalc.add(invoice.id);
       cursor = this.addMonths(cursor.month, cursor.year, 1);
     }
+
+    await this.installmentsRepo.createMany(installmentsToCreate);
+    await this.recalcInvoiceTotals(invoiceIdsToRecalc);
 
     if (number !== entry.installmentsCount) {
       await this.entriesRepo.update(entry.id, { installmentsCount: number, updatedAt: now });
@@ -727,19 +737,31 @@ export class CreditCardsService {
     });
   }
 
-  private async recalcInvoiceTotal(invoiceId: string): Promise<void> {
+  // Recalcula o total de uma ou mais faturas com uma única leitura do
+  // arquivo de parcelas (em vez de um findAll() por fatura), já que todas
+  // as parcelas necessárias já estão presentes numa única leitura.
+  private async recalcInvoiceTotals(
+    invoiceIds: Iterable<string>,
+  ): Promise<void> {
+    const ids = [...new Set(invoiceIds)];
+    if (ids.length === 0) return;
+
     const all = await this.installmentsRepo.findAll();
-    const total = all
-      .filter(
-        (i) =>
-          i.creditCardInvoiceId === invoiceId &&
-          i.status !== InstallmentStatus.CANCELED,
-      )
-      .reduce((s, i) => s + i.amount, 0);
-    await this.invoicesRepo.update(invoiceId, {
-      totalAmount: total,
-      updatedAt: nowISO(),
-    });
+    const now = nowISO();
+
+    for (const invoiceId of ids) {
+      const total = all
+        .filter(
+          (i) =>
+            i.creditCardInvoiceId === invoiceId &&
+            i.status !== InstallmentStatus.CANCELED,
+        )
+        .reduce((s, i) => s + i.amount, 0);
+      await this.invoicesRepo.update(invoiceId, {
+        totalAmount: total,
+        updatedAt: now,
+      });
+    }
   }
 
   private async getEntryChecked(
