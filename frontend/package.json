@@ -9,13 +9,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.3.4",
     "@tanstack/react-query": "^5.18.1",
     "axios": "^1.6.7",
     "lucide-react": "^0.316.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.49.3",
     "react-router-dom": "^6.21.3",
     "zod": "^3.22.4"
   },
