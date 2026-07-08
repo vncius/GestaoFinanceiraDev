@@ -1,26 +1,9 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/utils/async-handler';
-import { CreditCardsFileRepository } from './credit-cards.file-repository';
-import { CreditCardEntriesFileRepository } from './credit-cards.file-repository';
-import { CreditCardInstallmentsFileRepository } from './credit-cards.file-repository';
-import { CreditCardInvoicesFileRepository } from './credit-cards.file-repository';
-import { FinancialTransactionsFileRepository } from '../financial-transactions/financial-transactions.file-repository';
-import { SettingsFileRepository } from '../settings/settings.file-repository';
-import { CreditCardsService } from './credit-cards.service';
-import { CreditCardsController } from './credit-cards.controller';
+import { controllers } from '../../container';
 
 const router = Router();
-
-const controller = new CreditCardsController(
-  new CreditCardsService(
-    new CreditCardsFileRepository(),
-    new CreditCardEntriesFileRepository(),
-    new CreditCardInstallmentsFileRepository(),
-    new CreditCardInvoicesFileRepository(),
-    new FinancialTransactionsFileRepository(),
-    new SettingsFileRepository(),
-  ),
-);
+const controller = controllers.creditCards;
 
 // cards CRUD
 router.get('/', asyncHandler((req, res) => controller.findAll(req, res)));

@@ -1,24 +1,9 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/utils/async-handler';
-import { ReceivablesFileRepository } from '../receivables/receivables.file-repository';
-import { FinancialTransactionsFileRepository } from '../financial-transactions/financial-transactions.file-repository';
-import { AccountsFileRepository } from '../accounts/accounts.file-repository';
-import { SettingsFileRepository } from '../settings/settings.file-repository';
-import { CreditCardInvoicesFileRepository } from '../credit-cards/credit-cards.file-repository';
-import { CashFlowService } from './cash-flow.service';
-import { CashFlowController } from './cash-flow.controller';
+import { controllers } from '../../container';
 
 const router = Router();
-
-const controller = new CashFlowController(
-  new CashFlowService(
-    new ReceivablesFileRepository(),
-    new FinancialTransactionsFileRepository(),
-    new AccountsFileRepository(),
-    new SettingsFileRepository(),
-    new CreditCardInvoicesFileRepository(),
-  ),
-);
+const controller = controllers.cashFlow;
 
 // resumo mensal
 router.get('/', asyncHandler((req, res) => controller.getCashFlow(req, res)));

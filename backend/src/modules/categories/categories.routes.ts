@@ -1,11 +1,9 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/utils/async-handler';
-import { CategoriesFileRepository } from './categories.file-repository';
-import { CategoriesService } from './categories.service';
-import { CategoriesController } from './categories.controller';
+import { controllers } from '../../container';
 
 const router = Router();
-const controller = new CategoriesController(new CategoriesService(new CategoriesFileRepository()));
+const controller = controllers.categories;
 
 router.get('/', asyncHandler((req, res) => controller.findAll(req, res)));
 router.get('/:id', asyncHandler((req, res) => controller.findById(req, res)));

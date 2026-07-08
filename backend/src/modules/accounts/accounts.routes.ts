@@ -1,11 +1,9 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/utils/async-handler';
-import { AccountsFileRepository } from './accounts.file-repository';
-import { AccountsService } from './accounts.service';
-import { AccountsController } from './accounts.controller';
+import { controllers } from '../../container';
 
 const router = Router();
-const controller = new AccountsController(new AccountsService(new AccountsFileRepository()));
+const controller = controllers.accounts;
 
 router.get('/', asyncHandler((req, res) => controller.findAll(req, res)));
 router.get('/:id', asyncHandler((req, res) => controller.findById(req, res)));

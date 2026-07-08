@@ -1,20 +1,9 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/utils/async-handler';
-import { ReceivablesFileRepository } from './receivables.file-repository';
-import { FinancialTransactionsFileRepository } from '../financial-transactions/financial-transactions.file-repository';
-import { SettingsFileRepository } from '../settings/settings.file-repository';
-import { ReceivablesService } from './receivables.service';
-import { ReceivablesController } from './receivables.controller';
+import { controllers } from '../../container';
 
 const router = Router();
-
-const controller = new ReceivablesController(
-  new ReceivablesService(
-    new ReceivablesFileRepository(),
-    new FinancialTransactionsFileRepository(),
-    new SettingsFileRepository(),
-  ),
-);
+const controller = controllers.receivables;
 
 router.get('/', asyncHandler((req, res) => controller.findAll(req, res)));
 router.get('/:id', asyncHandler((req, res) => controller.findById(req, res)));
