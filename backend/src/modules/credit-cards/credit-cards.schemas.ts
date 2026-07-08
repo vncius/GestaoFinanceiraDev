@@ -47,6 +47,11 @@ export const cardFlowQuerySchema = z.object({
   year: z.coerce.number().int().min(2000),
 });
 
+export const findCardsQuerySchema = z.object({
+  month: z.coerce.number().int().min(1).max(12).optional(),
+  year: z.coerce.number().int().min(2000).optional(),
+});
+
 export const payInvoiceSchema = z
   .object({
     paymentAccountId: z.string().uuid().nullable().optional(),
@@ -65,5 +70,6 @@ export type UpdateCreditCardInput = z.infer<typeof updateCreditCardSchema>;
 export type CreateCardEntryInput = z.infer<typeof createCardEntrySchema>;
 export type UpdateCardEntryInput = z.infer<typeof updateCardEntrySchema>;
 export type CardFlowQuery = z.infer<typeof cardFlowQuerySchema>;
+export type FindCardsQuery = z.infer<typeof findCardsQuerySchema>;
 export type PayInvoiceInput = z.infer<typeof payInvoiceSchema>;
 export type DeleteCardEntryQuery = z.infer<typeof deleteCardEntryQuerySchema>;

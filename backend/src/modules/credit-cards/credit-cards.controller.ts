@@ -8,6 +8,7 @@ import {
   cardFlowQuerySchema,
   payInvoiceSchema,
   deleteCardEntryQuerySchema,
+  findCardsQuerySchema,
 } from './credit-cards.schemas';
 
 export class CreditCardsController {
@@ -16,8 +17,7 @@ export class CreditCardsController {
   // ─── Cards ────────────────────────────────────────────────────────────────────
 
   async findAll(req: Request, res: Response): Promise<void> {
-    const month = req.query.month ? parseInt(req.query.month as string, 10) : undefined;
-    const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
+    const { month, year } = findCardsQuerySchema.parse(req.query);
     const cards = await this.service.findAll(month, year);
     res.json(cards);
   }
