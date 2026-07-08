@@ -47,7 +47,12 @@ export class JsonFileStore<T extends { id: string }> {
 
   private async writeAll(items: T[]): Promise<void> {
     await this.ensureFile();
-    await fs.writeFile(this.filePath, JSON.stringify(items, null, 2), 'utf-8');
+    // Escreve em arquivo temporário e renomeia (operação atômica no sistema
+    // de arquivos) para que um crash no meio da escrita nunca deixe o JSON
+    // final truncado/corrompido.
+    const tmpPath = `${this.filePath}.${process.pid}.${Date.now()}.tmp`;
+    await fs.writeFile(tmpPath, JSON.stringify(items, null, 2), 'utf-8');
+    await fs.rename(tmpPath, this.filePath);
   }
 
   async findAll(): Promise<T[]> {
@@ -67,6 +72,18 @@ export class JsonFileStore<T extends { id: string }> {
       items.push(data);
       await this.writeAll(items);
       return data;
+    });
+  }
+
+  // Insere múltiplos registros com uma única leitura+escrita do arquivo,
+  // em vez de uma leitura+escrita completa por item (ver create()).
+  async createMany(dataList: T[]): Promise<T[]> {
+    if (dataList.length === 0) return [];
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      items.push(...dataList);
+      await this.writeAll(items);
+      return dataList;
     });
   }
 
