@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO, addMonths, monthKey, monthYearOf } from '../../shared/utils/date.utils';
+import { calcAccountBalance } from '../../shared/utils/balance.utils';
 import { ReceivablesRepository } from '../receivables/receivables.repository';
 import { ReceivableStatus } from '../receivables/receivables.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
@@ -109,13 +110,18 @@ export class CashFlowService {
     // selecionado quando a referência não é futura, então é sempre calculado
     // diretamente (mesma lógica de acúmulo futuro dos demais campos previstos).
     const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
-    const [mainInitial, reserveEndBalance, futureRangeInitial, reserveProjectedInitialBalance] =
-      await Promise.all([
-        mainId ? this.calcAccountBalance(mainId, allTransactions, monthStart) : 0,
-        reserveId ? this.calcAccountBalance(reserveId, allTransactions, monthEnd) : 0,
-        isFutureSelection && mainId ? this.calcAccountBalance(mainId, allTransactions, rangeStart) : null,
-        reserveId ? this.calcAccountBalance(reserveId, allTransactions, rangeStart) : 0,
-      ]);
+    const [mainAccount, reserveAccount] = await Promise.all([
+      mainId ? this.accountsRepo.findById(mainId) : null,
+      reserveId ? this.accountsRepo.findById(reserveId) : null,
+    ]);
+
+    const mainInitial = mainAccount ? calcAccountBalance(mainAccount, allTransactions, monthStart) : 0;
+    const reserveEndBalance = reserveAccount ? calcAccountBalance(reserveAccount, allTransactions, monthEnd) : 0;
+    const futureRangeInitial =
+      isFutureSelection && mainAccount ? calcAccountBalance(mainAccount, allTransactions, rangeStart) : null;
+    const reserveProjectedInitialBalance = reserveAccount
+      ? calcAccountBalance(reserveAccount, allTransactions, rangeStart)
+      : 0;
 
     const initialBalance = mainInitial;
     const projectedInitialBalance = futureRangeInitial ?? initialBalance;
@@ -596,51 +602,6 @@ export class CashFlowService {
   }
 
   // ─── Balance calculation ──────────────────────────────────────────────────────
-
-  private async calcAccountBalance(
-    accountId: string,
-    transactions: FinancialTransaction[],
-    beforeDate?: Date,
-  ): Promise<number> {
-    const account = await this.accountsRepo.findById(accountId);
-    if (!account) return 0;
-
-    let balance = account.initialBalance;
-
-    // Derive "YYYY-MM" string for the month boundary (local time).
-    // String comparison of ISO year-month is timezone-safe and avoids the
-    // UTC-vs-local offset that Date objects introduce (e.g. "2026-06-01T00:00Z"
-    // parses to May 31 21:00 in UTC-3, so Date comparison would wrongly include
-    // June 1 transactions in the May carry-over).
-    const beforeYM = beforeDate
-      ? `${beforeDate.getFullYear()}-${String(beforeDate.getMonth() + 1).padStart(2, '0')}`
-      : null;
-
-    const confirmed = transactions.filter((t) => {
-      const isConfirmed =
-        t.status === TransactionStatus.RECEIVED ||
-        t.status === TransactionStatus.PAID;
-      if (!isConfirmed) return false;
-      if (beforeYM) {
-        // Use expectedDate for ALL types so that initialBalance is consistent
-        // with how paidPayments / receivedIncome track months (both use
-        // expectedDate / expectedPaymentDate). This ensures that
-        // initialBalance_June == realizedBalance_May.
-        return t.expectedDate.slice(0, 7) < beforeYM;
-      }
-      return true;
-    });
-
-    balance += confirmed
-      .filter((t) => t.targetAccountId === accountId)
-      .reduce((s, t) => s + t.amount, 0);
-
-    balance -= confirmed
-      .filter((t) => t.sourceAccountId === accountId)
-      .reduce((s, t) => s + t.amount, 0);
-
-    return balance;
-  }
 
   private isExcludedFromFlow(t: FinancialTransaction): boolean {
     return (

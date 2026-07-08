@@ -7,7 +7,6 @@ import {
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
-import { Account } from '../accounts/accounts.types';
 import { SettingsRepository } from '../settings/settings.repository';
 import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
@@ -27,6 +26,7 @@ import {
 } from './dashboard.types';
 import { DashboardQuery } from './dashboard.schemas';
 import { CashFlowService } from '../cash-flow/cash-flow.service';
+import { calcAccountBalance } from '../../shared/utils/balance.utils';
 
 export class DashboardService {
   constructor(
@@ -87,10 +87,10 @@ export class DashboardService {
       : null;
 
     const mainBalance = mainAccount
-      ? this.calcBalance(mainAccount, allTransactions)
+      ? calcAccountBalance(mainAccount, allTransactions)
       : 0;
     const reserveBalance = reserveAccount
-      ? this.calcBalance(reserveAccount, allTransactions)
+      ? calcAccountBalance(reserveAccount, allTransactions)
       : 0;
 
     // ── Upcoming dues ───────────────────────────────────────────────────────────
@@ -366,41 +366,6 @@ export class DashboardService {
       monthlyEvolution,
       categoryBreakdown,
     };
-  }
-
-  // ── Private helpers ───────────────────────────────────────────────────────────
-
-  private calcBalance(
-    account: Account,
-    transactions: FinancialTransaction[],
-    beforeDate?: Date,
-  ): number {
-    let balance = account.initialBalance;
-
-    const beforeYM = beforeDate
-      ? `${beforeDate.getFullYear()}-${String(beforeDate.getMonth() + 1).padStart(2, '0')}`
-      : null;
-
-    const confirmed = transactions.filter((t) => {
-      const ok =
-        t.status === TransactionStatus.RECEIVED ||
-        t.status === TransactionStatus.PAID;
-      if (!ok) return false;
-      if (beforeYM) {
-        return t.expectedDate.slice(0, 7) < beforeYM;
-      }
-      return true;
-    });
-
-    balance += confirmed
-      .filter((t) => t.targetAccountId === account.id)
-      .reduce((s, t) => s + t.amount, 0);
-
-    balance -= confirmed
-      .filter((t) => t.sourceAccountId === account.id)
-      .reduce((s, t) => s + t.amount, 0);
-
-    return balance;
   }
 
 }
