@@ -111,6 +111,7 @@ export function TransactionModal({
             <button
               type="button"
               title="Excluir"
+              aria-label="Excluir"
               onClick={() => { onClose(); onDelete(item!); }}
               className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
             >

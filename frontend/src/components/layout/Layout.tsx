@@ -47,6 +47,7 @@ export default function Layout() {
               onClick={toggleTheme}
               className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>

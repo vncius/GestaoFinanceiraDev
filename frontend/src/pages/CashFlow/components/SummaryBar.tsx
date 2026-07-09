@@ -64,6 +64,8 @@ export function SummaryBar({
           onClick={onToggleExpanded}
           className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           title={expanded ? 'Recolher' : 'Ver previstos'}
+          aria-label={expanded ? 'Recolher' : 'Ver previstos'}
+          aria-expanded={expanded}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>

@@ -104,7 +104,12 @@ function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
           {dues.map((due) => (
             <li
               key={due.id}
+              role="button"
+              tabIndex={0}
               onClick={() => handleDueClick(due)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDueClick(due); }
+              }}
               className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               title="Ir para o fluxo de caixa deste mês"
             >

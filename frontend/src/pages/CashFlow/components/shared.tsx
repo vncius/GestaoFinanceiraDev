@@ -51,6 +51,7 @@ export function ActionBtn({
   return (
     <button
       title={title}
+      aria-label={title}
       onClick={onClick}
       className={`p-1 sm:p-1.5 rounded-md transition-colors ${className}`}
     >

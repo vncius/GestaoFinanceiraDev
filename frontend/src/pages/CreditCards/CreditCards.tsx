@@ -440,6 +440,7 @@ function CardDetail({
                           {entry?.active && (
                             <button
                               title="Editar lançamento"
+                              aria-label="Editar lançamento"
                               onClick={() => { setEntryToEdit(entry); }}
                               className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                             >
@@ -449,6 +450,7 @@ function CardDetail({
                           {entry?.active && (
                             <button
                               title="Cancelar lançamento"
+                              aria-label="Cancelar lançamento"
                               onClick={async () => {
                                 if (entry.entryType === 'FIXED') {
                                   setFixedDeleteTarget(entry);

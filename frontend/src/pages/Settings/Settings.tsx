@@ -456,6 +456,7 @@ function AccountsTab() {
                       <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           title="Editar"
+                          aria-label="Editar"
                           onClick={() => setModal({ item: a })}
                           className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
@@ -464,6 +465,7 @@ function AccountsTab() {
                         {a.active && (
                           <button
                             title="Desativar"
+                            aria-label="Desativar"
                             onClick={async () => {
                               if (await confirm('Desativar esta conta?'))
                                 deleteMut.mutate(a.id);
@@ -638,6 +640,7 @@ function CategorySection({
                     <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
                       <button
                         title="Editar"
+                        aria-label="Editar"
                         onClick={() => onEdit(c)}
                         className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                       >
@@ -646,6 +649,7 @@ function CategorySection({
                       {c.active && !c.protected && (
                         <button
                           title="Desativar"
+                          aria-label="Desativar"
                           onClick={async () => {
                             if (await confirm('Desativar esta categoria?')) onDelete(c.id);
                           }}
@@ -960,6 +964,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                       <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           title="Editar"
+                          aria-label="Editar"
                           onClick={() => setModal({ item: card })}
                           className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
@@ -968,6 +973,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                         {card.active && (
                           <button
                             title="Desativar"
+                            aria-label="Desativar"
                             onClick={async () => {
                               if (await confirm('Desativar este cartão?'))
                                 deleteMut.mutate(card.id);

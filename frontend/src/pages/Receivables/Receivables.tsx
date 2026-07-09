@@ -52,6 +52,7 @@ function PaidToggle({ paid, onToggle }: { paid: boolean; onToggle: () => void })
   return (
     <button
       title={paid ? 'Reverter recebimento' : 'Marcar como recebido'}
+      aria-label={paid ? 'Reverter recebimento' : 'Marcar como recebido'}
       onClick={onToggle}
       className={`p-1 sm:p-1.5 rounded-md transition-colors ${
         paid
@@ -162,6 +163,7 @@ function ReceivableModal({
             <button
               type="button"
               title="Excluir"
+              aria-label="Excluir"
               onClick={() => { onClose(); onDelete(item!); }}
               className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
             >
@@ -458,6 +460,7 @@ export default function Receivables() {
                           {item.status !== 'CANCELED' && (
                             <button
                               title="Editar"
+                              aria-label="Editar"
                               onClick={() => setModal({ item })}
                               className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                             >
@@ -466,6 +469,7 @@ export default function Receivables() {
                           )}
                           <button
                             title="Excluir"
+                            aria-label="Excluir"
                             onClick={() => handleDelete(item)}
                             className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                           >
