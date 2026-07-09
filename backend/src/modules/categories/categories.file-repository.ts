@@ -25,6 +25,10 @@ export class CategoriesFileRepository implements CategoriesRepository {
     return this.store.delete(id, tenantId);
   }
 
+  replaceAll(tenantId: string, items: Category[]) {
+    return this.store.replaceAllForTenant(tenantId, items);
+  }
+
   async findActive(tenantId: string) {
     const all = await this.store.findAll(tenantId);
     return all.filter((c) => c.active);

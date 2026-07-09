@@ -20,6 +20,7 @@ export class CreditCardsFileRepository implements CreditCardsRepository {
   create(data: CreditCard) { return this.store.create(data); }
   update(id: string, data: Partial<CreditCard>, tenantId: string) { return this.store.update(id, data, tenantId); }
   delete(id: string, tenantId: string) { return this.store.delete(id, tenantId); }
+  replaceAll(tenantId: string, items: CreditCard[]) { return this.store.replaceAllForTenant(tenantId, items); }
 
   async findActive(tenantId: string) {
     const all = await this.store.findAll(tenantId);
@@ -37,6 +38,7 @@ export class CreditCardEntriesFileRepository
   create(data: CreditCardEntry) { return this.store.create(data); }
   update(id: string, data: Partial<CreditCardEntry>, tenantId: string) { return this.store.update(id, data, tenantId); }
   delete(id: string, tenantId: string) { return this.store.delete(id, tenantId); }
+  replaceAll(tenantId: string, items: CreditCardEntry[]) { return this.store.replaceAllForTenant(tenantId, items); }
 
   async findByCardId(tenantId: string, creditCardId: string) {
     const all = await this.store.findAll(tenantId);
@@ -62,6 +64,7 @@ export class CreditCardInstallmentsFileRepository
   createMany(items: CreditCardInstallment[]) { return this.store.createMany(items); }
   update(id: string, data: Partial<CreditCardInstallment>, tenantId: string) { return this.store.update(id, data, tenantId); }
   delete(id: string, tenantId: string) { return this.store.delete(id, tenantId); }
+  replaceAll(tenantId: string, items: CreditCardInstallment[]) { return this.store.replaceAllForTenant(tenantId, items); }
 
   async findByEntryId(tenantId: string, entryId: string) {
     const all = await this.store.findAll(tenantId);
@@ -106,6 +109,7 @@ export class CreditCardInvoicesFileRepository
   create(data: CreditCardInvoice) { return this.store.create(data); }
   update(id: string, data: Partial<CreditCardInvoice>, tenantId: string) { return this.store.update(id, data, tenantId); }
   delete(id: string, tenantId: string) { return this.store.delete(id, tenantId); }
+  replaceAll(tenantId: string, items: CreditCardInvoice[]) { return this.store.replaceAllForTenant(tenantId, items); }
 
   async findByCardId(tenantId: string, creditCardId: string) {
     const all = await this.store.findAll(tenantId);

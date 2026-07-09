@@ -21,6 +21,7 @@ import { ReceivablesService } from './modules/receivables/receivables.service';
 import { CreditCardsService } from './modules/credit-cards/credit-cards.service';
 import { CashFlowService } from './modules/cash-flow/cash-flow.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
+import { BackupService } from './modules/backup/backup.service';
 
 import { AccountsController } from './modules/accounts/accounts.controller';
 import { CategoriesController } from './modules/categories/categories.controller';
@@ -29,6 +30,7 @@ import { ReceivablesController } from './modules/receivables/receivables.control
 import { CreditCardsController } from './modules/credit-cards/credit-cards.controller';
 import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
+import { BackupController } from './modules/backup/backup.controller';
 
 // ─── Repositórios (uma instância por arquivo de dados) ─────────────────────────
 
@@ -79,6 +81,17 @@ const dashboardService = new DashboardService(
   creditCardEntriesRepo,
   creditCardInstallmentsRepo,
 );
+const backupService = new BackupService(
+  accountsRepo,
+  categoriesRepo,
+  settingsRepo,
+  receivablesRepo,
+  transactionsRepo,
+  creditCardsRepo,
+  creditCardEntriesRepo,
+  creditCardInstallmentsRepo,
+  creditCardInvoicesRepo,
+);
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
@@ -90,4 +103,5 @@ export const controllers = {
   creditCards: new CreditCardsController(creditCardsService),
   cashFlow: new CashFlowController(cashFlowService),
   dashboard: new DashboardController(dashboardService),
+  backup: new BackupController(backupService),
 };

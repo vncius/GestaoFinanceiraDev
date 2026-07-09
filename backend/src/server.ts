@@ -13,6 +13,7 @@ import receivablesRouter from './modules/receivables/receivables.routes';
 import cashFlowRouter from './modules/cash-flow/cash-flow.routes';
 import creditCardsRouter from './modules/credit-cards/credit-cards.routes';
 import dashboardRouter from './modules/dashboard/dashboard.routes';
+import backupRouter from './modules/backup/backup.routes';
 
 const app = express();
 const PORT = process.env.PORT ?? 3100;
@@ -22,7 +23,9 @@ const PORT = process.env.PORT ?? 3100;
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
 
 app.use(cors({ origin: CORS_ORIGIN }));
-app.use(express.json());
+// Limite maior que o default (100kb) porque a restauração de backup e a
+// importação de extrato mandam o dataset completo/arquivo no corpo da requisição.
+app.use(express.json({ limit: '20mb' }));
 app.use(requestLogger);
 app.use(tenantMiddleware);
 
@@ -37,6 +40,7 @@ app.use('/receivables', receivablesRouter);
 app.use('/cash-flow', cashFlowRouter);
 app.use('/credit-cards', creditCardsRouter);
 app.use('/dashboard', dashboardRouter);
+app.use('/backup', backupRouter);
 
 app.use(errorHandler);
 

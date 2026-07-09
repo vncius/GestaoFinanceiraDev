@@ -26,12 +26,20 @@ export class FinancialTransactionsFileRepository
     return this.store.create(data);
   }
 
+  createMany(items: FinancialTransaction[]) {
+    return this.store.createMany(items);
+  }
+
   update(id: string, data: Partial<FinancialTransaction>, tenantId: string) {
     return this.store.update(id, data, tenantId);
   }
 
   delete(id: string, tenantId: string) {
     return this.store.delete(id, tenantId);
+  }
+
+  replaceAll(tenantId: string, items: FinancialTransaction[]) {
+    return this.store.replaceAllForTenant(tenantId, items);
   }
 
   async findByMonth(tenantId: string, month: number, year: number): Promise<FinancialTransaction[]> {

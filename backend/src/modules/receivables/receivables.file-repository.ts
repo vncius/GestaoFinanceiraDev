@@ -25,6 +25,10 @@ export class ReceivablesFileRepository implements ReceivablesRepository {
     return this.store.delete(id, tenantId);
   }
 
+  replaceAll(tenantId: string, items: Receivable[]) {
+    return this.store.replaceAllForTenant(tenantId, items);
+  }
+
   async findByMonth(tenantId: string, month: number, year: number): Promise<Receivable[]> {
     const all = await this.store.findAll(tenantId);
     return all.filter((r) => {

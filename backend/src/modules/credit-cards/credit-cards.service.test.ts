@@ -54,6 +54,11 @@ class InMemoryRepo<T extends { id: string; tenantId: string }> {
   async delete(id: string, tenantId: string): Promise<void> {
     this.items = this.items.filter((i) => !(i.id === id && i.tenantId === tenantId));
   }
+
+  async replaceAll(tenantId: string, items: T[]): Promise<void> {
+    const others = this.items.filter((i) => i.tenantId !== tenantId);
+    this.items = [...others, ...items];
+  }
 }
 
 class FakeCardsRepo extends InMemoryRepo<CreditCard> implements CreditCardsRepository {

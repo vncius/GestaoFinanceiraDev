@@ -25,6 +25,10 @@ export class AccountsFileRepository implements AccountsRepository {
     return this.store.delete(id, tenantId);
   }
 
+  replaceAll(tenantId: string, items: Account[]) {
+    return this.store.replaceAllForTenant(tenantId, items);
+  }
+
   async findActive(tenantId: string) {
     const all = await this.store.findAll(tenantId);
     return all.filter((a) => a.active);

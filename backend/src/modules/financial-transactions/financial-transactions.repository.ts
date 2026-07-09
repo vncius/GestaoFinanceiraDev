@@ -8,6 +8,7 @@ import {
 
 export interface FinancialTransactionsRepository
   extends BaseRepository<FinancialTransaction> {
+  createMany(items: FinancialTransaction[]): Promise<FinancialTransaction[]>;
   findByMonth(tenantId: string, month: number, year: number): Promise<FinancialTransaction[]>;
   findByType(tenantId: string, type: TransactionType): Promise<FinancialTransaction[]>;
   findByStatus(tenantId: string, status: TransactionStatus): Promise<FinancialTransaction[]>;
