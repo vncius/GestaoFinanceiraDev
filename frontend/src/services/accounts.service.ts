@@ -3,8 +3,10 @@ import { Account } from '../types';
 
 export interface CreateAccountPayload {
   name: string;
-  type: Account['type'];
+  accountTypeId: string | null;
   initialBalance: number;
+  autoReserveEnabled: boolean;
+  autoReservePercentage: number;
 }
 
 export const AccountsService = {

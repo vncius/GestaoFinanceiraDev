@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
-  PiggyBank,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -425,23 +424,17 @@ export default function Dashboard() {
         <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
           Saldos Atuais
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <StatCard
-            label="Conta Principal"
-            value={formatCurrency(accounts.main?.balance ?? 0)}
-            icon={<Wallet size={18} className="text-blue-600" />}
-            iconBg="bg-blue-50 dark:bg-blue-900/30"
-            valueColor={balanceColor(accounts.main?.balance ?? 0)}
-            sub={accounts.main?.name}
-          />
-          <StatCard
-            label="Reserva de Emergência"
-            value={formatCurrency(accounts.emergencyReserve?.balance ?? 0)}
-            icon={<PiggyBank size={18} className="text-green-600" />}
-            iconBg="bg-green-50 dark:bg-green-900/30"
-            valueColor={balanceColor(accounts.emergencyReserve?.balance ?? 0)}
-            sub={accounts.emergencyReserve?.name}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {accounts.list.map((a) => (
+            <StatCard
+              key={a.id}
+              label={a.name}
+              value={formatCurrency(a.balance)}
+              icon={<Wallet size={18} className="text-blue-600" />}
+              iconBg="bg-blue-50 dark:bg-blue-900/30"
+              valueColor={balanceColor(a.balance)}
+            />
+          ))}
           <StatCard
             label="Total Geral"
             value={formatCurrency(accounts.totalBalance)}

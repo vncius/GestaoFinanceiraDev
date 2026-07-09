@@ -7,7 +7,8 @@ import {
 } from '../../services/receivables.service';
 import { CategoriesService } from '../../services/categories.service';
 import { SettingsService } from '../../services/settings.service';
-import { Category, Receivable, RecurrenceType } from '../../types';
+import { AccountsService } from '../../services/accounts.service';
+import { Account, Category, Receivable, RecurrenceType } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
@@ -72,7 +73,7 @@ interface FormState {
   incomeCategoryId: string;
   expectedPaymentDate: string;
   grossAmount: string;
-  separateReservePercentage: boolean;
+  reserveAccountIds: string[];
   customerName: string;
   invoiceNumber: string;
   notes: string;
@@ -84,7 +85,8 @@ function ReceivableModal({
   onClose,
   item,
   categories,
-  defaultReservePct,
+  accounts,
+  mainAccountId,
   onSave,
   isSaving,
   onDelete,
@@ -93,20 +95,26 @@ function ReceivableModal({
   onClose: () => void;
   item?: Receivable;
   categories: Category[];
-  defaultReservePct: number;
+  accounts: Account[];
+  mainAccountId: string | null;
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
   onDelete?: (item: Receivable) => void;
 }) {
   const isEdit = !!item;
   const incomeCats = categories.filter((c) => c.type === 'INCOME' && c.active);
+  const reserveEligibleAccounts = accounts.filter(
+    (a) => a.active && a.autoReserveEnabled && a.id !== mainAccountId,
+  );
 
   const init = (): FormState => ({
     description: item?.description ?? '',
     incomeCategoryId: item?.incomeCategoryId ?? (incomeCats[0]?.id ?? ''),
     expectedPaymentDate: item ? toInputDate(item.expectedPaymentDate) : todayISO(),
     grossAmount: item ? String(centsToFloat(item.grossAmount)) : '',
-    separateReservePercentage: item?.separateReservePercentage ?? true,
+    reserveAccountIds: item
+      ? item.reserveAllocations.map((a) => a.accountId)
+      : reserveEligibleAccounts.map((a) => a.id),
     customerName: item?.customerName ?? '',
     invoiceNumber: item?.invoiceNumber ?? '',
     notes: item?.notes ?? '',
@@ -118,15 +126,29 @@ function ReceivableModal({
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
+  const selectedReserveAccounts = reserveEligibleAccounts.filter((a) =>
+    form.reserveAccountIds.includes(a.id),
+  );
   const grossCents = floatToCents(parseFloat(form.grossAmount) || 0);
-  const pct = form.separateReservePercentage ? defaultReservePct : 0;
-  const reserveCents = Math.round((grossCents * pct) / 100);
+  const reserveCents = selectedReserveAccounts.reduce(
+    (s, a) => s + Math.round((grossCents * a.autoReservePercentage) / 100),
+    0,
+  );
   const netCents = grossCents - reserveCents;
 
   const set =
     (k: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  function toggleReserveAccount(accountId: string) {
+    setForm((f) => ({
+      ...f,
+      reserveAccountIds: f.reserveAccountIds.includes(accountId)
+        ? f.reserveAccountIds.filter((id) => id !== accountId)
+        : [...f.reserveAccountIds, accountId],
+    }));
+  }
 
   const { alert } = useDialog();
 
@@ -143,7 +165,7 @@ function ReceivableModal({
       incomeCategoryId: form.incomeCategoryId,
       expectedPaymentDate: new Date(form.expectedPaymentDate).toISOString(),
       grossAmount: grossCents,
-      separateReservePercentage: form.separateReservePercentage,
+      reserveAccountIds: selectedReserveAccounts.map((a) => a.id),
       customerName: form.customerName || null,
       invoiceNumber: form.invoiceNumber || null,
       notes: form.notes || null,
@@ -224,19 +246,25 @@ function ReceivableModal({
             </select>
           </Field>
         )}
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.separateReservePercentage}
-            onChange={(e) => setForm((f) => ({ ...f, separateReservePercentage: e.target.checked }))}
-            className="rounded"
-          />
-          Separar reserva ({defaultReservePct}%)
-        </label>
+        {reserveEligibleAccounts.length > 0 && (
+          <div className="space-y-1.5">
+            {reserveEligibleAccounts.map((a) => (
+              <label key={a.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.reserveAccountIds.includes(a.id)}
+                  onChange={() => toggleReserveAccount(a.id)}
+                  className="rounded"
+                />
+                Separar {a.autoReservePercentage}% para {a.name}
+              </label>
+            ))}
+          </div>
+        )}
         {grossCents > 0 && (
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
             <div className="flex justify-between">
-              <span>Reserva ({pct}%)</span>
+              <span>Reserva</span>
               <span>{formatCurrency(reserveCents)}</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-800 dark:text-gray-100">
@@ -281,9 +309,13 @@ export default function Receivables() {
     queryFn: SettingsService.get,
     staleTime: Infinity,
   });
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: AccountsService.findAll,
+    staleTime: 30_000,
+  });
 
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
-  const defaultReservePct = settings?.defaultReservePercentage ?? 30;
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['receivables'] });
     qc.invalidateQueries({ queryKey: ['cashFlow'] });
@@ -491,7 +523,8 @@ export default function Receivables() {
         onClose={() => setModal(null)}
         item={modal?.item}
         categories={categories}
-        defaultReservePct={defaultReservePct}
+        accounts={accounts}
+        mainAccountId={settings?.mainAccountId ?? null}
         onSave={save}
         isSaving={createMut.isPending || updateMut.isPending}
         onDelete={handleDelete}

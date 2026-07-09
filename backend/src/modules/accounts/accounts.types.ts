@@ -1,17 +1,13 @@
-export enum AccountType {
-  MAIN = 'MAIN',
-  EMERGENCY_RESERVE = 'EMERGENCY_RESERVE',
-  COMMON = 'COMMON',
-}
-
 export interface Account {
   id: string;
   tenantId: string;
   name: string;
-  type: AccountType;
+  accountTypeId: string | null;
   initialBalance: number;      // centavos
   initialBalanceDate: string;  // ISO
   active: boolean;
+  autoReserveEnabled: boolean;
+  autoReservePercentage: number; // 0-100, só relevante quando autoReserveEnabled
   createdAt: string;
   updatedAt: string;
 }

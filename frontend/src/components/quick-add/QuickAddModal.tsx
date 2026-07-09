@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { DateInput } from '../ui/DateInput';
 import { CategoriesService } from '../../services/categories.service';
-import { SettingsService } from '../../services/settings.service';
+import { AccountsService } from '../../services/accounts.service';
 import { CashFlowService } from '../../services/cash-flow.service';
 import { ReceivablesService } from '../../services/receivables.service';
 import { floatToCents } from '../../utils/money';
@@ -49,10 +49,10 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
     queryFn: CategoriesService.findAll,
     staleTime: Infinity,
   });
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: SettingsService.get,
-    staleTime: Infinity,
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: AccountsService.findAll,
+    staleTime: 30_000,
   });
 
   const categoryType = form.type === 'receivable' ? 'INCOME' : 'EXPENSE';
@@ -70,11 +70,14 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
       const expectedDate = new Date(form.date).toISOString();
 
       if (form.type === 'receivable') {
+        const reserveAccountIds = accounts
+          .filter((a) => a.active && a.autoReserveEnabled)
+          .map((a) => a.id);
         return ReceivablesService.create({
           description: form.description,
           expectedPaymentDate: expectedDate,
           grossAmount: amount,
-          separateReservePercentage: settings?.applyReserveByDefault ?? true,
+          reserveAccountIds,
           incomeCategoryId: form.categoryId,
         });
       }

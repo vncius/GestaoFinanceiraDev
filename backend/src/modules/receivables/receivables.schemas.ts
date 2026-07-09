@@ -5,7 +5,7 @@ export const createReceivableSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
   expectedPaymentDate: z.string({ required_error: 'Data prevista é obrigatória' }),
   grossAmount: z.number().int().positive('Valor bruto deve ser positivo'),
-  separateReservePercentage: z.boolean().default(true),
+  reserveAccountIds: z.array(z.string().uuid()).default([]),
   incomeCategoryId: z.string().uuid('Categoria inválida'),
   notes: z.string().nullable().optional(),
   recurrence: z.nativeEnum(RecurrenceType).default(RecurrenceType.UNIQUE),

@@ -1,12 +1,12 @@
 import { TrendingUp, Pencil, Trash2 } from 'lucide-react';
-import { Category, Receivable } from '../../../types';
+import { Account, Receivable } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { formatCurrency } from '../../../utils/money';
 import { formatDate } from '../../../utils/date';
 import {
   ActionBtn,
   COL_ACOES,
-  COL_CATEGORIA,
+  COL_CONTA,
   COL_DATA,
   COL_VALOR,
   COL_VALOR_SECUNDARIO,
@@ -16,7 +16,7 @@ import {
 
 export function EntriesGrid({
   items,
-  categories,
+  accounts,
   onAdd,
   onEdit,
   onReceive,
@@ -24,14 +24,14 @@ export function EntriesGrid({
   onDelete,
 }: {
   items: Receivable[];
-  categories: Category[];
+  accounts: Account[];
   onAdd: () => void;
   onEdit: (item: Receivable) => void;
   onReceive: (id: string) => void;
   onRevert: (id: string) => void;
   onDelete: (item: Receivable) => void;
 }) {
-  const catMap = new Map(categories.map((c) => [c.id, c.name]));
+  const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -53,7 +53,7 @@ export function EntriesGrid({
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
-                <th className={`${COL_CATEGORIA} text-left px-3 py-2.5 font-medium`}>Categoria</th>
+                <th className={`${COL_CONTA} text-left px-3 py-2.5 font-medium`}>Conta</th>
                 <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>Valor Bruto</th>
                 <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>Reserva</th>
                 <th className={`${COL_VALOR} text-right px-2 sm:px-3 py-2.5 font-medium`}>Valor líquido</th>
@@ -71,8 +71,8 @@ export function EntriesGrid({
                   <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                     {item.description}
                   </td>
-                  <td className={`${COL_CATEGORIA} px-3 py-3 text-gray-500 dark:text-gray-400 text-xs truncate`}>
-                    {catMap.get(item.incomeCategoryId) ?? '—'}
+                  <td className={`${COL_CONTA} px-3 py-3 text-gray-500 dark:text-gray-400 text-xs truncate`}>
+                    {item.targetAccountId ? accountMap.get(item.targetAccountId) ?? '—' : '—'}
                   </td>
                   <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3 text-right text-gray-600 dark:text-gray-300`}>
                     {formatCurrency(item.grossAmount)}

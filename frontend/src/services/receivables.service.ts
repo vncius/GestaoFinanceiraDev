@@ -5,7 +5,7 @@ export interface CreateReceivablePayload {
   description: string;
   expectedPaymentDate: string;
   grossAmount: number;
-  separateReservePercentage: boolean;
+  reserveAccountIds: string[];
   incomeCategoryId: string;
   notes?: string | null;
   customerName?: string | null;

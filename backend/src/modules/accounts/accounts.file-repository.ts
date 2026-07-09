@@ -1,6 +1,6 @@
 import { JsonFileStore } from '../../shared/persistence/json-file-store';
 import { AccountsRepository } from './accounts.repository';
-import { Account, AccountType } from './accounts.types';
+import { Account } from './accounts.types';
 
 export class AccountsFileRepository implements AccountsRepository {
   private store = new JsonFileStore<Account>('accounts.json');
@@ -32,10 +32,5 @@ export class AccountsFileRepository implements AccountsRepository {
   async findActive(tenantId: string) {
     const all = await this.store.findAll(tenantId);
     return all.filter((a) => a.active);
-  }
-
-  async findByType(tenantId: string, type: AccountType) {
-    const all = await this.store.findAll(tenantId);
-    return all.filter((a) => a.type === type && a.active);
   }
 }

@@ -79,19 +79,13 @@ export class DashboardService {
     const cardEntryMap = new Map(allCardEntries.map((e) => [e.id, e]));
 
     // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────
-    const mainAccount = settings?.mainAccountId
-      ? allAccounts.find((a) => a.id === settings.mainAccountId) ?? null
-      : null;
-    const reserveAccount = settings?.emergencyReserveAccountId
-      ? allAccounts.find((a) => a.id === settings.emergencyReserveAccountId) ?? null
-      : null;
-
-    const mainBalance = mainAccount
-      ? calcAccountBalance(mainAccount, allTransactions)
-      : 0;
-    const reserveBalance = reserveAccount
-      ? calcAccountBalance(reserveAccount, allTransactions)
-      : 0;
+    const activeAccounts = allAccounts.filter((a) => a.active);
+    const accountBalances = activeAccounts.map((a) => ({
+      id: a.id,
+      name: a.name,
+      balance: calcAccountBalance(a, allTransactions),
+    }));
+    const totalBalance = accountBalances.reduce((s, a) => s + a.balance, 0);
 
     // ── Upcoming dues ───────────────────────────────────────────────────────────
     const cutoff = new Date(
@@ -346,13 +340,8 @@ export class DashboardService {
       month,
       year,
       accounts: {
-        main: mainAccount
-          ? { id: mainAccount.id, name: mainAccount.name, balance: mainBalance }
-          : null,
-        emergencyReserve: reserveAccount
-          ? { id: reserveAccount.id, name: reserveAccount.name, balance: reserveBalance }
-          : null,
-        totalBalance: mainBalance + reserveBalance,
+        list: accountBalances,
+        totalBalance,
       },
       monthSummary,
       upcomingDues,

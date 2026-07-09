@@ -26,10 +26,12 @@ export class AccountsService {
       id: generateId(),
       tenantId,
       name: input.name,
-      type: input.type,
+      accountTypeId: input.accountTypeId ?? null,
       initialBalance: input.initialBalance ?? 0,
       initialBalanceDate: input.initialBalanceDate ?? now,
       active: true,
+      autoReserveEnabled: input.autoReserveEnabled ?? false,
+      autoReservePercentage: input.autoReservePercentage ?? 0,
       createdAt: now,
       updatedAt: now,
     });

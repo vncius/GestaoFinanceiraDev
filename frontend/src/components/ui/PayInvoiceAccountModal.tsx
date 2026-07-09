@@ -13,13 +13,6 @@ interface Props {
 
 const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  MAIN: 'Principal',
-  EMERGENCY_RESERVE: 'Reserva de Emergência',
-  INVESTMENT: 'Investimentos',
-  OTHER: 'Outra',
-};
-
 export function PayInvoiceAccountModal({ open, onClose, accounts, onConfirm, isPaying }: Props) {
   const activeAccounts = accounts.filter((a) => a.active);
   const [accountId, setAccountId] = useState('');
@@ -62,7 +55,7 @@ export function PayInvoiceAccountModal({ open, onClose, accounts, onConfirm, isP
           <option value="">Selecione...</option>
           {activeAccounts.map((a) => (
             <option key={a.id} value={a.id}>
-              {a.name} ({ACCOUNT_TYPE_LABELS[a.type] ?? a.type})
+              {a.name}
             </option>
           ))}
         </select>

@@ -3,6 +3,7 @@
 // reimportar) os mesmos repositórios de arquivo em cada módulo.
 
 import { AccountsFileRepository } from './modules/accounts/accounts.file-repository';
+import { AccountTypesFileRepository } from './modules/account-types/account-types.file-repository';
 import { CategoriesFileRepository } from './modules/categories/categories.file-repository';
 import { SettingsFileRepository } from './modules/settings/settings.file-repository';
 import { ReceivablesFileRepository } from './modules/receivables/receivables.file-repository';
@@ -15,6 +16,7 @@ import {
 } from './modules/credit-cards/credit-cards.file-repository';
 
 import { AccountsService } from './modules/accounts/accounts.service';
+import { AccountTypesService } from './modules/account-types/account-types.service';
 import { CategoriesService } from './modules/categories/categories.service';
 import { SettingsService } from './modules/settings/settings.service';
 import { ReceivablesService } from './modules/receivables/receivables.service';
@@ -24,6 +26,7 @@ import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
 
 import { AccountsController } from './modules/accounts/accounts.controller';
+import { AccountTypesController } from './modules/account-types/account-types.controller';
 import { CategoriesController } from './modules/categories/categories.controller';
 import { SettingsController } from './modules/settings/settings.controller';
 import { ReceivablesController } from './modules/receivables/receivables.controller';
@@ -35,6 +38,7 @@ import { BackupController } from './modules/backup/backup.controller';
 // ─── Repositórios (uma instância por arquivo de dados) ─────────────────────────
 
 const accountsRepo = new AccountsFileRepository();
+const accountTypesRepo = new AccountTypesFileRepository();
 const categoriesRepo = new CategoriesFileRepository();
 const settingsRepo = new SettingsFileRepository();
 const receivablesRepo = new ReceivablesFileRepository();
@@ -47,12 +51,14 @@ const creditCardInvoicesRepo = new CreditCardInvoicesFileRepository();
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 
 const accountsService = new AccountsService(accountsRepo);
+const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
 const settingsService = new SettingsService(settingsRepo, categoriesRepo);
 const receivablesService = new ReceivablesService(
   receivablesRepo,
   transactionsRepo,
   settingsRepo,
+  accountsRepo,
 );
 const creditCardsService = new CreditCardsService(
   creditCardsRepo,
@@ -97,6 +103,7 @@ const backupService = new BackupService(
 
 export const controllers = {
   accounts: new AccountsController(accountsService),
+  accountTypes: new AccountTypesController(accountTypesService),
   categories: new CategoriesController(categoriesService),
   settings: new SettingsController(settingsService),
   receivables: new ReceivablesController(receivablesService),

@@ -1,12 +1,20 @@
 // ── Accounts ──────────────────────────────────────────────────────────────────
-export type AccountType = 'MAIN' | 'EMERGENCY_RESERVE' | 'INVESTMENT' | 'OTHER';
+export interface AccountTypeItem {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Account {
   id: string;
   name: string;
-  type: AccountType;
+  accountTypeId: string | null;
   initialBalance: number;
   active: boolean;
+  autoReserveEnabled: boolean;
+  autoReservePercentage: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,11 +35,7 @@ export interface Category {
 // ── Settings ──────────────────────────────────────────────────────────────────
 export interface FinancialSettings {
   id: string;
-  defaultReservePercentage: number;
-  applyReserveByDefault: boolean;
-  allowDisableReserve: boolean;
   mainAccountId: string | null;
-  emergencyReserveAccountId: string | null;
   minimumMainBalance: number;
   annualRevenueLimit: number;
   controlStartMonth: number;
@@ -45,14 +49,19 @@ export interface FinancialSettings {
 export type ReceivableStatus = 'EXPECTED' | 'RECEIVED' | 'CANCELED';
 export type RecurrenceType = 'UNIQUE' | 'FIXED';
 
+export interface ReserveAllocation {
+  accountId: string;
+  percentage: number;
+  amount: number;
+}
+
 export interface Receivable {
   id: string;
   description: string;
   expectedPaymentDate: string;
   actualPaymentDate: string | null;
   grossAmount: number;
-  separateReservePercentage: boolean;
-  reservePercentageApplied: number;
+  reserveAllocations: ReserveAllocation[];
   reserveAmount: number;
   netAmount: number;
   status: ReceivableStatus;
@@ -275,8 +284,7 @@ export interface DashboardResponse {
   month: number;
   year: number;
   accounts: {
-    main: AccountBalance | null;
-    emergencyReserve: AccountBalance | null;
+    list: AccountBalance[];
     totalBalance: number;
   };
   monthSummary: CashFlowSummary;

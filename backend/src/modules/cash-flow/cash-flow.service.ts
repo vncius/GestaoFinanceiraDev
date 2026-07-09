@@ -101,7 +101,12 @@ export class CashFlowService {
     const monthStart = new Date(year, month - 1, 1);
     const monthEnd = new Date(year, month, 1); // primeiro dia do mês seguinte
     const mainId = settings?.mainAccountId ?? null;
-    const reserveId = settings?.emergencyReserveAccountId ?? null;
+
+    // Contas de reserva agora são configuradas individualmente (Account.autoReserveEnabled),
+    // em vez de um único settings.emergencyReserveAccountId.
+    const allAccounts = await this.accountsRepo.findActive(tenantId);
+    const reserveAccounts = allAccounts.filter((a) => a.autoReserveEnabled);
+    const reserveAccountIds = new Set(reserveAccounts.map((a) => a.id));
 
     // O saldo inicial da projeção só precisa ser recalculado com um corte
     // diferente (início do mês atual) quando a referência é futura; nos
@@ -110,41 +115,42 @@ export class CashFlowService {
     // selecionado quando a referência não é futura, então é sempre calculado
     // diretamente (mesma lógica de acúmulo futuro dos demais campos previstos).
     const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
-    const [mainAccount, reserveAccount] = await Promise.all([
-      mainId ? this.accountsRepo.findById(mainId, tenantId) : null,
-      reserveId ? this.accountsRepo.findById(reserveId, tenantId) : null,
-    ]);
+    const mainAccount = mainId ? await this.accountsRepo.findById(mainId, tenantId) : null;
 
     const mainInitial = mainAccount ? calcAccountBalance(mainAccount, allTransactions, monthStart) : 0;
-    const reserveEndBalance = reserveAccount ? calcAccountBalance(reserveAccount, allTransactions, monthEnd) : 0;
+    const reserveEndBalance = reserveAccounts.reduce(
+      (s, a) => s + calcAccountBalance(a, allTransactions, monthEnd),
+      0,
+    );
     const futureRangeInitial =
       isFutureSelection && mainAccount ? calcAccountBalance(mainAccount, allTransactions, rangeStart) : null;
-    const reserveProjectedInitialBalance = reserveAccount
-      ? calcAccountBalance(reserveAccount, allTransactions, rangeStart)
-      : 0;
+    const reserveProjectedInitialBalance = reserveAccounts.reduce(
+      (s, a) => s + calcAccountBalance(a, allTransactions, rangeStart),
+      0,
+    );
 
     const initialBalance = mainInitial;
     const projectedInitialBalance = futureRangeInitial ?? initialBalance;
 
-    // Transações da conta reserva não afetam os totais da conta principal
+    // Transações de contas de reserva não afetam os totais da conta principal
     const mainEntries = entries.filter(
-      (r) => !reserveId || r.targetAccountId !== reserveId,
+      (r) => !r.targetAccountId || !reserveAccountIds.has(r.targetAccountId),
     );
     const mainPayments = payments.filter(
-      (t) => !reserveId || t.sourceAccountId !== reserveId,
+      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
     );
     const mainExtraExpenses = extraExpenses.filter(
-      (t) => !reserveId || t.sourceAccountId !== reserveId,
+      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
     );
 
     const rangeMainEntries = rangeEntries.filter(
-      (r) => !reserveId || r.targetAccountId !== reserveId,
+      (r) => !r.targetAccountId || !reserveAccountIds.has(r.targetAccountId),
     );
     const rangeMainPayments = rangePayments.filter(
-      (t) => !reserveId || t.sourceAccountId !== reserveId,
+      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
     );
     const rangeMainExtraExpenses = rangeExtraExpenses.filter(
-      (t) => !reserveId || t.sourceAccountId !== reserveId,
+      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
     );
 
     // realizado — sempre restrito ao mês selecionado
@@ -174,17 +180,20 @@ export class CashFlowService {
     const reserveInflow = entries
       .filter((r) => r.status === ReceivableStatus.RECEIVED)
       .reduce((s, r) => {
-        // Entrada com destino direto à reserva: valor líquido inteiro vai para reserva
-        if (reserveId && r.targetAccountId === reserveId) return s + r.netAmount;
-        // Entrada com split: apenas a parcela reserva vai para a reserva
+        // Entrada com destino direto a uma conta de reserva: valor líquido inteiro vai para reserva
+        if (r.targetAccountId && reserveAccountIds.has(r.targetAccountId)) return s + r.netAmount;
+        // Entrada com split: apenas a soma das alocações de reserva vai para a reserva
         return s + r.reserveAmount;
       }, 0);
 
-    const reserveOutflow = reserveId
-      ? [...payments, ...extraExpenses]
-          .filter((t) => t.status === TransactionStatus.PAID && t.sourceAccountId === reserveId)
-          .reduce((s, t) => s + t.amount, 0)
-      : 0;
+    const reserveOutflow = [...payments, ...extraExpenses]
+      .filter(
+        (t) =>
+          t.status === TransactionStatus.PAID &&
+          !!t.sourceAccountId &&
+          reserveAccountIds.has(t.sourceAccountId),
+      )
+      .reduce((s, t) => s + t.amount, 0);
 
     return {
       month,

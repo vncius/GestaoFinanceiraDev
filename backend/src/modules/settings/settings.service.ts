@@ -7,11 +7,7 @@ import { CategoriesRepository } from '../categories/categories.repository';
 import { CategoryType } from '../categories/categories.types';
 
 const DEFAULT_SETTINGS: Omit<FinancialSettings, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'> = {
-  defaultReservePercentage: 30,
-  applyReserveByDefault: true,
-  allowDisableReserve: true,
   mainAccountId: null,
-  emergencyReserveAccountId: null,
   minimumMainBalance: 0,
   annualRevenueLimit: 0,
   controlStartMonth: new Date().getMonth() + 1,

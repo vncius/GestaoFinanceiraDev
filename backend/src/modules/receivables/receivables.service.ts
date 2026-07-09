@@ -3,7 +3,7 @@ import { generateId } from '../../shared/utils/id.utils';
 import { nowISO, addMonths, monthKey, monthYearOf } from '../../shared/utils/date.utils';
 import { applyPercentage } from '../../shared/utils/money.utils';
 import { ReceivablesRepository } from './receivables.repository';
-import { Receivable, ReceivableStatus, RecurrenceType } from './receivables.types';
+import { Receivable, ReceivableStatus, RecurrenceType, ReserveAllocation } from './receivables.types';
 import {
   CreateReceivableInput,
   UpdateReceivableInput,
@@ -18,6 +18,7 @@ import {
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
 import { SettingsRepository } from '../settings/settings.repository';
+import { AccountsRepository } from '../accounts/accounts.repository';
 import { DeleteScope } from '../../shared/types/recurrence.types';
 
 export class ReceivablesService {
@@ -25,6 +26,7 @@ export class ReceivablesService {
     private readonly receivablesRepo: ReceivablesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly settingsRepo: SettingsRepository,
+    private readonly accountsRepo: AccountsRepository,
   ) {}
 
   async findAll(tenantId: string, query: ReceivableQuery): Promise<Receivable[]> {
@@ -46,11 +48,10 @@ export class ReceivablesService {
   }
 
   async create(tenantId: string, input: CreateReceivableInput): Promise<Receivable> {
-    const settings = await this.settingsRepo.get(tenantId);
-    const { reservePercentage, reserveAmount, netAmount } = this.calcAmounts(
+    const { reserveAllocations, reserveAmount, netAmount } = await this.calcReserveAllocations(
+      tenantId,
       input.grossAmount,
-      input.separateReservePercentage ?? true,
-      settings?.defaultReservePercentage ?? 30,
+      input.reserveAccountIds ?? [],
     );
 
     const now = nowISO();
@@ -66,8 +67,7 @@ export class ReceivablesService {
       expectedPaymentDate: input.expectedPaymentDate,
       actualPaymentDate: null,
       grossAmount: input.grossAmount,
-      separateReservePercentage: input.separateReservePercentage ?? true,
-      reservePercentageApplied: reservePercentage,
+      reserveAllocations,
       reserveAmount,
       netAmount,
       status: ReceivableStatus.EXPECTED,
@@ -105,15 +105,14 @@ export class ReceivablesService {
       recurrencePatch = { recurringGroupId: id, recurringActive: true };
     }
 
-    const settings = await this.settingsRepo.get(tenantId);
     const grossAmount = input.grossAmount ?? existing.grossAmount;
-    const separateReserve =
-      input.separateReservePercentage ?? existing.separateReservePercentage;
+    const reserveAccountIds =
+      input.reserveAccountIds ?? existing.reserveAllocations.map((a) => a.accountId);
 
-    const { reservePercentage, reserveAmount, netAmount } = this.calcAmounts(
+    const { reserveAllocations, reserveAmount, netAmount } = await this.calcReserveAllocations(
+      tenantId,
       grossAmount,
-      separateReserve,
-      settings?.defaultReservePercentage ?? 30,
+      reserveAccountIds,
     );
 
     const now = nowISO();
@@ -121,13 +120,14 @@ export class ReceivablesService {
     const updated = await this.receivablesRepo.update(id, {
       ...input,
       ...recurrencePatch,
-      reservePercentageApplied: reservePercentage,
+      reserveAllocations,
       reserveAmount,
       netAmount,
       updatedAt: now,
     }, tenantId);
 
     if (existing.status === ReceivableStatus.RECEIVED) {
+      const settings = await this.settingsRepo.get(tenantId);
       if (!settings?.mainAccountId) {
         throw new AppError('Conta principal não configurada nas parametrizações.', 400);
       }
@@ -168,24 +168,21 @@ export class ReceivablesService {
         updatedAt: now,
       });
 
-      // Cria nova reserva (se aplicável e destino não é a própria reserva)
-      if (
-        reserveAmount > 0 &&
-        settings.emergencyReserveAccountId &&
-        incomeTarget !== settings.emergencyReserveAccountId
-      ) {
+      // Cria as novas reservas (uma por conta configurada, exceto a própria conta de destino)
+      for (const allocation of reserveAllocations) {
+        if (allocation.amount <= 0 || allocation.accountId === incomeTarget) continue;
         await this.transactionsRepo.create({
           id: generateId(),
           tenantId,
           type: TransactionType.RESERVE,
           description: `Reserva: ${updated.description}`,
           categoryId: null,
-          amount: reserveAmount,
+          amount: allocation.amount,
           expectedDate: updated.expectedPaymentDate,
           actualDate: now,
           status: TransactionStatus.RECEIVED,
           sourceAccountId: null,
-          targetAccountId: settings.emergencyReserveAccountId,
+          targetAccountId: allocation.accountId,
           originType: OriginType.RECEIVABLE,
           originId: id,
           notes: null,
@@ -368,24 +365,21 @@ export class ReceivablesService {
       updatedAt: now,
     });
 
-    // só cria transação de reserva se o destino não for a própria conta de reserva
-    if (
-      receivable.reserveAmount > 0 &&
-      settings.emergencyReserveAccountId &&
-      incomeTarget !== settings.emergencyReserveAccountId
-    ) {
+    // cria uma transação RESERVE por conta configurada, exceto a própria conta de destino
+    for (const allocation of receivable.reserveAllocations) {
+      if (allocation.amount <= 0 || allocation.accountId === incomeTarget) continue;
       transactions.push({
         id: generateId(),
         tenantId,
         type: TransactionType.RESERVE,
         description: `Reserva: ${receivable.description}`,
         categoryId: null,
-        amount: receivable.reserveAmount,
+        amount: allocation.amount,
         expectedDate: effectiveDate,
         actualDate: now,
         status: TransactionStatus.RECEIVED,
         sourceAccountId: null,
-        targetAccountId: settings.emergencyReserveAccountId,
+        targetAccountId: allocation.accountId,
         originType: OriginType.RECEIVABLE,
         originId: receivable.id,
         notes: null,
@@ -450,17 +444,27 @@ export class ReceivablesService {
 
   // --- helpers ---
 
-  private calcAmounts(
+  private async calcReserveAllocations(
+    tenantId: string,
     grossAmount: number,
-    separateReserve: boolean,
-    defaultPercentage: number,
-  ) {
-    if (!separateReserve) {
-      return { reservePercentage: 0, reserveAmount: 0, netAmount: grossAmount };
+    reserveAccountIds: string[],
+  ): Promise<{ reserveAllocations: ReserveAllocation[]; reserveAmount: number; netAmount: number }> {
+    if (reserveAccountIds.length === 0) {
+      return { reserveAllocations: [], reserveAmount: 0, netAmount: grossAmount };
     }
-    const reservePercentage = defaultPercentage;
-    const reserveAmount = applyPercentage(grossAmount, reservePercentage);
+
+    const accounts = await this.accountsRepo.findActive(tenantId);
+    const eligibleIds = new Set(reserveAccountIds);
+    const reserveAllocations: ReserveAllocation[] = accounts
+      .filter((a) => a.autoReserveEnabled && eligibleIds.has(a.id))
+      .map((a) => ({
+        accountId: a.id,
+        percentage: a.autoReservePercentage,
+        amount: applyPercentage(grossAmount, a.autoReservePercentage),
+      }));
+
+    const reserveAmount = reserveAllocations.reduce((s, a) => s + a.amount, 0);
     const netAmount = grossAmount - reserveAmount;
-    return { reservePercentage, reserveAmount, netAmount };
+    return { reserveAllocations, reserveAmount, netAmount };
   }
 }

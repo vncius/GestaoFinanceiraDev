@@ -109,8 +109,9 @@ export default function Report() {
         </header>
 
         <Section title="Saldos Atuais">
-          <KeyValueRow label={accounts.main?.name ?? 'Conta Principal'} value={formatCurrency(accounts.main?.balance ?? 0)} />
-          <KeyValueRow label={accounts.emergencyReserve?.name ?? 'Reserva de Emergência'} value={formatCurrency(accounts.emergencyReserve?.balance ?? 0)} />
+          {accounts.list.map((a) => (
+            <KeyValueRow key={a.id} label={a.name} value={formatCurrency(a.balance)} />
+          ))}
           <KeyValueRow label="Total Geral" value={formatCurrency(accounts.totalBalance)} bold />
         </Section>
 

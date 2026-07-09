@@ -8,6 +8,12 @@ export enum ReceivableStatus {
   CANCELED = 'CANCELED',
 }
 
+export interface ReserveAllocation {
+  accountId: string;
+  percentage: number;  // ex: 30
+  amount: number;       // centavos
+}
+
 export interface Receivable {
   id: string;
   tenantId: string;
@@ -15,9 +21,8 @@ export interface Receivable {
   expectedPaymentDate: string;        // ISO
   actualPaymentDate: string | null;   // ISO — preenchido ao receber
   grossAmount: number;                // centavos
-  separateReservePercentage: boolean;
-  reservePercentageApplied: number;   // ex: 30
-  reserveAmount: number;              // centavos
+  reserveAllocations: ReserveAllocation[];
+  reserveAmount: number;              // centavos, soma de reserveAllocations
   netAmount: number;                  // centavos
   status: ReceivableStatus;
   incomeCategoryId: string;

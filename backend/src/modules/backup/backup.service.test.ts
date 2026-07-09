@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BackupService } from './backup.service';
 import { AccountsRepository } from '../accounts/accounts.repository';
-import { Account, AccountType } from '../accounts/accounts.types';
+import { Account } from '../accounts/accounts.types';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { Category, CategoryType } from '../categories/categories.types';
 import { SettingsRepository } from '../settings/settings.repository';
@@ -66,7 +66,6 @@ class InMemoryRepo<T extends { id: string; tenantId: string }> {
 
 class FakeAccountsRepo extends InMemoryRepo<Account> implements AccountsRepository {
   async findActive(tenantId: string) { return this.items.filter((a) => a.tenantId === tenantId && a.active); }
-  async findByType(tenantId: string, type: AccountType) { return this.items.filter((a) => a.tenantId === tenantId && a.type === type); }
 }
 
 class FakeCategoriesRepo extends InMemoryRepo<Category> implements CategoriesRepository {
@@ -155,10 +154,12 @@ function makeAccount(tenantId: string, overrides: Partial<Account> = {}): Accoun
     id: randomUUID(),
     tenantId,
     name: 'Conta Teste',
-    type: AccountType.MAIN,
+    accountTypeId: null,
     initialBalance: 0,
     initialBalanceDate: now,
     active: true,
+    autoReserveEnabled: false,
+    autoReservePercentage: 0,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -215,8 +216,7 @@ function makeReceivable(tenantId: string, overrides: Partial<Receivable> = {}): 
     expectedPaymentDate: '2026-03-05',
     actualPaymentDate: null,
     grossAmount: 2000,
-    separateReservePercentage: false,
-    reservePercentageApplied: 0,
+    reserveAllocations: [],
     reserveAmount: 0,
     netAmount: 2000,
     status: ReceivableStatus.RECEIVED,

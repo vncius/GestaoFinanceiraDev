@@ -17,7 +17,7 @@ interface ReceivableFormState {
   description: string;
   expectedPaymentDate: string;
   grossAmount: string;
-  separateReservePercentage: boolean;
+  reserveAccountIds: string[];
   incomeCategoryId: string;
   targetAccountId: string;
   notes: string;
@@ -31,8 +31,6 @@ export function ReceivableModal({
   categories,
   accounts,
   mainAccountId,
-  reserveAccountId,
-  defaultReservePct,
   onSave,
   isSaving,
   onReceive,
@@ -44,8 +42,6 @@ export function ReceivableModal({
   categories: Category[];
   accounts: Account[];
   mainAccountId: string | null;
-  reserveAccountId: string | null;
-  defaultReservePct: number;
   onSave: (data: CreateReceivablePayload) => void;
   isSaving: boolean;
   onReceive?: (id: string) => void;
@@ -53,15 +49,16 @@ export function ReceivableModal({
 }) {
   const isEdit = !!item;
   const incomeCategories = categories.filter((c) => c.type === 'INCOME');
-  const selectableAccounts = accounts.filter(
-    (a) => a.active && (a.id === mainAccountId || a.id === reserveAccountId),
-  );
+  const activeAccounts = accounts.filter((a) => a.active);
+  const reserveCapableAccounts = activeAccounts.filter((a) => a.autoReserveEnabled);
 
   const init = (): ReceivableFormState => ({
     description: item?.description ?? '',
     expectedPaymentDate: item ? toInputDate(item.expectedPaymentDate) : todayISO(),
     grossAmount: item ? String(centsToFloat(item.grossAmount)) : '',
-    separateReservePercentage: item?.separateReservePercentage ?? true,
+    reserveAccountIds: item
+      ? item.reserveAllocations.map((a) => a.accountId)
+      : reserveCapableAccounts.map((a) => a.id),
     incomeCategoryId: item?.incomeCategoryId ?? (incomeCategories[0]?.id ?? ''),
     targetAccountId: item?.targetAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
@@ -74,14 +71,31 @@ export function ReceivableModal({
   if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
+  // Uma conta não faz sentido separar reserva para si mesma.
+  const reserveEligibleAccounts = reserveCapableAccounts.filter(
+    (a) => a.id !== form.targetAccountId,
+  );
+  const selectedReserveAccounts = reserveEligibleAccounts.filter((a) =>
+    form.reserveAccountIds.includes(a.id),
+  );
+
   const grossCents = floatToCents(parseFloat(form.grossAmount) || 0);
-  const isReserveTarget = !!reserveAccountId && form.targetAccountId === reserveAccountId;
-  const effectiveSeparate = isReserveTarget ? false : form.separateReservePercentage;
-  const pct = effectiveSeparate ? defaultReservePct : 0;
-  const reserveCents = Math.round((grossCents * pct) / 100);
+  const reserveCents = selectedReserveAccounts.reduce(
+    (s, a) => s + Math.round((grossCents * a.autoReservePercentage) / 100),
+    0,
+  );
   const netCents = grossCents - reserveCents;
 
   const { alert } = useDialog();
+
+  function toggleReserveAccount(accountId: string) {
+    setForm((f) => ({
+      ...f,
+      reserveAccountIds: f.reserveAccountIds.includes(accountId)
+        ? f.reserveAccountIds.filter((id) => id !== accountId)
+        : [...f.reserveAccountIds, accountId],
+    }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,7 +109,7 @@ export function ReceivableModal({
       description: form.description,
       expectedPaymentDate: new Date(form.expectedPaymentDate).toISOString(),
       grossAmount: grossCents,
-      separateReservePercentage: effectiveSeparate,
+      reserveAccountIds: selectedReserveAccounts.map((a) => a.id),
       incomeCategoryId: form.incomeCategoryId,
       targetAccountId: form.targetAccountId || null,
       notes: form.notes || null,
@@ -186,34 +200,38 @@ export function ReceivableModal({
           )}
         </div>
         <div className="grid grid-cols-2 gap-3">
-          {selectableAccounts.length > 0 && (
+          {activeAccounts.length > 0 && (
             <Field label="Conta de destino">
               <select
                 className={INPUT}
                 value={form.targetAccountId}
                 onChange={(e) => setForm((f) => ({ ...f, targetAccountId: e.target.value }))}
               >
-                {selectableAccounts.map((a) => (
+                {activeAccounts.map((a) => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
             </Field>
           )}
         </div>
-        {!isReserveTarget && (
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.separateReservePercentage}
-              onChange={(e) => setForm((f) => ({ ...f, separateReservePercentage: e.target.checked }))}
-              className="rounded"
-            />
-            Separar reserva ({defaultReservePct}%)
-          </label>
+        {reserveEligibleAccounts.length > 0 && (
+          <div className="space-y-1.5">
+            {reserveEligibleAccounts.map((a) => (
+              <label key={a.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.reserveAccountIds.includes(a.id)}
+                  onChange={() => toggleReserveAccount(a.id)}
+                  className="rounded"
+                />
+                Separar {a.autoReservePercentage}% para {a.name}
+              </label>
+            ))}
+          </div>
         )}
         {grossCents > 0 && (
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
-            <div className="flex justify-between"><span>Reserva ({pct}%)</span><span className="font-medium">{formatCurrency(reserveCents)}</span></div>
+            <div className="flex justify-between"><span>Reserva</span><span className="font-medium">{formatCurrency(reserveCents)}</span></div>
             <div className="flex justify-between font-semibold text-gray-800 dark:text-gray-100"><span>Valor líquido</span><span className="text-green-700 dark:text-green-400">{formatCurrency(netCents)}</span></div>
           </div>
         )}

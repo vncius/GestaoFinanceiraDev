@@ -61,8 +61,7 @@ export interface DashboardResponse {
   month: number;
   year: number;
   accounts: {
-    main: AccountBalance | null;
-    emergencyReserve: AccountBalance | null;
+    list: AccountBalance[];
     totalBalance: number;
   };
   monthSummary: CashFlowSummary;

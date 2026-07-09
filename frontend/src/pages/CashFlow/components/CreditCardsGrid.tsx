@@ -5,7 +5,7 @@ import { formatDate } from '../../../utils/date';
 import {
   ActionBtn,
   COL_ACOES,
-  COL_CATEGORIA,
+  COL_CONTA,
   COL_DATA,
   COL_VALOR,
   COL_VALOR_SECUNDARIO,
@@ -39,7 +39,7 @@ export function CreditCardsGrid({
           <thead>
             <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Cartão</th>
-              <th className={`${COL_CATEGORIA} px-3 py-2.5`} />
+              <th className={`${COL_CONTA} px-3 py-2.5`} />
               <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
               <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
               <th className={`${COL_VALOR} text-right px-3 py-2.5 font-medium`}>Valor fatura</th>
@@ -57,7 +57,7 @@ export function CreditCardsGrid({
                 <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                   {cardNames.get(inv.creditCardId) ?? 'Cartão'}
                 </td>
-                <td className={`${COL_CATEGORIA} px-3 py-3`} />
+                <td className={`${COL_CONTA} px-3 py-3`} />
                 <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
                 <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
                 <td className={`${COL_VALOR} px-3 py-3 text-right font-semibold text-purple-700 dark:text-purple-400 whitespace-nowrap`}>

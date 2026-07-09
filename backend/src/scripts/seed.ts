@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { AccountsFileRepository } from '../modules/accounts/accounts.file-repository';
-import { AccountType } from '../modules/accounts/accounts.types';
+import { AccountTypesFileRepository } from '../modules/account-types/account-types.file-repository';
 import { CategoriesFileRepository } from '../modules/categories/categories.file-repository';
 import { CategoryType } from '../modules/categories/categories.types';
 import { SettingsFileRepository } from '../modules/settings/settings.file-repository';
@@ -11,10 +11,36 @@ import { nowISO } from '../shared/utils/date.utils';
 import { DEFAULT_TENANT_ID } from '../shared/tenant/tenant.constants';
 
 const accountsRepo = new AccountsFileRepository();
+const accountTypesRepo = new AccountTypesFileRepository();
 const categoriesRepo = new CategoriesFileRepository();
 const settingsRepo = new SettingsFileRepository();
 
-async function seedAccounts() {
+async function seedAccountTypes() {
+  const existing = await accountTypesRepo.findAll(DEFAULT_TENANT_ID);
+  if (existing.length > 0) {
+    console.log('  [account-types] Já existem tipos — pulando seed.');
+    return existing;
+  }
+
+  const now = nowISO();
+  const names = ['Conta Principal', 'Reserva de Emergência'];
+  const types = [];
+  for (const name of names) {
+    const created = await accountTypesRepo.create({
+      id: generateId(),
+      tenantId: DEFAULT_TENANT_ID,
+      name,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    types.push(created);
+    console.log(`  [account-types] Criado: ${name}`);
+  }
+  return types;
+}
+
+async function seedAccounts(mainTypeId: string, reserveTypeId: string) {
   const existing = await accountsRepo.findAll(DEFAULT_TENANT_ID);
   if (existing.length > 0) {
     console.log('  [accounts] Já existem contas — pulando seed.');
@@ -27,10 +53,12 @@ async function seedAccounts() {
       id: generateId(),
       tenantId: DEFAULT_TENANT_ID,
       name: 'Conta Principal',
-      type: AccountType.MAIN,
+      accountTypeId: mainTypeId,
       initialBalance: 0,
       initialBalanceDate: now,
       active: true,
+      autoReserveEnabled: false,
+      autoReservePercentage: 0,
       createdAt: now,
       updatedAt: now,
     },
@@ -38,10 +66,12 @@ async function seedAccounts() {
       id: generateId(),
       tenantId: DEFAULT_TENANT_ID,
       name: 'Reserva de Emergência',
-      type: AccountType.EMERGENCY_RESERVE,
+      accountTypeId: reserveTypeId,
       initialBalance: 0,
       initialBalanceDate: now,
       active: true,
+      autoReserveEnabled: true,
+      autoReservePercentage: 30,
       createdAt: now,
       updatedAt: now,
     },
@@ -120,10 +150,7 @@ async function seedCategories() {
   }
 }
 
-async function seedSettings(
-  mainAccountId: string,
-  reserveAccountId: string,
-) {
+async function seedSettings(mainAccountId: string) {
   const existing = await settingsRepo.get(DEFAULT_TENANT_ID);
   if (existing) {
     console.log('  [settings] Configuração já existe — pulando seed.');
@@ -136,11 +163,7 @@ async function seedSettings(
   await settingsRepo.upsert({
     id: generateId(),
     tenantId: DEFAULT_TENANT_ID,
-    defaultReservePercentage: 30,
-    applyReserveByDefault: true,
-    allowDisableReserve: true,
     mainAccountId,
-    emergencyReserveAccountId: reserveAccountId,
     minimumMainBalance: 0,
     annualRevenueLimit: 0,
     controlStartMonth: today.getMonth() + 1,
@@ -150,7 +173,7 @@ async function seedSettings(
     updatedAt: now,
   });
 
-  console.log('  [settings] Configuração padrão criada (reserva: 30%)');
+  console.log('  [settings] Configuração padrão criada');
 }
 
 async function ensureDataDir() {
@@ -163,16 +186,14 @@ async function main() {
 
   await ensureDataDir();
 
-  const accounts = await seedAccounts();
+  const [mainType, reserveType] = await seedAccountTypes();
+  const accounts = await seedAccounts(mainType.id, reserveType.id);
   await seedCategories();
 
-  const main = accounts.find((a) => a.type === AccountType.MAIN);
-  const reserve = accounts.find(
-    (a) => a.type === AccountType.EMERGENCY_RESERVE,
-  );
+  const main = accounts.find((a) => a.accountTypeId === mainType.id);
 
-  if (main && reserve) {
-    await seedSettings(main.id, reserve.id);
+  if (main) {
+    await seedSettings(main.id);
   }
 
   console.log('\n✅ Seed concluído!\n');

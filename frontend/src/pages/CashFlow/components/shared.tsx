@@ -90,11 +90,11 @@ export function PaidToggle({
   );
 }
 
-// Shared column widths so Categoria/Valor/Data/Ações line up across the
+// Shared column widths so Conta/Valor/Data/Ações line up across the
 // Entradas/Pagamentos/Gastos Extraordinários/Cartões grids, which each have a
 // different set of columns. Grids missing a column render an empty cell with
 // the same width/breakpoint instead of skipping it, so later columns stay aligned.
-export const COL_CATEGORIA = 'hidden md:table-cell w-32';
+export const COL_CONTA = 'hidden md:table-cell w-32';
 export const COL_VALOR_SECUNDARIO = 'hidden lg:table-cell w-24'; // Valor Bruto / Reserva
 export const COL_VALOR = 'w-28';
 export const COL_DATA = 'hidden md:table-cell w-28';

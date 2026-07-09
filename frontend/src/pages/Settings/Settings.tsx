@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Trash2, Plus, Check } from 'lucide-react';
 import { SettingsService } from '../../services/settings.service';
 import { AccountsService, CreateAccountPayload } from '../../services/accounts.service';
+import { AccountTypesService, CreateAccountTypePayload } from '../../services/account-types.service';
 import { CategoriesService, CreateCategoryPayload } from '../../services/categories.service';
 import {
   CreditCardsService,
   CreateCreditCardPayload,
 } from '../../services/credit-cards.service';
-import { Account, Category, CreditCard, FinancialSettings } from '../../types';
+import { Account, AccountTypeItem, Category, CreditCard, FinancialSettings } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
@@ -20,11 +21,12 @@ import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-type SettingsTab = 'general' | 'accounts' | 'categories' | 'cards';
+type SettingsTab = 'general' | 'accounts' | 'accountTypes' | 'categories' | 'cards';
 
 const TAB_LABELS: Record<SettingsTab, string> = {
   general: 'Geral',
   accounts: 'Contas',
+  accountTypes: 'Tipos de Conta',
   categories: 'Categorias',
   cards: 'Cartões',
 };
@@ -55,11 +57,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 // ── General Tab ───────────────────────────────────────────────────────────────
 
 interface GeneralFormState {
-  defaultReservePercentage: string;
-  applyReserveByDefault: boolean;
-  allowDisableReserve: boolean;
   mainAccountId: string;
-  emergencyReserveAccountId: string;
   minimumMainBalance: string;
   annualRevenueLimit: string;
   controlStartMonth: string;
@@ -77,11 +75,7 @@ function GeneralTab({
   const qc = useQueryClient();
 
   const initForm = (s: FinancialSettings): GeneralFormState => ({
-    defaultReservePercentage: String(s.defaultReservePercentage),
-    applyReserveByDefault: s.applyReserveByDefault,
-    allowDisableReserve: s.allowDisableReserve,
     mainAccountId: s.mainAccountId ?? '',
-    emergencyReserveAccountId: s.emergencyReserveAccountId ?? '',
     minimumMainBalance: String(centsToFloat(s.minimumMainBalance)),
     annualRevenueLimit: String(centsToFloat(s.annualRevenueLimit)),
     controlStartMonth: String(s.controlStartMonth),
@@ -114,11 +108,7 @@ function GeneralTab({
 
   function handleSave() {
     updateMut.mutate({
-      defaultReservePercentage: parseFloat(form.defaultReservePercentage) || 0,
-      applyReserveByDefault: form.applyReserveByDefault,
-      allowDisableReserve: form.allowDisableReserve,
       mainAccountId: form.mainAccountId || null,
-      emergencyReserveAccountId: form.emergencyReserveAccountId || null,
       minimumMainBalance: floatToCents(parseFloat(form.minimumMainBalance) || 0),
       annualRevenueLimit: floatToCents(parseFloat(form.annualRevenueLimit) || 0),
       controlStartMonth: parseInt(form.controlStartMonth) || 1,
@@ -131,60 +121,10 @@ function GeneralTab({
 
   return (
     <div className="space-y-5 max-w-2xl">
-      <SectionCard title="Reserva de Lucro">
-        <div className="space-y-4">
-          <Field label="Percentual de reserva padrão (%)">
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
-              className={INPUT}
-              value={form.defaultReservePercentage}
-              onChange={set('defaultReservePercentage')}
-            />
-          </Field>
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.applyReserveByDefault}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, applyReserveByDefault: e.target.checked }))
-              }
-              className="rounded"
-            />
-            Aplicar reserva por padrão em novos recebimentos
-          </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.allowDisableReserve}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, allowDisableReserve: e.target.checked }))
-              }
-              className="rounded"
-            />
-            Permitir desabilitar reserva por recebimento
-          </label>
-        </div>
-      </SectionCard>
-
       <SectionCard title="Contas Vinculadas">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Conta principal">
             <select className={INPUT} value={form.mainAccountId} onChange={set('mainAccountId')}>
-              <option value="">Nenhuma</option>
-              {activeAccounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Conta de reserva de emergência">
-            <select
-              className={INPUT}
-              value={form.emergencyReserveAccountId}
-              onChange={set('emergencyReserveAccountId')}
-            >
               <option value="">Nenhuma</option>
               {activeAccounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
@@ -277,36 +217,37 @@ function GeneralTab({
 
 // ── Accounts Tab ──────────────────────────────────────────────────────────────
 
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  MAIN: 'Conta Principal',
-  EMERGENCY_RESERVE: 'Reserva de Emergência',
-  INVESTMENT: 'Investimentos',
-  OTHER: 'Outra',
-};
-
 interface AccountFormState {
   name: string;
-  type: Account['type'];
+  accountTypeId: string;
   initialBalance: string;
+  autoReserveEnabled: boolean;
+  autoReservePercentage: string;
 }
 
 function AccountModal({
   open,
   onClose,
   item,
+  accountTypes,
   onSave,
   isSaving,
 }: {
   open: boolean;
   onClose: () => void;
   item?: Account;
+  accountTypes: AccountTypeItem[];
   onSave: (data: CreateAccountPayload) => void;
   isSaving: boolean;
 }) {
+  const activeTypes = accountTypes.filter((t) => t.active);
+
   const init = (): AccountFormState => ({
     name: item?.name ?? '',
-    type: item?.type ?? 'OTHER',
+    accountTypeId: item?.accountTypeId ?? '',
     initialBalance: item ? String(centsToFloat(item.initialBalance)) : '0',
+    autoReserveEnabled: item?.autoReserveEnabled ?? false,
+    autoReservePercentage: String(item?.autoReservePercentage ?? 0),
   });
 
   const [form, setForm] = useState<AccountFormState>(init);
@@ -327,8 +268,10 @@ function AccountModal({
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       name: form.name,
-      type: form.type,
+      accountTypeId: form.accountTypeId || null,
       initialBalance: floatToCents(parseFloat(form.initialBalance) || 0),
+      autoReserveEnabled: form.autoReserveEnabled,
+      autoReservePercentage: form.autoReserveEnabled ? parseFloat(form.autoReservePercentage) || 0 : 0,
     });
   }
 
@@ -348,16 +291,15 @@ function AccountModal({
         <Field label="Nome *">
           <input className={INPUT} value={form.name} onChange={set('name')} required />
         </Field>
-        <Field label="Tipo *">
+        <Field label="Tipo">
           <select
             className={INPUT}
-            value={form.type}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, type: e.target.value as Account['type'] }))
-            }
+            value={form.accountTypeId}
+            onChange={set('accountTypeId')}
           >
-            {Object.entries(ACCOUNT_TYPE_LABELS).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
+            <option value="">Sem tipo</option>
+            {activeTypes.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </Field>
@@ -370,6 +312,28 @@ function AccountModal({
             onChange={set('initialBalance')}
           />
         </Field>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.autoReserveEnabled}
+            onChange={(e) => setForm((f) => ({ ...f, autoReserveEnabled: e.target.checked }))}
+            className="rounded"
+          />
+          Participa da separação automática de reserva
+        </label>
+        {form.autoReserveEnabled && (
+          <Field label="Percentual separado automaticamente (%)">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.5"
+              className={INPUT}
+              value={form.autoReservePercentage}
+              onChange={set('autoReservePercentage')}
+            />
+          </Field>
+        )}
       </form>
     </Modal>
   );
@@ -384,6 +348,12 @@ function AccountsTab() {
     queryKey: ['accounts'],
     queryFn: AccountsService.findAll,
   });
+  const { data: accountTypes = [] } = useQuery({
+    queryKey: ['accountTypes'],
+    queryFn: AccountTypesService.findAll,
+    staleTime: 30_000,
+  });
+  const accountTypeMap = new Map(accountTypes.map((t) => [t.id, t.name]));
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['accounts'] });
 
@@ -426,6 +396,7 @@ function AccountsTab() {
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="text-left px-3 sm:px-5 py-3 font-medium">Nome</th>
                   <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">Tipo</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Reserva automática</th>
                   <th className="text-right px-2 sm:px-3 py-3 font-medium">Saldo inicial</th>
                   <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">Status</th>
                   <th className="px-1 sm:px-3 py-3" />
@@ -436,7 +407,16 @@ function AccountsTab() {
                   <tr key={a.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!a.active ? 'opacity-50' : ''}`}>
                     <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[120px] sm:max-w-none truncate">{a.name}</td>
                     <td className="hidden sm:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {ACCOUNT_TYPE_LABELS[a.type] ?? a.type}
+                      {a.accountTypeId ? accountTypeMap.get(a.accountTypeId) ?? '—' : '—'}
+                    </td>
+                    <td className="hidden md:table-cell px-3 py-3 text-xs">
+                      {a.autoReserveEnabled ? (
+                        <span className="inline-flex px-2 py-0.5 rounded-full font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                          {a.autoReservePercentage}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500">—</span>
+                      )}
                     </td>
                     <td className="px-2 sm:px-3 py-3 text-right text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {formatCurrency(a.initialBalance)}
@@ -486,6 +466,161 @@ function AccountsTab() {
       </div>
 
       <AccountModal
+        open={modal !== null}
+        onClose={() => setModal(null)}
+        item={modal?.item}
+        accountTypes={accountTypes}
+        onSave={save}
+        isSaving={createMut.isPending || updateMut.isPending}
+      />
+    </div>
+  );
+}
+
+// ── Account Types Tab ─────────────────────────────────────────────────────────
+
+interface AccountTypeFormState {
+  name: string;
+}
+
+function AccountTypeModal({
+  open,
+  onClose,
+  item,
+  onSave,
+  isSaving,
+}: {
+  open: boolean;
+  onClose: () => void;
+  item?: AccountTypeItem;
+  onSave: (data: CreateAccountTypePayload) => void;
+  isSaving: boolean;
+}) {
+  const init = (): AccountTypeFormState => ({ name: item?.name ?? '' });
+
+  const [form, setForm] = useState<AccountTypeFormState>(init);
+  const [lastOpen, setLastOpen] = useState(false);
+  if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
+  if (!open && lastOpen) setLastOpen(false);
+
+  const { alert } = useDialog();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const missing = getMissingFields([{ label: 'Nome', valid: !!form.name }]);
+    if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
+    onSave({ name: form.name });
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={item ? 'Editar Tipo de Conta' : 'Novo Tipo de Conta'}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Nome *">
+          <input
+            className={INPUT}
+            value={form.name}
+            onChange={(e) => setForm({ name: e.target.value })}
+            required
+          />
+        </Field>
+      </form>
+    </Modal>
+  );
+}
+
+function AccountTypesTab() {
+  const qc = useQueryClient();
+  const [modal, setModal] = useState<{ item?: AccountTypeItem } | null>(null);
+  const { confirm } = useDialog();
+
+  const { data: accountTypes = [], isLoading } = useQuery({
+    queryKey: ['accountTypes'],
+    queryFn: AccountTypesService.findAll,
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['accountTypes'] });
+
+  const createMut = useMutation({
+    mutationFn: AccountTypesService.create,
+    onSuccess: () => { invalidate(); setModal(null); },
+  });
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateAccountTypePayload> }) =>
+      AccountTypesService.update(id, data),
+    onSuccess: () => { invalidate(); setModal(null); },
+  });
+  const deleteMut = useMutation({
+    mutationFn: AccountTypesService.remove,
+    onSuccess: invalidate,
+  });
+
+  function save(payload: CreateAccountTypePayload) {
+    if (modal?.item) updateMut.mutate({ id: modal.item.id, data: payload });
+    else createMut.mutate(payload);
+  }
+
+  if (isLoading) return <PageLoading />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button icon={<Plus size={14} />} onClick={() => setModal({})}>
+          Novo Tipo
+        </Button>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        {accountTypes.length === 0 ? (
+          <EmptyState title="Nenhum tipo de conta cadastrado" description="Clique em Novo Tipo para cadastrar" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                {accountTypes.map((t) => (
+                  <tr key={t.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!t.active ? 'opacity-50' : ''}`}>
+                    <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{t.name}</td>
+                    <td className="px-1 sm:px-3 py-2.5">
+                      <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
+                        <button
+                          title="Editar"
+                          aria-label="Editar"
+                          onClick={() => setModal({ item: t })}
+                          className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          title="Remover"
+                          aria-label="Remover"
+                          onClick={async () => {
+                            if (await confirm('Remover este tipo de conta?')) deleteMut.mutate(t.id);
+                          }}
+                          className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <AccountTypeModal
         open={modal !== null}
         onClose={() => setModal(null)}
         item={modal?.item}
@@ -758,7 +893,7 @@ function CardSettingsModal({
   isSaving: boolean;
 }) {
   const activeAccounts = accounts.filter((a) => a.active);
-  const mainAccountId = accounts.find((a) => a.type === 'MAIN')?.id ?? '';
+  const mainAccountId = activeAccounts[0]?.id ?? '';
 
   const init = (): CardFormState => ({
     name: item?.name ?? '',
@@ -1044,6 +1179,7 @@ export default function Settings() {
 
       {tab === 'general' && <GeneralTab settings={settings} accounts={accounts} />}
       {tab === 'accounts' && <AccountsTab />}
+      {tab === 'accountTypes' && <AccountTypesTab />}
       {tab === 'categories' && <CategoriesTab />}
       {tab === 'cards' && <CardsTab accounts={accounts} />}
     </div>

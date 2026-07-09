@@ -209,7 +209,6 @@ export default function CashFlow() {
   if (isLoading || !data) return <PageLoading />;
 
   const { summary } = data;
-  const defaultReservePct = settings?.defaultReservePercentage ?? 30;
 
   const txSaving =
     createPayment.isPending || updatePayment.isPending ||
@@ -234,7 +233,7 @@ export default function CashFlow() {
         {/* Entradas */}
         <EntriesGrid
           items={filteredEntries}
-          categories={categories}
+          accounts={accounts as Account[]}
           onAdd={() => setModal({ type: 'receivable', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'receivable', mode: 'edit', item })}
           onReceive={(id) => receiveItem.mutate(id)}
@@ -247,7 +246,7 @@ export default function CashFlow() {
           title="Pagamentos"
           icon={<TrendingDown size={16} className="text-red-500" />}
           items={filteredPayments}
-          categories={categories}
+          accounts={accounts as Account[]}
           onAdd={() => setModal({ type: 'payment', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'payment', mode: 'edit', item })}
           onPay={(id) => payPayment.mutate(id)}
@@ -260,7 +259,7 @@ export default function CashFlow() {
           title="Gastos Extraordinários"
           icon={<TrendingDown size={16} className="text-orange-500" />}
           items={filteredExtraExpenses}
-          categories={categories}
+          accounts={accounts as Account[]}
           onAdd={() => setModal({ type: 'extra-expense', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'extra-expense', mode: 'edit', item })}
           onPay={(id) => payExtra.mutate(id)}
@@ -293,8 +292,6 @@ export default function CashFlow() {
         categories={categories}
         accounts={accounts as Account[]}
         mainAccountId={settings?.mainAccountId ?? null}
-        reserveAccountId={settings?.emergencyReserveAccountId ?? null}
-        defaultReservePct={defaultReservePct}
         onSave={saveReceivable}
         isSaving={rxSaving}
         onReceive={(id) => { receiveItem.mutate(id); }}

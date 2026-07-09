@@ -6,7 +6,9 @@ import path from 'path';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
 import { tenantMiddleware } from './shared/middlewares/tenant.middleware';
+import { migrateLegacyAccountConfig } from './shared/migrations/migrate-legacy-account-config';
 import accountsRouter from './modules/accounts/accounts.routes';
+import accountTypesRouter from './modules/account-types/account-types.routes';
 import categoriesRouter from './modules/categories/categories.routes';
 import settingsRouter from './modules/settings/settings.routes';
 import receivablesRouter from './modules/receivables/receivables.routes';
@@ -34,6 +36,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/accounts', accountsRouter);
+app.use('/account-types', accountTypesRouter);
 app.use('/categories', categoriesRouter);
 app.use('/settings', settingsRouter);
 app.use('/receivables', receivablesRouter);
@@ -48,6 +51,8 @@ async function bootstrap() {
   const dataDir = path.join(process.cwd(), 'data');
   await fs.mkdir(dataDir, { recursive: true });
   console.log(`[data] Diretório de dados: ${dataDir}`);
+
+  await migrateLegacyAccountConfig();
 
   app.listen(PORT, () => {
     console.log(`[server] Rodando em http://localhost:${PORT}`);
