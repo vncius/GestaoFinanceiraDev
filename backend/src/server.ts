@@ -6,7 +6,10 @@ import path from 'path';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
 import { tenantMiddleware } from './shared/middlewares/tenant.middleware';
-import { migrateLegacyAccountConfig } from './shared/migrations/migrate-legacy-account-config';
+import {
+  migrateLegacyAccountConfig,
+  migrateLegacyReceivableReserves,
+} from './shared/migrations/migrate-legacy-account-config';
 import accountsRouter from './modules/accounts/accounts.routes';
 import accountTypesRouter from './modules/account-types/account-types.routes';
 import categoriesRouter from './modules/categories/categories.routes';
@@ -53,6 +56,7 @@ async function bootstrap() {
   console.log(`[data] Diretório de dados: ${dataDir}`);
 
   await migrateLegacyAccountConfig();
+  await migrateLegacyReceivableReserves();
 
   app.listen(PORT, () => {
     console.log(`[server] Rodando em http://localhost:${PORT}`);

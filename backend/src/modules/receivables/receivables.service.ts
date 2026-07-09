@@ -107,7 +107,7 @@ export class ReceivablesService {
 
     const grossAmount = input.grossAmount ?? existing.grossAmount;
     const reserveAccountIds =
-      input.reserveAccountIds ?? existing.reserveAllocations.map((a) => a.accountId);
+      input.reserveAccountIds ?? (existing.reserveAllocations ?? []).map((a) => a.accountId);
 
     const { reserveAllocations, reserveAmount, netAmount } = await this.calcReserveAllocations(
       tenantId,
@@ -366,7 +366,7 @@ export class ReceivablesService {
     });
 
     // cria uma transação RESERVE por conta configurada, exceto a própria conta de destino
-    for (const allocation of receivable.reserveAllocations) {
+    for (const allocation of receivable.reserveAllocations ?? []) {
       if (allocation.amount <= 0 || allocation.accountId === incomeTarget) continue;
       transactions.push({
         id: generateId(),

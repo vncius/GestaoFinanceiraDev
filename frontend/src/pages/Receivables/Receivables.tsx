@@ -113,7 +113,7 @@ function ReceivableModal({
     expectedPaymentDate: item ? toInputDate(item.expectedPaymentDate) : todayISO(),
     grossAmount: item ? String(centsToFloat(item.grossAmount)) : '',
     reserveAccountIds: item
-      ? item.reserveAllocations.map((a) => a.accountId)
+      ? (item.reserveAllocations ?? []).map((a) => a.accountId)
       : reserveEligibleAccounts.map((a) => a.id),
     customerName: item?.customerName ?? '',
     invoiceNumber: item?.invoiceNumber ?? '',

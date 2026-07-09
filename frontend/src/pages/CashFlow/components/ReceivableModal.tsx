@@ -57,7 +57,7 @@ export function ReceivableModal({
     expectedPaymentDate: item ? toInputDate(item.expectedPaymentDate) : todayISO(),
     grossAmount: item ? String(centsToFloat(item.grossAmount)) : '',
     reserveAccountIds: item
-      ? item.reserveAllocations.map((a) => a.accountId)
+      ? (item.reserveAllocations ?? []).map((a) => a.accountId)
       : reserveCapableAccounts.map((a) => a.id),
     incomeCategoryId: item?.incomeCategoryId ?? (incomeCategories[0]?.id ?? ''),
     targetAccountId: item?.targetAccountId ?? mainAccountId ?? '',
