@@ -7,20 +7,21 @@ import {
 } from './credit-cards.types';
 
 export interface CreditCardsRepository extends BaseRepository<CreditCard> {
-  findActive(): Promise<CreditCard[]>;
+  findActive(tenantId: string): Promise<CreditCard[]>;
 }
 
 export interface CreditCardEntriesRepository
   extends BaseRepository<CreditCardEntry> {
-  findByCardId(creditCardId: string): Promise<CreditCardEntry[]>;
-  findActiveByCardId(creditCardId: string): Promise<CreditCardEntry[]>;
+  findByCardId(tenantId: string, creditCardId: string): Promise<CreditCardEntry[]>;
+  findActiveByCardId(tenantId: string, creditCardId: string): Promise<CreditCardEntry[]>;
 }
 
 export interface CreditCardInstallmentsRepository
   extends BaseRepository<CreditCardInstallment> {
-  findByEntryId(entryId: string): Promise<CreditCardInstallment[]>;
-  findByMonth(month: number, year: number): Promise<CreditCardInstallment[]>;
+  findByEntryId(tenantId: string, entryId: string): Promise<CreditCardInstallment[]>;
+  findByMonth(tenantId: string, month: number, year: number): Promise<CreditCardInstallment[]>;
   findByCardAndMonth(
+    tenantId: string,
     creditCardId: string,
     month: number,
     year: number,
@@ -30,8 +31,9 @@ export interface CreditCardInstallmentsRepository
 
 export interface CreditCardInvoicesRepository
   extends BaseRepository<CreditCardInvoice> {
-  findByCardId(creditCardId: string): Promise<CreditCardInvoice[]>;
+  findByCardId(tenantId: string, creditCardId: string): Promise<CreditCardInvoice[]>;
   findByCardAndMonth(
+    tenantId: string,
     creditCardId: string,
     month: number,
     year: number,

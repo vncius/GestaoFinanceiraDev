@@ -14,49 +14,50 @@ export class FinancialTransactionsFileRepository
     'financial-transactions.json',
   );
 
-  findAll() {
-    return this.store.findAll();
+  findAll(tenantId: string) {
+    return this.store.findAll(tenantId);
   }
 
-  findById(id: string) {
-    return this.store.findById(id);
+  findById(id: string, tenantId: string) {
+    return this.store.findById(id, tenantId);
   }
 
   create(data: FinancialTransaction) {
     return this.store.create(data);
   }
 
-  update(id: string, data: Partial<FinancialTransaction>) {
-    return this.store.update(id, data);
+  update(id: string, data: Partial<FinancialTransaction>, tenantId: string) {
+    return this.store.update(id, data, tenantId);
   }
 
-  delete(id: string) {
-    return this.store.delete(id);
+  delete(id: string, tenantId: string) {
+    return this.store.delete(id, tenantId);
   }
 
-  async findByMonth(month: number, year: number): Promise<FinancialTransaction[]> {
-    const all = await this.store.findAll();
+  async findByMonth(tenantId: string, month: number, year: number): Promise<FinancialTransaction[]> {
+    const all = await this.store.findAll(tenantId);
     return all.filter((t) => {
       const [y, m] = t.expectedDate.slice(0, 10).split('-').map(Number);
       return m === month && y === year;
     });
   }
 
-  async findByType(type: TransactionType): Promise<FinancialTransaction[]> {
-    const all = await this.store.findAll();
+  async findByType(tenantId: string, type: TransactionType): Promise<FinancialTransaction[]> {
+    const all = await this.store.findAll(tenantId);
     return all.filter((t) => t.type === type);
   }
 
-  async findByStatus(status: TransactionStatus): Promise<FinancialTransaction[]> {
-    const all = await this.store.findAll();
+  async findByStatus(tenantId: string, status: TransactionStatus): Promise<FinancialTransaction[]> {
+    const all = await this.store.findAll(tenantId);
     return all.filter((t) => t.status === status);
   }
 
   async findByOrigin(
+    tenantId: string,
     originType: OriginType,
     originId: string,
   ): Promise<FinancialTransaction[]> {
-    const all = await this.store.findAll();
+    const all = await this.store.findAll(tenantId);
     return all.filter(
       (t) => t.originType === originType && t.originId === originId,
     );

@@ -1,5 +1,6 @@
 export interface FinancialSettings {
   id: string;
+  tenantId: string;
   defaultReservePercentage: number;      // ex: 30 (%)
   applyReserveByDefault: boolean;
   allowDisableReserve: boolean;

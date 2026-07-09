@@ -5,15 +5,15 @@ import { FinancialSettings } from './settings.types';
 export class SettingsFileRepository implements SettingsRepository {
   private store = new JsonFileStore<FinancialSettings>('settings.json');
 
-  async get(): Promise<FinancialSettings | null> {
-    const all = await this.store.findAll();
+  async get(tenantId: string): Promise<FinancialSettings | null> {
+    const all = await this.store.findAll(tenantId);
     return all[0] ?? null;
   }
 
   async upsert(data: FinancialSettings): Promise<FinancialSettings> {
-    const existing = await this.get();
+    const existing = await this.get(data.tenantId);
     if (existing) {
-      return this.store.update(existing.id, data);
+      return this.store.update(existing.id, data, data.tenantId);
     }
     return this.store.create(data);
   }

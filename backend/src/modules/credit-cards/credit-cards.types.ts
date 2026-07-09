@@ -20,6 +20,7 @@ export enum InvoiceStatus {
 
 export interface CreditCard {
   id: string;
+  tenantId: string;
   name: string;
   bank: string;
   closingDay: number;                    // dia do fechamento (1–28)
@@ -33,6 +34,7 @@ export interface CreditCard {
 
 export interface CreditCardEntry {
   id: string;
+  tenantId: string;
   creditCardId: string;
   description: string;
   expenseCategoryId: string;
@@ -49,6 +51,7 @@ export interface CreditCardEntry {
 
 export interface CreditCardInstallment {
   id: string;
+  tenantId: string;
   creditCardEntryId: string;
   installmentNumber: number;
   totalInstallments: number;
@@ -63,6 +66,7 @@ export interface CreditCardInstallment {
 
 export interface CreditCardInvoice {
   id: string;
+  tenantId: string;
   creditCardId: string;
   month: number;                         // 1–12
   year: number;

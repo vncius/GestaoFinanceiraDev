@@ -27,26 +27,26 @@ export class ReceivablesService {
     private readonly settingsRepo: SettingsRepository,
   ) {}
 
-  async findAll(query: ReceivableQuery): Promise<Receivable[]> {
+  async findAll(tenantId: string, query: ReceivableQuery): Promise<Receivable[]> {
     if (query.month && query.year) {
-      await this.ensureFixedOccurrences(query.month, query.year);
-      const byMonth = await this.receivablesRepo.findByMonth(query.month, query.year);
+      await this.ensureFixedOccurrences(tenantId, query.month, query.year);
+      const byMonth = await this.receivablesRepo.findByMonth(tenantId, query.month, query.year);
       return query.status ? byMonth.filter((r) => r.status === query.status) : byMonth;
     }
     if (query.status) {
-      return this.receivablesRepo.findByStatus(query.status);
+      return this.receivablesRepo.findByStatus(tenantId, query.status);
     }
-    return this.receivablesRepo.findAll();
+    return this.receivablesRepo.findAll(tenantId);
   }
 
-  async findById(id: string): Promise<Receivable> {
-    const receivable = await this.receivablesRepo.findById(id);
+  async findById(id: string, tenantId: string): Promise<Receivable> {
+    const receivable = await this.receivablesRepo.findById(id, tenantId);
     if (!receivable) throw new AppError('Recebimento não encontrado', 404);
     return receivable;
   }
 
-  async create(input: CreateReceivableInput): Promise<Receivable> {
-    const settings = await this.settingsRepo.get();
+  async create(tenantId: string, input: CreateReceivableInput): Promise<Receivable> {
+    const settings = await this.settingsRepo.get(tenantId);
     const { reservePercentage, reserveAmount, netAmount } = this.calcAmounts(
       input.grossAmount,
       input.separateReservePercentage ?? true,
@@ -58,6 +58,7 @@ export class ReceivablesService {
     const recurrence = input.recurrence ?? RecurrenceType.UNIQUE;
     return this.receivablesRepo.create({
       id,
+      tenantId,
       recurrence,
       recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,
       recurringActive: true,
@@ -86,8 +87,8 @@ export class ReceivablesService {
     });
   }
 
-  async update(id: string, input: UpdateReceivableInput): Promise<Receivable> {
-    const existing = await this.findById(id);
+  async update(id: string, input: UpdateReceivableInput, tenantId: string): Promise<Receivable> {
+    const existing = await this.findById(id, tenantId);
 
     if (existing.status === ReceivableStatus.CANCELED) {
       throw new AppError('Recebimentos cancelados não podem ser editados.', 400);
@@ -104,7 +105,7 @@ export class ReceivablesService {
       recurrencePatch = { recurringGroupId: id, recurringActive: true };
     }
 
-    const settings = await this.settingsRepo.get();
+    const settings = await this.settingsRepo.get(tenantId);
     const grossAmount = input.grossAmount ?? existing.grossAmount;
     const separateReserve =
       input.separateReservePercentage ?? existing.separateReservePercentage;
@@ -124,7 +125,7 @@ export class ReceivablesService {
       reserveAmount,
       netAmount,
       updatedAt: now,
-    });
+    }, tenantId);
 
     if (existing.status === ReceivableStatus.RECEIVED) {
       if (!settings?.mainAccountId) {
@@ -132,13 +133,13 @@ export class ReceivablesService {
       }
 
       // Estorna movimentações antigas
-      const linked = await this.transactionsRepo.findByOrigin(OriginType.RECEIVABLE, id);
+      const linked = await this.transactionsRepo.findByOrigin(tenantId, OriginType.RECEIVABLE, id);
       for (const tx of linked) {
         if (tx.status !== TransactionStatus.REVERSED) {
           await this.transactionsRepo.update(tx.id, {
             status: TransactionStatus.REVERSED,
             updatedAt: now,
-          });
+          }, tenantId);
         }
       }
 
@@ -147,6 +148,7 @@ export class ReceivablesService {
       // Cria nova entrada principal
       await this.transactionsRepo.create({
         id: generateId(),
+        tenantId,
         type: TransactionType.INCOME,
         description: `Recebimento: ${updated.description}`,
         categoryId: updated.incomeCategoryId,
@@ -174,6 +176,7 @@ export class ReceivablesService {
       ) {
         await this.transactionsRepo.create({
           id: generateId(),
+          tenantId,
           type: TransactionType.RESERVE,
           description: `Reserva: ${updated.description}`,
           categoryId: null,
@@ -200,11 +203,12 @@ export class ReceivablesService {
 
   async delete(
     id: string,
+    tenantId: string,
     scope?: DeleteScope,
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    const existing = await this.findById(id);
+    const existing = await this.findById(id, tenantId);
     if (existing.status === ReceivableStatus.RECEIVED) {
       throw new AppError(
         'Recebimentos já recebidos não podem ser excluídos. Reverta primeiro.',
@@ -219,14 +223,15 @@ export class ReceivablesService {
           400,
         );
       }
-      return this.deleteFixedReceivable(existing, scope, referenceMonth, referenceYear);
+      return this.deleteFixedReceivable(existing, tenantId, scope, referenceMonth, referenceYear);
     }
 
-    await this.receivablesRepo.delete(id);
+    await this.receivablesRepo.delete(id, tenantId);
   }
 
   private async deleteFixedReceivable(
     existing: Receivable,
+    tenantId: string,
     scope: DeleteScope,
     referenceMonth: number,
     referenceYear: number,
@@ -234,7 +239,7 @@ export class ReceivablesService {
     const now = nowISO();
     const refKey = monthKey(referenceMonth, referenceYear);
     const groupId = existing.recurringGroupId ?? existing.id;
-    const all = await this.receivablesRepo.findAll();
+    const all = await this.receivablesRepo.findAll(tenantId);
     const group = all.filter((r) => r.recurringGroupId === groupId);
 
     const toCancel = group.filter((r) => {
@@ -244,21 +249,21 @@ export class ReceivablesService {
     });
 
     for (const r of toCancel) {
-      await this.receivablesRepo.update(r.id, { status: ReceivableStatus.CANCELED, updatedAt: now });
+      await this.receivablesRepo.update(r.id, { status: ReceivableStatus.CANCELED, updatedAt: now }, tenantId);
     }
 
     // Encerra a série (impede geração de novos meses) sem alterar histórico já passado.
     if (scope === 'CURRENT_AND_FUTURE') {
       for (const r of group) {
         if (r.recurringActive) {
-          await this.receivablesRepo.update(r.id, { recurringActive: false, updatedAt: now });
+          await this.receivablesRepo.update(r.id, { recurringActive: false, updatedAt: now }, tenantId);
         }
       }
     }
   }
 
-  private async ensureFixedOccurrences(targetMonth: number, targetYear: number): Promise<void> {
-    const all = await this.receivablesRepo.findAll();
+  private async ensureFixedOccurrences(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
+    const all = await this.receivablesRepo.findAll(tenantId);
     const fixed = all.filter((r) => r.recurrence === RecurrenceType.FIXED);
     if (fixed.length === 0) return;
 
@@ -316,8 +321,8 @@ export class ReceivablesService {
     }
   }
 
-  async receive(id: string, input: ReceiveActionInput): Promise<Receivable> {
-    const receivable = await this.findById(id);
+  async receive(id: string, tenantId: string, input: ReceiveActionInput): Promise<Receivable> {
+    const receivable = await this.findById(id, tenantId);
 
     if (receivable.status === ReceivableStatus.RECEIVED) {
       throw new AppError('Recebimento já foi recebido.', 400);
@@ -326,7 +331,7 @@ export class ReceivablesService {
       throw new AppError('Recebimento cancelado não pode ser recebido.', 400);
     }
 
-    const settings = await this.settingsRepo.get();
+    const settings = await this.settingsRepo.get(tenantId);
     if (!settings?.mainAccountId) {
       throw new AppError(
         'Conta principal não configurada nas parametrizações.',
@@ -343,6 +348,7 @@ export class ReceivablesService {
     const incomeTarget = receivable.targetAccountId ?? settings.mainAccountId;
     transactions.push({
       id: generateId(),
+      tenantId,
       type: TransactionType.INCOME,
       description: `Recebimento: ${receivable.description}`,
       categoryId: receivable.incomeCategoryId,
@@ -370,6 +376,7 @@ export class ReceivablesService {
     ) {
       transactions.push({
         id: generateId(),
+        tenantId,
         type: TransactionType.RESERVE,
         description: `Reserva: ${receivable.description}`,
         categoryId: null,
@@ -395,17 +402,17 @@ export class ReceivablesService {
       status: ReceivableStatus.RECEIVED,
       actualPaymentDate: now,
       updatedAt: now,
-    });
+    }, tenantId);
 
     for (const tx of transactions) {
       await this.transactionsRepo.create(tx);
     }
 
-    return this.findById(id);
+    return this.findById(id, tenantId);
   }
 
-  async revert(id: string): Promise<Receivable> {
-    const receivable = await this.findById(id);
+  async revert(id: string, tenantId: string): Promise<Receivable> {
+    const receivable = await this.findById(id, tenantId);
 
     if (receivable.status !== ReceivableStatus.RECEIVED) {
       throw new AppError(
@@ -418,6 +425,7 @@ export class ReceivablesService {
 
     // estorna movimentações vinculadas
     const linked = await this.transactionsRepo.findByOrigin(
+      tenantId,
       OriginType.RECEIVABLE,
       id,
     );
@@ -426,7 +434,7 @@ export class ReceivablesService {
         await this.transactionsRepo.update(tx.id, {
           status: TransactionStatus.REVERSED,
           updatedAt: now,
-        });
+        }, tenantId);
       }
     }
 
@@ -435,9 +443,9 @@ export class ReceivablesService {
       status: ReceivableStatus.EXPECTED,
       actualPaymentDate: null,
       updatedAt: now,
-    });
+    }, tenantId);
 
-    return this.findById(id);
+    return this.findById(id, tenantId);
   }
 
   // --- helpers ---

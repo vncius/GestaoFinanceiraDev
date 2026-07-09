@@ -10,6 +10,7 @@ export enum ReceivableStatus {
 
 export interface Receivable {
   id: string;
+  tenantId: string;
   description: string;
   expectedPaymentDate: string;        // ISO
   actualPaymentDate: string | null;   // ISO — preenchido ao receber

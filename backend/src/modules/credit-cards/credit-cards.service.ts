@@ -67,10 +67,10 @@ export class CreditCardsService {
 
   // ─── Cards CRUD ───────────────────────────────────────────────────────────────
 
-  async findAll(month?: number, year?: number): Promise<CreditCardWithSummary[]> {
+  async findAll(tenantId: string, month?: number, year?: number): Promise<CreditCardWithSummary[]> {
     const [cards, allEntries] = await Promise.all([
-      this.cardsRepo.findActive(),
-      this.entriesRepo.findAll(),
+      this.cardsRepo.findActive(tenantId),
+      this.entriesRepo.findAll(tenantId),
     ]);
 
     const now = new Date();
@@ -82,13 +82,13 @@ export class CreditCardsService {
         (e) => e.creditCardId === card.id && e.active && e.entryType === CardEntryType.FIXED,
       );
       for (const entry of fixedEntries) {
-        await this.ensureFixedInstallments(entry, card, currentMonth, currentYear);
+        await this.ensureFixedInstallments(tenantId, entry, card, currentMonth, currentYear);
       }
     }
 
     const [allInstallments, allInvoices] = await Promise.all([
-      this.installmentsRepo.findAll(),
-      this.invoicesRepo.findAll(),
+      this.installmentsRepo.findAll(tenantId),
+      this.invoicesRepo.findAll(tenantId),
     ]);
 
     return cards.map((card) => {
@@ -135,17 +135,18 @@ export class CreditCardsService {
     });
   }
 
-  async findById(id: string): Promise<CreditCard> {
-    const card = await this.cardsRepo.findById(id);
+  async findById(id: string, tenantId: string): Promise<CreditCard> {
+    const card = await this.cardsRepo.findById(id, tenantId);
     if (!card) throw new AppError('Cartão não encontrado.', 404);
     if (!card.active) throw new AppError('Cartão inativo.', 400);
     return card;
   }
 
-  async create(input: CreateCreditCardInput): Promise<CreditCard> {
+  async create(tenantId: string, input: CreateCreditCardInput): Promise<CreditCard> {
     const now = nowISO();
     return this.cardsRepo.create({
       id: generateId(),
+      tenantId,
       name: input.name,
       bank: input.bank,
       closingDay: input.closingDay,
@@ -158,36 +159,37 @@ export class CreditCardsService {
     });
   }
 
-  async update(id: string, input: UpdateCreditCardInput): Promise<CreditCard> {
-    await this.findById(id);
-    return this.cardsRepo.update(id, { ...input, updatedAt: nowISO() });
+  async update(id: string, input: UpdateCreditCardInput, tenantId: string): Promise<CreditCard> {
+    await this.findById(id, tenantId);
+    return this.cardsRepo.update(id, { ...input, updatedAt: nowISO() }, tenantId);
   }
 
-  async softDelete(id: string): Promise<void> {
-    await this.findById(id);
-    await this.cardsRepo.update(id, { active: false, updatedAt: nowISO() });
+  async softDelete(id: string, tenantId: string): Promise<void> {
+    await this.findById(id, tenantId);
+    await this.cardsRepo.update(id, { active: false, updatedAt: nowISO() }, tenantId);
   }
 
   // ─── Card flow ────────────────────────────────────────────────────────────────
 
   async getCardFlow(
     cardId: string,
+    tenantId: string,
     month: number,
     year: number,
   ): Promise<CardFlowResponse> {
-    const card = await this.findById(cardId);
+    const card = await this.findById(cardId, tenantId);
 
-    const allEntries = await this.entriesRepo.findByCardId(cardId);
+    const allEntries = await this.entriesRepo.findByCardId(tenantId, cardId);
     const fixedEntries = allEntries.filter(
       (e) => e.active && e.entryType === CardEntryType.FIXED,
     );
     for (const entry of fixedEntries) {
-      await this.ensureFixedInstallments(entry, card, month, year);
+      await this.ensureFixedInstallments(tenantId, entry, card, month, year);
     }
 
     const [invoice, installments] = await Promise.all([
-      this.invoicesRepo.findByCardAndMonth(cardId, month, year),
-      this.installmentsRepo.findByCardAndMonth(cardId, month, year),
+      this.invoicesRepo.findByCardAndMonth(tenantId, cardId, month, year),
+      this.installmentsRepo.findByCardAndMonth(tenantId, cardId, month, year),
     ]);
 
     const active = installments.filter(
@@ -221,9 +223,10 @@ export class CreditCardsService {
 
   async createEntry(
     cardId: string,
+    tenantId: string,
     input: CreateCardEntryInput,
   ): Promise<{ entry: CreditCardEntry; installments: CreditCardInstallment[] }> {
-    const card = await this.findById(cardId);
+    const card = await this.findById(cardId, tenantId);
 
     const firstMonth = this.getInvoiceMonth(input.purchaseDate, card.closingDay);
 
@@ -244,6 +247,7 @@ export class CreditCardsService {
     const now = nowISO();
     const entry = await this.entriesRepo.create({
       id: generateId(),
+      tenantId,
       creditCardId: cardId,
       description: input.description,
       expenseCategoryId: input.expenseCategoryId,
@@ -269,6 +273,7 @@ export class CreditCardsService {
       );
       const amount = base + (i === 0 ? remainder : 0);
       const invoice = await this.findOrCreateInvoice(
+        tenantId,
         cardId,
         month,
         year,
@@ -277,6 +282,7 @@ export class CreditCardsService {
 
       installmentsToCreate.push({
         id: generateId(),
+        tenantId,
         creditCardEntryId: entry.id,
         installmentNumber: i + 1,
         totalInstallments: count,
@@ -294,11 +300,11 @@ export class CreditCardsService {
     const createdInstallments = await this.installmentsRepo.createMany(
       installmentsToCreate,
     );
-    await this.recalcInvoiceTotals(invoiceIdsToRecalc);
+    await this.recalcInvoiceTotals(tenantId, invoiceIdsToRecalc);
 
     if (entry.entryType === CardEntryType.FIXED) {
       const nowDate = new Date();
-      await this.ensureFixedInstallments(entry, card, nowDate.getMonth() + 1, nowDate.getFullYear());
+      await this.ensureFixedInstallments(tenantId, entry, card, nowDate.getMonth() + 1, nowDate.getFullYear());
     }
 
     return { entry, installments: createdInstallments };
@@ -307,9 +313,10 @@ export class CreditCardsService {
   async updateEntry(
     cardId: string,
     entryId: string,
+    tenantId: string,
     input: UpdateCardEntryInput,
   ): Promise<CreditCardEntry> {
-    const entry = await this.getEntryChecked(cardId, entryId);
+    const entry = await this.getEntryChecked(cardId, entryId, tenantId);
     if (!entry.active) throw new AppError('Lançamento inativo.', 400);
 
     const now = nowISO();
@@ -326,13 +333,13 @@ export class CreditCardsService {
         expenseCategoryId: input.expenseCategoryId ?? entry.expenseCategoryId,
         notes: input.notes !== undefined ? input.notes : entry.notes,
         updatedAt: now,
-      });
+      }, tenantId);
     }
 
-    const card = await this.findById(cardId);
+    const card = await this.findById(cardId, tenantId);
 
     // 1. Cancela parcelas existentes e coleta faturas afetadas
-    const existingInstallments = await this.installmentsRepo.findByEntryId(entryId);
+    const existingInstallments = await this.installmentsRepo.findByEntryId(tenantId, entryId);
     const affectedInvoiceIds = new Set<string>();
 
     for (const inst of existingInstallments) {
@@ -341,16 +348,17 @@ export class CreditCardsService {
         await this.installmentsRepo.update(inst.id, {
           status: InstallmentStatus.CANCELED,
           updatedAt: now,
-        });
+        }, tenantId);
       }
     }
 
     // 2. Estorna pagamentos de faturas pagas e volta status para OPEN
     for (const invoiceId of affectedInvoiceIds) {
-      const invoice = await this.invoicesRepo.findById(invoiceId);
+      const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
       if (!invoice) continue;
       if (invoice.status === InvoiceStatus.PAID) {
         const linked = await this.transactionsRepo.findByOrigin(
+          tenantId,
           OriginType.CREDIT_CARD_INVOICE,
           invoiceId,
         );
@@ -359,7 +367,7 @@ export class CreditCardsService {
             await this.transactionsRepo.update(tx.id, {
               status: TransactionStatus.REVERSED,
               updatedAt: now,
-            });
+            }, tenantId);
           }
         }
         await this.invoicesRepo.update(invoiceId, {
@@ -367,10 +375,10 @@ export class CreditCardsService {
           paymentDate: null,
           paymentAccountId: null,
           updatedAt: now,
-        });
+        }, tenantId);
       }
     }
-    await this.recalcInvoiceTotals(affectedInvoiceIds);
+    await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
 
     // 3. Determina novos valores
     const newTotalAmount = input.totalAmount ?? entry.totalAmount;
@@ -396,7 +404,7 @@ export class CreditCardsService {
       installmentsCount: count,
       notes: input.notes !== undefined ? input.notes : entry.notes,
       updatedAt: now,
-    });
+    }, tenantId);
 
     // 5. Recria parcelas usando o fechamento vigente na criação do lançamento
     // (não o closingDay atual do cartão, que pode ter mudado desde então)
@@ -410,10 +418,11 @@ export class CreditCardsService {
     for (let i = 0; i < count; i++) {
       const { month, year } = this.addMonths(firstMonth.month, firstMonth.year, i);
       const amount = base + (i === 0 ? remainder : 0);
-      const invoice = await this.findOrCreateInvoice(cardId, month, year, card.dueDay);
+      const invoice = await this.findOrCreateInvoice(tenantId, cardId, month, year, card.dueDay);
 
       installmentsToCreate.push({
         id: generateId(),
+        tenantId,
         creditCardEntryId: entryId,
         installmentNumber: i + 1,
         totalInstallments: count,
@@ -429,11 +438,11 @@ export class CreditCardsService {
     }
 
     await this.installmentsRepo.createMany(installmentsToCreate);
-    await this.recalcInvoiceTotals(invoiceIdsToRecalc);
+    await this.recalcInvoiceTotals(tenantId, invoiceIdsToRecalc);
 
     if (newEntryType === CardEntryType.FIXED) {
       const nowDate = new Date();
-      await this.ensureFixedInstallments(updatedEntry, card, nowDate.getMonth() + 1, nowDate.getFullYear());
+      await this.ensureFixedInstallments(tenantId, updatedEntry, card, nowDate.getMonth() + 1, nowDate.getFullYear());
     }
 
     return updatedEntry;
@@ -442,11 +451,12 @@ export class CreditCardsService {
   async deleteEntry(
     cardId: string,
     entryId: string,
+    tenantId: string,
     scope?: 'CURRENT' | 'CURRENT_AND_FUTURE',
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    const entry = await this.getEntryChecked(cardId, entryId);
+    const entry = await this.getEntryChecked(cardId, entryId, tenantId);
     if (!entry.active) throw new AppError('Lançamento já está inativo.', 400);
 
     if (entry.entryType === CardEntryType.FIXED) {
@@ -456,12 +466,12 @@ export class CreditCardsService {
           400,
         );
       }
-      return this.deleteFixedEntry(entry, scope, referenceMonth, referenceYear);
+      return this.deleteFixedEntry(entry, tenantId, scope, referenceMonth, referenceYear);
     }
 
     const now = nowISO();
 
-    const installments = await this.installmentsRepo.findByEntryId(entryId);
+    const installments = await this.installmentsRepo.findByEntryId(tenantId, entryId);
     const affectedInvoiceIds = new Set<string>();
 
     for (const inst of installments) {
@@ -470,13 +480,13 @@ export class CreditCardsService {
         await this.installmentsRepo.update(inst.id, {
           status: InstallmentStatus.CANCELED,
           updatedAt: now,
-        });
+        }, tenantId);
       }
     }
 
-    await this.entriesRepo.update(entryId, { active: false, updatedAt: now });
+    await this.entriesRepo.update(entryId, { active: false, updatedAt: now }, tenantId);
 
-    await this.recalcInvoiceTotals(affectedInvoiceIds);
+    await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
   }
 
   // Lançamentos fixos são recorrentes por tempo indeterminado, então a exclusão
@@ -485,6 +495,7 @@ export class CreditCardsService {
   // O histórico (referências anteriores à escolhida) nunca é alterado.
   private async deleteFixedEntry(
     entry: CreditCardEntry,
+    tenantId: string,
     scope: 'CURRENT' | 'CURRENT_AND_FUTURE',
     referenceMonth: number,
     referenceYear: number,
@@ -492,7 +503,7 @@ export class CreditCardsService {
     const now = nowISO();
     const refKey = this.monthKey(referenceMonth, referenceYear);
 
-    const installments = await this.installmentsRepo.findByEntryId(entry.id);
+    const installments = await this.installmentsRepo.findByEntryId(tenantId, entry.id);
     const affectedInvoiceIds = new Set<string>();
 
     const toCancel = installments.filter((i) => {
@@ -506,14 +517,14 @@ export class CreditCardsService {
       await this.installmentsRepo.update(inst.id, {
         status: InstallmentStatus.CANCELED,
         updatedAt: now,
-      });
+      }, tenantId);
     }
 
     if (scope === 'CURRENT_AND_FUTURE') {
-      await this.entriesRepo.update(entry.id, { active: false, updatedAt: now });
+      await this.entriesRepo.update(entry.id, { active: false, updatedAt: now }, tenantId);
     }
 
-    await this.recalcInvoiceTotals(affectedInvoiceIds);
+    await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
   }
 
   // ─── Invoice payment ──────────────────────────────────────────────────────────
@@ -521,10 +532,11 @@ export class CreditCardsService {
   async payInvoice(
     cardId: string,
     invoiceId: string,
+    tenantId: string,
     input: PayInvoiceInput,
   ): Promise<CreditCardInvoice> {
-    const card = await this.findById(cardId);
-    const invoice = await this.invoicesRepo.findById(invoiceId);
+    const card = await this.findById(cardId, tenantId);
+    const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
 
     if (!invoice) throw new AppError('Fatura não encontrada.', 404);
     if (invoice.creditCardId !== cardId)
@@ -534,7 +546,7 @@ export class CreditCardsService {
     if (invoice.status === InvoiceStatus.CANCELED)
       throw new AppError('Fatura cancelada não pode ser paga.', 400);
 
-    const settings = await this.settingsRepo.get();
+    const settings = await this.settingsRepo.get(tenantId);
     const paymentAccountId =
       input?.paymentAccountId ??
       card.defaultPaymentAccountId ??
@@ -546,6 +558,7 @@ export class CreditCardsService {
 
     await this.transactionsRepo.create({
       id: generateId(),
+      tenantId,
       type: TransactionType.CREDIT_CARD_PAYMENT,
       description: `Pagamento fatura ${card.name} ${invoice.month}/${invoice.year}`,
       categoryId: null,
@@ -570,14 +583,15 @@ export class CreditCardsService {
       paymentDate,
       paymentAccountId,
       updatedAt: now,
-    });
+    }, tenantId);
   }
 
   async revertInvoice(
     cardId: string,
     invoiceId: string,
+    tenantId: string,
   ): Promise<CreditCardInvoice> {
-    const invoice = await this.invoicesRepo.findById(invoiceId);
+    const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
 
     if (!invoice) throw new AppError('Fatura não encontrada.', 404);
     if (invoice.creditCardId !== cardId)
@@ -588,6 +602,7 @@ export class CreditCardsService {
     const now = nowISO();
 
     const linked = await this.transactionsRepo.findByOrigin(
+      tenantId,
       OriginType.CREDIT_CARD_INVOICE,
       invoiceId,
     );
@@ -596,7 +611,7 @@ export class CreditCardsService {
         await this.transactionsRepo.update(tx.id, {
           status: TransactionStatus.REVERSED,
           updatedAt: now,
-        });
+        }, tenantId);
       }
     }
 
@@ -605,7 +620,7 @@ export class CreditCardsService {
       paymentDate: null,
       paymentAccountId: null,
       updatedAt: now,
-    });
+    }, tenantId);
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -648,6 +663,7 @@ export class CreditCardsService {
   // referência é gerada sob demanda, conforme o usuário navega até o mês
   // (getCardFlow/findAll), até o limite do mês/ano solicitado.
   private async ensureFixedInstallments(
+    tenantId: string,
     entry: CreditCardEntry,
     card: CreditCard,
     targetMonth: number,
@@ -655,7 +671,7 @@ export class CreditCardsService {
   ): Promise<void> {
     if (entry.entryType !== CardEntryType.FIXED || !entry.active) return;
 
-    const existing = await this.installmentsRepo.findByEntryId(entry.id);
+    const existing = await this.installmentsRepo.findByEntryId(tenantId, entry.id);
     if (existing.length === 0) return;
 
     let lastMonth = 0;
@@ -680,10 +696,11 @@ export class CreditCardsService {
 
     while (this.monthKey(cursor.month, cursor.year) <= this.monthKey(targetMonth, targetYear)) {
       number += 1;
-      const invoice = await this.findOrCreateInvoice(card.id, cursor.month, cursor.year, card.dueDay);
+      const invoice = await this.findOrCreateInvoice(tenantId, card.id, cursor.month, cursor.year, card.dueDay);
 
       installmentsToCreate.push({
         id: generateId(),
+        tenantId,
         creditCardEntryId: entry.id,
         installmentNumber: number,
         totalInstallments: number,
@@ -700,20 +717,22 @@ export class CreditCardsService {
     }
 
     await this.installmentsRepo.createMany(installmentsToCreate);
-    await this.recalcInvoiceTotals(invoiceIdsToRecalc);
+    await this.recalcInvoiceTotals(tenantId, invoiceIdsToRecalc);
 
     if (number !== entry.installmentsCount) {
-      await this.entriesRepo.update(entry.id, { installmentsCount: number, updatedAt: now });
+      await this.entriesRepo.update(entry.id, { installmentsCount: number, updatedAt: now }, tenantId);
     }
   }
 
   private async findOrCreateInvoice(
+    tenantId: string,
     cardId: string,
     month: number,
     year: number,
     dueDay: number,
   ): Promise<CreditCardInvoice> {
     const existing = await this.invoicesRepo.findByCardAndMonth(
+      tenantId,
       cardId,
       month,
       year,
@@ -724,6 +743,7 @@ export class CreditCardsService {
     const now = nowISO();
     return this.invoicesRepo.create({
       id: generateId(),
+      tenantId,
       creditCardId: cardId,
       month,
       year,
@@ -741,12 +761,13 @@ export class CreditCardsService {
   // arquivo de parcelas (em vez de um findAll() por fatura), já que todas
   // as parcelas necessárias já estão presentes numa única leitura.
   private async recalcInvoiceTotals(
+    tenantId: string,
     invoiceIds: Iterable<string>,
   ): Promise<void> {
     const ids = [...new Set(invoiceIds)];
     if (ids.length === 0) return;
 
-    const all = await this.installmentsRepo.findAll();
+    const all = await this.installmentsRepo.findAll(tenantId);
     const now = nowISO();
 
     for (const invoiceId of ids) {
@@ -760,15 +781,16 @@ export class CreditCardsService {
       await this.invoicesRepo.update(invoiceId, {
         totalAmount: total,
         updatedAt: now,
-      });
+      }, tenantId);
     }
   }
 
   private async getEntryChecked(
     cardId: string,
     entryId: string,
+    tenantId: string,
   ): Promise<CreditCardEntry> {
-    const entry = await this.entriesRepo.findById(entryId);
+    const entry = await this.entriesRepo.findById(entryId, tenantId);
     if (!entry) throw new AppError('Lançamento não encontrado.', 404);
     if (entry.creditCardId !== cardId)
       throw new AppError('Lançamento não pertence a este cartão.', 400);

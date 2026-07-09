@@ -6,7 +6,7 @@ import { UpdateSettingsInput } from './settings.schemas';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { CategoryType } from '../categories/categories.types';
 
-const DEFAULT_SETTINGS: Omit<FinancialSettings, 'id' | 'createdAt' | 'updatedAt'> = {
+const DEFAULT_SETTINGS: Omit<FinancialSettings, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'> = {
   defaultReservePercentage: 30,
   applyReserveByDefault: true,
   allowDisableReserve: true,
@@ -25,33 +25,35 @@ export class SettingsService {
     private readonly categoriesRepo: CategoriesRepository,
   ) {}
 
-  async get(): Promise<FinancialSettings> {
-    const settings = await this.repo.get();
+  async get(tenantId: string): Promise<FinancialSettings> {
+    const settings = await this.repo.get(tenantId);
     if (settings) return { ...DEFAULT_SETTINGS, ...settings };
 
     // cria configuração padrão se não existir
     const now = nowISO();
     return this.repo.upsert({
-      id: generateId(),
       ...DEFAULT_SETTINGS,
+      id: generateId(),
+      tenantId,
       createdAt: now,
       updatedAt: now,
     });
   }
 
-  async update(input: UpdateSettingsInput): Promise<FinancialSettings> {
-    const current = await this.get();
+  async update(tenantId: string, input: UpdateSettingsInput): Promise<FinancialSettings> {
+    const current = await this.get(tenantId);
     const updated = await this.repo.upsert({
       ...current,
       ...input,
+      tenantId,
       updatedAt: nowISO(),
     });
-    await this.syncNotaFiscalCategory(updated.pjLimitControlEnabled);
+    await this.syncNotaFiscalCategory(tenantId, updated.pjLimitControlEnabled);
     return updated;
   }
 
-  private async syncNotaFiscalCategory(enabled: boolean): Promise<void> {
-    const categories = await this.categoriesRepo.findAll();
+  private async syncNotaFiscalCategory(tenantId: string, enabled: boolean): Promise<void> {
+    const categories = await this.categoriesRepo.findAll(tenantId);
     const notaFiscal = categories.find((c) => c.protected);
     const now = nowISO();
 
@@ -59,6 +61,7 @@ export class SettingsService {
       if (!notaFiscal) {
         await this.categoriesRepo.create({
           id: generateId(),
+          tenantId,
           name: 'Nota Fiscal',
           type: CategoryType.INCOME,
           active: true,
@@ -67,10 +70,10 @@ export class SettingsService {
           updatedAt: now,
         });
       } else if (!notaFiscal.active) {
-        await this.categoriesRepo.update(notaFiscal.id, { active: true, updatedAt: now });
+        await this.categoriesRepo.update(notaFiscal.id, { active: true, updatedAt: now }, tenantId);
       }
     } else if (notaFiscal?.active) {
-      await this.categoriesRepo.update(notaFiscal.id, { active: false, updatedAt: now });
+      await this.categoriesRepo.update(notaFiscal.id, { active: false, updatedAt: now }, tenantId);
     }
   }
 }

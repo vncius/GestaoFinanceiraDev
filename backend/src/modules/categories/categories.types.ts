@@ -5,6 +5,7 @@ export enum CategoryType {
 
 export interface Category {
   id: string;
+  tenantId: string;
   name: string;
   type: CategoryType;
   active: boolean;

@@ -5,36 +5,36 @@ import { Receivable, ReceivableStatus } from './receivables.types';
 export class ReceivablesFileRepository implements ReceivablesRepository {
   private store = new JsonFileStore<Receivable>('receivables.json');
 
-  findAll() {
-    return this.store.findAll();
+  findAll(tenantId: string) {
+    return this.store.findAll(tenantId);
   }
 
-  findById(id: string) {
-    return this.store.findById(id);
+  findById(id: string, tenantId: string) {
+    return this.store.findById(id, tenantId);
   }
 
   create(data: Receivable) {
     return this.store.create(data);
   }
 
-  update(id: string, data: Partial<Receivable>) {
-    return this.store.update(id, data);
+  update(id: string, data: Partial<Receivable>, tenantId: string) {
+    return this.store.update(id, data, tenantId);
   }
 
-  delete(id: string) {
-    return this.store.delete(id);
+  delete(id: string, tenantId: string) {
+    return this.store.delete(id, tenantId);
   }
 
-  async findByMonth(month: number, year: number): Promise<Receivable[]> {
-    const all = await this.store.findAll();
+  async findByMonth(tenantId: string, month: number, year: number): Promise<Receivable[]> {
+    const all = await this.store.findAll(tenantId);
     return all.filter((r) => {
       const [y, m] = r.expectedPaymentDate.slice(0, 10).split('-').map(Number);
       return m === month && y === year;
     });
   }
 
-  async findByStatus(status: ReceivableStatus): Promise<Receivable[]> {
-    const all = await this.store.findAll();
+  async findByStatus(tenantId: string, status: ReceivableStatus): Promise<Receivable[]> {
+    const all = await this.store.findAll(tenantId);
     return all.filter((r) => r.status === status);
   }
 }

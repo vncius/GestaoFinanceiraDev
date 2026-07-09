@@ -35,19 +35,19 @@ export class CashFlowService {
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
 
-  async getCashFlow(query: CashFlowQuery): Promise<CashFlowResponse> {
+  async getCashFlow(tenantId: string, query: CashFlowQuery): Promise<CashFlowResponse> {
     const { month, year } = query;
 
-    await this.ensureFixedOccurrences(month, year);
+    await this.ensureFixedOccurrences(tenantId, month, year);
 
     // Uma única leitura de cada arquivo — os filtros por mês e por intervalo
     // (usados pelas previsões) são feitos em memória sobre esses arrays,
     // em vez de buscar novamente no repositório por período.
     const [allReceivables, allTransactions, settings, allInvoices] = await Promise.all([
-      this.receivablesRepo.findAll(),
-      this.transactionsRepo.findAll(),
-      this.settingsRepo.get(),
-      this.creditCardInvoicesRepo?.findAll() ?? Promise.resolve([]),
+      this.receivablesRepo.findAll(tenantId),
+      this.transactionsRepo.findAll(tenantId),
+      this.settingsRepo.get(tenantId),
+      this.creditCardInvoicesRepo?.findAll(tenantId) ?? Promise.resolve([]),
     ]);
 
     // "Previsto" acumula do mês atual (real) até o mês de referência quando
@@ -111,8 +111,8 @@ export class CashFlowService {
     // diretamente (mesma lógica de acúmulo futuro dos demais campos previstos).
     const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
     const [mainAccount, reserveAccount] = await Promise.all([
-      mainId ? this.accountsRepo.findById(mainId) : null,
-      reserveId ? this.accountsRepo.findById(reserveId) : null,
+      mainId ? this.accountsRepo.findById(mainId, tenantId) : null,
+      reserveId ? this.accountsRepo.findById(reserveId, tenantId) : null,
     ]);
 
     const mainInitial = mainAccount ? calcAccountBalance(mainAccount, allTransactions, monthStart) : 0;
@@ -226,76 +226,83 @@ export class CashFlowService {
 
   // ─── Payments ────────────────────────────────────────────────────────────────
 
-  async createPayment(input: CreateTransactionInput): Promise<FinancialTransaction> {
-    return this.createTransaction(TransactionType.PAYMENT, input);
+  async createPayment(tenantId: string, input: CreateTransactionInput): Promise<FinancialTransaction> {
+    return this.createTransaction(TransactionType.PAYMENT, tenantId, input);
   }
 
   async updatePayment(
     id: string,
     input: UpdateTransactionInput,
+    tenantId: string,
   ): Promise<FinancialTransaction> {
-    return this.updateTransactionChecked(id, TransactionType.PAYMENT, input);
+    return this.updateTransactionChecked(id, TransactionType.PAYMENT, input, tenantId);
   }
 
   async deletePayment(
     id: string,
+    tenantId: string,
     scope?: DeleteScope,
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    return this.deleteTransactionChecked(id, TransactionType.PAYMENT, scope, referenceMonth, referenceYear);
+    return this.deleteTransactionChecked(id, TransactionType.PAYMENT, tenantId, scope, referenceMonth, referenceYear);
   }
 
-  async payPayment(id: string, input: PayActionInput): Promise<FinancialTransaction> {
-    return this.payTransactionChecked(id, TransactionType.PAYMENT, input);
+  async payPayment(id: string, tenantId: string, input: PayActionInput): Promise<FinancialTransaction> {
+    return this.payTransactionChecked(id, TransactionType.PAYMENT, tenantId, input);
   }
 
-  async revertPayment(id: string): Promise<FinancialTransaction> {
-    return this.revertTransactionChecked(id, TransactionType.PAYMENT);
+  async revertPayment(id: string, tenantId: string): Promise<FinancialTransaction> {
+    return this.revertTransactionChecked(id, TransactionType.PAYMENT, tenantId);
   }
 
   // ─── Extra Expenses ───────────────────────────────────────────────────────────
 
   async createExtraExpense(
+    tenantId: string,
     input: CreateTransactionInput,
   ): Promise<FinancialTransaction> {
-    return this.createTransaction(TransactionType.EXTRA_EXPENSE, input);
+    return this.createTransaction(TransactionType.EXTRA_EXPENSE, tenantId, input);
   }
 
   async updateExtraExpense(
     id: string,
     input: UpdateTransactionInput,
+    tenantId: string,
   ): Promise<FinancialTransaction> {
-    return this.updateTransactionChecked(id, TransactionType.EXTRA_EXPENSE, input);
+    return this.updateTransactionChecked(id, TransactionType.EXTRA_EXPENSE, input, tenantId);
   }
 
   async deleteExtraExpense(
     id: string,
+    tenantId: string,
     scope?: DeleteScope,
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    return this.deleteTransactionChecked(id, TransactionType.EXTRA_EXPENSE, scope, referenceMonth, referenceYear);
+    return this.deleteTransactionChecked(id, TransactionType.EXTRA_EXPENSE, tenantId, scope, referenceMonth, referenceYear);
   }
 
   async payExtraExpense(
     id: string,
+    tenantId: string,
     input: PayActionInput,
   ): Promise<FinancialTransaction> {
-    return this.payTransactionChecked(id, TransactionType.EXTRA_EXPENSE, input);
+    return this.payTransactionChecked(id, TransactionType.EXTRA_EXPENSE, tenantId, input);
   }
 
-  async revertExtraExpense(id: string): Promise<FinancialTransaction> {
-    return this.revertTransactionChecked(id, TransactionType.EXTRA_EXPENSE);
+  async revertExtraExpense(id: string, tenantId: string): Promise<FinancialTransaction> {
+    return this.revertTransactionChecked(id, TransactionType.EXTRA_EXPENSE, tenantId);
   }
 
   // ─── Shared helpers ──────────────────────────────────────────────────────────
 
   private async createTransaction(
     type: TransactionType,
+    tenantId: string,
     input: CreateTransactionInput,
   ): Promise<FinancialTransaction> {
-    const settings = await this.settingsRepo.get();
+    const settings = await this.settingsRepo.get(tenantId);
     const sourceAccountId =
       input.sourceAccountId ?? settings?.mainAccountId ?? null;
 
@@ -304,6 +311,7 @@ export class CashFlowService {
     const recurrence = input.recurrence ?? RecurrenceType.UNIQUE;
     return this.transactionsRepo.create({
       id,
+      tenantId,
       type,
       description: input.description,
       categoryId: input.categoryId,
@@ -328,8 +336,9 @@ export class CashFlowService {
     id: string,
     type: TransactionType,
     input: UpdateTransactionInput,
+    tenantId: string,
   ): Promise<FinancialTransaction> {
-    const tx = await this.getTransactionChecked(id, type);
+    const tx = await this.getTransactionChecked(id, type, tenantId);
 
     if (tx.status === TransactionStatus.CANCELED) {
       throw new AppError('Lançamentos cancelados não podem ser editados.', 400);
@@ -351,17 +360,18 @@ export class CashFlowService {
 
     // Para transações já pagas, a própria transação é o impacto financeiro.
     // Atualizar seus campos (amount, sourceAccountId, etc.) recalcula saldos automaticamente.
-    return this.transactionsRepo.update(id, { ...input, ...recurrencePatch, updatedAt: nowISO() });
+    return this.transactionsRepo.update(id, { ...input, ...recurrencePatch, updatedAt: nowISO() }, tenantId);
   }
 
   private async deleteTransactionChecked(
     id: string,
     type: TransactionType,
+    tenantId: string,
     scope?: DeleteScope,
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    const tx = await this.getTransactionChecked(id, type);
+    const tx = await this.getTransactionChecked(id, type, tenantId);
 
     if (tx.status === TransactionStatus.PAID) {
       throw new AppError(
@@ -377,17 +387,18 @@ export class CashFlowService {
           400,
         );
       }
-      return this.deleteFixedTransaction(tx, scope, referenceMonth, referenceYear);
+      return this.deleteFixedTransaction(tx, tenantId, scope, referenceMonth, referenceYear);
     }
 
     await this.transactionsRepo.update(id, {
       status: TransactionStatus.CANCELED,
       updatedAt: nowISO(),
-    });
+    }, tenantId);
   }
 
   private async deleteFixedTransaction(
     existing: FinancialTransaction,
+    tenantId: string,
     scope: DeleteScope,
     referenceMonth: number,
     referenceYear: number,
@@ -395,7 +406,7 @@ export class CashFlowService {
     const now = nowISO();
     const refKey = monthKey(referenceMonth, referenceYear);
     const groupId = existing.recurringGroupId ?? existing.id;
-    const all = await this.transactionsRepo.findAll();
+    const all = await this.transactionsRepo.findAll(tenantId);
     const group = all.filter((t) => t.recurringGroupId === groupId);
 
     const toCancel = group.filter((t) => {
@@ -406,13 +417,13 @@ export class CashFlowService {
     });
 
     for (const t of toCancel) {
-      await this.transactionsRepo.update(t.id, { status: TransactionStatus.CANCELED, updatedAt: now });
+      await this.transactionsRepo.update(t.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
     }
 
     if (scope === 'CURRENT_AND_FUTURE') {
       for (const t of group) {
         if (t.recurringActive) {
-          await this.transactionsRepo.update(t.id, { recurringActive: false, updatedAt: now });
+          await this.transactionsRepo.update(t.id, { recurringActive: false, updatedAt: now }, tenantId);
         }
       }
     }
@@ -420,15 +431,15 @@ export class CashFlowService {
 
   // ─── Recorrência (lançamentos fixos) ──────────────────────────────────────────
 
-  private async ensureFixedOccurrences(targetMonth: number, targetYear: number): Promise<void> {
+  private async ensureFixedOccurrences(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
     await Promise.all([
-      this.ensureFixedTransactions(targetMonth, targetYear),
-      this.ensureFixedReceivablesForFlow(targetMonth, targetYear),
+      this.ensureFixedTransactions(tenantId, targetMonth, targetYear),
+      this.ensureFixedReceivablesForFlow(tenantId, targetMonth, targetYear),
     ]);
   }
 
-  private async ensureFixedTransactions(targetMonth: number, targetYear: number): Promise<void> {
-    const all = await this.transactionsRepo.findAll();
+  private async ensureFixedTransactions(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
+    const all = await this.transactionsRepo.findAll(tenantId);
     const fixed = all.filter((t) => t.recurrence === RecurrenceType.FIXED);
     if (fixed.length === 0) return;
 
@@ -483,8 +494,8 @@ export class CashFlowService {
     }
   }
 
-  private async ensureFixedReceivablesForFlow(targetMonth: number, targetYear: number): Promise<void> {
-    const all = await this.receivablesRepo.findAll();
+  private async ensureFixedReceivablesForFlow(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
+    const all = await this.receivablesRepo.findAll(tenantId);
     const fixed = all.filter((r) => r.recurrence === RecurrenceType.FIXED);
     if (fixed.length === 0) return;
 
@@ -542,9 +553,10 @@ export class CashFlowService {
   private async payTransactionChecked(
     id: string,
     type: TransactionType,
+    tenantId: string,
     input: PayActionInput,
   ): Promise<FinancialTransaction> {
-    const tx = await this.getTransactionChecked(id, type);
+    const tx = await this.getTransactionChecked(id, type, tenantId);
 
     if (tx.status === TransactionStatus.PAID) {
       throw new AppError('Lançamento já foi pago.', 400);
@@ -563,14 +575,15 @@ export class CashFlowService {
       actualDate: now,
       amount: amountPaid,
       updatedAt: now,
-    });
+    }, tenantId);
   }
 
   private async revertTransactionChecked(
     id: string,
     type: TransactionType,
+    tenantId: string,
   ): Promise<FinancialTransaction> {
-    const tx = await this.getTransactionChecked(id, type);
+    const tx = await this.getTransactionChecked(id, type, tenantId);
 
     if (tx.status !== TransactionStatus.PAID) {
       throw new AppError(
@@ -583,14 +596,15 @@ export class CashFlowService {
       status: TransactionStatus.PENDING,
       actualDate: null,
       updatedAt: nowISO(),
-    });
+    }, tenantId);
   }
 
   private async getTransactionChecked(
     id: string,
     type: TransactionType,
+    tenantId: string,
   ): Promise<FinancialTransaction> {
-    const tx = await this.transactionsRepo.findById(id);
+    const tx = await this.transactionsRepo.findById(id, tenantId);
     if (!tx) throw new AppError('Lançamento não encontrado.', 404);
     if (tx.type !== type) {
       throw new AppError(

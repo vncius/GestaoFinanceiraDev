@@ -42,14 +42,14 @@ export class DashboardService {
     private readonly installmentsRepo: CreditCardInstallmentsRepository,
   ) {}
 
-  async getDashboard(query: DashboardQuery): Promise<DashboardResponse> {
+  async getDashboard(tenantId: string, query: DashboardQuery): Promise<DashboardResponse> {
     const now = new Date();
     const month = query.month ?? now.getMonth() + 1;
     const year = query.year ?? now.getFullYear();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // Resumo mensal centralizado no CashFlowService (fonte única de verdade)
-    const cashFlow = await this.cashFlowService.getCashFlow({ month, year });
+    const cashFlow = await this.cashFlowService.getCashFlow(tenantId, { month, year });
     const monthSummary = cashFlow.summary;
 
     const [
@@ -63,15 +63,15 @@ export class DashboardService {
       allCardEntries,
       allInstallments,
     ] = await Promise.all([
-      this.receivablesRepo.findAll(),
-      this.transactionsRepo.findAll(),
-      this.accountsRepo.findAll(),
-      this.settingsRepo.get(),
-      this.creditCardsRepo.findAll(),
-      this.invoicesRepo.findAll(),
-      this.categoriesRepo.findAll(),
-      this.cardEntriesRepo.findAll(),
-      this.installmentsRepo.findAll(),
+      this.receivablesRepo.findAll(tenantId),
+      this.transactionsRepo.findAll(tenantId),
+      this.accountsRepo.findAll(tenantId),
+      this.settingsRepo.get(tenantId),
+      this.creditCardsRepo.findAll(tenantId),
+      this.invoicesRepo.findAll(tenantId),
+      this.categoriesRepo.findAll(tenantId),
+      this.cardEntriesRepo.findAll(tenantId),
+      this.installmentsRepo.findAll(tenantId),
     ]);
 
     const cardMap = new Map(allCards.map((c) => [c.id, c]));

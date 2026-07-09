@@ -29,6 +29,7 @@ export enum OriginType {
 
 export interface FinancialTransaction {
   id: string;
+  tenantId: string;
   type: TransactionType;
   description: string;
   categoryId: string | null;

@@ -13,7 +13,7 @@ export class CashFlowController {
 
   async getCashFlow(req: Request, res: Response): Promise<void> {
     const query = cashFlowQuerySchema.parse(req.query);
-    const data = await this.service.getCashFlow(query);
+    const data = await this.service.getCashFlow(req.tenantId, query);
     res.json(data);
   }
 
@@ -21,30 +21,30 @@ export class CashFlowController {
 
   async createPayment(req: Request, res: Response): Promise<void> {
     const input = createTransactionSchema.parse(req.body);
-    const tx = await this.service.createPayment(input);
+    const tx = await this.service.createPayment(req.tenantId, input);
     res.status(201).json(tx);
   }
 
   async updatePayment(req: Request, res: Response): Promise<void> {
     const input = updateTransactionSchema.parse(req.body);
-    const tx = await this.service.updatePayment(req.params.id, input);
+    const tx = await this.service.updatePayment(req.params.id, input, req.tenantId);
     res.json(tx);
   }
 
   async deletePayment(req: Request, res: Response): Promise<void> {
     const { scope, month, year } = deleteTransactionQuerySchema.parse(req.query);
-    await this.service.deletePayment(req.params.id, scope, month, year);
+    await this.service.deletePayment(req.params.id, req.tenantId, scope, month, year);
     res.status(204).send();
   }
 
   async payPayment(req: Request, res: Response): Promise<void> {
     const input = payActionSchema.parse(req.body);
-    const tx = await this.service.payPayment(req.params.id, input);
+    const tx = await this.service.payPayment(req.params.id, req.tenantId, input);
     res.json(tx);
   }
 
   async revertPayment(req: Request, res: Response): Promise<void> {
-    const tx = await this.service.revertPayment(req.params.id);
+    const tx = await this.service.revertPayment(req.params.id, req.tenantId);
     res.json(tx);
   }
 
@@ -52,30 +52,30 @@ export class CashFlowController {
 
   async createExtraExpense(req: Request, res: Response): Promise<void> {
     const input = createTransactionSchema.parse(req.body);
-    const tx = await this.service.createExtraExpense(input);
+    const tx = await this.service.createExtraExpense(req.tenantId, input);
     res.status(201).json(tx);
   }
 
   async updateExtraExpense(req: Request, res: Response): Promise<void> {
     const input = updateTransactionSchema.parse(req.body);
-    const tx = await this.service.updateExtraExpense(req.params.id, input);
+    const tx = await this.service.updateExtraExpense(req.params.id, input, req.tenantId);
     res.json(tx);
   }
 
   async deleteExtraExpense(req: Request, res: Response): Promise<void> {
     const { scope, month, year } = deleteTransactionQuerySchema.parse(req.query);
-    await this.service.deleteExtraExpense(req.params.id, scope, month, year);
+    await this.service.deleteExtraExpense(req.params.id, req.tenantId, scope, month, year);
     res.status(204).send();
   }
 
   async payExtraExpense(req: Request, res: Response): Promise<void> {
     const input = payActionSchema.parse(req.body);
-    const tx = await this.service.payExtraExpense(req.params.id, input);
+    const tx = await this.service.payExtraExpense(req.params.id, req.tenantId, input);
     res.json(tx);
   }
 
   async revertExtraExpense(req: Request, res: Response): Promise<void> {
-    const tx = await this.service.revertExtraExpense(req.params.id);
+    const tx = await this.service.revertExtraExpense(req.params.id, req.tenantId);
     res.json(tx);
   }
 }

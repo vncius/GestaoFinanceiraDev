@@ -6,6 +6,7 @@ export enum AccountType {
 
 export interface Account {
   id: string;
+  tenantId: string;
   name: string;
   type: AccountType;
   initialBalance: number;      // centavos

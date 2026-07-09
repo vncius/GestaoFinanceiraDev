@@ -8,13 +8,14 @@ import { CategoryType } from '../modules/categories/categories.types';
 import { SettingsFileRepository } from '../modules/settings/settings.file-repository';
 import { generateId } from '../shared/utils/id.utils';
 import { nowISO } from '../shared/utils/date.utils';
+import { DEFAULT_TENANT_ID } from '../shared/tenant/tenant.constants';
 
 const accountsRepo = new AccountsFileRepository();
 const categoriesRepo = new CategoriesFileRepository();
 const settingsRepo = new SettingsFileRepository();
 
 async function seedAccounts() {
-  const existing = await accountsRepo.findAll();
+  const existing = await accountsRepo.findAll(DEFAULT_TENANT_ID);
   if (existing.length > 0) {
     console.log('  [accounts] Já existem contas — pulando seed.');
     return existing;
@@ -24,6 +25,7 @@ async function seedAccounts() {
   const accounts = [
     {
       id: generateId(),
+      tenantId: DEFAULT_TENANT_ID,
       name: 'Conta Principal',
       type: AccountType.MAIN,
       initialBalance: 0,
@@ -34,6 +36,7 @@ async function seedAccounts() {
     },
     {
       id: generateId(),
+      tenantId: DEFAULT_TENANT_ID,
       name: 'Reserva de Emergência',
       type: AccountType.EMERGENCY_RESERVE,
       initialBalance: 0,
@@ -53,7 +56,7 @@ async function seedAccounts() {
 }
 
 async function seedCategories() {
-  const existing = await categoriesRepo.findAll();
+  const existing = await categoriesRepo.findAll(DEFAULT_TENANT_ID);
   if (existing.length > 0) {
     console.log('  [categories] Já existem categorias — pulando seed.');
     return;
@@ -91,6 +94,7 @@ async function seedCategories() {
   for (const name of incomeCategories) {
     await categoriesRepo.create({
       id: generateId(),
+      tenantId: DEFAULT_TENANT_ID,
       name,
       type: CategoryType.INCOME,
       active: true,
@@ -104,6 +108,7 @@ async function seedCategories() {
   for (const name of expenseCategories) {
     await categoriesRepo.create({
       id: generateId(),
+      tenantId: DEFAULT_TENANT_ID,
       name,
       type: CategoryType.EXPENSE,
       active: true,
@@ -119,7 +124,7 @@ async function seedSettings(
   mainAccountId: string,
   reserveAccountId: string,
 ) {
-  const existing = await settingsRepo.get();
+  const existing = await settingsRepo.get(DEFAULT_TENANT_ID);
   if (existing) {
     console.log('  [settings] Configuração já existe — pulando seed.');
     return;
@@ -130,6 +135,7 @@ async function seedSettings(
 
   await settingsRepo.upsert({
     id: generateId(),
+    tenantId: DEFAULT_TENANT_ID,
     defaultReservePercentage: 30,
     applyReserveByDefault: true,
     allowDisableReserve: true,

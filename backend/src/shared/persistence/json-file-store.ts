@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { DEFAULT_TENANT_ID } from '../tenant/tenant.constants';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -21,7 +22,7 @@ function withFileLock<R>(filePath: string, task: () => Promise<R>): Promise<R> {
   return run;
 }
 
-export class JsonFileStore<T extends { id: string }> {
+export class JsonFileStore<T extends { id: string; tenantId: string }> {
   private readonly filePath: string;
 
   constructor(fileName: string) {
@@ -37,12 +38,17 @@ export class JsonFileStore<T extends { id: string }> {
     }
   }
 
+  // Lê todos os registros do arquivo, sem filtro de tenant. Registros
+  // gravados antes da introdução de tenantId (dado legado em disco) são
+  // tratados como pertencentes ao DEFAULT_TENANT_ID, para não desaparecer
+  // silenciosamente após esta migração.
   private async readAll(): Promise<T[]> {
     await this.ensureFile();
     const raw = await fs.readFile(this.filePath, 'utf-8');
     const content = raw.replace(/^﻿/, '');
     if (!content.trim()) return [];
-    return JSON.parse(content) as T[];
+    const items = JSON.parse(content) as T[];
+    return items.map((item) => (item.tenantId ? item : { ...item, tenantId: DEFAULT_TENANT_ID }));
   }
 
   private async writeAll(items: T[]): Promise<void> {
@@ -55,14 +61,17 @@ export class JsonFileStore<T extends { id: string }> {
     await fs.rename(tmpPath, this.filePath);
   }
 
-  async findAll(): Promise<T[]> {
-    return withFileLock(this.filePath, () => this.readAll());
-  }
-
-  async findById(id: string): Promise<T | null> {
+  async findAll(tenantId: string): Promise<T[]> {
     return withFileLock(this.filePath, async () => {
       const items = await this.readAll();
-      return items.find((item) => item.id === id) ?? null;
+      return items.filter((item) => item.tenantId === tenantId);
+    });
+  }
+
+  async findById(id: string, tenantId: string): Promise<T | null> {
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      return items.find((item) => item.id === id && item.tenantId === tenantId) ?? null;
     });
   }
 
@@ -87,10 +96,10 @@ export class JsonFileStore<T extends { id: string }> {
     });
   }
 
-  async update(id: string, data: Partial<T>): Promise<T> {
+  async update(id: string, data: Partial<T>, tenantId: string): Promise<T> {
     return withFileLock(this.filePath, async () => {
       const items = await this.readAll();
-      const index = items.findIndex((item) => item.id === id);
+      const index = items.findIndex((item) => item.id === id && item.tenantId === tenantId);
       if (index === -1) throw new Error(`Registro com id ${id} não encontrado`);
       items[index] = { ...items[index], ...data };
       await this.writeAll(items);
@@ -98,11 +107,22 @@ export class JsonFileStore<T extends { id: string }> {
     });
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, tenantId: string): Promise<void> {
     return withFileLock(this.filePath, async () => {
       const items = await this.readAll();
-      const filtered = items.filter((item) => item.id !== id);
+      const filtered = items.filter((item) => !(item.id === id && item.tenantId === tenantId));
       await this.writeAll(filtered);
+    });
+  }
+
+  // Substitui TODOS os registros de um tenant pelos informados — usado pela
+  // restauração de backup (import). Registros de outros tenants no mesmo
+  // arquivo não são tocados.
+  async replaceAllForTenant(tenantId: string, newItems: T[]): Promise<void> {
+    return withFileLock(this.filePath, async () => {
+      const items = await this.readAll();
+      const others = items.filter((item) => item.tenantId !== tenantId);
+      await this.writeAll([...others, ...newItems]);
     });
   }
 }

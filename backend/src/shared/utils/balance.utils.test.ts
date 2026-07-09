@@ -8,6 +8,7 @@ const ACCOUNT = { id: 'acc-1', initialBalance: 10000 };
 function tx(overrides: Partial<FinancialTransaction>): FinancialTransaction {
   return {
     id: 'tx',
+    tenantId: 'tenant-1',
     type: TransactionType.PAYMENT,
     description: 'test',
     categoryId: null,

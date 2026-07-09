@@ -13,41 +13,41 @@ export class ReceivablesController {
 
   async findAll(req: Request, res: Response): Promise<void> {
     const query = receivableQuerySchema.parse(req.query);
-    const receivables = await this.service.findAll(query);
+    const receivables = await this.service.findAll(req.tenantId, query);
     res.json(receivables);
   }
 
   async findById(req: Request, res: Response): Promise<void> {
-    const receivable = await this.service.findById(req.params.id);
+    const receivable = await this.service.findById(req.params.id, req.tenantId);
     res.json(receivable);
   }
 
   async create(req: Request, res: Response): Promise<void> {
     const input = createReceivableSchema.parse(req.body);
-    const receivable = await this.service.create(input);
+    const receivable = await this.service.create(req.tenantId, input);
     res.status(201).json(receivable);
   }
 
   async update(req: Request, res: Response): Promise<void> {
     const input = updateReceivableSchema.parse(req.body);
-    const receivable = await this.service.update(req.params.id, input);
+    const receivable = await this.service.update(req.params.id, input, req.tenantId);
     res.json(receivable);
   }
 
   async delete(req: Request, res: Response): Promise<void> {
     const { scope, month, year } = deleteReceivableQuerySchema.parse(req.query);
-    await this.service.delete(req.params.id, scope, month, year);
+    await this.service.delete(req.params.id, req.tenantId, scope, month, year);
     res.status(204).send();
   }
 
   async receive(req: Request, res: Response): Promise<void> {
     const input = receiveActionSchema.parse(req.body);
-    const receivable = await this.service.receive(req.params.id, input);
+    const receivable = await this.service.receive(req.params.id, req.tenantId, input);
     res.json(receivable);
   }
 
   async revert(req: Request, res: Response): Promise<void> {
-    const receivable = await this.service.revert(req.params.id);
+    const receivable = await this.service.revert(req.params.id, req.tenantId);
     res.json(receivable);
   }
 }

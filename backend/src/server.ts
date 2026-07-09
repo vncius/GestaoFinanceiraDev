@@ -5,6 +5,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
+import { tenantMiddleware } from './shared/middlewares/tenant.middleware';
 import accountsRouter from './modules/accounts/accounts.routes';
 import categoriesRouter from './modules/categories/categories.routes';
 import settingsRouter from './modules/settings/settings.routes';
@@ -23,6 +24,7 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
 app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json());
 app.use(requestLogger);
+app.use(tenantMiddleware);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });

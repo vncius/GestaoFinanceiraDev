@@ -8,10 +8,11 @@ import {
 
 export interface FinancialTransactionsRepository
   extends BaseRepository<FinancialTransaction> {
-  findByMonth(month: number, year: number): Promise<FinancialTransaction[]>;
-  findByType(type: TransactionType): Promise<FinancialTransaction[]>;
-  findByStatus(status: TransactionStatus): Promise<FinancialTransaction[]>;
+  findByMonth(tenantId: string, month: number, year: number): Promise<FinancialTransaction[]>;
+  findByType(tenantId: string, type: TransactionType): Promise<FinancialTransaction[]>;
+  findByStatus(tenantId: string, status: TransactionStatus): Promise<FinancialTransaction[]>;
   findByOrigin(
+    tenantId: string,
     originType: OriginType,
     originId: string,
   ): Promise<FinancialTransaction[]>;

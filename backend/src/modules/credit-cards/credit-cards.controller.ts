@@ -18,24 +18,24 @@ export class CreditCardsController {
 
   async findAll(req: Request, res: Response): Promise<void> {
     const { month, year } = findCardsQuerySchema.parse(req.query);
-    const cards = await this.service.findAll(month, year);
+    const cards = await this.service.findAll(req.tenantId, month, year);
     res.json(cards);
   }
 
   async create(req: Request, res: Response): Promise<void> {
     const input = createCreditCardSchema.parse(req.body);
-    const card = await this.service.create(input);
+    const card = await this.service.create(req.tenantId, input);
     res.status(201).json(card);
   }
 
   async update(req: Request, res: Response): Promise<void> {
     const input = updateCreditCardSchema.parse(req.body);
-    const card = await this.service.update(req.params.id, input);
+    const card = await this.service.update(req.params.id, input, req.tenantId);
     res.json(card);
   }
 
   async remove(req: Request, res: Response): Promise<void> {
-    await this.service.softDelete(req.params.id);
+    await this.service.softDelete(req.params.id, req.tenantId);
     res.status(204).send();
   }
 
@@ -43,7 +43,7 @@ export class CreditCardsController {
 
   async getCardFlow(req: Request, res: Response): Promise<void> {
     const { month, year } = cardFlowQuerySchema.parse(req.query);
-    const flow = await this.service.getCardFlow(req.params.id, month, year);
+    const flow = await this.service.getCardFlow(req.params.id, req.tenantId, month, year);
     res.json(flow);
   }
 
@@ -51,7 +51,7 @@ export class CreditCardsController {
 
   async createEntry(req: Request, res: Response): Promise<void> {
     const input = createCardEntrySchema.parse(req.body);
-    const result = await this.service.createEntry(req.params.id, input);
+    const result = await this.service.createEntry(req.params.id, req.tenantId, input);
     res.status(201).json(result);
   }
 
@@ -60,6 +60,7 @@ export class CreditCardsController {
     const entry = await this.service.updateEntry(
       req.params.id,
       req.params.entryId,
+      req.tenantId,
       input,
     );
     res.json(entry);
@@ -67,7 +68,7 @@ export class CreditCardsController {
 
   async deleteEntry(req: Request, res: Response): Promise<void> {
     const { scope, month, year } = deleteCardEntryQuerySchema.parse(req.query);
-    await this.service.deleteEntry(req.params.id, req.params.entryId, scope, month, year);
+    await this.service.deleteEntry(req.params.id, req.params.entryId, req.tenantId, scope, month, year);
     res.status(204).send();
   }
 
@@ -78,6 +79,7 @@ export class CreditCardsController {
     const invoice = await this.service.payInvoice(
       req.params.id,
       req.params.invoiceId,
+      req.tenantId,
       input,
     );
     res.json(invoice);
@@ -87,6 +89,7 @@ export class CreditCardsController {
     const invoice = await this.service.revertInvoice(
       req.params.id,
       req.params.invoiceId,
+      req.tenantId,
     );
     res.json(invoice);
   }

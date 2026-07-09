@@ -8,22 +8,23 @@ import { CreateAccountInput, UpdateAccountInput } from './accounts.schemas';
 export class AccountsService {
   constructor(private readonly repo: AccountsRepository) {}
 
-  findAll(): Promise<Account[]> {
-    return this.repo.findActive();
+  findAll(tenantId: string): Promise<Account[]> {
+    return this.repo.findActive(tenantId);
   }
 
-  async findById(id: string): Promise<Account> {
-    const account = await this.repo.findById(id);
+  async findById(id: string, tenantId: string): Promise<Account> {
+    const account = await this.repo.findById(id, tenantId);
     if (!account || !account.active) {
       throw new AppError('Conta não encontrada', 404);
     }
     return account;
   }
 
-  async create(input: CreateAccountInput): Promise<Account> {
+  async create(tenantId: string, input: CreateAccountInput): Promise<Account> {
     const now = nowISO();
     return this.repo.create({
       id: generateId(),
+      tenantId,
       name: input.name,
       type: input.type,
       initialBalance: input.initialBalance ?? 0,
@@ -34,13 +35,13 @@ export class AccountsService {
     });
   }
 
-  async update(id: string, input: UpdateAccountInput): Promise<Account> {
-    await this.findById(id);
-    return this.repo.update(id, { ...input, updatedAt: nowISO() });
+  async update(id: string, input: UpdateAccountInput, tenantId: string): Promise<Account> {
+    await this.findById(id, tenantId);
+    return this.repo.update(id, { ...input, updatedAt: nowISO() }, tenantId);
   }
 
-  async delete(id: string): Promise<void> {
-    await this.findById(id);
-    await this.repo.update(id, { active: false, updatedAt: nowISO() });
+  async delete(id: string, tenantId: string): Promise<void> {
+    await this.findById(id, tenantId);
+    await this.repo.update(id, { active: false, updatedAt: nowISO() }, tenantId);
   }
 }
