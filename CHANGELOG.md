@@ -7,6 +7,10 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 ## [Unreleased]
 
 ### Added
+- Preparação de multi-tenant: todas as 9 entidades, repositórios, serviços e controllers do backend agora tratam `tenantId` como parâmetro real (não hardcoded), resolvido via header `X-Tenant-Id` com fallback para um tenant default fixo (`backend/src/shared/tenant/tenant.constants.ts`). Sem autenticação/login ainda — é só a camada de dados já pronta para isso.
+- Módulo de backup/export/import (`/backup/*`): backup completo em JSON (export/import, com confirmação obrigatória por ser destrutivo), exportação de lançamentos em CSV por período ou tudo, e importação de extrato bancário (CSV genérico + OFX 1.x, com pré-visualização e detecção de possíveis duplicatas antes de confirmar). Nova página `/backup` no frontend.
+- Página `/report`: relatório financeiro para impressão/exportação em PDF via `window.print()` do navegador (sem depender de biblioteca de geração de PDF).
+- Atalhos de teclado globais: `Alt+←`/`Alt+→` para navegar entre meses, `N` para abrir um modal de lançamento rápido (Pagamento/Gasto Extra/Recebimento), `?` para ver a lista de atalhos.
 - README.md com instruções de setup, os dois servidores (backend :3100 + frontend :3101) e `npm run seed`.
 - `docs/api.md` — referência dos endpoints do backend.
 - `docs/domain-logic.md` — regras de fatura de cartão de crédito e lançamentos recorrentes (fixos).

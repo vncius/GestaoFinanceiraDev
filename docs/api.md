@@ -6,6 +6,8 @@ Todos os endpoints (exceto `/health`) retornam JSON. Erros de validação (Zod) 
 
 Valores monetários são sempre inteiros em centavos, tanto no corpo das requisições quanto nas respostas.
 
+**Multi-tenant**: toda requisição é resolvida para um tenant via o header `X-Tenant-Id`. Sem esse header (caso normal hoje, já que não há autenticação), o backend usa um tenant default fixo (`backend/src/shared/tenant/tenant.constants.ts`) — o comportamento é idêntico ao de um sistema single-tenant até que exista login.
+
 - [Accounts](#accounts)
 - [Categories](#categories)
 - [Settings](#settings)
@@ -13,6 +15,7 @@ Valores monetários são sempre inteiros em centavos, tanto no corpo das requisi
 - [Cash Flow](#cash-flow)
 - [Credit Cards](#credit-cards)
 - [Dashboard](#dashboard)
+- [Backup](#backup)
 
 ---
 
@@ -105,3 +108,15 @@ Agregações para a tela inicial (saldos, resumo do mês, alertas, vencimentos p
 | Método | Rota         | Query |
 |--------|--------------|-------|
 | GET    | `/dashboard`   | `?month=&year=&upcomingDays=` (default 15) `&evolutionMonths=` (default 6) — todos opcionais |
+
+## Backup
+
+Backup completo, exportação de lançamentos em CSV e importação de extrato bancário (CSV/OFX). Todos os dados são escopados pelo tenant da requisição.
+
+| Método | Rota                       | Body / Query |
+|--------|----------------------------|--------------|
+| GET    | `/backup/export`             | — retorna `{ version, exportedAt, data: { accounts, categories, settings, receivables, financialTransactions, creditCards, creditCardEntries, creditCardInstallments, creditCardInvoices } }` como download |
+| POST   | `/backup/import`              | `{ confirm: true, bundle }` — **destrutivo**: substitui todos os dados do tenant pelos do bundle. `tenantId` de cada registro é sempre re-carimbado com o tenant de quem importa, nunca confia no valor do arquivo |
+| GET    | `/backup/export-csv`          | `?from=YYYY-MM-DD&to=YYYY-MM-DD` ou `?all=true` — CSV (delimitador `;`) unificando `FinancialTransaction` + `Receivable` do período |
+| POST   | `/backup/statement/parse`     | `{ filename, content }` — detecta CSV vs OFX pela extensão/conteúdo, retorna `{ entries: [{ date, description, amount, type, possibleDuplicate }] }` **sem persistir** |
+| POST   | `/backup/statement/import`    | `{ accountId, entries }` — cria um `FinancialTransaction` por entrada revisada na pré-visualização |
