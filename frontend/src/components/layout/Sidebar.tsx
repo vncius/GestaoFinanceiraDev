@@ -6,6 +6,7 @@ import {
   CreditCard,
   DollarSign,
   Settings,
+  DatabaseBackup,
 } from 'lucide-react';
 
 const navItems = [
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/cash-flow', label: 'Fluxo de Caixa', icon: TrendingUp },
   { to: '/credit-cards', label: 'Cartões de Crédito', icon: CreditCard },
   { to: '/receivables', label: 'Recebimentos', icon: DollarSign },
+  { to: '/backup', label: 'Backup e Exportação', icon: DatabaseBackup },
   { to: '/settings', label: 'Parametrizações', icon: Settings },
 ];
 

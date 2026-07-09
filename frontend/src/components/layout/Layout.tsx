@@ -10,6 +10,7 @@ const ROUTE_META: Record<string, { title: string; showMonthNav?: boolean }> = {
   '/cash-flow': { title: 'Fluxo de Caixa', showMonthNav: true },
   '/credit-cards': { title: 'Cartões de Crédito', showMonthNav: true },
   '/receivables': { title: 'Recebimentos' },
+  '/backup': { title: 'Backup e Exportação' },
   '/settings': { title: 'Parametrizações' },
 };
 
