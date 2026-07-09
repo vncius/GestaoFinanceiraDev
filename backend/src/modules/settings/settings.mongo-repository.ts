@@ -1,9 +1,9 @@
-import { JsonFileStore } from '../../shared/persistence/json-file-store';
+import { MongoStore } from '../../shared/persistence/mongo-store';
 import { SettingsRepository } from './settings.repository';
 import { FinancialSettings } from './settings.types';
 
-export class SettingsFileRepository implements SettingsRepository {
-  private store = new JsonFileStore<FinancialSettings>('settings.json');
+export class SettingsMongoRepository implements SettingsRepository {
+  private store = new MongoStore<FinancialSettings>('settings');
 
   async get(tenantId: string): Promise<FinancialSettings | null> {
     const all = await this.store.findAll(tenantId);

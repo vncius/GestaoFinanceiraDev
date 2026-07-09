@@ -1,9 +1,9 @@
-import { JsonFileStore } from '../../shared/persistence/json-file-store';
+import { MongoStore } from '../../shared/persistence/mongo-store';
 import { CategoriesRepository } from './categories.repository';
 import { Category, CategoryType } from './categories.types';
 
-export class CategoriesFileRepository implements CategoriesRepository {
-  private store = new JsonFileStore<Category>('categories.json');
+export class CategoriesMongoRepository implements CategoriesRepository {
+  private store = new MongoStore<Category>('categories');
 
   findAll(tenantId: string) {
     return this.store.findAll(tenantId);

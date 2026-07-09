@@ -2,18 +2,18 @@
 // importa os controllers já montados aqui em vez de reinstanciar (e
 // reimportar) os mesmos repositórios de arquivo em cada módulo.
 
-import { AccountsFileRepository } from './modules/accounts/accounts.file-repository';
-import { AccountTypesFileRepository } from './modules/account-types/account-types.file-repository';
-import { CategoriesFileRepository } from './modules/categories/categories.file-repository';
-import { SettingsFileRepository } from './modules/settings/settings.file-repository';
-import { ReceivablesFileRepository } from './modules/receivables/receivables.file-repository';
-import { FinancialTransactionsFileRepository } from './modules/financial-transactions/financial-transactions.file-repository';
+import { AccountsMongoRepository } from './modules/accounts/accounts.mongo-repository';
+import { AccountTypesMongoRepository } from './modules/account-types/account-types.mongo-repository';
+import { CategoriesMongoRepository } from './modules/categories/categories.mongo-repository';
+import { SettingsMongoRepository } from './modules/settings/settings.mongo-repository';
+import { ReceivablesMongoRepository } from './modules/receivables/receivables.mongo-repository';
+import { FinancialTransactionsMongoRepository } from './modules/financial-transactions/financial-transactions.mongo-repository';
 import {
-  CreditCardsFileRepository,
-  CreditCardEntriesFileRepository,
-  CreditCardInstallmentsFileRepository,
-  CreditCardInvoicesFileRepository,
-} from './modules/credit-cards/credit-cards.file-repository';
+  CreditCardsMongoRepository,
+  CreditCardEntriesMongoRepository,
+  CreditCardInstallmentsMongoRepository,
+  CreditCardInvoicesMongoRepository,
+} from './modules/credit-cards/credit-cards.mongo-repository';
 
 import { AccountsService } from './modules/accounts/accounts.service';
 import { AccountTypesService } from './modules/account-types/account-types.service';
@@ -35,18 +35,18 @@ import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { BackupController } from './modules/backup/backup.controller';
 
-// ─── Repositórios (uma instância por arquivo de dados) ─────────────────────────
+// ─── Repositórios (uma instância por coleção do MongoDB) ────────────────────────
 
-const accountsRepo = new AccountsFileRepository();
-const accountTypesRepo = new AccountTypesFileRepository();
-const categoriesRepo = new CategoriesFileRepository();
-const settingsRepo = new SettingsFileRepository();
-const receivablesRepo = new ReceivablesFileRepository();
-const transactionsRepo = new FinancialTransactionsFileRepository();
-const creditCardsRepo = new CreditCardsFileRepository();
-const creditCardEntriesRepo = new CreditCardEntriesFileRepository();
-const creditCardInstallmentsRepo = new CreditCardInstallmentsFileRepository();
-const creditCardInvoicesRepo = new CreditCardInvoicesFileRepository();
+const accountsRepo = new AccountsMongoRepository();
+const accountTypesRepo = new AccountTypesMongoRepository();
+const categoriesRepo = new CategoriesMongoRepository();
+const settingsRepo = new SettingsMongoRepository();
+const receivablesRepo = new ReceivablesMongoRepository();
+const transactionsRepo = new FinancialTransactionsMongoRepository();
+const creditCardsRepo = new CreditCardsMongoRepository();
+const creditCardEntriesRepo = new CreditCardEntriesMongoRepository();
+const creditCardInstallmentsRepo = new CreditCardInstallmentsMongoRepository();
+const creditCardInvoicesRepo = new CreditCardInvoicesMongoRepository();
 
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 

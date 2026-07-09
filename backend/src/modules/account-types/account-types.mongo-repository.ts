@@ -1,9 +1,9 @@
-import { JsonFileStore } from '../../shared/persistence/json-file-store';
+import { MongoStore } from '../../shared/persistence/mongo-store';
 import { AccountTypesRepository } from './account-types.repository';
 import { AccountType } from './account-types.types';
 
-export class AccountTypesFileRepository implements AccountTypesRepository {
-  private store = new JsonFileStore<AccountType>('account-types.json');
+export class AccountTypesMongoRepository implements AccountTypesRepository {
+  private store = new MongoStore<AccountType>('account_types');
 
   findAll(tenantId: string) {
     return this.store.findAll(tenantId);

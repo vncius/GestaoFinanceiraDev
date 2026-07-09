@@ -1,9 +1,9 @@
-import { JsonFileStore } from '../../shared/persistence/json-file-store';
+import { MongoStore } from '../../shared/persistence/mongo-store';
 import { ReceivablesRepository } from './receivables.repository';
 import { Receivable, ReceivableStatus } from './receivables.types';
 
-export class ReceivablesFileRepository implements ReceivablesRepository {
-  private store = new JsonFileStore<Receivable>('receivables.json');
+export class ReceivablesMongoRepository implements ReceivablesRepository {
+  private store = new MongoStore<Receivable>('receivables');
 
   findAll(tenantId: string) {
     return this.store.findAll(tenantId);

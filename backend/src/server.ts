@@ -1,8 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
 import { tenantMiddleware } from './shared/middlewares/tenant.middleware';
@@ -51,9 +50,7 @@ app.use('/backup', backupRouter);
 app.use(errorHandler);
 
 async function bootstrap() {
-  const dataDir = path.join(process.cwd(), 'data');
-  await fs.mkdir(dataDir, { recursive: true });
-  console.log(`[data] Diretório de dados: ${dataDir}`);
+  await connectMongo();
 
   await migrateLegacyAccountConfig();
   await migrateLegacyReceivableReserves();

@@ -1,4 +1,4 @@
-import { JsonFileStore } from '../../shared/persistence/json-file-store';
+import { MongoStore } from '../../shared/persistence/mongo-store';
 import { FinancialTransactionsRepository } from './financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -7,12 +7,10 @@ import {
   TransactionType,
 } from './financial-transactions.types';
 
-export class FinancialTransactionsFileRepository
+export class FinancialTransactionsMongoRepository
   implements FinancialTransactionsRepository
 {
-  private store = new JsonFileStore<FinancialTransaction>(
-    'financial-transactions.json',
-  );
+  private store = new MongoStore<FinancialTransaction>('financial_transactions');
 
   findAll(tenantId: string) {
     return this.store.findAll(tenantId);

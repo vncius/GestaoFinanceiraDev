@@ -1,4 +1,4 @@
-import { JsonFileStore } from '../../shared/persistence/json-file-store';
+import { MongoStore } from '../../shared/persistence/mongo-store';
 import {
   CreditCardsRepository,
   CreditCardEntriesRepository,
@@ -12,8 +12,8 @@ import {
   CreditCardInvoice,
 } from './credit-cards.types';
 
-export class CreditCardsFileRepository implements CreditCardsRepository {
-  private store = new JsonFileStore<CreditCard>('credit-cards.json');
+export class CreditCardsMongoRepository implements CreditCardsRepository {
+  private store = new MongoStore<CreditCard>('credit_cards');
 
   findAll(tenantId: string) { return this.store.findAll(tenantId); }
   findById(id: string, tenantId: string) { return this.store.findById(id, tenantId); }
@@ -28,10 +28,10 @@ export class CreditCardsFileRepository implements CreditCardsRepository {
   }
 }
 
-export class CreditCardEntriesFileRepository
+export class CreditCardEntriesMongoRepository
   implements CreditCardEntriesRepository
 {
-  private store = new JsonFileStore<CreditCardEntry>('credit-card-entries.json');
+  private store = new MongoStore<CreditCardEntry>('credit_card_entries');
 
   findAll(tenantId: string) { return this.store.findAll(tenantId); }
   findById(id: string, tenantId: string) { return this.store.findById(id, tenantId); }
@@ -51,11 +51,11 @@ export class CreditCardEntriesFileRepository
   }
 }
 
-export class CreditCardInstallmentsFileRepository
+export class CreditCardInstallmentsMongoRepository
   implements CreditCardInstallmentsRepository
 {
-  private store = new JsonFileStore<CreditCardInstallment>(
-    'credit-card-installments.json',
+  private store = new MongoStore<CreditCardInstallment>(
+    'credit_card_installments',
   );
 
   findAll(tenantId: string) { return this.store.findAll(tenantId); }
@@ -82,7 +82,7 @@ export class CreditCardInstallmentsFileRepository
     month: number,
     year: number,
   ) {
-    const entries = await new CreditCardEntriesFileRepository().findByCardId(
+    const entries = await new CreditCardEntriesMongoRepository().findByCardId(
       tenantId,
       creditCardId,
     );
@@ -97,11 +97,11 @@ export class CreditCardInstallmentsFileRepository
   }
 }
 
-export class CreditCardInvoicesFileRepository
+export class CreditCardInvoicesMongoRepository
   implements CreditCardInvoicesRepository
 {
-  private store = new JsonFileStore<CreditCardInvoice>(
-    'credit-card-invoices.json',
+  private store = new MongoStore<CreditCardInvoice>(
+    'credit_card_invoices',
   );
 
   findAll(tenantId: string) { return this.store.findAll(tenantId); }

@@ -1,7 +1,7 @@
-import { AccountsFileRepository } from '../../modules/accounts/accounts.file-repository';
-import { AccountTypesFileRepository } from '../../modules/account-types/account-types.file-repository';
-import { SettingsFileRepository } from '../../modules/settings/settings.file-repository';
-import { ReceivablesFileRepository } from '../../modules/receivables/receivables.file-repository';
+import { AccountsMongoRepository } from '../../modules/accounts/accounts.mongo-repository';
+import { AccountTypesMongoRepository } from '../../modules/account-types/account-types.mongo-repository';
+import { SettingsMongoRepository } from '../../modules/settings/settings.mongo-repository';
+import { ReceivablesMongoRepository } from '../../modules/receivables/receivables.mongo-repository';
 import { ReserveAllocation } from '../../modules/receivables/receivables.types';
 import { generateId } from '../utils/id.utils';
 import { nowISO } from '../utils/date.utils';
@@ -14,9 +14,9 @@ import { DEFAULT_TENANT_ID } from '../tenant/tenant.constants';
 // `accountTypeId` no JSON em disco; uma vez migradas, sempre têm (mesmo que `null`),
 // então esta função vira no-op nas próximas inicializações.
 export async function migrateLegacyAccountConfig(): Promise<void> {
-  const accountsRepo = new AccountsFileRepository();
-  const accountTypesRepo = new AccountTypesFileRepository();
-  const settingsRepo = new SettingsFileRepository();
+  const accountsRepo = new AccountsMongoRepository();
+  const accountTypesRepo = new AccountTypesMongoRepository();
+  const settingsRepo = new SettingsMongoRepository();
 
   const accounts = await accountsRepo.findAll(DEFAULT_TENANT_ID);
   const pending = accounts.filter((a) => (a as unknown as Record<string, unknown>).accountTypeId === undefined);
@@ -112,8 +112,8 @@ export async function migrateLegacyAccountConfig(): Promise<void> {
 // registros gravados antes desta versão não têm a chave `reserveAllocations`
 // no JSON em disco; uma vez migrados, sempre têm (mesmo que `[]`).
 export async function migrateLegacyReceivableReserves(): Promise<void> {
-  const receivablesRepo = new ReceivablesFileRepository();
-  const settingsRepo = new SettingsFileRepository();
+  const receivablesRepo = new ReceivablesMongoRepository();
+  const settingsRepo = new SettingsMongoRepository();
 
   const receivables = await receivablesRepo.findAll(DEFAULT_TENANT_ID);
   const pending = receivables.filter(

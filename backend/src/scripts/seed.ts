@@ -1,19 +1,18 @@
 import 'dotenv/config';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { AccountsFileRepository } from '../modules/accounts/accounts.file-repository';
-import { AccountTypesFileRepository } from '../modules/account-types/account-types.file-repository';
-import { CategoriesFileRepository } from '../modules/categories/categories.file-repository';
+import { connectMongo, closeMongo } from '../shared/persistence/mongo-client';
+import { AccountsMongoRepository } from '../modules/accounts/accounts.mongo-repository';
+import { AccountTypesMongoRepository } from '../modules/account-types/account-types.mongo-repository';
+import { CategoriesMongoRepository } from '../modules/categories/categories.mongo-repository';
 import { CategoryType } from '../modules/categories/categories.types';
-import { SettingsFileRepository } from '../modules/settings/settings.file-repository';
+import { SettingsMongoRepository } from '../modules/settings/settings.mongo-repository';
 import { generateId } from '../shared/utils/id.utils';
 import { nowISO } from '../shared/utils/date.utils';
 import { DEFAULT_TENANT_ID } from '../shared/tenant/tenant.constants';
 
-const accountsRepo = new AccountsFileRepository();
-const accountTypesRepo = new AccountTypesFileRepository();
-const categoriesRepo = new CategoriesFileRepository();
-const settingsRepo = new SettingsFileRepository();
+const accountsRepo = new AccountsMongoRepository();
+const accountTypesRepo = new AccountTypesMongoRepository();
+const categoriesRepo = new CategoriesMongoRepository();
+const settingsRepo = new SettingsMongoRepository();
 
 async function seedAccountTypes() {
   const existing = await accountTypesRepo.findAll(DEFAULT_TENANT_ID);
@@ -176,15 +175,10 @@ async function seedSettings(mainAccountId: string) {
   console.log('  [settings] Configuração padrão criada');
 }
 
-async function ensureDataDir() {
-  const dataDir = path.join(process.cwd(), 'data');
-  await fs.mkdir(dataDir, { recursive: true });
-}
-
 async function main() {
   console.log('\n🌱 Iniciando seed...\n');
 
-  await ensureDataDir();
+  await connectMongo();
 
   const [mainType, reserveType] = await seedAccountTypes();
   const accounts = await seedAccounts(mainType.id, reserveType.id);
@@ -199,7 +193,9 @@ async function main() {
   console.log('\n✅ Seed concluído!\n');
 }
 
-main().catch((err) => {
-  console.error('\n❌ Erro no seed:', err);
-  process.exit(1);
-});
+main()
+  .catch((err) => {
+    console.error('\n❌ Erro no seed:', err);
+    process.exitCode = 1;
+  })
+  .finally(() => closeMongo());
