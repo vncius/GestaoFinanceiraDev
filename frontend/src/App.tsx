@@ -9,6 +9,7 @@ import CreditCards from './pages/CreditCards/CreditCards';
 import Receivables from './pages/Receivables/Receivables';
 import Settings from './pages/Settings/Settings';
 import Backup from './pages/Backup/Backup';
+import Report from './pages/Report/Report';
 
 export default function App() {
   return (
@@ -26,6 +27,8 @@ export default function App() {
                 <Route path="settings" element={<Settings />} />
                 <Route path="backup" element={<Backup />} />
               </Route>
+              {/* Fora do Layout: página de relatório para impressão, sem sidebar/header. */}
+              <Route path="/report" element={<Report />} />
             </Routes>
           </MonthProvider>
         </DialogProvider>
