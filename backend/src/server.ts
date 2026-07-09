@@ -4,6 +4,7 @@ import cors from 'cors';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { errorHandler } from './shared/middlewares/error-handler';
+import { requestLogger } from './shared/middlewares/request-logger';
 import accountsRouter from './modules/accounts/accounts.routes';
 import categoriesRouter from './modules/categories/categories.routes';
 import settingsRouter from './modules/settings/settings.routes';
@@ -15,8 +16,13 @@ import dashboardRouter from './modules/dashboard/dashboard.routes';
 const app = express();
 const PORT = process.env.PORT ?? 3100;
 
-app.use(cors());
+// Origem do frontend Vite. Configurável via env para deploys fora de
+// localhost; em dev aponta para a porta padrão definida em vite.config.ts.
+const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
+
+app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json());
+app.use(requestLogger);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
