@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Menu, Moon, Sun } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Moon, Sun, LogOut } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { MonthNavigator } from '../ui/MonthNavigator';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { QuickAddProvider } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
 
@@ -21,7 +22,14 @@ export default function Layout() {
   const segment = '/' + location.pathname.split('/')[1];
   const meta = ROUTE_META[segment] ?? { title: 'Gestão Financeira' };
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <QuickAddProvider>
@@ -55,6 +63,14 @@ export default function Layout() {
                 aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
               >
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Sair"
+                aria-label="Sair"
+              >
+                <LogOut size={16} />
               </button>
             </div>
           </header>

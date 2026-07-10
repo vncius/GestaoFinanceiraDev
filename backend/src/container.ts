@@ -2,6 +2,7 @@
 // importa os controllers já montados aqui em vez de reinstanciar (e
 // reimportar) os mesmos repositórios de arquivo em cada módulo.
 
+import { UsersMongoRepository } from './modules/auth/users.mongo-repository';
 import { AccountsMongoRepository } from './modules/accounts/accounts.mongo-repository';
 import { AccountTypesMongoRepository } from './modules/account-types/account-types.mongo-repository';
 import { CategoriesMongoRepository } from './modules/categories/categories.mongo-repository';
@@ -15,6 +16,7 @@ import {
   CreditCardInvoicesMongoRepository,
 } from './modules/credit-cards/credit-cards.mongo-repository';
 
+import { AuthService } from './modules/auth/auth.service';
 import { AccountsService } from './modules/accounts/accounts.service';
 import { AccountTypesService } from './modules/account-types/account-types.service';
 import { CategoriesService } from './modules/categories/categories.service';
@@ -25,6 +27,7 @@ import { CashFlowService } from './modules/cash-flow/cash-flow.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
 
+import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
 import { AccountTypesController } from './modules/account-types/account-types.controller';
 import { CategoriesController } from './modules/categories/categories.controller';
@@ -37,6 +40,7 @@ import { BackupController } from './modules/backup/backup.controller';
 
 // ─── Repositórios (uma instância por coleção do MongoDB) ────────────────────────
 
+const usersRepo = new UsersMongoRepository();
 const accountsRepo = new AccountsMongoRepository();
 const accountTypesRepo = new AccountTypesMongoRepository();
 const categoriesRepo = new CategoriesMongoRepository();
@@ -50,6 +54,7 @@ const creditCardInvoicesRepo = new CreditCardInvoicesMongoRepository();
 
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 
+export const authService = new AuthService(usersRepo);
 const accountsService = new AccountsService(accountsRepo);
 const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
@@ -102,6 +107,7 @@ const backupService = new BackupService(
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const controllers = {
+  auth: new AuthController(authService),
   accounts: new AccountsController(accountsService),
   accountTypes: new AccountTypesController(accountTypesService),
   categories: new CategoriesController(categoriesService),

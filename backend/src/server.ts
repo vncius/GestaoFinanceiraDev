@@ -1,14 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
-import { tenantMiddleware } from './shared/middlewares/tenant.middleware';
+import { authMiddleware } from './shared/middlewares/auth.middleware';
 import {
   migrateLegacyAccountConfig,
   migrateLegacyReceivableReserves,
 } from './shared/migrations/migrate-legacy-account-config';
+import authRouter from './modules/auth/auth.routes';
 import accountsRouter from './modules/accounts/accounts.routes';
 import accountTypesRouter from './modules/account-types/account-types.routes';
 import categoriesRouter from './modules/categories/categories.routes';
@@ -26,16 +28,21 @@ const PORT = process.env.PORT ?? 3100;
 // localhost; em dev aponta para a porta padrão definida em vite.config.ts.
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
 
-app.use(cors({ origin: CORS_ORIGIN }));
+app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 // Limite maior que o default (100kb) porque a restauração de backup e a
 // importação de extrato mandam o dataset completo/arquivo no corpo da requisição.
 app.use(express.json({ limit: '20mb' }));
+app.use(cookieParser());
 app.use(requestLogger);
-app.use(tenantMiddleware);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Rotas de login ficam antes do authMiddleware — são o único jeito de
+// conseguir uma sessão. Tudo montado depois dele exige cookie válido.
+app.use('/auth', authRouter);
+app.use(authMiddleware);
 
 app.use('/accounts', accountsRouter);
 app.use('/account-types', accountTypesRouter);
