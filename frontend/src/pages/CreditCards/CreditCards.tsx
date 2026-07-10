@@ -65,6 +65,7 @@ function EntryModal({
   month,
   year,
   onSave,
+  onDelete,
   isSaving,
 }: {
   open: boolean;
@@ -74,6 +75,7 @@ function EntryModal({
   month: number;
   year: number;
   onSave: (data: CreateCardEntryPayload | Parameters<typeof CreditCardsService.updateEntry>[2]) => void;
+  onDelete?: (item: CreditCardEntry) => void;
   isSaving: boolean;
 }) {
   const { t } = useTranslation('creditCards');
@@ -157,6 +159,17 @@ function EntryModal({
       title={isEdit ? t('entryModal.title.edit') : t('entryModal.title.new')}
       footer={
         <>
+          {isEdit && onDelete && (
+            <button
+              type="button"
+              title={t('installments.actions.cancel')}
+              aria-label={t('installments.actions.cancel')}
+              onClick={() => { onClose(); onDelete(item!); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>{t('entryModal.cancelButton')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{isEdit ? t('entryModal.saveButton') : t('entryModal.addButton')}</Button>
         </>
@@ -304,6 +317,14 @@ function CardDetail({
     onSuccess: invalidate,
   });
 
+  async function handleDeleteEntry(entry: CreditCardEntry) {
+    if (entry.entryType === 'FIXED') {
+      setFixedDeleteTarget(entry);
+    } else if (await confirm(t('installments.confirmCancel'))) {
+      deleteEntryMut.mutate({ entryId: entry.id });
+    }
+  }
+
   if (isLoading) return <PageLoading />;
   if (!flow) return null;
 
@@ -417,7 +438,11 @@ function CardDetail({
                 {activeInstallments.map((inst) => {
                   const entry = entryMap.get(inst.creditCardEntryId);
                   return (
-                    <tr key={inst.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group">
+                    <tr
+                      key={inst.id}
+                      className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${entry?.active ? 'cursor-pointer' : ''}`}
+                      onClick={() => { if (entry?.active) setEntryToEdit(entry); }}
+                    >
                       <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[110px] lg:max-w-none truncate">
                         {entry?.description ?? '—'}
                       </td>
@@ -437,14 +462,14 @@ function CardDetail({
                       <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
                         {formatCurrency(inst.amount)}
                       </td>
-                      <td className="px-1 sm:px-3 py-3">
-                        <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {entry?.active && (
                             <button
                               title={t('installments.actions.edit')}
                               aria-label={t('installments.actions.edit')}
                               onClick={() => { setEntryToEdit(entry); }}
-                              className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                              className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                             >
                               <Pencil size={14} />
                             </button>
@@ -453,14 +478,8 @@ function CardDetail({
                             <button
                               title={t('installments.actions.cancel')}
                               aria-label={t('installments.actions.cancel')}
-                              onClick={async () => {
-                                if (entry.entryType === 'FIXED') {
-                                  setFixedDeleteTarget(entry);
-                                } else if (await confirm(t('installments.confirmCancel'))) {
-                                  deleteEntryMut.mutate({ entryId: entry.id });
-                                }
-                              }}
-                              className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                              onClick={() => handleDeleteEntry(entry)}
+                              className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -494,6 +513,7 @@ function CardDetail({
         month={month}
         year={year}
         onSave={(payload) => updateEntryMut.mutate(payload as Parameters<typeof CreditCardsService.updateEntry>[2])}
+        onDelete={handleDeleteEntry}
         isSaving={updateEntryMut.isPending}
       />
 

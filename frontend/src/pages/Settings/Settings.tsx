@@ -227,6 +227,7 @@ function AccountModal({
   item,
   accountTypes,
   onSave,
+  onDelete,
   isSaving,
 }: {
   open: boolean;
@@ -234,6 +235,7 @@ function AccountModal({
   item?: Account;
   accountTypes: AccountTypeItem[];
   onSave: (data: CreateAccountPayload) => void;
+  onDelete?: () => void;
   isSaving: boolean;
 }) {
   const { t } = useTranslation('settings');
@@ -279,6 +281,17 @@ function AccountModal({
       title={item ? t('accounts.modal.editTitle') : t('accounts.modal.newTitle')}
       footer={
         <>
+          {item && onDelete && (
+            <button
+              type="button"
+              title={t('actions.deactivate')}
+              aria-label={t('actions.deactivate')}
+              onClick={() => { onClose(); onDelete(); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
@@ -374,6 +387,10 @@ function AccountsTab() {
     else createMut.mutate(payload);
   }
 
+  async function handleDeactivate(a: Account) {
+    if (await confirm(t('accounts.deactivateConfirm'))) deleteMut.mutate(a.id);
+  }
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -402,7 +419,11 @@ function AccountsTab() {
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {accounts.map((a) => (
-                  <tr key={a.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!a.active ? 'opacity-50' : ''}`}>
+                  <tr
+                    key={a.id}
+                    className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer ${!a.active ? 'opacity-50' : ''}`}
+                    onClick={() => setModal({ item: a })}
+                  >
                     <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[120px] sm:max-w-none truncate">{a.name}</td>
                     <td className="hidden sm:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                       {a.accountTypeId ? accountTypeMap.get(a.accountTypeId) ?? '—' : '—'}
@@ -430,13 +451,13 @@ function AccountsTab() {
                         {a.active ? t('status.active') : t('status.inactive')}
                       </span>
                     </td>
-                    <td className="px-1 sm:px-3 py-3">
-                      <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           title={t('actions.edit')}
                           aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: a })}
-                          className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
                           <Pencil size={14} />
                         </button>
@@ -444,11 +465,8 @@ function AccountsTab() {
                           <button
                             title={t('actions.deactivate')}
                             aria-label={t('actions.deactivate')}
-                            onClick={async () => {
-                              if (await confirm(t('accounts.deactivateConfirm')))
-                                deleteMut.mutate(a.id);
-                            }}
-                            className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                            onClick={() => handleDeactivate(a)}
+                            className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -469,6 +487,7 @@ function AccountsTab() {
         item={modal?.item}
         accountTypes={accountTypes}
         onSave={save}
+        onDelete={modal?.item?.active ? () => handleDeactivate(modal.item!) : undefined}
         isSaving={createMut.isPending || updateMut.isPending}
       />
     </div>
@@ -486,12 +505,14 @@ function AccountTypeModal({
   onClose,
   item,
   onSave,
+  onDelete,
   isSaving,
 }: {
   open: boolean;
   onClose: () => void;
   item?: AccountTypeItem;
   onSave: (data: CreateAccountTypePayload) => void;
+  onDelete?: () => void;
   isSaving: boolean;
 }) {
   const { t } = useTranslation('settings');
@@ -519,6 +540,17 @@ function AccountTypeModal({
       size="sm"
       footer={
         <>
+          {item && onDelete && (
+            <button
+              type="button"
+              title={t('actions.remove')}
+              aria-label={t('actions.remove')}
+              onClick={() => { onClose(); onDelete(); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
@@ -570,6 +602,10 @@ function AccountTypesTab() {
     else createMut.mutate(payload);
   }
 
+  async function handleRemove(at: AccountTypeItem) {
+    if (await confirm(t('accountTypes.removeConfirm'))) deleteMut.mutate(at.id);
+  }
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -588,25 +624,27 @@ function AccountTypesTab() {
             <table className="w-full text-sm">
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {accountTypes.map((at) => (
-                  <tr key={at.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!at.active ? 'opacity-50' : ''}`}>
+                  <tr
+                    key={at.id}
+                    className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer ${!at.active ? 'opacity-50' : ''}`}
+                    onClick={() => setModal({ item: at })}
+                  >
                     <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{at.name}</td>
-                    <td className="px-1 sm:px-3 py-2.5">
-                      <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
+                    <td className="px-1 sm:px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                         <button
                           title={t('actions.edit')}
                           aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: at })}
-                          className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           title={t('actions.remove')}
                           aria-label={t('actions.remove')}
-                          onClick={async () => {
-                            if (await confirm(t('accountTypes.removeConfirm'))) deleteMut.mutate(at.id);
-                          }}
-                          className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                          onClick={() => handleRemove(at)}
+                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -625,6 +663,7 @@ function AccountTypesTab() {
         onClose={() => setModal(null)}
         item={modal?.item}
         onSave={save}
+        onDelete={modal?.item ? () => handleRemove(modal.item!) : undefined}
         isSaving={createMut.isPending || updateMut.isPending}
       />
     </div>
@@ -644,6 +683,7 @@ function CategoryModal({
   item,
   defaultType,
   onSave,
+  onDelete,
   isSaving,
 }: {
   open: boolean;
@@ -651,6 +691,7 @@ function CategoryModal({
   item?: Category;
   defaultType?: Category['type'];
   onSave: (data: CreateCategoryPayload) => void;
+  onDelete?: () => void;
   isSaving: boolean;
 }) {
   const { t } = useTranslation('settings');
@@ -681,6 +722,17 @@ function CategoryModal({
       size="sm"
       footer={
         <>
+          {item && onDelete && (
+            <button
+              type="button"
+              title={t('actions.deactivate')}
+              aria-label={t('actions.deactivate')}
+              onClick={() => { onClose(); onDelete(); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
@@ -723,10 +775,9 @@ function CategorySection({
   categories: Category[];
   onAdd: (type: Category['type']) => void;
   onEdit: (item: Category) => void;
-  onDelete: (id: string) => void;
+  onDelete: (item: Category) => void;
 }) {
   const { t } = useTranslation('settings');
-  const { confirm } = useDialog();
   const items = categories.filter((c) => c.type === type);
   const label = type === 'INCOME' ? t('categories.income') : t('categories.expense');
   const color = type === 'INCOME'
@@ -753,7 +804,11 @@ function CategorySection({
           <table className="w-full text-sm">
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((c) => (
-                <tr key={c.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!c.active ? 'opacity-50' : ''}`}>
+                <tr
+                  key={c.id}
+                  className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer ${!c.active ? 'opacity-50' : ''}`}
+                  onClick={() => onEdit(c)}
+                >
                   <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">
                     {c.name}
                     {c.protected && (
@@ -773,13 +828,13 @@ function CategorySection({
                       {c.active ? t('status.active') : t('status.inactive')}
                     </span>
                   </td>
-                  <td className="px-1 sm:px-3 py-2.5">
-                    <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
+                  <td className="px-1 sm:px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                       <button
                         title={t('actions.edit')}
                         aria-label={t('actions.edit')}
                         onClick={() => onEdit(c)}
-                        className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                       >
                         <Pencil size={14} />
                       </button>
@@ -787,10 +842,8 @@ function CategorySection({
                         <button
                           title={t('actions.deactivate')}
                           aria-label={t('actions.deactivate')}
-                          onClick={async () => {
-                            if (await confirm(t('categories.deactivateConfirm'))) onDelete(c.id);
-                          }}
-                          className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                          onClick={() => onDelete(c)}
+                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -808,8 +861,10 @@ function CategorySection({
 }
 
 function CategoriesTab() {
+  const { t } = useTranslation('settings');
   const qc = useQueryClient();
   const [modal, setModal] = useState<{ item?: Category; defaultType?: Category['type'] } | null>(null);
+  const { confirm } = useDialog();
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
@@ -837,6 +892,10 @@ function CategoriesTab() {
     else createMut.mutate(payload);
   }
 
+  async function handleDeactivate(c: Category) {
+    if (await confirm(t('categories.deactivateConfirm'))) deleteMut.mutate(c.id);
+  }
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -846,14 +905,14 @@ function CategoriesTab() {
         categories={categories}
         onAdd={(type) => setModal({ defaultType: type })}
         onEdit={(item) => setModal({ item })}
-        onDelete={(id) => deleteMut.mutate(id)}
+        onDelete={handleDeactivate}
       />
       <CategorySection
         type="EXPENSE"
         categories={categories}
         onAdd={(type) => setModal({ defaultType: type })}
         onEdit={(item) => setModal({ item })}
-        onDelete={(id) => deleteMut.mutate(id)}
+        onDelete={handleDeactivate}
       />
 
       <CategoryModal
@@ -862,6 +921,11 @@ function CategoriesTab() {
         item={modal?.item}
         defaultType={modal?.defaultType}
         onSave={save}
+        onDelete={
+          modal?.item?.active && !modal.item.protected
+            ? () => handleDeactivate(modal.item!)
+            : undefined
+        }
         isSaving={createMut.isPending || updateMut.isPending}
       />
     </div>
@@ -885,6 +949,7 @@ function CardSettingsModal({
   item,
   accounts,
   onSave,
+  onDelete,
   isSaving,
 }: {
   open: boolean;
@@ -892,6 +957,7 @@ function CardSettingsModal({
   item?: CreditCard;
   accounts: Account[];
   onSave: (data: CreateCreditCardPayload) => void;
+  onDelete?: () => void;
   isSaving: boolean;
 }) {
   const { t } = useTranslation('settings');
@@ -945,6 +1011,17 @@ function CardSettingsModal({
       title={item ? t('cards.modal.editTitle') : t('cards.modal.newTitle')}
       footer={
         <>
+          {item && onDelete && (
+            <button
+              type="button"
+              title={t('actions.deactivate')}
+              aria-label={t('actions.deactivate')}
+              onClick={() => { onClose(); onDelete(); }}
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
           <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
@@ -1036,6 +1113,10 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
     else createMut.mutate(payload);
   }
 
+  async function handleDeactivate(card: CreditCard) {
+    if (await confirm(t('cards.deactivateConfirm'))) deleteMut.mutate(card.id);
+  }
+
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   if (isLoading) return <PageLoading />;
@@ -1070,7 +1151,8 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                 {cards.map((card) => (
                   <tr
                     key={card.id}
-                    className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!card.active ? 'opacity-50' : ''}`}
+                    className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer ${!card.active ? 'opacity-50' : ''}`}
+                    onClick={() => setModal({ item: card })}
                   >
                     <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[100px] sm:max-w-none truncate">{card.name}</td>
                     <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">{card.bank}</td>
@@ -1099,13 +1181,13 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                         {card.active ? t('status.activeMasc') : t('status.inactiveMasc')}
                       </span>
                     </td>
-                    <td className="px-1 sm:px-3 py-3">
-                      <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           title={t('actions.edit')}
                           aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: card })}
-                          className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
                           <Pencil size={14} />
                         </button>
@@ -1113,11 +1195,8 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                           <button
                             title={t('actions.deactivate')}
                             aria-label={t('actions.deactivate')}
-                            onClick={async () => {
-                              if (await confirm(t('cards.deactivateConfirm')))
-                                deleteMut.mutate(card.id);
-                            }}
-                            className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                            onClick={() => handleDeactivate(card)}
+                            className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1138,6 +1217,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
         item={modal?.item}
         accounts={accounts}
         onSave={save}
+        onDelete={modal?.item?.active ? () => handleDeactivate(modal.item!) : undefined}
         isSaving={createMut.isPending || updateMut.isPending}
       />
     </div>
