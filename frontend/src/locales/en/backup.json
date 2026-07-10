@@ -14,9 +14,14 @@
   "csvExport": {
     "title": "Export entries",
     "description": "Generates a CSV spreadsheet with payments, extra expenses, and receivables for the selected period.",
+    "periodLabel": "Period",
     "periodMonth": "Current month",
     "periodCustom": "Custom",
     "periodAll": "Entire period",
+    "fromLabel": "From",
+    "toLabel": "To",
+    "periodSummary": "Entries from {{from}} to {{to}} will be exported.",
+    "periodSummaryAll": "All entries will be exported, with no period filter.",
     "downloadButton": "Download CSV",
     "printReportLink": "Printable report (current month)",
     "downloadError": "Error exporting CSV."

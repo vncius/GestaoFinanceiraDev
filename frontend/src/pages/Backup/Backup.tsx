@@ -149,37 +149,61 @@ function CsvExportSection() {
     { value: 'all', label: t('csvExport.periodAll') },
   ];
 
+  const effectiveFrom = mode === 'month' ? firstDayOfMonthISO(month, year) : from;
+  const effectiveTo = mode === 'month' ? lastDayOfMonthISO(month, year) : to;
+
   return (
     <SectionCard
       title={t('csvExport.title')}
       icon={<FileSpreadsheet size={18} />}
       description={t('csvExport.description')}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        {periodOptions.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setMode(opt.value)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-              mode === opt.value
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+      <div>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+          {t('csvExport.periodLabel')}
+        </label>
+        <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-700 p-1 gap-1">
+          {periodOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setMode(opt.value)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                mode === opt.value
+                  ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {mode === 'custom' && (
         <div className="grid grid-cols-2 gap-3 max-w-sm">
-          <DateInput value={from} onChange={setFrom} className={INPUT} />
-          <DateInput value={to} onChange={setTo} className={INPUT} />
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+              {t('csvExport.fromLabel')}
+            </label>
+            <DateInput value={from} onChange={setFrom} className={INPUT} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+              {t('csvExport.toLabel')}
+            </label>
+            <DateInput value={to} onChange={setTo} className={INPUT} />
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        {mode === 'all'
+          ? t('csvExport.periodSummaryAll')
+          : t('csvExport.periodSummary', { from: formatDate(effectiveFrom), to: formatDate(effectiveTo) })}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
         <Button icon={<Download size={14} />} loading={downloading} onClick={handleDownload}>
           {t('csvExport.downloadButton')}
         </Button>
