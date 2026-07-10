@@ -1,0 +1,54 @@
+{
+  "error": {
+    "loadFailed": "Could not load the dashboard. Check whether the server is running."
+  },
+  "balances": {
+    "sectionTitle": "Current Balances",
+    "total": "Grand Total"
+  },
+  "summary": {
+    "sectionTitle": "Summary for {{monthYear}}",
+    "initialBalance": "Initial Balance",
+    "initialBalanceSub": "Before the month",
+    "monthBalance": "Month Balance",
+    "monthBalanceSub": "Consolidated",
+    "income": "Income",
+    "expenses": "Expenses",
+    "payments": "Payments",
+    "extraExpenses": "Extra Expenses",
+    "creditCardInvoices": "Credit Card Invoices"
+  },
+  "categoryAnalysis": {
+    "sectionTitle": "Category Analysis",
+    "incomeByCategory": "Income by Category",
+    "expensesByCategory": "Expenses by Category",
+    "empty": "No entries in this period"
+  },
+  "upcomingDue": {
+    "title": "Upcoming Due Dates",
+    "period": "15 days",
+    "empty": "No due dates in the next 15 days",
+    "goToCashFlow": "Go to this month's cash flow"
+  },
+  "annualSummary": {
+    "title": "Annual Revenue",
+    "grossIncome": "Gross income received this year",
+    "limitUsage": "Limit usage",
+    "annualLimit": "Configured annual limit",
+    "noLimitConfigured": "Set up an annual limit in Settings to track usage."
+  },
+  "evolutionChart": {
+    "title": "Recent Months Trend",
+    "income": "Income",
+    "expenses": "Expenses",
+    "incomeTooltip": "Income: {{amount}}",
+    "expensesTooltip": "Expenses: {{amount}}",
+    "resultTooltip": "Result: {{amount}}"
+  },
+  "overview": {
+    "title": "Month Overview",
+    "income": "Income",
+    "expenses": "Expenses",
+    "reserve": "Reserve"
+  }
+}

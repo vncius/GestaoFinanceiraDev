@@ -1,0 +1,111 @@
+{
+  "tabs": {
+    "general": "General",
+    "accounts": "Accounts",
+    "accountTypes": "Account Types",
+    "categories": "Categories",
+    "cards": "Cards"
+  },
+  "actions": {
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "activeMasc": "Active",
+    "inactiveMasc": "Inactive"
+  },
+  "validation": {
+    "nameLabel": "Name",
+    "bankLabel": "Bank",
+    "limitLabel": "Limit"
+  },
+  "general": {
+    "linkedAccountsTitle": "Linked Accounts",
+    "mainAccountLabel": "Main account",
+    "mainAccountNone": "None",
+    "minimumMainBalanceLabel": "Minimum main account balance ($)",
+    "limitsAndPeriodTitle": "Limits and Period",
+    "managePjLimitsLabel": "Manage Business Limits",
+    "annualRevenueLimitLabel": "Annual revenue limit ($)",
+    "controlStartMonthLabel": "Control start month",
+    "controlStartYearLabel": "Start year",
+    "pjLimitsHint": "Enable \"Manage Business Limits\" to configure the annual revenue limit and control period.",
+    "saveButton": "Save settings",
+    "savedMessage": "Saved!"
+  },
+  "accounts": {
+    "newButton": "New Account",
+    "emptyState": "No accounts registered",
+    "tableName": "Name",
+    "tableType": "Type",
+    "tableAutoReserve": "Auto reserve",
+    "tableInitialBalance": "Initial balance",
+    "tableStatus": "Status",
+    "deactivateConfirm": "Deactivate this account?",
+    "modal": {
+      "editTitle": "Edit Account",
+      "newTitle": "New Account",
+      "nameLabel": "Name *",
+      "typeLabel": "Type",
+      "typeNone": "No type",
+      "initialBalanceLabel": "Initial balance ($)",
+      "autoReserveLabel": "Included in automatic reserve split",
+      "autoReservePercentageLabel": "Auto-reserved percentage (%)"
+    }
+  },
+  "accountTypes": {
+    "newButton": "New Type",
+    "emptyState": "No account types registered",
+    "emptyStateDescription": "Click New Type to register one",
+    "removeConfirm": "Remove this account type?",
+    "modal": {
+      "editTitle": "Edit Account Type",
+      "newTitle": "New Account Type",
+      "nameLabel": "Name *"
+    }
+  },
+  "categories": {
+    "income": "Income",
+    "expense": "Expenses",
+    "newButton": "New",
+    "emptyState": "No {{type}} categories registered",
+    "protectedBadge": "Fixed",
+    "deactivateConfirm": "Deactivate this category?",
+    "modal": {
+      "editTitle": "Edit Category",
+      "newTitle": "New Category",
+      "nameLabel": "Name *",
+      "typeLabel": "Type *",
+      "typeIncome": "Income",
+      "typeExpense": "Expense"
+    }
+  },
+  "cards": {
+    "newButton": "New Card",
+    "emptyState": "No cards registered",
+    "tableName": "Name",
+    "tableBank": "Bank",
+    "tableClosingDay": "Closing",
+    "tableDueDay": "Due date",
+    "tableLimit": "Limit",
+    "tableDefaultAccount": "Default account",
+    "tableStatus": "Status",
+    "dayPrefix": "Day {{day}}",
+    "deactivateConfirm": "Deactivate this card?",
+    "modal": {
+      "editTitle": "Edit Card",
+      "newTitle": "New Card",
+      "nameLabel": "Name *",
+      "bankLabel": "Bank *",
+      "closingDayLabel": "Closing day",
+      "dueDayLabel": "Due day",
+      "limitLabel": "Limit ($) *",
+      "defaultAccountLabel": "Default payment account"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 
@@ -29,6 +30,7 @@ interface DialogContextValue {
 const DialogContext = createContext<DialogContextValue | null>(null);
 
 export function DialogProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('common');
   const [current, setCurrent] = useState<DialogState | null>(null);
   const queueRef = useRef<DialogState[]>([]);
 
@@ -47,7 +49,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
         enqueue({
           kind: 'alert',
           message,
-          title: opts?.title ?? 'Atenção',
+          title: opts?.title ?? t('dialog.defaultTitle'),
           resolve: () => resolve(),
         });
       }),
@@ -60,9 +62,9 @@ export function DialogProvider({ children }: { children: ReactNode }) {
         enqueue({
           kind: 'confirm',
           message,
-          title: opts?.title ?? 'Confirmação',
-          confirmLabel: opts?.confirmLabel ?? 'Confirmar',
-          cancelLabel: opts?.cancelLabel ?? 'Cancelar',
+          title: opts?.title ?? t('dialog.confirmTitle'),
+          confirmLabel: opts?.confirmLabel ?? t('dialog.confirm'),
+          cancelLabel: opts?.cancelLabel ?? t('dialog.cancel'),
           resolve,
         });
       }),
@@ -91,7 +93,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
               <Button onClick={() => handleClose(true)}>{current.confirmLabel}</Button>
             </>
           ) : (
-            <Button onClick={() => handleClose(true)}>OK</Button>
+            <Button onClick={() => handleClose(true)}>{t('dialog.ok')}</Button>
           )
         }
       >

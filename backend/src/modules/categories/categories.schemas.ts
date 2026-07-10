@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { CategoryType } from './categories.types';
 
 export const createCategorySchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  type: z.nativeEnum(CategoryType, { message: 'Tipo de categoria inválido' }),
+  name: z.string().min(1, 'validation.name.required'),
+  type: z.nativeEnum(CategoryType, { message: 'validation.type.invalid' }),
 });
 
 export const updateCategorySchema = z.object({

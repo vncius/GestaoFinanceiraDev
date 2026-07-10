@@ -1,0 +1,92 @@
+{
+  "common": {
+    "unknown": "Ocurrió un error inesperado.",
+    "networkError": "No se pudo conectar con el servidor",
+    "internalError": "Error interno del servidor"
+  },
+  "validation": {
+    "generic": "Error de validación",
+    "name": { "required": "El nombre es obligatorio" },
+    "bank": { "required": "El banco es obligatorio" },
+    "description": { "required": "La descripción es obligatoria" },
+    "expenseCategoryId": { "invalid": "Categoría inválida" },
+    "totalAmount": { "positive": "El monto debe ser positivo" },
+    "purchaseDate": { "required": "La fecha de compra es obligatoria" },
+    "installmentsCount": { "required": "La cantidad de cuotas (mínimo 2) es obligatoria para registros en cuotas" },
+    "categoryId": { "invalid": "Categoría inválida" },
+    "amount": { "positive": "El monto debe ser positivo" },
+    "expectedDate": { "required": "La fecha prevista es obligatoria" },
+    "expectedPaymentDate": { "required": "La fecha prevista es obligatoria" },
+    "grossAmount": { "positive": "El monto bruto debe ser positivo" },
+    "incomeCategoryId": { "invalid": "Categoría inválida" },
+    "type": { "invalid": "Tipo de categoría inválido" },
+    "confirm": { "required": "Confirma explícitamente la restauración (operación destructiva)." },
+    "dateRange": { "required": "Indica la fecha inicial y final, o selecciona todos los registros." },
+    "initialBalance": { "min": "El saldo inicial debe ser mayor o igual a cero" }
+  },
+  "creditCard": {
+    "notFound": "Tarjeta no encontrada.",
+    "inactive": "Tarjeta inactiva."
+  },
+  "creditCardEntry": {
+    "inactive": "Registro inactivo.",
+    "alreadyInactive": "El registro ya está inactivo.",
+    "scopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
+    "notFound": "Registro no encontrado.",
+    "belongsToOtherCard": "El registro no pertenece a esta tarjeta."
+  },
+  "creditCardInvoice": {
+    "notFound": "Factura no encontrada.",
+    "belongsToOtherCard": "La factura no pertenece a esta tarjeta.",
+    "alreadyPaid": "La factura ya fue pagada.",
+    "canceled": "Una factura cancelada no puede pagarse.",
+    "notPaid": "Solo las facturas pagadas pueden revertirse."
+  },
+  "transaction": {
+    "canceledCannotEdit": "Los registros cancelados no pueden editarse.",
+    "reversedCannotEdit": "Los registros revertidos no pueden editarse.",
+    "fixedCannotRevertToUnique": "No es posible revertir un registro fijo a único.",
+    "paidCannotDelete": "Los registros ya pagados no pueden eliminarse. Revierte primero.",
+    "deleteScopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
+    "alreadyPaid": "El registro ya fue pagado.",
+    "canceledCannotPay": "Los registros cancelados no pueden pagarse.",
+    "notPaidCannotRevert": "Solo los registros pagados pueden revertirse.",
+    "notFound": "Registro no encontrado.",
+    "wrongType": "El registro no es del tipo {{type}}."
+  },
+  "receivable": {
+    "notFound": "Cobro no encontrado",
+    "canceledCannotEdit": "Los cobros cancelados no pueden editarse.",
+    "fixedCannotRevertToUnique": "No es posible revertir un registro fijo a único.",
+    "mainAccountNotConfigured": "La cuenta principal no está configurada en los ajustes.",
+    "alreadyReceivedCannotDelete": "Los cobros ya recibidos no pueden eliminarse. Revierte primero.",
+    "deleteScopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
+    "alreadyReceived": "El cobro ya fue recibido.",
+    "canceledCannotReceive": "Un cobro cancelado no puede recibirse.",
+    "notReceivedCannotRevert": "Solo los cobros recibidos pueden revertirse."
+  },
+  "auth": {
+    "invalidGoogleToken": "Token de Google inválido",
+    "googleTokenMissingEmail": "El token de Google no tiene correo electrónico",
+    "invalidAppleToken": "Token de Apple inválido",
+    "appleTokenMissingEmail": "El token de Apple no tiene correo electrónico",
+    "userNotFound": "Usuario no encontrado",
+    "invalidSession": "Sesión inválida o expirada",
+    "emailAlreadyRegistered": "Este correo ya está registrado mediante {{provider}}"
+  },
+  "category": {
+    "notFound": "Categoría no encontrada",
+    "typeChangeNotAllowed": "No se puede cambiar el tipo de esta categoría",
+    "protected": "Esta categoría es administrada por el sistema y no puede eliminarse"
+  },
+  "backup": {
+    "noEntriesRecognized": "No se pudo reconocer ningún registro en el archivo enviado.",
+    "accountNotFound": "Cuenta no encontrada."
+  },
+  "account": {
+    "notFound": "Cuenta no encontrada"
+  },
+  "accountType": {
+    "notFound": "Tipo de cuenta no encontrado"
+  }
+}

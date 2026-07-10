@@ -1,27 +1,35 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Moon, Sun, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Menu, Moon, Sun, LogOut, Globe } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { MonthNavigator } from '../ui/MonthNavigator';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { Language } from '../../i18n';
 import { QuickAddProvider } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
 
-const ROUTE_META: Record<string, { title: string; showMonthNav?: boolean }> = {
-  '/dashboard': { title: 'Dashboard', showMonthNav: true },
-  '/cash-flow': { title: 'Fluxo de Caixa', showMonthNav: true },
-  '/credit-cards': { title: 'Cartões de Crédito', showMonthNav: true },
-  '/receivables': { title: 'Recebimentos' },
-  '/backup': { title: 'Backup e Exportação' },
-  '/settings': { title: 'Parametrizações' },
+const ROUTE_META: Record<string, { titleKey: string; showMonthNav?: boolean }> = {
+  '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true },
+  '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true },
+  '/credit-cards': { titleKey: 'nav.creditCards', showMonthNav: true },
+  '/receivables': { titleKey: 'nav.receivables' },
+  '/backup': { titleKey: 'nav.backup' },
+  '/settings': { titleKey: 'nav.settings' },
 };
 
+const LANGUAGES: Language[] = ['pt', 'en', 'es'];
+
 export default function Layout() {
+  const { t } = useTranslation('layout');
   const location = useLocation();
   const segment = '/' + location.pathname.split('/')[1];
-  const meta = ROUTE_META[segment] ?? { title: 'Gestão Financeira' };
+  const meta = ROUTE_META[segment];
+  const title = meta ? t(meta.titleKey) : t('appName');
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -42,33 +50,48 @@ export default function Layout() {
             <button
               onClick={() => setMobileNavOpen(true)}
               className="p-2 -ml-1 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors md:hidden shrink-0"
-              aria-label="Abrir menu"
+              aria-label={t('header.openMenu')}
             >
               <Menu size={18} />
             </button>
 
             <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate shrink-0 md:flex-1">
-              {meta.title}
+              {title}
             </h2>
 
             <div className="flex-1 flex justify-end md:flex-1 md:justify-center min-w-0">
-              {meta.showMonthNav && <MonthNavigator />}
+              {meta?.showMonthNav && <MonthNavigator />}
             </div>
 
-            <div className="flex justify-end shrink-0 md:flex-1">
+            <div className="flex items-center justify-end shrink-0 md:flex-1">
+              <div className="flex items-center gap-1 mr-1">
+                <Globe size={14} className="text-gray-400 dark:text-gray-500" />
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as Language)}
+                  aria-label={t('header.language')}
+                  className="bg-transparent text-xs font-medium text-gray-500 dark:text-gray-400 rounded-lg py-1.5 pl-1 pr-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang} value={lang} className="text-gray-900 dark:text-gray-100">
+                      {lang.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-                aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+                title={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
+                aria-label={theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
               >
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
               </button>
               <button
                 onClick={handleLogout}
                 className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                title="Sair"
-                aria-label="Sair"
+                title={t('header.logout')}
+                aria-label={t('header.logout')}
               >
                 <LogOut size={16} />
               </button>

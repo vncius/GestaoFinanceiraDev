@@ -1,0 +1,92 @@
+{
+  "common": {
+    "unknown": "Ocorreu um erro inesperado.",
+    "networkError": "Erro ao conectar com o servidor",
+    "internalError": "Erro interno do servidor"
+  },
+  "validation": {
+    "generic": "Erro de validação",
+    "name": { "required": "Nome é obrigatório" },
+    "bank": { "required": "Banco é obrigatório" },
+    "description": { "required": "Descrição é obrigatória" },
+    "expenseCategoryId": { "invalid": "Categoria inválida" },
+    "totalAmount": { "positive": "Valor deve ser positivo" },
+    "purchaseDate": { "required": "Data da compra é obrigatória" },
+    "installmentsCount": { "required": "Quantidade de parcelas (mínimo 2) é obrigatória para lançamentos parcelados" },
+    "categoryId": { "invalid": "Categoria inválida" },
+    "amount": { "positive": "Valor deve ser positivo" },
+    "expectedDate": { "required": "Data prevista é obrigatória" },
+    "expectedPaymentDate": { "required": "Data prevista é obrigatória" },
+    "grossAmount": { "positive": "Valor bruto deve ser positivo" },
+    "incomeCategoryId": { "invalid": "Categoria inválida" },
+    "type": { "invalid": "Tipo de categoria inválido" },
+    "confirm": { "required": "Confirme explicitamente a restauração (operação destrutiva)." },
+    "dateRange": { "required": "Informe as datas inicial e final, ou marque todos os lançamentos." },
+    "initialBalance": { "min": "Saldo inicial deve ser maior ou igual a zero" }
+  },
+  "creditCard": {
+    "notFound": "Cartão não encontrado.",
+    "inactive": "Cartão inativo."
+  },
+  "creditCardEntry": {
+    "inactive": "Lançamento inativo.",
+    "alreadyInactive": "Lançamento já está inativo.",
+    "scopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
+    "notFound": "Lançamento não encontrado.",
+    "belongsToOtherCard": "Lançamento não pertence a este cartão."
+  },
+  "creditCardInvoice": {
+    "notFound": "Fatura não encontrada.",
+    "belongsToOtherCard": "Fatura não pertence a este cartão.",
+    "alreadyPaid": "Fatura já foi paga.",
+    "canceled": "Fatura cancelada não pode ser paga.",
+    "notPaid": "Apenas faturas pagas podem ser revertidas."
+  },
+  "transaction": {
+    "canceledCannotEdit": "Lançamentos cancelados não podem ser editados.",
+    "reversedCannotEdit": "Lançamentos revertidos não podem ser editados.",
+    "fixedCannotRevertToUnique": "Não é possível reverter um lançamento fixo para único.",
+    "paidCannotDelete": "Lançamentos já pagos não podem ser excluídos. Reverta primeiro.",
+    "deleteScopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
+    "alreadyPaid": "Lançamento já foi pago.",
+    "canceledCannotPay": "Lançamentos cancelados não podem ser pagos.",
+    "notPaidCannotRevert": "Apenas lançamentos com status pago podem ser revertidos.",
+    "notFound": "Lançamento não encontrado.",
+    "wrongType": "Lançamento não é do tipo {{type}}."
+  },
+  "receivable": {
+    "notFound": "Recebimento não encontrado",
+    "canceledCannotEdit": "Recebimentos cancelados não podem ser editados.",
+    "fixedCannotRevertToUnique": "Não é possível reverter um lançamento fixo para único.",
+    "mainAccountNotConfigured": "Conta principal não configurada nas parametrizações.",
+    "alreadyReceivedCannotDelete": "Recebimentos já recebidos não podem ser excluídos. Reverta primeiro.",
+    "deleteScopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
+    "alreadyReceived": "Recebimento já foi recebido.",
+    "canceledCannotReceive": "Recebimento cancelado não pode ser recebido.",
+    "notReceivedCannotRevert": "Apenas recebimentos recebidos podem ser revertidos."
+  },
+  "auth": {
+    "invalidGoogleToken": "Token do Google inválido",
+    "googleTokenMissingEmail": "Token do Google sem e-mail",
+    "invalidAppleToken": "Token da Apple inválido",
+    "appleTokenMissingEmail": "Token da Apple sem e-mail",
+    "userNotFound": "Usuário não encontrado",
+    "invalidSession": "Sessão inválida ou expirada",
+    "emailAlreadyRegistered": "Este e-mail já está cadastrado via {{provider}}"
+  },
+  "category": {
+    "notFound": "Categoria não encontrada",
+    "typeChangeNotAllowed": "Não é possível alterar o tipo desta categoria",
+    "protected": "Esta categoria é gerenciada pelo sistema e não pode ser excluída"
+  },
+  "backup": {
+    "noEntriesRecognized": "Não foi possível reconhecer nenhum lançamento no arquivo enviado.",
+    "accountNotFound": "Conta não encontrada."
+  },
+  "account": {
+    "notFound": "Conta não encontrada"
+  },
+  "accountType": {
+    "notFound": "Tipo de conta não encontrado"
+  }
+}

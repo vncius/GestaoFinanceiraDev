@@ -15,7 +15,7 @@ export class AccountTypesService {
   async findById(id: string, tenantId: string): Promise<AccountType> {
     const accountType = await this.repo.findById(id, tenantId);
     if (!accountType || !accountType.active) {
-      throw new AppError('Tipo de conta não encontrado', 404);
+      throw new AppError('Tipo de conta não encontrado', 404, 'accountType.notFound');
     }
     return accountType;
   }

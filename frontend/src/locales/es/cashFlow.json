@@ -1,0 +1,166 @@
+{
+  "filterBar": {
+    "label": "Filtros:",
+    "typeToggle": {
+      "all": "Todos",
+      "income": "Entradas",
+      "expense": "Salidas"
+    },
+    "categories": {
+      "button": "Categorías",
+      "selectAll": "Seleccionar todas",
+      "clear": "Limpiar",
+      "incomeGroup": "Entradas",
+      "expenseGroup": "Salidas"
+    }
+  },
+  "summaryBar": {
+    "initial": "Inicial",
+    "income": "Entradas",
+    "expense": "Salidas",
+    "finalBalance": "Saldo Final",
+    "collapse": "Contraer",
+    "expand": "Ver previstos",
+    "projectedInitialBalance": "Saldo Inicial Previsto",
+    "expectedIncome": "Prev. Entradas",
+    "expectedExpense": "Prev. Salidas",
+    "projectedBalance": "Prev. Saldo",
+    "reserveProjectedInitialBalance": "Previsión Inicial Reserva",
+    "reserveInflow": "Entradas Reserva",
+    "reserveOutflow": "Salidas Reserva",
+    "reserveBalance": "Saldo Reserva"
+  },
+  "grid": {
+    "new": "Nuevo",
+    "columns": {
+      "description": "Descripción",
+      "account": "Cuenta"
+    },
+    "actions": {
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "toggle": {
+      "revertPaid": "Revertir pago"
+    }
+  },
+  "entriesGrid": {
+    "title": "Entradas",
+    "columns": {
+      "grossAmount": "Valor Bruto",
+      "reserve": "Reserva",
+      "netAmount": "Valor neto",
+      "expectedDate": "Fecha prev."
+    },
+    "emptyState": {
+      "title": "Ninguna entrada este mes",
+      "description": "Haga clic en Nuevo para agregar un cobro"
+    },
+    "toggle": {
+      "markReceived": "Marcar como recibido",
+      "revertReceived": "Revertir cobro"
+    }
+  },
+  "transactionGrid": {
+    "columns": {
+      "value": "Valor",
+      "dueDate": "Fecha de vencimiento"
+    },
+    "emptyState": {
+      "title": "Ningún registro este mes"
+    },
+    "toggle": {
+      "markPaid": "Marcar como pagado"
+    }
+  },
+  "creditCardsGrid": {
+    "title": "Tarjetas de Crédito",
+    "cardFallbackName": "Tarjeta",
+    "columns": {
+      "card": "Tarjeta",
+      "invoiceAmount": "Valor factura",
+      "dueDate": "Vencimiento"
+    },
+    "toggle": {
+      "pay": "Pagar factura",
+      "payOverdue": "Factura vencida — pagar"
+    },
+    "actions": {
+      "openInvoice": "Abrir factura"
+    }
+  },
+  "recurrence": {
+    "unique": "Único",
+    "fixed": "Fijo (recurrente)"
+  },
+  "transactionModal": {
+    "title": {
+      "newPayment": "Nuevo Pago",
+      "editPayment": "Editar Pago",
+      "newExtraExpense": "Nuevo Gasto Extraordinario",
+      "editExtraExpense": "Editar Gasto Extraordinario"
+    },
+    "fields": {
+      "description": "Descripción *",
+      "category": "Categoría *",
+      "selectPlaceholder": "Seleccione...",
+      "entryDate": "Fecha de registro *",
+      "amount": "Valor *",
+      "debitAccount": "Cuenta de débito",
+      "recurrenceType": "Tipo de registro",
+      "notes": "Observaciones"
+    },
+    "fixedRecurrenceHint": "Para finalizar la recurrencia, elimine \"esta y las futuras\".",
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "pay": "Pagar",
+    "save": "Guardar",
+    "validation": {
+      "description": "Descripción",
+      "category": "Categoría",
+      "amount": "Valor"
+    }
+  },
+  "receivableModal": {
+    "title": {
+      "new": "Nuevo Cobro",
+      "edit": "Editar Cobro"
+    },
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "receive": "Recibir",
+    "save": "Guardar",
+    "fields": {
+      "description": "Descripción *",
+      "category": "Categoría *",
+      "selectPlaceholder": "Seleccione...",
+      "expectedDate": "Fecha prevista *",
+      "grossAmount": "Valor bruto *",
+      "recurrenceType": "Tipo de registro",
+      "targetAccount": "Cuenta de destino",
+      "notes": "Observaciones"
+    },
+    "fixedRecurrenceHint": "Para finalizar la recurrencia, elimine \"esta y las futuras\".",
+    "reserveCheckbox": "Reservar {{percentage}}% para {{account}}",
+    "summary": {
+      "reserve": "Reserva",
+      "netAmount": "Valor neto"
+    },
+    "validation": {
+      "description": "Descripción",
+      "category": "Categoría",
+      "grossAmount": "Valor bruto"
+    }
+  },
+  "page": {
+    "paymentsTitle": "Pagos",
+    "extraExpensesTitle": "Gastos Extraordinarios",
+    "confirmEdit": "Este ítem ya fue efectivizado. Modificar este registro recalculará los saldos e indicadores. ¿Desea continuar?",
+    "confirmDeleteEffected": "Este ítem ya está pagado/recibido. Al eliminarlo, el pago se revertirá y los saldos se recalcularán. ¿Desea continuar?",
+    "confirmDelete": "¿Confirmar eliminación?",
+    "scopedDelete": {
+      "title": "Eliminar registro fijo",
+      "description": "es un registro fijo. ¿Desea eliminar solo esta referencia, o esta y todas las futuras? El historial de referencias ya registradas/pagadas/recibidas nunca se modifica."
+    }
+  }
+}

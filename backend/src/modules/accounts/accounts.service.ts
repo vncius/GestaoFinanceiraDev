@@ -15,7 +15,7 @@ export class AccountsService {
   async findById(id: string, tenantId: string): Promise<Account> {
     const account = await this.repo.findById(id, tenantId);
     if (!account || !account.active) {
-      throw new AppError('Conta não encontrada', 404);
+      throw new AppError('Conta não encontrada', 404, 'account.notFound');
     }
     return account;
   }

@@ -43,7 +43,7 @@ export class ReceivablesService {
 
   async findById(id: string, tenantId: string): Promise<Receivable> {
     const receivable = await this.receivablesRepo.findById(id, tenantId);
-    if (!receivable) throw new AppError('Recebimento não encontrado', 404);
+    if (!receivable) throw new AppError('Recebimento não encontrado', 404, 'receivable.notFound');
     return receivable;
   }
 
@@ -91,7 +91,7 @@ export class ReceivablesService {
     const existing = await this.findById(id, tenantId);
 
     if (existing.status === ReceivableStatus.CANCELED) {
-      throw new AppError('Recebimentos cancelados não podem ser editados.', 400);
+      throw new AppError('Recebimentos cancelados não podem ser editados.', 400, 'receivable.canceledCannotEdit');
     }
 
     let recurrencePatch: Partial<Receivable> = {};
@@ -100,6 +100,7 @@ export class ReceivablesService {
         throw new AppError(
           'Não é possível reverter um lançamento fixo para único. Use a exclusão com escopo para encerrar a recorrência.',
           400,
+          'receivable.fixedCannotRevertToUnique',
         );
       }
       recurrencePatch = { recurringGroupId: id, recurringActive: true };
@@ -129,7 +130,7 @@ export class ReceivablesService {
     if (existing.status === ReceivableStatus.RECEIVED) {
       const settings = await this.settingsRepo.get(tenantId);
       if (!settings?.mainAccountId) {
-        throw new AppError('Conta principal não configurada nas parametrizações.', 400);
+        throw new AppError('Conta principal não configurada nas parametrizações.', 400, 'receivable.mainAccountNotConfigured');
       }
 
       // Estorna movimentações antigas
@@ -210,6 +211,7 @@ export class ReceivablesService {
       throw new AppError(
         'Recebimentos já recebidos não podem ser excluídos. Reverta primeiro.',
         400,
+        'receivable.alreadyReceivedCannotDelete',
       );
     }
 
@@ -218,6 +220,7 @@ export class ReceivablesService {
         throw new AppError(
           'Informe se deseja excluir apenas a referência atual ou também as futuras.',
           400,
+          'receivable.deleteScopeRequired',
         );
       }
       return this.deleteFixedReceivable(existing, tenantId, scope, referenceMonth, referenceYear);
@@ -322,10 +325,10 @@ export class ReceivablesService {
     const receivable = await this.findById(id, tenantId);
 
     if (receivable.status === ReceivableStatus.RECEIVED) {
-      throw new AppError('Recebimento já foi recebido.', 400);
+      throw new AppError('Recebimento já foi recebido.', 400, 'receivable.alreadyReceived');
     }
     if (receivable.status === ReceivableStatus.CANCELED) {
-      throw new AppError('Recebimento cancelado não pode ser recebido.', 400);
+      throw new AppError('Recebimento cancelado não pode ser recebido.', 400, 'receivable.canceledCannotReceive');
     }
 
     const settings = await this.settingsRepo.get(tenantId);
@@ -333,6 +336,7 @@ export class ReceivablesService {
       throw new AppError(
         'Conta principal não configurada nas parametrizações.',
         400,
+        'receivable.mainAccountNotConfigured',
       );
     }
 
@@ -412,6 +416,7 @@ export class ReceivablesService {
       throw new AppError(
         'Apenas recebimentos com status RECEIVED podem ser revertidos.',
         400,
+        'receivable.notReceivedCannotRevert',
       );
     }
 

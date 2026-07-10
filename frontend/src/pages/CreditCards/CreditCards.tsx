@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -56,12 +57,6 @@ interface EntryFormState {
   notes: string;
 }
 
-const ENTRY_TYPE_LABELS: Record<string, string> = {
-  CASH: 'À vista',
-  FIXED: 'Fixo (recorrente)',
-  INSTALLMENT: 'Parcelado',
-};
-
 function EntryModal({
   open,
   onClose,
@@ -81,6 +76,12 @@ function EntryModal({
   onSave: (data: CreateCardEntryPayload | Parameters<typeof CreditCardsService.updateEntry>[2]) => void;
   isSaving: boolean;
 }) {
+  const { t } = useTranslation('creditCards');
+  const ENTRY_TYPE_LABELS: Record<string, string> = {
+    CASH: t('entryModal.entryTypes.cash'),
+    FIXED: t('entryModal.entryTypes.fixed'),
+    INSTALLMENT: t('entryModal.entryTypes.installment'),
+  };
   const expenseCats = categories.filter((c) => c.type === 'EXPENSE' && c.active);
   const isEdit = !!item;
 
@@ -110,9 +111,9 @@ function EntryModal({
     e.preventDefault();
     const cents = floatToCents(parseFloat(form.totalAmount) || 0);
     const missing = getMissingFields([
-      { label: 'Descrição', valid: !!form.description },
-      { label: 'Categoria', valid: !!form.expenseCategoryId },
-      { label: 'Valor total', valid: !!cents },
+      { label: t('entryModal.validation.description'), valid: !!form.description },
+      { label: t('entryModal.validation.category'), valid: !!form.expenseCategoryId },
+      { label: t('entryModal.validation.totalAmount'), valid: !!cents },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
 
@@ -124,7 +125,7 @@ function EntryModal({
         (form.entryType === 'INSTALLMENT' && parseInt(form.installmentsCount) !== item!.installmentsCount);
 
       if (willRecreate && !(await confirm(
-        'Alterar valor, data, tipo ou parcelas irá recriar todas as parcelas e pode reverter faturas pagas. Deseja continuar?'
+        t('entryModal.confirmRecreate')
       ))) return;
 
       onSave({
@@ -153,40 +154,40 @@ function EntryModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isEdit ? 'Editar Lançamento' : 'Adicionar Lançamento'}
+      title={isEdit ? t('entryModal.title.edit') : t('entryModal.title.new')}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>{isEdit ? 'Salvar' : 'Adicionar'}</Button>
+          <Button variant="secondary" onClick={onClose}>{t('entryModal.cancelButton')}</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{isEdit ? t('entryModal.saveButton') : t('entryModal.addButton')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Descrição *">
+        <Field label={t('entryModal.fields.description')}>
           <input className={INPUT} value={form.description} onChange={set('description')} required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Categoria *">
+          <Field label={t('entryModal.fields.category')}>
             <select className={INPUT} value={form.expenseCategoryId} onChange={set('expenseCategoryId')} required>
-              <option value="">Selecione...</option>
+              <option value="">{t('entryModal.fields.categoryPlaceholder')}</option>
               {expenseCats.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </Field>
-          <Field label="Data de lançamento *">
+          <Field label={t('entryModal.fields.purchaseDate')}>
             <DateInput className={INPUT} value={form.purchaseDate} onChange={(v) => setForm((f) => ({ ...f, purchaseDate: v }))} required />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Valor total *">
+          <Field label={t('entryModal.fields.totalAmount')}>
             <CurrencyInput
               className={INPUT}
               value={form.totalAmount}
               onChange={(v) => setForm((f) => ({ ...f, totalAmount: v }))}
             />
           </Field>
-          <Field label="Tipo *">
+          <Field label={t('entryModal.fields.type')}>
             <select
               className={INPUT}
               value={form.entryType}
@@ -204,7 +205,7 @@ function EntryModal({
           </Field>
         </div>
         {form.entryType === 'INSTALLMENT' && (
-          <Field label="Nº de parcelas *">
+          <Field label={t('entryModal.fields.installmentsCount')}>
             <input
               type="number"
               min="2"
@@ -216,7 +217,7 @@ function EntryModal({
             />
           </Field>
         )}
-        <Field label="Observações">
+        <Field label={t('entryModal.fields.notes')}>
           <input className={INPUT} value={form.notes} onChange={set('notes')} />
         </Field>
       </form>
@@ -235,6 +236,7 @@ function CardDetail({
   month: number;
   year: number;
 }) {
+  const { t } = useTranslation('creditCards');
   const qc = useQueryClient();
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<CreditCardEntry | undefined>(undefined);
@@ -317,35 +319,35 @@ function CardDetail({
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Fatura — {formatMonthYear(month, year)}
+              {t('invoiceHeader.title', { monthYear: formatMonthYear(month, year) })}
             </h3>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {card.name} · {card.bank}
             </p>
             {invoice?.dueDate && (
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                Vencimento: {formatDate(invoice.dueDate)}
+                {t('invoiceHeader.dueDate', { date: formatDate(invoice.dueDate) })}
               </p>
             )}
           </div>
           <div>
             {invoice
               ? invoiceStatusBadge(invoice.status)
-              : <span className="text-xs text-gray-400 dark:text-gray-500">Sem fatura</span>}
+              : <span className="text-xs text-gray-400 dark:text-gray-500">{t('invoiceHeader.noInvoice')}</span>}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
           <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Total fatura</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('invoiceHeader.summary.invoiceTotal')}</p>
             <p className="text-sm lg:text-lg font-bold text-gray-800 dark:text-gray-100 truncate">{formatCurrency(summary.invoiceTotal)}</p>
           </div>
           <div className="text-center p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Pago</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('invoiceHeader.summary.paid')}</p>
             <p className="text-sm lg:text-lg font-bold text-green-600 dark:text-green-400 truncate">{formatCurrency(summary.paidAmount)}</p>
           </div>
           <div className="text-center p-2 sm:p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Em aberto</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">{t('invoiceHeader.summary.open')}</p>
             <p className="text-sm lg:text-lg font-bold text-red-500 dark:text-red-400 truncate">{formatCurrency(summary.openAmount)}</p>
           </div>
         </div>
@@ -359,7 +361,7 @@ function CardDetail({
                 onClick={() => setInvoicePayTarget(invoice)}
                 loading={payMut.isPending}
               >
-                Pagar fatura
+                {t('invoiceHeader.payButton')}
               </Button>
             )}
             {invoice.status === 'PAID' && (
@@ -370,7 +372,7 @@ function CardDetail({
                 onClick={() => revertMut.mutate(invoice.id)}
                 loading={revertMut.isPending}
               >
-                Reverter pagamento
+                {t('invoiceHeader.revertButton')}
               </Button>
             )}
           </div>
@@ -381,7 +383,7 @@ function CardDetail({
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Lançamentos ({activeInstallments.length})
+            {t('installments.title', { count: activeInstallments.length })}
           </h3>
           <Button
             size="sm"
@@ -389,25 +391,25 @@ function CardDetail({
             icon={<Plus size={14} />}
             onClick={() => setShowEntryModal(true)}
           >
-            Adicionar
+            {t('installments.addButton')}
           </Button>
         </div>
 
         {activeInstallments.length === 0 ? (
           <EmptyState
-            title="Nenhum lançamento neste mês"
-            description="Clique em Adicionar para registrar uma compra"
+            title={t('installments.emptyState.title')}
+            description={t('installments.emptyState.description')}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
-                  <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">Categoria</th>
-                  <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">Data lanç.</th>
-                  <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">Parcela</th>
-                  <th className="text-right px-3 py-2.5 font-medium">Valor</th>
+                  <th className="text-left px-3 sm:px-5 py-2.5 font-medium">{t('installments.table.description')}</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">{t('installments.table.category')}</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">{t('installments.table.purchaseDate')}</th>
+                  <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">{t('installments.table.installment')}</th>
+                  <th className="text-right px-3 py-2.5 font-medium">{t('installments.table.amount')}</th>
                   <th className="px-1 sm:px-3 py-2.5" />
                 </tr>
               </thead>
@@ -427,9 +429,9 @@ function CardDetail({
                       </td>
                       <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {entry?.entryType === 'CASH'
-                          ? 'À vista'
+                          ? t('installments.entryType.cash')
                           : entry?.entryType === 'FIXED'
-                          ? 'Recorrente'
+                          ? t('installments.entryType.fixed')
                           : `${inst.installmentNumber}/${inst.totalInstallments}`}
                       </td>
                       <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
@@ -439,8 +441,8 @@ function CardDetail({
                         <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {entry?.active && (
                             <button
-                              title="Editar lançamento"
-                              aria-label="Editar lançamento"
+                              title={t('installments.actions.edit')}
+                              aria-label={t('installments.actions.edit')}
                               onClick={() => { setEntryToEdit(entry); }}
                               className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                             >
@@ -449,12 +451,12 @@ function CardDetail({
                           )}
                           {entry?.active && (
                             <button
-                              title="Cancelar lançamento"
-                              aria-label="Cancelar lançamento"
+                              title={t('installments.actions.cancel')}
+                              aria-label={t('installments.actions.cancel')}
                               onClick={async () => {
                                 if (entry.entryType === 'FIXED') {
                                   setFixedDeleteTarget(entry);
-                                } else if (await confirm('Cancelar este lançamento e todas as suas parcelas?')) {
+                                } else if (await confirm(t('installments.confirmCancel'))) {
                                   deleteEntryMut.mutate({ entryId: entry.id });
                                 }
                               }}
@@ -498,13 +500,12 @@ function CardDetail({
       <ScopedDeleteModal
         open={!!fixedDeleteTarget}
         onClose={() => setFixedDeleteTarget(null)}
-        title="Excluir lançamento fixo"
+        title={t('fixedDeleteModal.title')}
         loading={deleteEntryMut.isPending}
         description={
           <>
-            <strong>{fixedDeleteTarget?.description}</strong> é um lançamento fixo. Deseja excluir
-            apenas a referência de {formatMonthYear(month, year)}, ou esta e todas as futuras?
-            O histórico de referências já lançadas/pagas nunca é alterado.
+            <strong>{fixedDeleteTarget?.description}</strong>{' '}
+            {t('fixedDeleteModal.description', { monthYear: formatMonthYear(month, year) })}
           </>
         }
         onDeleteCurrent={() =>
@@ -535,6 +536,7 @@ function CardDetail({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CreditCards() {
+  const { t } = useTranslation('creditCards');
   const { month, year } = useMonth();
   const location = useLocation();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -558,8 +560,8 @@ export default function CreditCards() {
     return (
       <div className="flex items-center justify-center h-64">
         <EmptyState
-          title="Nenhum cartão cadastrado"
-          description="Cadastre cartões de crédito em Parametrizações → Cartões"
+          title={t('cardList.emptyState.title')}
+          description={t('cardList.emptyState.description')}
           icon={<CreditCardIcon size={24} className="text-gray-300" />}
         />
       </div>
@@ -589,13 +591,13 @@ export default function CreditCards() {
             </div>
             <div className="mt-3 space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400 dark:text-gray-500">Mês atual</span>
+                <span className="text-gray-400 dark:text-gray-500">{t('cardList.currentMonth')}</span>
                 <span className="font-semibold text-red-500 dark:text-red-400">
                   {formatCurrency(card.currentMonthAmount)}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400 dark:text-gray-500">Limite</span>
+                <span className="text-gray-400 dark:text-gray-500">{t('cardList.limit')}</span>
                 <span className="text-gray-600 dark:text-gray-300">{formatCurrency(card.limit)}</span>
               </div>
               {card.currentInvoice && (
@@ -613,8 +615,8 @@ export default function CreditCards() {
         ) : (
           <div className="flex items-center justify-center h-full">
             <EmptyState
-              title="Selecione um cartão"
-              description="Clique em um cartão à esquerda para ver os detalhes"
+              title={t('selectCard.title')}
+              description={t('selectCard.description')}
               icon={<CreditCardIcon size={24} className="text-gray-300" />}
             />
           </div>

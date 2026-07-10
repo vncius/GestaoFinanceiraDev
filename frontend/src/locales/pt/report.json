@@ -1,0 +1,40 @@
+{
+  "backLink": "Voltar",
+  "printButton": "Imprimir / Salvar PDF",
+  "title": "Relatório Financeiro",
+  "balances": {
+    "sectionTitle": "Saldos Atuais",
+    "total": "Total Geral"
+  },
+  "summary": {
+    "sectionTitle": "Resumo de {{monthYear}}",
+    "initialBalance": "Saldo inicial",
+    "receivedIncome": "Entradas recebidas",
+    "payments": "Pagamentos",
+    "extraExpenses": "Gastos extras",
+    "creditCardInvoices": "Faturas de cartão",
+    "totalExpenses": "Total de saídas",
+    "finalBalance": "Saldo final"
+  },
+  "category": {
+    "incomeByCategory": "Receitas por Categoria",
+    "expensesByCategory": "Gastos por Categoria",
+    "empty": "Sem lançamentos no período."
+  },
+  "annualSummary": {
+    "sectionTitle": "Faturamento Anual (PJ)",
+    "grossIncome": "Faturamento bruto no ano",
+    "annualLimit": "Limite anual configurado",
+    "limitUsage": "Utilização do limite"
+  },
+  "evolution": {
+    "sectionTitle": "Evolução dos Últimos Meses",
+    "month": "Mês",
+    "income": "Entradas",
+    "expenses": "Saídas",
+    "result": "Resultado"
+  },
+  "footer": {
+    "generatedAt": "Gerado em {{date}}"
+  }
+}

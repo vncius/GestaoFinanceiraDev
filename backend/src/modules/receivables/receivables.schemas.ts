@@ -2,11 +2,11 @@ import { z } from 'zod';
 import { ReceivableStatus, RecurrenceType } from './receivables.types';
 
 export const createReceivableSchema = z.object({
-  description: z.string().min(1, 'Descrição é obrigatória'),
-  expectedPaymentDate: z.string({ required_error: 'Data prevista é obrigatória' }),
-  grossAmount: z.number().int().positive('Valor bruto deve ser positivo'),
+  description: z.string().min(1, 'validation.description.required'),
+  expectedPaymentDate: z.string({ required_error: 'validation.expectedPaymentDate.required' }),
+  grossAmount: z.number().int().positive('validation.grossAmount.positive'),
   reserveAccountIds: z.array(z.string().uuid()).default([]),
-  incomeCategoryId: z.string().uuid('Categoria inválida'),
+  incomeCategoryId: z.string().uuid('validation.incomeCategoryId.invalid'),
   notes: z.string().nullable().optional(),
   recurrence: z.nativeEnum(RecurrenceType).default(RecurrenceType.UNIQUE),
   // campos opcionais de NF / projeto

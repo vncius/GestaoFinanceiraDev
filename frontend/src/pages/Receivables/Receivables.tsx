@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ThumbsUp, ThumbsDown, Pencil, Trash2, Plus } from 'lucide-react';
 import {
@@ -21,21 +22,9 @@ import { DateInput } from '../../components/ui/DateInput';
 import { useDialog } from '../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
-const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
-  UNIQUE: 'Único',
-  FIXED: 'Fixo (recorrente)',
-};
-
 // ── Types & constants ─────────────────────────────────────────────────────────
 
 type StatusFilter = 'ALL' | 'EXPECTED' | 'RECEIVED' | 'CANCELED';
-
-const STATUS_LABELS: Record<StatusFilter, string> = {
-  ALL: 'Todos',
-  EXPECTED: 'Esperados',
-  RECEIVED: 'Recebidos',
-  CANCELED: 'Cancelados',
-};
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -50,10 +39,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function PaidToggle({ paid, onToggle }: { paid: boolean; onToggle: () => void }) {
+  const { t } = useTranslation('receivables');
+  const label = paid ? t('toggle.revert') : t('toggle.markReceived');
   return (
     <button
-      title={paid ? 'Reverter recebimento' : 'Marcar como recebido'}
-      aria-label={paid ? 'Reverter recebimento' : 'Marcar como recebido'}
+      title={label}
+      aria-label={label}
       onClick={onToggle}
       className={`p-1 sm:p-1.5 rounded-md transition-colors ${
         paid
@@ -101,6 +92,11 @@ function ReceivableModal({
   isSaving: boolean;
   onDelete?: (item: Receivable) => void;
 }) {
+  const { t } = useTranslation('receivables');
+  const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
+    UNIQUE: t('recurrence.unique'),
+    FIXED: t('recurrence.fixed'),
+  };
   const isEdit = !!item;
   const incomeCats = categories.filter((c) => c.type === 'INCOME' && c.active);
   const reserveEligibleAccounts = accounts.filter(
@@ -155,9 +151,9 @@ function ReceivableModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const missing = getMissingFields([
-      { label: 'Descrição', valid: !!form.description },
-      { label: 'Categoria', valid: !!form.incomeCategoryId },
-      { label: 'Valor bruto', valid: !!grossCents },
+      { label: t('modal.validation.description'), valid: !!form.description },
+      { label: t('modal.validation.category'), valid: !!form.incomeCategoryId },
+      { label: t('modal.validation.grossAmount'), valid: !!grossCents },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
@@ -177,64 +173,64 @@ function ReceivableModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={item ? 'Editar Recebimento' : 'Novo Recebimento'}
+      title={item ? t('modal.editTitle') : t('modal.newTitle')}
       size="lg"
       footer={
         <>
           {isEdit && onDelete && (
             <button
               type="button"
-              title="Excluir"
-              aria-label="Excluir"
+              title={t('actions.delete')}
+              aria-label={t('actions.delete')}
               onClick={() => { onClose(); onDelete(item!); }}
               className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
             >
               <Trash2 size={16} />
             </button>
           )}
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+          <Button variant="secondary" onClick={onClose}>{t('modal.cancel')}</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{t('modal.save')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Descrição *">
+        <Field label={t('modal.fields.description')}>
           <input className={INPUT} value={form.description} onChange={set('description')} required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Categoria *">
+          <Field label={t('modal.fields.category')}>
             <select className={INPUT} value={form.incomeCategoryId} onChange={set('incomeCategoryId')} required>
-              <option value="">Selecione...</option>
+              <option value="">{t('modal.fields.selectPlaceholder')}</option>
               {incomeCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="Data prevista *">
+          <Field label={t('modal.fields.expectedDate')}>
             <DateInput className={INPUT} value={form.expectedPaymentDate} onChange={(v) => setForm((f) => ({ ...f, expectedPaymentDate: v }))} required />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Valor bruto (R$) *">
+          <Field label={t('modal.fields.grossAmount')}>
             <CurrencyInput
               className={INPUT}
               value={form.grossAmount}
               onChange={(v) => setForm((f) => ({ ...f, grossAmount: v }))}
             />
           </Field>
-          <Field label="Cliente">
-            <input className={INPUT} value={form.customerName} onChange={set('customerName')} placeholder="Nome do cliente" />
+          <Field label={t('modal.fields.customer')}>
+            <input className={INPUT} value={form.customerName} onChange={set('customerName')} placeholder={t('modal.fields.customerPlaceholder')} />
           </Field>
         </div>
         {isEdit && item?.recurrence === 'FIXED' ? (
-          <Field label="Tipo de lançamento">
+          <Field label={t('modal.fields.recurrenceType')}>
             <div className={`${INPUT} bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400`}>
               {RECURRENCE_LABELS.FIXED}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Para encerrar a recorrência, exclua "esta e as futuras".
+              {t('modal.fixedRecurrenceHint')}
             </p>
           </Field>
         ) : (
-          <Field label="Tipo de lançamento">
+          <Field label={t('modal.fields.recurrenceType')}>
             <select
               className={INPUT}
               value={form.recurrence}
@@ -256,7 +252,7 @@ function ReceivableModal({
                   onChange={() => toggleReserveAccount(a.id)}
                   className="rounded"
                 />
-                Separar {a.autoReservePercentage}% para {a.name}
+                {t('modal.reserveCheckbox', { percentage: a.autoReservePercentage, account: a.name })}
               </label>
             ))}
           </div>
@@ -264,20 +260,20 @@ function ReceivableModal({
         {grossCents > 0 && (
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
             <div className="flex justify-between">
-              <span>Reserva</span>
+              <span>{t('modal.summary.reserve')}</span>
               <span>{formatCurrency(reserveCents)}</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-800 dark:text-gray-100">
-              <span>Valor líquido</span>
+              <span>{t('modal.summary.netAmount')}</span>
               <span className="text-green-700 dark:text-green-400">{formatCurrency(netCents)}</span>
             </div>
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Nº da NF">
-            <input className={INPUT} value={form.invoiceNumber} onChange={set('invoiceNumber')} placeholder="Ex: 12345" />
+          <Field label={t('modal.fields.invoiceNumber')}>
+            <input className={INPUT} value={form.invoiceNumber} onChange={set('invoiceNumber')} placeholder={t('modal.fields.invoiceNumberPlaceholder')} />
           </Field>
-          <Field label="Observações">
+          <Field label={t('modal.fields.notes')}>
             <input className={INPUT} value={form.notes} onChange={set('notes')} />
           </Field>
         </div>
@@ -289,6 +285,13 @@ function ReceivableModal({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Receivables() {
+  const { t } = useTranslation('receivables');
+  const STATUS_LABELS: Record<StatusFilter, string> = {
+    ALL: t('status.all'),
+    EXPECTED: t('status.expected'),
+    RECEIVED: t('status.received'),
+    CANCELED: t('status.canceled'),
+  };
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [search, setSearch] = useState('');
@@ -347,8 +350,8 @@ export default function Receivables() {
 
   const { confirm } = useDialog();
 
-  const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
-  const EFFECTED_DELETE_CONFIRM = 'Este item já está recebido. Ao excluir, o recebimento será revertido e os saldos recalculados. Deseja continuar?';
+  const EFFECTED_CONFIRM = t('modal.confirmEdit');
+  const EFFECTED_DELETE_CONFIRM = t('modal.confirmDeleteReceived');
 
   async function save(payload: CreateReceivablePayload) {
     if (modal?.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
@@ -362,7 +365,7 @@ export default function Receivables() {
   async function handleDelete(item: Receivable) {
     if (item.recurrence === 'FIXED') { setFixedDeleteTarget(item); return; }
     const isReceived = item.status === 'RECEIVED';
-    if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : 'Confirmar exclusão?'))) return;
+    if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : t('modal.confirmDelete')))) return;
     if (isReceived) await revertMut.mutateAsync(item.id);
     deleteMut.mutate({ id: item.id });
   }
@@ -417,12 +420,12 @@ export default function Receivables() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm w-full sm:w-52 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Buscar descrição / cliente..."
+            placeholder={t('toolbar.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <Button icon={<Plus size={14} />} onClick={() => setModal({})} className="shrink-0">
-            Novo
+            {t('toolbar.new')}
           </Button>
         </div>
       </div>
@@ -431,21 +434,21 @@ export default function Receivables() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {sorted.length === 0 ? (
           <EmptyState
-            title="Nenhum recebimento encontrado"
-            description="Clique em Novo para adicionar um recebimento"
+            title={t('emptyState.title')}
+            description={t('emptyState.description')}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-3 sm:px-5 py-3 font-medium">Descrição</th>
-                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Cliente</th>
-                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Categoria</th>
-                  <th className="hidden lg:table-cell text-right px-3 py-3 font-medium">Bruto</th>
-                  <th className="text-right px-2 sm:px-3 py-3 font-medium">Líquido</th>
-                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Data prev.</th>
-                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Recebido em</th>
+                  <th className="text-left px-3 sm:px-5 py-3 font-medium">{t('table.description')}</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">{t('table.customer')}</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">{t('table.category')}</th>
+                  <th className="hidden lg:table-cell text-right px-3 py-3 font-medium">{t('table.gross')}</th>
+                  <th className="text-right px-2 sm:px-3 py-3 font-medium">{t('table.net')}</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">{t('table.expectedDate')}</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">{t('table.receivedDate')}</th>
                   <th className="px-1 sm:px-3 py-3" />
                 </tr>
               </thead>
@@ -456,15 +459,15 @@ export default function Receivables() {
                       {item.description}
                       {item.invoiceNumber && (
                         <span className="ml-1.5 text-xs text-gray-400 font-normal">
-                          NF {item.invoiceNumber}
+                          {t('table.invoicePrefix', { number: item.invoiceNumber })}
                         </span>
                       )}
                     </td>
                     <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {item.customerName ?? '—'}
+                      {item.customerName ?? t('table.emptyValue')}
                     </td>
                     <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {catMap.get(item.incomeCategoryId) ?? '—'}
+                      {catMap.get(item.incomeCategoryId) ?? t('table.emptyValue')}
                     </td>
                     <td className="hidden lg:table-cell px-3 py-3 text-right text-gray-700 dark:text-gray-300">
                       {formatCurrency(item.grossAmount)}
@@ -476,7 +479,7 @@ export default function Receivables() {
                       {formatDate(item.expectedPaymentDate)}
                     </td>
                     <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
-                      {item.actualPaymentDate ? formatDate(item.actualPaymentDate) : '—'}
+                      {item.actualPaymentDate ? formatDate(item.actualPaymentDate) : t('table.emptyValue')}
                     </td>
                     <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-0 sm:gap-0.5">
@@ -491,8 +494,8 @@ export default function Receivables() {
                         <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {item.status !== 'CANCELED' && (
                             <button
-                              title="Editar"
-                              aria-label="Editar"
+                              title={t('actions.edit')}
+                              aria-label={t('actions.edit')}
                               onClick={() => setModal({ item })}
                               className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                             >
@@ -500,8 +503,8 @@ export default function Receivables() {
                             </button>
                           )}
                           <button
-                            title="Excluir"
-                            aria-label="Excluir"
+                            title={t('actions.delete')}
+                            aria-label={t('actions.delete')}
                             onClick={() => handleDelete(item)}
                             className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                           >
@@ -533,13 +536,11 @@ export default function Receivables() {
       <ScopedDeleteModal
         open={!!fixedDeleteTarget}
         onClose={() => setFixedDeleteTarget(null)}
-        title="Excluir lançamento fixo"
+        title={t('scopedDelete.title')}
         loading={deleteMut.isPending}
         description={
           <>
-            <strong>{fixedDeleteTarget?.description}</strong> é um lançamento fixo. Deseja excluir
-            apenas esta referência, ou esta e todas as futuras? O histórico de referências já
-            recebidas nunca é alterado.
+            <strong>{fixedDeleteTarget?.description}</strong> {t('scopedDelete.description')}
           </>
         }
         onDeleteCurrent={() => runScopedDelete('CURRENT')}

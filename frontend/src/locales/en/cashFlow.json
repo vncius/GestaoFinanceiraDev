@@ -1,0 +1,166 @@
+{
+  "filterBar": {
+    "label": "Filters:",
+    "typeToggle": {
+      "all": "All",
+      "income": "Income",
+      "expense": "Expenses"
+    },
+    "categories": {
+      "button": "Categories",
+      "selectAll": "Select all",
+      "clear": "Clear",
+      "incomeGroup": "Income",
+      "expenseGroup": "Expenses"
+    }
+  },
+  "summaryBar": {
+    "initial": "Initial",
+    "income": "Income",
+    "expense": "Expenses",
+    "finalBalance": "Final Balance",
+    "collapse": "Collapse",
+    "expand": "View forecast",
+    "projectedInitialBalance": "Projected Initial Balance",
+    "expectedIncome": "Exp. Income",
+    "expectedExpense": "Exp. Expenses",
+    "projectedBalance": "Proj. Balance",
+    "reserveProjectedInitialBalance": "Projected Initial Reserve",
+    "reserveInflow": "Reserve Inflow",
+    "reserveOutflow": "Reserve Outflow",
+    "reserveBalance": "Reserve Balance"
+  },
+  "grid": {
+    "new": "New",
+    "columns": {
+      "description": "Description",
+      "account": "Account"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "toggle": {
+      "revertPaid": "Revert payment"
+    }
+  },
+  "entriesGrid": {
+    "title": "Income",
+    "columns": {
+      "grossAmount": "Gross Amount",
+      "reserve": "Reserve",
+      "netAmount": "Net Amount",
+      "expectedDate": "Expected date"
+    },
+    "emptyState": {
+      "title": "No income this month",
+      "description": "Click New to add a receipt"
+    },
+    "toggle": {
+      "markReceived": "Mark as received",
+      "revertReceived": "Revert receipt"
+    }
+  },
+  "transactionGrid": {
+    "columns": {
+      "value": "Amount",
+      "dueDate": "Due date"
+    },
+    "emptyState": {
+      "title": "No records this month"
+    },
+    "toggle": {
+      "markPaid": "Mark as paid"
+    }
+  },
+  "creditCardsGrid": {
+    "title": "Credit Cards",
+    "cardFallbackName": "Card",
+    "columns": {
+      "card": "Card",
+      "invoiceAmount": "Invoice amount",
+      "dueDate": "Due date"
+    },
+    "toggle": {
+      "pay": "Pay invoice",
+      "payOverdue": "Overdue invoice — pay"
+    },
+    "actions": {
+      "openInvoice": "Open invoice"
+    }
+  },
+  "recurrence": {
+    "unique": "One-time",
+    "fixed": "Fixed (recurring)"
+  },
+  "transactionModal": {
+    "title": {
+      "newPayment": "New Payment",
+      "editPayment": "Edit Payment",
+      "newExtraExpense": "New Extra Expense",
+      "editExtraExpense": "Edit Extra Expense"
+    },
+    "fields": {
+      "description": "Description *",
+      "category": "Category *",
+      "selectPlaceholder": "Select...",
+      "entryDate": "Entry date *",
+      "amount": "Amount *",
+      "debitAccount": "Debit account",
+      "recurrenceType": "Entry type",
+      "notes": "Notes"
+    },
+    "fixedRecurrenceHint": "To end the recurrence, delete \"this and future ones\".",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "pay": "Pay",
+    "save": "Save",
+    "validation": {
+      "description": "Description",
+      "category": "Category",
+      "amount": "Amount"
+    }
+  },
+  "receivableModal": {
+    "title": {
+      "new": "New Receivable",
+      "edit": "Edit Receivable"
+    },
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "receive": "Receive",
+    "save": "Save",
+    "fields": {
+      "description": "Description *",
+      "category": "Category *",
+      "selectPlaceholder": "Select...",
+      "expectedDate": "Expected date *",
+      "grossAmount": "Gross amount *",
+      "recurrenceType": "Entry type",
+      "targetAccount": "Target account",
+      "notes": "Notes"
+    },
+    "fixedRecurrenceHint": "To end the recurrence, delete \"this and future ones\".",
+    "reserveCheckbox": "Set aside {{percentage}}% for {{account}}",
+    "summary": {
+      "reserve": "Reserve",
+      "netAmount": "Net amount"
+    },
+    "validation": {
+      "description": "Description",
+      "category": "Category",
+      "grossAmount": "Gross amount"
+    }
+  },
+  "page": {
+    "paymentsTitle": "Payments",
+    "extraExpensesTitle": "Extra Expenses",
+    "confirmEdit": "This item has already been settled. Changing this record will recalculate balances and indicators. Do you want to continue?",
+    "confirmDeleteEffected": "This item is already paid/received. Deleting it will revert the payment and recalculate balances. Do you want to continue?",
+    "confirmDelete": "Confirm deletion?",
+    "scopedDelete": {
+      "title": "Delete fixed entry",
+      "description": "is a fixed entry. Do you want to delete only this reference, or this one and all future ones? The history of already posted/paid/received references is never changed."
+    }
+  }
+}

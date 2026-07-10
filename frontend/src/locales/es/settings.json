@@ -1,0 +1,111 @@
+{
+  "tabs": {
+    "general": "General",
+    "accounts": "Cuentas",
+    "accountTypes": "Tipos de Cuenta",
+    "categories": "Categorías",
+    "cards": "Tarjetas"
+  },
+  "actions": {
+    "edit": "Editar",
+    "deactivate": "Desactivar",
+    "remove": "Eliminar",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "status": {
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "activeMasc": "Activo",
+    "inactiveMasc": "Inactivo"
+  },
+  "validation": {
+    "nameLabel": "Nombre",
+    "bankLabel": "Banco",
+    "limitLabel": "Límite"
+  },
+  "general": {
+    "linkedAccountsTitle": "Cuentas Vinculadas",
+    "mainAccountLabel": "Cuenta principal",
+    "mainAccountNone": "Ninguna",
+    "minimumMainBalanceLabel": "Saldo mínimo de la cuenta principal (R$)",
+    "limitsAndPeriodTitle": "Límites y Período",
+    "managePjLimitsLabel": "Gestionar Límites PJ",
+    "annualRevenueLimitLabel": "Límite anual de facturación (R$)",
+    "controlStartMonthLabel": "Mes de inicio del control",
+    "controlStartYearLabel": "Año de inicio",
+    "pjLimitsHint": "Active \"Gestionar Límites PJ\" para configurar el límite anual de facturación y el período de control.",
+    "saveButton": "Guardar configuración",
+    "savedMessage": "¡Guardado!"
+  },
+  "accounts": {
+    "newButton": "Nueva Cuenta",
+    "emptyState": "Ninguna cuenta registrada",
+    "tableName": "Nombre",
+    "tableType": "Tipo",
+    "tableAutoReserve": "Reserva automática",
+    "tableInitialBalance": "Saldo inicial",
+    "tableStatus": "Estado",
+    "deactivateConfirm": "¿Desactivar esta cuenta?",
+    "modal": {
+      "editTitle": "Editar Cuenta",
+      "newTitle": "Nueva Cuenta",
+      "nameLabel": "Nombre *",
+      "typeLabel": "Tipo",
+      "typeNone": "Sin tipo",
+      "initialBalanceLabel": "Saldo inicial (R$)",
+      "autoReserveLabel": "Participa en la separación automática de reserva",
+      "autoReservePercentageLabel": "Porcentaje separado automáticamente (%)"
+    }
+  },
+  "accountTypes": {
+    "newButton": "Nuevo Tipo",
+    "emptyState": "Ningún tipo de cuenta registrado",
+    "emptyStateDescription": "Haga clic en Nuevo Tipo para registrar",
+    "removeConfirm": "¿Eliminar este tipo de cuenta?",
+    "modal": {
+      "editTitle": "Editar Tipo de Cuenta",
+      "newTitle": "Nuevo Tipo de Cuenta",
+      "nameLabel": "Nombre *"
+    }
+  },
+  "categories": {
+    "income": "Ingresos",
+    "expense": "Gastos",
+    "newButton": "Nueva",
+    "emptyState": "Ninguna categoría de {{type}} registrada",
+    "protectedBadge": "Fija",
+    "deactivateConfirm": "¿Desactivar esta categoría?",
+    "modal": {
+      "editTitle": "Editar Categoría",
+      "newTitle": "Nueva Categoría",
+      "nameLabel": "Nombre *",
+      "typeLabel": "Tipo *",
+      "typeIncome": "Ingreso",
+      "typeExpense": "Gasto"
+    }
+  },
+  "cards": {
+    "newButton": "Nueva Tarjeta",
+    "emptyState": "Ninguna tarjeta registrada",
+    "tableName": "Nombre",
+    "tableBank": "Banco",
+    "tableClosingDay": "Cierre",
+    "tableDueDay": "Vencimiento",
+    "tableLimit": "Límite",
+    "tableDefaultAccount": "Cuenta predeterminada",
+    "tableStatus": "Estado",
+    "dayPrefix": "Día {{day}}",
+    "deactivateConfirm": "¿Desactivar esta tarjeta?",
+    "modal": {
+      "editTitle": "Editar Tarjeta",
+      "newTitle": "Nueva Tarjeta",
+      "nameLabel": "Nombre *",
+      "bankLabel": "Banco *",
+      "closingDayLabel": "Día de cierre",
+      "dueDayLabel": "Día de vencimiento",
+      "limitLabel": "Límite (R$) *",
+      "defaultAccountLabel": "Cuenta predeterminada de pago"
+    }
+  }
+}

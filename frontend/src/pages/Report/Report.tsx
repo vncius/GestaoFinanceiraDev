@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Printer, ArrowLeft } from 'lucide-react';
 import { DashboardService } from '../../services/dashboard.service';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
@@ -29,7 +30,8 @@ function KeyValueRow({ label, value, bold = false }: { label: string; value: str
 }
 
 function CategoryTable({ items }: { items: CategoryBreakdownItem[] }) {
-  if (items.length === 0) return <p className="text-xs text-gray-400">Sem lançamentos no período.</p>;
+  const { t } = useTranslation('report');
+  if (items.length === 0) return <p className="text-xs text-gray-400">{t('category.empty')}</p>;
   return (
     <table className="w-full text-sm">
       <tbody>
@@ -46,14 +48,15 @@ function CategoryTable({ items }: { items: CategoryBreakdownItem[] }) {
 }
 
 function EvolutionTable({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
+  const { t } = useTranslation('report');
   return (
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-gray-500 border-b border-gray-300">
-          <th className="py-1 font-medium">Mês</th>
-          <th className="py-1 font-medium text-right">Entradas</th>
-          <th className="py-1 font-medium text-right">Saídas</th>
-          <th className="py-1 font-medium text-right">Resultado</th>
+          <th className="py-1 font-medium">{t('evolution.month')}</th>
+          <th className="py-1 font-medium text-right">{t('evolution.income')}</th>
+          <th className="py-1 font-medium text-right">{t('evolution.expenses')}</th>
+          <th className="py-1 font-medium text-right">{t('evolution.result')}</th>
         </tr>
       </thead>
       <tbody>
@@ -73,6 +76,7 @@ function EvolutionTable({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
 }
 
 export default function Report() {
+  const { t } = useTranslation('report');
   const { month: currentMonth, year: currentYear } = useMonth();
   const [params] = useSearchParams();
   const month = Number(params.get('month')) || currentMonth;
@@ -93,65 +97,65 @@ export default function Report() {
       <div className="max-w-3xl mx-auto px-6 py-8 print:px-0 print:py-0">
         <div className="no-print flex items-center justify-between mb-6">
           <a href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800">
-            <ArrowLeft size={14} /> Voltar
+            <ArrowLeft size={14} /> {t('backLink')}
           </a>
           <button
             onClick={() => window.print()}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
           >
-            <Printer size={16} /> Imprimir / Salvar PDF
+            <Printer size={16} /> {t('printButton')}
           </button>
         </div>
 
         <header className="mb-6 pb-4 border-b-2 border-gray-800">
-          <h1 className="text-xl font-bold text-gray-900">Relatório Financeiro</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-sm text-gray-500">{formatMonthYear(month, year)}</p>
         </header>
 
-        <Section title="Saldos Atuais">
+        <Section title={t('balances.sectionTitle')}>
           {accounts.list.map((a) => (
             <KeyValueRow key={a.id} label={a.name} value={formatCurrency(a.balance)} />
           ))}
-          <KeyValueRow label="Total Geral" value={formatCurrency(accounts.totalBalance)} bold />
+          <KeyValueRow label={t('balances.total')} value={formatCurrency(accounts.totalBalance)} bold />
         </Section>
 
-        <Section title={`Resumo de ${formatMonthYear(month, year)}`}>
-          <KeyValueRow label="Saldo inicial" value={formatCurrency(s.initialBalance)} />
-          <KeyValueRow label="Entradas recebidas" value={formatCurrency(s.receivedIncome)} />
-          <KeyValueRow label="Pagamentos" value={formatCurrency(s.paidPayments)} />
-          <KeyValueRow label="Gastos extras" value={formatCurrency(s.paidExtraExpenses)} />
-          <KeyValueRow label="Faturas de cartão" value={formatCurrency(s.paidCreditCardInvoices)} />
-          <KeyValueRow label="Total de saídas" value={formatCurrency(totalPaid)} />
-          <KeyValueRow label="Saldo final" value={formatCurrency(s.realizedBalance)} bold />
+        <Section title={t('summary.sectionTitle', { monthYear: formatMonthYear(month, year) })}>
+          <KeyValueRow label={t('summary.initialBalance')} value={formatCurrency(s.initialBalance)} />
+          <KeyValueRow label={t('summary.receivedIncome')} value={formatCurrency(s.receivedIncome)} />
+          <KeyValueRow label={t('summary.payments')} value={formatCurrency(s.paidPayments)} />
+          <KeyValueRow label={t('summary.extraExpenses')} value={formatCurrency(s.paidExtraExpenses)} />
+          <KeyValueRow label={t('summary.creditCardInvoices')} value={formatCurrency(s.paidCreditCardInvoices)} />
+          <KeyValueRow label={t('summary.totalExpenses')} value={formatCurrency(totalPaid)} />
+          <KeyValueRow label={t('summary.finalBalance')} value={formatCurrency(s.realizedBalance)} bold />
         </Section>
 
         <div className="grid grid-cols-2 gap-6">
-          <Section title="Receitas por Categoria">
+          <Section title={t('category.incomeByCategory')}>
             <CategoryTable items={categoryBreakdown.income} />
           </Section>
-          <Section title="Gastos por Categoria">
+          <Section title={t('category.expensesByCategory')}>
             <CategoryTable items={categoryBreakdown.expenses} />
           </Section>
         </div>
 
         {annualSummary.enabled && (
-          <Section title="Faturamento Anual (PJ)">
-            <KeyValueRow label="Faturamento bruto no ano" value={formatCurrency(annualSummary.grossIncome)} />
+          <Section title={t('annualSummary.sectionTitle')}>
+            <KeyValueRow label={t('annualSummary.grossIncome')} value={formatCurrency(annualSummary.grossIncome)} />
             {annualSummary.annualLimit > 0 && (
               <>
-                <KeyValueRow label="Limite anual configurado" value={formatCurrency(annualSummary.annualLimit)} />
-                <KeyValueRow label="Utilização do limite" value={`${annualSummary.limitUsedPercentage}%`} />
+                <KeyValueRow label={t('annualSummary.annualLimit')} value={formatCurrency(annualSummary.annualLimit)} />
+                <KeyValueRow label={t('annualSummary.limitUsage')} value={`${annualSummary.limitUsedPercentage}%`} />
               </>
             )}
           </Section>
         )}
 
-        <Section title="Evolução dos Últimos Meses">
+        <Section title={t('evolution.sectionTitle')}>
           <EvolutionTable evolution={monthlyEvolution} />
         </Section>
 
         <p className="no-print text-xs text-gray-300 mt-8">
-          Gerado em {new Date().toLocaleString('pt-BR')}
+          {t('footer.generatedAt', { date: new Date().toLocaleString('pt-BR') })}
         </p>
       </div>
 

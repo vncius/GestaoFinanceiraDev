@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import '../i18n';
 import { getMissingFields, missingFieldsMessage } from './validation';
 
 describe('getMissingFields', () => {

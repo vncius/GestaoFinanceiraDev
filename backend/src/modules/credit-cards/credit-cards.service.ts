@@ -137,8 +137,8 @@ export class CreditCardsService {
 
   async findById(id: string, tenantId: string): Promise<CreditCard> {
     const card = await this.cardsRepo.findById(id, tenantId);
-    if (!card) throw new AppError('Cartão não encontrado.', 404);
-    if (!card.active) throw new AppError('Cartão inativo.', 400);
+    if (!card) throw new AppError('Cartão não encontrado.', 404, 'creditCard.notFound');
+    if (!card.active) throw new AppError('Cartão inativo.', 400, 'creditCard.inactive');
     return card;
   }
 
@@ -317,7 +317,7 @@ export class CreditCardsService {
     input: UpdateCardEntryInput,
   ): Promise<CreditCardEntry> {
     const entry = await this.getEntryChecked(cardId, entryId, tenantId);
-    if (!entry.active) throw new AppError('Lançamento inativo.', 400);
+    if (!entry.active) throw new AppError('Lançamento inativo.', 400, 'creditCardEntry.inactive');
 
     const now = nowISO();
 
@@ -457,13 +457,14 @@ export class CreditCardsService {
     referenceYear?: number,
   ): Promise<void> {
     const entry = await this.getEntryChecked(cardId, entryId, tenantId);
-    if (!entry.active) throw new AppError('Lançamento já está inativo.', 400);
+    if (!entry.active) throw new AppError('Lançamento já está inativo.', 400, 'creditCardEntry.alreadyInactive');
 
     if (entry.entryType === CardEntryType.FIXED) {
       if (!scope || !referenceMonth || !referenceYear) {
         throw new AppError(
           'Informe se deseja excluir apenas a referência atual ou também as futuras.',
           400,
+          'creditCardEntry.scopeRequired',
         );
       }
       return this.deleteFixedEntry(entry, tenantId, scope, referenceMonth, referenceYear);
@@ -538,13 +539,13 @@ export class CreditCardsService {
     const card = await this.findById(cardId, tenantId);
     const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
 
-    if (!invoice) throw new AppError('Fatura não encontrada.', 404);
+    if (!invoice) throw new AppError('Fatura não encontrada.', 404, 'creditCardInvoice.notFound');
     if (invoice.creditCardId !== cardId)
-      throw new AppError('Fatura não pertence a este cartão.', 400);
+      throw new AppError('Fatura não pertence a este cartão.', 400, 'creditCardInvoice.belongsToOtherCard');
     if (invoice.status === InvoiceStatus.PAID)
-      throw new AppError('Fatura já foi paga.', 400);
+      throw new AppError('Fatura já foi paga.', 400, 'creditCardInvoice.alreadyPaid');
     if (invoice.status === InvoiceStatus.CANCELED)
-      throw new AppError('Fatura cancelada não pode ser paga.', 400);
+      throw new AppError('Fatura cancelada não pode ser paga.', 400, 'creditCardInvoice.canceled');
 
     const settings = await this.settingsRepo.get(tenantId);
     const paymentAccountId =
@@ -593,11 +594,11 @@ export class CreditCardsService {
   ): Promise<CreditCardInvoice> {
     const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
 
-    if (!invoice) throw new AppError('Fatura não encontrada.', 404);
+    if (!invoice) throw new AppError('Fatura não encontrada.', 404, 'creditCardInvoice.notFound');
     if (invoice.creditCardId !== cardId)
-      throw new AppError('Fatura não pertence a este cartão.', 400);
+      throw new AppError('Fatura não pertence a este cartão.', 400, 'creditCardInvoice.belongsToOtherCard');
     if (invoice.status !== InvoiceStatus.PAID)
-      throw new AppError('Apenas faturas pagas podem ser revertidas.', 400);
+      throw new AppError('Apenas faturas pagas podem ser revertidas.', 400, 'creditCardInvoice.notPaid');
 
     const now = nowISO();
 
@@ -791,9 +792,9 @@ export class CreditCardsService {
     tenantId: string,
   ): Promise<CreditCardEntry> {
     const entry = await this.entriesRepo.findById(entryId, tenantId);
-    if (!entry) throw new AppError('Lançamento não encontrado.', 404);
+    if (!entry) throw new AppError('Lançamento não encontrado.', 404, 'creditCardEntry.notFound');
     if (entry.creditCardId !== cardId)
-      throw new AppError('Lançamento não pertence a este cartão.', 400);
+      throw new AppError('Lançamento não pertence a este cartão.', 400, 'creditCardEntry.belongsToOtherCard');
     return entry;
   }
 }

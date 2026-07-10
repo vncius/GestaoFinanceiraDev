@@ -1,0 +1,54 @@
+{
+  "error": {
+    "loadFailed": "No se pudo cargar el panel. Verifique si el servidor está en ejecución."
+  },
+  "balances": {
+    "sectionTitle": "Saldos Actuales",
+    "total": "Total General"
+  },
+  "summary": {
+    "sectionTitle": "Resumen de {{monthYear}}",
+    "initialBalance": "Saldo Inicial",
+    "initialBalanceSub": "Antes del mes",
+    "monthBalance": "Saldo del Mes",
+    "monthBalanceSub": "Consolidado",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "payments": "Pagos",
+    "extraExpenses": "Gastos Extras",
+    "creditCardInvoices": "Facturas de Tarjeta"
+  },
+  "categoryAnalysis": {
+    "sectionTitle": "Análisis por Categoría",
+    "incomeByCategory": "Ingresos por Categoría",
+    "expensesByCategory": "Gastos por Categoría",
+    "empty": "Sin movimientos en el período"
+  },
+  "upcomingDue": {
+    "title": "Próximos Vencimientos",
+    "period": "15 días",
+    "empty": "Sin vencimientos en los próximos 15 días",
+    "goToCashFlow": "Ir al flujo de caja de este mes"
+  },
+  "annualSummary": {
+    "title": "Facturación Anual",
+    "grossIncome": "Facturación bruta recibida en el año",
+    "limitUsage": "Uso del límite",
+    "annualLimit": "Límite anual configurado",
+    "noLimitConfigured": "Configure un límite anual en Configuración para seguir el uso."
+  },
+  "evolutionChart": {
+    "title": "Evolución de los Últimos Meses",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "incomeTooltip": "Ingresos: {{amount}}",
+    "expensesTooltip": "Gastos: {{amount}}",
+    "resultTooltip": "Resultado: {{amount}}"
+  },
+  "overview": {
+    "title": "Visión General del Mes",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "reserve": "Reserva"
+  }
+}

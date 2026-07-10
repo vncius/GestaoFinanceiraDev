@@ -16,7 +16,7 @@ export class CategoriesService {
   async findById(id: string, tenantId: string): Promise<Category> {
     const category = await this.repo.findById(id, tenantId);
     if (!category || !category.active) {
-      throw new AppError('Categoria não encontrada', 404);
+      throw new AppError('Categoria não encontrada', 404, 'category.notFound');
     }
     return category;
   }
@@ -38,7 +38,7 @@ export class CategoriesService {
   async update(id: string, input: UpdateCategoryInput, tenantId: string): Promise<Category> {
     const category = await this.findById(id, tenantId);
     if (category.protected && input.type && input.type !== category.type) {
-      throw new AppError('Não é possível alterar o tipo desta categoria', 400);
+      throw new AppError('Não é possível alterar o tipo desta categoria', 400, 'category.typeChangeNotAllowed');
     }
     return this.repo.update(id, { ...input, updatedAt: nowISO() }, tenantId);
   }
@@ -46,7 +46,7 @@ export class CategoriesService {
   async delete(id: string, tenantId: string): Promise<void> {
     const category = await this.findById(id, tenantId);
     if (category.protected) {
-      throw new AppError('Esta categoria é gerenciada pelo sistema e não pode ser excluída', 400);
+      throw new AppError('Esta categoria é gerenciada pelo sistema e não pode ser excluída', 400, 'category.protected');
     }
     await this.repo.update(id, { active: false, updatedAt: nowISO() }, tenantId);
   }

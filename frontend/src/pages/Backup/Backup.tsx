@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Download, Upload, FileSpreadsheet, Database, ArrowUpDown, Printer } from 'lucide-react';
 import { BackupService, readFileAsText, StatementEntry } from '../../services/backup.service';
 import { AccountsService } from '../../services/accounts.service';
@@ -37,6 +38,7 @@ function lastDayOfMonthISO(month: number, year: number): string {
 // ── Backup completo ──────────────────────────────────────────────────────────
 
 function FullBackupSection() {
+  const { t } = useTranslation('backup');
   const { confirm } = useDialog();
   const { showError, showSuccess } = useToast();
   const qc = useQueryClient();
@@ -49,7 +51,7 @@ function FullBackupSection() {
     try {
       await BackupService.downloadBackup();
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Erro ao baixar backup.');
+      showError(err instanceof Error ? err.message : t('fullBackup.downloadError'));
     } finally {
       setDownloading(false);
     }
@@ -61,8 +63,8 @@ function FullBackupSection() {
     if (!file) return;
 
     const ok = await confirm(
-      'Restaurar um backup substitui TODOS os dados atuais (contas, categorias, lançamentos, cartões) pelos do arquivo. Esta ação não pode ser desfeita. Deseja continuar?',
-      { title: 'Restaurar backup', confirmLabel: 'Restaurar' },
+      t('fullBackup.restoreConfirmMessage'),
+      { title: t('fullBackup.restoreConfirmTitle'), confirmLabel: t('fullBackup.restoreConfirmLabel') },
     );
     if (!ok) return;
 
@@ -72,9 +74,9 @@ function FullBackupSection() {
       const bundle = JSON.parse(content);
       await BackupService.restoreBackup(bundle);
       await qc.invalidateQueries();
-      showSuccess('Backup restaurado com sucesso.');
+      showSuccess(t('fullBackup.restoreSuccess'));
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Erro ao restaurar backup.');
+      showError(err instanceof Error ? err.message : t('fullBackup.restoreError'));
     } finally {
       setRestoring(false);
     }
@@ -82,13 +84,13 @@ function FullBackupSection() {
 
   return (
     <SectionCard
-      title="Backup completo"
+      title={t('fullBackup.title')}
       icon={<Database size={18} />}
-      description="Exporta ou restaura todos os dados do sistema em um único arquivo JSON."
+      description={t('fullBackup.description')}
     >
       <div className="flex flex-wrap gap-3">
         <Button icon={<Download size={14} />} loading={downloading} onClick={handleDownload}>
-          Baixar backup
+          {t('fullBackup.downloadButton')}
         </Button>
         <Button
           variant="secondary"
@@ -96,7 +98,7 @@ function FullBackupSection() {
           loading={restoring}
           onClick={() => fileInputRef.current?.click()}
         >
-          Restaurar backup
+          {t('fullBackup.restoreButton')}
         </Button>
         <input
           ref={fileInputRef}
@@ -116,6 +118,7 @@ function FullBackupSection() {
 type PeriodMode = 'month' | 'custom' | 'all';
 
 function CsvExportSection() {
+  const { t } = useTranslation('backup');
   const { month, year } = useMonth();
   const { showError } = useToast();
   const [mode, setMode] = useState<PeriodMode>('month');
@@ -134,24 +137,26 @@ function CsvExportSection() {
         await BackupService.downloadCsv({ from, to });
       }
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Erro ao exportar CSV.');
+      showError(err instanceof Error ? err.message : t('csvExport.downloadError'));
     } finally {
       setDownloading(false);
     }
   }
 
+  const periodOptions: { value: PeriodMode; label: string }[] = [
+    { value: 'month', label: t('csvExport.periodMonth') },
+    { value: 'custom', label: t('csvExport.periodCustom') },
+    { value: 'all', label: t('csvExport.periodAll') },
+  ];
+
   return (
     <SectionCard
-      title="Exportar lançamentos"
+      title={t('csvExport.title')}
       icon={<FileSpreadsheet size={18} />}
-      description="Gera uma planilha CSV com pagamentos, gastos extras e recebíveis do período escolhido."
+      description={t('csvExport.description')}
     >
       <div className="flex flex-wrap items-center gap-2">
-        {([
-          { value: 'month', label: 'Mês atual' },
-          { value: 'custom', label: 'Personalizado' },
-          { value: 'all', label: 'Todo o período' },
-        ] as { value: PeriodMode; label: string }[]).map((opt) => (
+        {periodOptions.map((opt) => (
           <button
             key={opt.value}
             type="button"
@@ -176,7 +181,7 @@ function CsvExportSection() {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button icon={<Download size={14} />} loading={downloading} onClick={handleDownload}>
-          Baixar CSV
+          {t('csvExport.downloadButton')}
         </Button>
         <a
           href={`/report?month=${month}&year=${year}`}
@@ -184,7 +189,7 @@ function CsvExportSection() {
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         >
-          <Printer size={13} /> Relatório para impressão (mês atual)
+          <Printer size={13} /> {t('csvExport.printReportLink')}
         </a>
       </div>
     </SectionCard>
@@ -198,6 +203,7 @@ interface PreviewEntry extends StatementEntry {
 }
 
 function StatementImportSection() {
+  const { t } = useTranslation('backup');
   const { showError, showSuccess } = useToast();
   const qc = useQueryClient();
   const [entries, setEntries] = useState<PreviewEntry[] | null>(null);
@@ -224,7 +230,7 @@ function StatementImportSection() {
       const { entries: parsed } = await BackupService.parseStatement(file.name, content);
       setEntries(parsed.map((entry) => ({ ...entry, include: !entry.possibleDuplicate })));
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Erro ao ler o extrato.');
+      showError(err instanceof Error ? err.message : t('statementImport.readError'));
     } finally {
       setParsing(false);
     }
@@ -248,10 +254,10 @@ function StatementImportSection() {
       const { created } = await BackupService.importStatement(accountId, selected);
       await qc.invalidateQueries({ queryKey: ['cashFlow'] });
       await qc.invalidateQueries({ queryKey: ['dashboard'] });
-      showSuccess(`${created} lançamento(s) importado(s).`);
+      showSuccess(t('statementImport.importSuccess', { count: created }));
       setEntries(null);
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Erro ao importar extrato.');
+      showError(err instanceof Error ? err.message : t('statementImport.importError'));
     } finally {
       setImporting(false);
     }
@@ -261,13 +267,13 @@ function StatementImportSection() {
 
   return (
     <SectionCard
-      title="Importar extrato bancário"
+      title={t('statementImport.title')}
       icon={<Upload size={18} />}
-      description="Envie um arquivo CSV ou OFX do seu banco para pré-visualizar e importar os lançamentos."
+      description={t('statementImport.description')}
     >
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="secondary" loading={parsing} onClick={() => fileInputRef.current?.click()}>
-          Selecionar arquivo (.csv, .ofx)
+          {t('statementImport.selectFileButton')}
         </Button>
         <input
           ref={fileInputRef}
@@ -280,14 +286,14 @@ function StatementImportSection() {
       </div>
 
       {entries && entries.length === 0 && (
-        <EmptyState title="Nenhum lançamento reconhecido no arquivo" />
+        <EmptyState title={t('statementImport.emptyState')} />
       )}
 
       {entries && entries.length > 0 && (
         <>
           <div className="max-w-xs">
             <select className={INPUT} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-              <option value="">Selecione a conta de destino...</option>
+              <option value="">{t('statementImport.selectAccountPlaceholder')}</option>
               {accounts.filter((a) => a.active).map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
@@ -299,10 +305,10 @@ function StatementImportSection() {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="px-3 py-2 text-left"></th>
-                  <th className="px-3 py-2 text-left font-medium">Data</th>
-                  <th className="px-3 py-2 text-left font-medium">Descrição</th>
-                  <th className="px-3 py-2 text-right font-medium">Valor</th>
-                  <th className="px-3 py-2 text-left font-medium">Tipo</th>
+                  <th className="px-3 py-2 text-left font-medium">{t('statementImport.tableDate')}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t('statementImport.tableDescription')}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t('statementImport.tableAmount')}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t('statementImport.tableType')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -315,7 +321,7 @@ function StatementImportSection() {
                     <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
                       {entry.description}
                       {entry.possibleDuplicate && (
-                        <span className="ml-2 text-[10px] text-amber-600 dark:text-amber-400">possível duplicata</span>
+                        <span className="ml-2 text-[10px] text-amber-600 dark:text-amber-400">{t('statementImport.possibleDuplicate')}</span>
                       )}
                     </td>
                     <td className={`px-3 py-2 text-right font-medium ${entry.type === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
@@ -325,11 +331,11 @@ function StatementImportSection() {
                       <button
                         type="button"
                         onClick={() => toggleType(i)}
-                        title="Clique para alternar entrada/saída"
+                        title={t('statementImport.toggleTypeTitle')}
                         className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                       >
                         <ArrowUpDown size={12} />
-                        {entry.type === 'INCOME' ? 'Entrada' : 'Saída'}
+                        {entry.type === 'INCOME' ? t('statementImport.typeIncome') : t('statementImport.typeExpense')}
                       </button>
                     </td>
                   </tr>
@@ -343,7 +349,7 @@ function StatementImportSection() {
             disabled={!accountId || selectedCount === 0}
             onClick={handleImport}
           >
-            Importar {selectedCount} lançamento(s)
+            {t('statementImport.importButton', { count: selectedCount })}
           </Button>
         </>
       )}

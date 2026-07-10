@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Pencil, Trash2, Plus, Check } from 'lucide-react';
 import { SettingsService } from '../../services/settings.service';
 import { AccountsService, CreateAccountPayload } from '../../services/accounts.service';
@@ -23,13 +24,7 @@ import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 type SettingsTab = 'general' | 'accounts' | 'accountTypes' | 'categories' | 'cards';
 
-const TAB_LABELS: Record<SettingsTab, string> = {
-  general: 'Geral',
-  accounts: 'Contas',
-  accountTypes: 'Tipos de Conta',
-  categories: 'Categorias',
-  cards: 'Cartões',
-};
+const TAB_ORDER: SettingsTab[] = ['general', 'accounts', 'accountTypes', 'categories', 'cards'];
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -72,6 +67,7 @@ function GeneralTab({
   settings: FinancialSettings;
   accounts: Account[];
 }) {
+  const { t } = useTranslation('settings');
   const qc = useQueryClient();
 
   const initForm = (s: FinancialSettings): GeneralFormState => ({
@@ -121,17 +117,17 @@ function GeneralTab({
 
   return (
     <div className="space-y-5 max-w-2xl">
-      <SectionCard title="Contas Vinculadas">
+      <SectionCard title={t('general.linkedAccountsTitle')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Conta principal">
+          <Field label={t('general.mainAccountLabel')}>
             <select className={INPUT} value={form.mainAccountId} onChange={set('mainAccountId')}>
-              <option value="">Nenhuma</option>
+              <option value="">{t('general.mainAccountNone')}</option>
               {activeAccounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>
           </Field>
-          <Field label="Saldo mínimo da conta principal (R$)">
+          <Field label={t('general.minimumMainBalanceLabel')}>
             <input
               type="number"
               min="0"
@@ -144,7 +140,7 @@ function GeneralTab({
         </div>
       </SectionCard>
 
-      <SectionCard title="Limites e Período">
+      <SectionCard title={t('general.limitsAndPeriodTitle')}>
         <div className="space-y-4">
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             <input
@@ -155,12 +151,12 @@ function GeneralTab({
               }
               className="rounded"
             />
-            Gerir Limites PJ
+            {t('general.managePjLimitsLabel')}
           </label>
 
           {form.pjLimitControlEnabled ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Limite anual de faturamento (R$)">
+              <Field label={t('general.annualRevenueLimitLabel')}>
                 <input
                   type="number"
                   min="0"
@@ -171,7 +167,7 @@ function GeneralTab({
                 />
               </Field>
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Mês início controle">
+                <Field label={t('general.controlStartMonthLabel')}>
                   <input
                     type="number"
                     min="1"
@@ -181,7 +177,7 @@ function GeneralTab({
                     onChange={set('controlStartMonth')}
                   />
                 </Field>
-                <Field label="Ano início">
+                <Field label={t('general.controlStartYearLabel')}>
                   <input
                     type="number"
                     min="2000"
@@ -195,7 +191,7 @@ function GeneralTab({
             </div>
           ) : (
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              Ative "Gerir Limites PJ" para configurar limite anual de faturamento e período de controle.
+              {t('general.pjLimitsHint')}
             </p>
           )}
         </div>
@@ -203,11 +199,11 @@ function GeneralTab({
 
       <div className="flex items-center gap-3">
         <Button onClick={handleSave} loading={updateMut.isPending}>
-          Salvar configurações
+          {t('general.saveButton')}
         </Button>
         {saved && (
           <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
-            <Check size={14} /> Salvo!
+            <Check size={14} /> {t('general.savedMessage')}
           </span>
         )}
       </div>
@@ -240,7 +236,8 @@ function AccountModal({
   onSave: (data: CreateAccountPayload) => void;
   isSaving: boolean;
 }) {
-  const activeTypes = accountTypes.filter((t) => t.active);
+  const { t } = useTranslation('settings');
+  const activeTypes = accountTypes.filter((at) => at.active);
 
   const init = (): AccountFormState => ({
     name: item?.name ?? '',
@@ -264,7 +261,7 @@ function AccountModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const missing = getMissingFields([{ label: 'Nome', valid: !!form.name }]);
+    const missing = getMissingFields([{ label: t('validation.nameLabel'), valid: !!form.name }]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       name: form.name,
@@ -279,31 +276,31 @@ function AccountModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={item ? 'Editar Conta' : 'Nova Conta'}
+      title={item ? t('accounts.modal.editTitle') : t('accounts.modal.newTitle')}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+          <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Nome *">
+        <Field label={t('accounts.modal.nameLabel')}>
           <input className={INPUT} value={form.name} onChange={set('name')} required />
         </Field>
-        <Field label="Tipo">
+        <Field label={t('accounts.modal.typeLabel')}>
           <select
             className={INPUT}
             value={form.accountTypeId}
             onChange={set('accountTypeId')}
           >
-            <option value="">Sem tipo</option>
-            {activeTypes.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+            <option value="">{t('accounts.modal.typeNone')}</option>
+            {activeTypes.map((at) => (
+              <option key={at.id} value={at.id}>{at.name}</option>
             ))}
           </select>
         </Field>
-        <Field label="Saldo inicial (R$)">
+        <Field label={t('accounts.modal.initialBalanceLabel')}>
           <input
             type="number"
             step="0.01"
@@ -319,10 +316,10 @@ function AccountModal({
             onChange={(e) => setForm((f) => ({ ...f, autoReserveEnabled: e.target.checked }))}
             className="rounded"
           />
-          Participa da separação automática de reserva
+          {t('accounts.modal.autoReserveLabel')}
         </label>
         {form.autoReserveEnabled && (
-          <Field label="Percentual separado automaticamente (%)">
+          <Field label={t('accounts.modal.autoReservePercentageLabel')}>
             <input
               type="number"
               min="0"
@@ -340,6 +337,7 @@ function AccountModal({
 }
 
 function AccountsTab() {
+  const { t } = useTranslation('settings');
   const qc = useQueryClient();
   const [modal, setModal] = useState<{ item?: Account } | null>(null);
   const { confirm } = useDialog();
@@ -353,7 +351,7 @@ function AccountsTab() {
     queryFn: AccountTypesService.findAll,
     staleTime: 30_000,
   });
-  const accountTypeMap = new Map(accountTypes.map((t) => [t.id, t.name]));
+  const accountTypeMap = new Map(accountTypes.map((at) => [at.id, at.name]));
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['accounts'] });
 
@@ -382,23 +380,23 @@ function AccountsTab() {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button icon={<Plus size={14} />} onClick={() => setModal({})}>
-          Nova Conta
+          {t('accounts.newButton')}
         </Button>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {accounts.length === 0 ? (
-          <EmptyState title="Nenhuma conta cadastrada" />
+          <EmptyState title={t('accounts.emptyState')} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-3 sm:px-5 py-3 font-medium">Nome</th>
-                  <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">Tipo</th>
-                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Reserva automática</th>
-                  <th className="text-right px-2 sm:px-3 py-3 font-medium">Saldo inicial</th>
-                  <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">Status</th>
+                  <th className="text-left px-3 sm:px-5 py-3 font-medium">{t('accounts.tableName')}</th>
+                  <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableType')}</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableAutoReserve')}</th>
+                  <th className="text-right px-2 sm:px-3 py-3 font-medium">{t('accounts.tableInitialBalance')}</th>
+                  <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableStatus')}</th>
                   <th className="px-1 sm:px-3 py-3" />
                 </tr>
               </thead>
@@ -429,14 +427,14 @@ function AccountsTab() {
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                         }`}
                       >
-                        {a.active ? 'Ativa' : 'Inativa'}
+                        {a.active ? t('status.active') : t('status.inactive')}
                       </span>
                     </td>
                     <td className="px-1 sm:px-3 py-3">
                       <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
-                          title="Editar"
-                          aria-label="Editar"
+                          title={t('actions.edit')}
+                          aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: a })}
                           className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
@@ -444,10 +442,10 @@ function AccountsTab() {
                         </button>
                         {a.active && (
                           <button
-                            title="Desativar"
-                            aria-label="Desativar"
+                            title={t('actions.deactivate')}
+                            aria-label={t('actions.deactivate')}
                             onClick={async () => {
-                              if (await confirm('Desativar esta conta?'))
+                              if (await confirm(t('accounts.deactivateConfirm')))
                                 deleteMut.mutate(a.id);
                             }}
                             className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
@@ -496,6 +494,7 @@ function AccountTypeModal({
   onSave: (data: CreateAccountTypePayload) => void;
   isSaving: boolean;
 }) {
+  const { t } = useTranslation('settings');
   const init = (): AccountTypeFormState => ({ name: item?.name ?? '' });
 
   const [form, setForm] = useState<AccountTypeFormState>(init);
@@ -507,7 +506,7 @@ function AccountTypeModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const missing = getMissingFields([{ label: 'Nome', valid: !!form.name }]);
+    const missing = getMissingFields([{ label: t('validation.nameLabel'), valid: !!form.name }]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({ name: form.name });
   }
@@ -516,17 +515,17 @@ function AccountTypeModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={item ? 'Editar Tipo de Conta' : 'Novo Tipo de Conta'}
+      title={item ? t('accountTypes.modal.editTitle') : t('accountTypes.modal.newTitle')}
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+          <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Nome *">
+        <Field label={t('accountTypes.modal.nameLabel')}>
           <input
             className={INPUT}
             value={form.name}
@@ -540,6 +539,7 @@ function AccountTypeModal({
 }
 
 function AccountTypesTab() {
+  const { t } = useTranslation('settings');
   const qc = useQueryClient();
   const [modal, setModal] = useState<{ item?: AccountTypeItem } | null>(null);
   const { confirm } = useDialog();
@@ -576,35 +576,35 @@ function AccountTypesTab() {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button icon={<Plus size={14} />} onClick={() => setModal({})}>
-          Novo Tipo
+          {t('accountTypes.newButton')}
         </Button>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {accountTypes.length === 0 ? (
-          <EmptyState title="Nenhum tipo de conta cadastrado" description="Clique em Novo Tipo para cadastrar" />
+          <EmptyState title={t('accountTypes.emptyState')} description={t('accountTypes.emptyStateDescription')} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                {accountTypes.map((t) => (
-                  <tr key={t.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!t.active ? 'opacity-50' : ''}`}>
-                    <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{t.name}</td>
+                {accountTypes.map((at) => (
+                  <tr key={at.id} className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${!at.active ? 'opacity-50' : ''}`}>
+                    <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{at.name}</td>
                     <td className="px-1 sm:px-3 py-2.5">
                       <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
                         <button
-                          title="Editar"
-                          aria-label="Editar"
-                          onClick={() => setModal({ item: t })}
+                          title={t('actions.edit')}
+                          aria-label={t('actions.edit')}
+                          onClick={() => setModal({ item: at })}
                           className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
-                          title="Remover"
-                          aria-label="Remover"
+                          title={t('actions.remove')}
+                          aria-label={t('actions.remove')}
                           onClick={async () => {
-                            if (await confirm('Remover este tipo de conta?')) deleteMut.mutate(t.id);
+                            if (await confirm(t('accountTypes.removeConfirm'))) deleteMut.mutate(at.id);
                           }}
                           className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                         >
@@ -653,6 +653,7 @@ function CategoryModal({
   onSave: (data: CreateCategoryPayload) => void;
   isSaving: boolean;
 }) {
+  const { t } = useTranslation('settings');
   const init = (): CategoryFormState => ({
     name: item?.name ?? '',
     type: item?.type ?? defaultType ?? 'EXPENSE',
@@ -667,7 +668,7 @@ function CategoryModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const missing = getMissingFields([{ label: 'Nome', valid: !!form.name }]);
+    const missing = getMissingFields([{ label: t('validation.nameLabel'), valid: !!form.name }]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({ name: form.name, type: form.type });
   }
@@ -676,17 +677,17 @@ function CategoryModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={item ? 'Editar Categoria' : 'Nova Categoria'}
+      title={item ? t('categories.modal.editTitle') : t('categories.modal.newTitle')}
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+          <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Nome *">
+        <Field label={t('categories.modal.nameLabel')}>
           <input
             className={INPUT}
             value={form.name}
@@ -694,7 +695,7 @@ function CategoryModal({
             required
           />
         </Field>
-        <Field label="Tipo *">
+        <Field label={t('categories.modal.typeLabel')}>
           <select
             className={INPUT}
             value={form.type}
@@ -702,8 +703,8 @@ function CategoryModal({
               setForm((f) => ({ ...f, type: e.target.value as Category['type'] }))
             }
           >
-            <option value="INCOME">Receita</option>
-            <option value="EXPENSE">Despesa</option>
+            <option value="INCOME">{t('categories.modal.typeIncome')}</option>
+            <option value="EXPENSE">{t('categories.modal.typeExpense')}</option>
           </select>
         </Field>
       </form>
@@ -724,9 +725,10 @@ function CategorySection({
   onEdit: (item: Category) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation('settings');
   const { confirm } = useDialog();
   const items = categories.filter((c) => c.type === type);
-  const label = type === 'INCOME' ? 'Receitas' : 'Despesas';
+  const label = type === 'INCOME' ? t('categories.income') : t('categories.expense');
   const color = type === 'INCOME'
     ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
     : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30';
@@ -741,11 +743,11 @@ function CategorySection({
           <span className="text-xs text-gray-400 dark:text-gray-500">({items.length})</span>
         </div>
         <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={() => onAdd(type)}>
-          Nova
+          {t('categories.newButton')}
         </Button>
       </div>
       {items.length === 0 ? (
-        <EmptyState title={`Nenhuma categoria de ${label.toLowerCase()} cadastrada`} />
+        <EmptyState title={t('categories.emptyState', { type: label.toLowerCase() })} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -756,7 +758,7 @@ function CategorySection({
                     {c.name}
                     {c.protected && (
                       <span className="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                        Fixa
+                        {t('categories.protectedBadge')}
                       </span>
                     )}
                   </td>
@@ -768,14 +770,14 @@ function CategorySection({
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                       }`}
                     >
-                      {c.active ? 'Ativa' : 'Inativa'}
+                      {c.active ? t('status.active') : t('status.inactive')}
                     </span>
                   </td>
                   <td className="px-1 sm:px-3 py-2.5">
                     <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
                       <button
-                        title="Editar"
-                        aria-label="Editar"
+                        title={t('actions.edit')}
+                        aria-label={t('actions.edit')}
                         onClick={() => onEdit(c)}
                         className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                       >
@@ -783,10 +785,10 @@ function CategorySection({
                       </button>
                       {c.active && !c.protected && (
                         <button
-                          title="Desativar"
-                          aria-label="Desativar"
+                          title={t('actions.deactivate')}
+                          aria-label={t('actions.deactivate')}
                           onClick={async () => {
-                            if (await confirm('Desativar esta categoria?')) onDelete(c.id);
+                            if (await confirm(t('categories.deactivateConfirm'))) onDelete(c.id);
                           }}
                           className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
                         >
@@ -892,6 +894,7 @@ function CardSettingsModal({
   onSave: (data: CreateCreditCardPayload) => void;
   isSaving: boolean;
 }) {
+  const { t } = useTranslation('settings');
   const activeAccounts = accounts.filter((a) => a.active);
   const mainAccountId = activeAccounts[0]?.id ?? '';
 
@@ -920,9 +923,9 @@ function CardSettingsModal({
     e.preventDefault();
     const limit = floatToCents(parseFloat(form.limit) || 0);
     const missing = getMissingFields([
-      { label: 'Nome', valid: !!form.name },
-      { label: 'Banco', valid: !!form.bank },
-      { label: 'Limite', valid: !!limit },
+      { label: t('validation.nameLabel'), valid: !!form.name },
+      { label: t('validation.bankLabel'), valid: !!form.bank },
+      { label: t('validation.limitLabel'), valid: !!limit },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
@@ -939,25 +942,25 @@ function CardSettingsModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={item ? 'Editar Cartão' : 'Novo Cartão'}
+      title={item ? t('cards.modal.editTitle') : t('cards.modal.newTitle')}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+          <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Nome *">
+          <Field label={t('cards.modal.nameLabel')}>
             <input className={INPUT} value={form.name} onChange={set('name')} required />
           </Field>
-          <Field label="Banco *">
+          <Field label={t('cards.modal.bankLabel')}>
             <input className={INPUT} value={form.bank} onChange={set('bank')} required />
           </Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Dia fechamento">
+          <Field label={t('cards.modal.closingDayLabel')}>
             <input
               type="number"
               min="1"
@@ -967,7 +970,7 @@ function CardSettingsModal({
               onChange={set('closingDay')}
             />
           </Field>
-          <Field label="Dia vencimento">
+          <Field label={t('cards.modal.dueDayLabel')}>
             <input
               type="number"
               min="1"
@@ -977,7 +980,7 @@ function CardSettingsModal({
               onChange={set('dueDay')}
             />
           </Field>
-          <Field label="Limite (R$) *">
+          <Field label={t('cards.modal.limitLabel')}>
             <CurrencyInput
               className={INPUT}
               value={form.limit}
@@ -985,7 +988,7 @@ function CardSettingsModal({
             />
           </Field>
         </div>
-        <Field label="Conta padrão de pagamento">
+        <Field label={t('cards.modal.defaultAccountLabel')}>
           <select
             className={INPUT}
             value={form.defaultPaymentAccountId}
@@ -1002,6 +1005,7 @@ function CardSettingsModal({
 }
 
 function CardsTab({ accounts }: { accounts: Account[] }) {
+  const { t } = useTranslation('settings');
   const qc = useQueryClient();
   const [modal, setModal] = useState<{ item?: CreditCard } | null>(null);
   const { confirm } = useDialog();
@@ -1040,25 +1044,25 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button icon={<Plus size={14} />} onClick={() => setModal({})}>
-          Novo Cartão
+          {t('cards.newButton')}
         </Button>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         {cards.length === 0 ? (
-          <EmptyState title="Nenhum cartão cadastrado" />
+          <EmptyState title={t('cards.emptyState')} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  <th className="text-left px-3 sm:px-5 py-3 font-medium">Nome</th>
-                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">Banco</th>
-                  <th className="hidden lg:table-cell text-center px-3 py-3 font-medium">Fechamento</th>
-                  <th className="hidden lg:table-cell text-center px-3 py-3 font-medium">Vencimento</th>
-                  <th className="text-right px-2 sm:px-3 py-3 font-medium">Limite</th>
-                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">Conta padrão</th>
-                  <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">Status</th>
+                  <th className="text-left px-3 sm:px-5 py-3 font-medium">{t('cards.tableName')}</th>
+                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">{t('cards.tableBank')}</th>
+                  <th className="hidden lg:table-cell text-center px-3 py-3 font-medium">{t('cards.tableClosingDay')}</th>
+                  <th className="hidden lg:table-cell text-center px-3 py-3 font-medium">{t('cards.tableDueDay')}</th>
+                  <th className="text-right px-2 sm:px-3 py-3 font-medium">{t('cards.tableLimit')}</th>
+                  <th className="hidden lg:table-cell text-left px-3 py-3 font-medium">{t('cards.tableDefaultAccount')}</th>
+                  <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">{t('cards.tableStatus')}</th>
                   <th className="px-1 sm:px-3 py-3" />
                 </tr>
               </thead>
@@ -1071,10 +1075,10 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                     <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[100px] sm:max-w-none truncate">{card.name}</td>
                     <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">{card.bank}</td>
                     <td className="hidden lg:table-cell px-3 py-3 text-center text-gray-500 dark:text-gray-400">
-                      Dia {card.closingDay}
+                      {t('cards.dayPrefix', { day: card.closingDay })}
                     </td>
                     <td className="hidden lg:table-cell px-3 py-3 text-center text-gray-500 dark:text-gray-400">
-                      Dia {card.dueDay}
+                      {t('cards.dayPrefix', { day: card.dueDay })}
                     </td>
                     <td className="px-2 sm:px-3 py-3 text-right text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {formatCurrency(card.limit)}
@@ -1092,14 +1096,14 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                         }`}
                       >
-                        {card.active ? 'Ativo' : 'Inativo'}
+                        {card.active ? t('status.activeMasc') : t('status.inactiveMasc')}
                       </span>
                     </td>
                     <td className="px-1 sm:px-3 py-3">
                       <div className="flex items-center gap-0 sm:gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
-                          title="Editar"
-                          aria-label="Editar"
+                          title={t('actions.edit')}
+                          aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: card })}
                           className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                         >
@@ -1107,10 +1111,10 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                         </button>
                         {card.active && (
                           <button
-                            title="Desativar"
-                            aria-label="Desativar"
+                            title={t('actions.deactivate')}
+                            aria-label={t('actions.deactivate')}
                             onClick={async () => {
-                              if (await confirm('Desativar este cartão?'))
+                              if (await confirm(t('cards.deactivateConfirm')))
                                 deleteMut.mutate(card.id);
                             }}
                             className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
@@ -1143,6 +1147,7 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Settings() {
+  const { t } = useTranslation('settings');
   const [tab, setTab] = useState<SettingsTab>('general');
 
   const { data: settings, isLoading: loadingSettings } = useQuery({
@@ -1162,17 +1167,17 @@ export default function Settings() {
     <div className="space-y-5">
       {/* Tab navigation */}
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {(Object.keys(TAB_LABELS) as SettingsTab[]).map((t) => (
+        {TAB_ORDER.map((tb) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tb}
+            onClick={() => setTab(tb)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              tab === t
+              tab === tb
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
-            {TAB_LABELS[t]}
+            {t(`tabs.${tb}`)}
           </button>
         ))}
       </div>

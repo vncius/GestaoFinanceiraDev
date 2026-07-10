@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { Button } from './Button';
 
@@ -21,6 +22,8 @@ export function ScopedDeleteModal({
   onDeleteFuture,
   loading = false,
 }: ScopedDeleteModalProps) {
+  const { t } = useTranslation('common');
+
   return (
     <Modal
       open={open}
@@ -29,13 +32,13 @@ export function ScopedDeleteModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancelar
+            {t('scopedDelete.cancel')}
           </Button>
           <Button variant="secondary" loading={loading} onClick={onDeleteCurrent}>
-            Somente esta referência
+            {t('scopedDelete.currentOnly')}
           </Button>
           <Button loading={loading} onClick={onDeleteFuture}>
-            Esta e as futuras
+            {t('scopedDelete.currentAndFuture')}
           </Button>
         </>
       }

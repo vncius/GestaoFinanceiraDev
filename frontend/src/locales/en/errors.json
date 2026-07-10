@@ -1,0 +1,92 @@
+{
+  "common": {
+    "unknown": "An unexpected error occurred.",
+    "networkError": "Could not connect to the server",
+    "internalError": "Internal server error"
+  },
+  "validation": {
+    "generic": "Validation error",
+    "name": { "required": "Name is required" },
+    "bank": { "required": "Bank is required" },
+    "description": { "required": "Description is required" },
+    "expenseCategoryId": { "invalid": "Invalid category" },
+    "totalAmount": { "positive": "Amount must be positive" },
+    "purchaseDate": { "required": "Purchase date is required" },
+    "installmentsCount": { "required": "Number of installments (minimum 2) is required for installment entries" },
+    "categoryId": { "invalid": "Invalid category" },
+    "amount": { "positive": "Amount must be positive" },
+    "expectedDate": { "required": "Expected date is required" },
+    "expectedPaymentDate": { "required": "Expected date is required" },
+    "grossAmount": { "positive": "Gross amount must be positive" },
+    "incomeCategoryId": { "invalid": "Invalid category" },
+    "type": { "invalid": "Invalid category type" },
+    "confirm": { "required": "Explicitly confirm the restore (destructive operation)." },
+    "dateRange": { "required": "Provide a start and end date, or select all entries." },
+    "initialBalance": { "min": "Initial balance must be greater than or equal to zero" }
+  },
+  "creditCard": {
+    "notFound": "Card not found.",
+    "inactive": "Card is inactive."
+  },
+  "creditCardEntry": {
+    "inactive": "Entry is inactive.",
+    "alreadyInactive": "Entry is already inactive.",
+    "scopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
+    "notFound": "Entry not found.",
+    "belongsToOtherCard": "Entry does not belong to this card."
+  },
+  "creditCardInvoice": {
+    "notFound": "Invoice not found.",
+    "belongsToOtherCard": "Invoice does not belong to this card.",
+    "alreadyPaid": "Invoice has already been paid.",
+    "canceled": "A canceled invoice cannot be paid.",
+    "notPaid": "Only paid invoices can be reverted."
+  },
+  "transaction": {
+    "canceledCannotEdit": "Canceled entries cannot be edited.",
+    "reversedCannotEdit": "Reverted entries cannot be edited.",
+    "fixedCannotRevertToUnique": "A recurring entry cannot be reverted to a one-time entry.",
+    "paidCannotDelete": "Paid entries cannot be deleted. Revert it first.",
+    "deleteScopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
+    "alreadyPaid": "Entry has already been paid.",
+    "canceledCannotPay": "Canceled entries cannot be paid.",
+    "notPaidCannotRevert": "Only paid entries can be reverted.",
+    "notFound": "Entry not found.",
+    "wrongType": "Entry is not of type {{type}}."
+  },
+  "receivable": {
+    "notFound": "Receivable not found",
+    "canceledCannotEdit": "Canceled receivables cannot be edited.",
+    "fixedCannotRevertToUnique": "A recurring entry cannot be reverted to a one-time entry.",
+    "mainAccountNotConfigured": "Main account is not configured in settings.",
+    "alreadyReceivedCannotDelete": "Received receivables cannot be deleted. Revert it first.",
+    "deleteScopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
+    "alreadyReceived": "Receivable has already been received.",
+    "canceledCannotReceive": "A canceled receivable cannot be received.",
+    "notReceivedCannotRevert": "Only received receivables can be reverted."
+  },
+  "auth": {
+    "invalidGoogleToken": "Invalid Google token",
+    "googleTokenMissingEmail": "Google token has no email",
+    "invalidAppleToken": "Invalid Apple token",
+    "appleTokenMissingEmail": "Apple token has no email",
+    "userNotFound": "User not found",
+    "invalidSession": "Invalid or expired session",
+    "emailAlreadyRegistered": "This email is already registered via {{provider}}"
+  },
+  "category": {
+    "notFound": "Category not found",
+    "typeChangeNotAllowed": "This category's type cannot be changed",
+    "protected": "This category is system-managed and cannot be deleted"
+  },
+  "backup": {
+    "noEntriesRecognized": "No entries could be recognized in the uploaded file.",
+    "accountNotFound": "Account not found."
+  },
+  "account": {
+    "notFound": "Account not found"
+  },
+  "accountType": {
+    "notFound": "Account type not found"
+  }
+}

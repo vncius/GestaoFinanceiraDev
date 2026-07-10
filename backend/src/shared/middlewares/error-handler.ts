@@ -12,6 +12,7 @@ export function errorHandler(
     res.status(error.statusCode).json({
       error: error.message,
       code: error.code,
+      params: error.params,
     });
     return;
   }
@@ -19,14 +20,15 @@ export function errorHandler(
   if (error instanceof ZodError) {
     res.status(400).json({
       error: 'Erro de validação',
+      code: 'validation.generic',
       details: error.errors.map((e) => ({
         field: e.path.join('.'),
-        message: e.message,
+        code: e.message,
       })),
     });
     return;
   }
 
   console.error('[Unhandled Error]', error);
-  res.status(500).json({ error: 'Erro interno do servidor' });
+  res.status(500).json({ error: 'Erro interno do servidor', code: 'common.internalError' });
 }

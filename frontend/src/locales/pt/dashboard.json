@@ -1,0 +1,54 @@
+{
+  "error": {
+    "loadFailed": "Não foi possível carregar o dashboard. Verifique se o servidor está rodando."
+  },
+  "balances": {
+    "sectionTitle": "Saldos Atuais",
+    "total": "Total Geral"
+  },
+  "summary": {
+    "sectionTitle": "Resumo de {{monthYear}}",
+    "initialBalance": "Saldo Inicial",
+    "initialBalanceSub": "Antes do mês",
+    "monthBalance": "Saldo do Mês",
+    "monthBalanceSub": "Consolidado",
+    "income": "Entradas",
+    "expenses": "Saídas",
+    "payments": "Pagamentos",
+    "extraExpenses": "Gastos Extras",
+    "creditCardInvoices": "Faturas Cartão"
+  },
+  "categoryAnalysis": {
+    "sectionTitle": "Análise por Categoria",
+    "incomeByCategory": "Receitas por Categoria",
+    "expensesByCategory": "Gastos por Categoria",
+    "empty": "Sem lançamentos no período"
+  },
+  "upcomingDue": {
+    "title": "Próximos Vencimentos",
+    "period": "15 dias",
+    "empty": "Nenhum vencimento nos próximos 15 dias",
+    "goToCashFlow": "Ir para o fluxo de caixa deste mês"
+  },
+  "annualSummary": {
+    "title": "Faturamento Anual",
+    "grossIncome": "Faturamento bruto recebido no ano",
+    "limitUsage": "Utilização do limite",
+    "annualLimit": "Limite anual configurado",
+    "noLimitConfigured": "Configure um limite anual em Parametrizações para acompanhar a utilização."
+  },
+  "evolutionChart": {
+    "title": "Evolução dos Últimos Meses",
+    "income": "Entradas",
+    "expenses": "Saídas",
+    "incomeTooltip": "Entradas: {{amount}}",
+    "expensesTooltip": "Saídas: {{amount}}",
+    "resultTooltip": "Resultado: {{amount}}"
+  },
+  "overview": {
+    "title": "Visão Geral do Mês",
+    "income": "Receitas",
+    "expenses": "Gastos",
+    "reserve": "Reserva"
+  }
+}

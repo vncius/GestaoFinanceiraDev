@@ -1,0 +1,76 @@
+{
+  "recurrence": {
+    "unique": "Único",
+    "fixed": "Fixo (recorrente)"
+  },
+  "status": {
+    "all": "Todos",
+    "expected": "Esperados",
+    "received": "Recebidos",
+    "canceled": "Cancelados"
+  },
+  "toggle": {
+    "revert": "Reverter recebimento",
+    "markReceived": "Marcar como recebido"
+  },
+  "toolbar": {
+    "searchPlaceholder": "Buscar descrição / cliente...",
+    "new": "Novo"
+  },
+  "table": {
+    "description": "Descrição",
+    "customer": "Cliente",
+    "category": "Categoria",
+    "gross": "Bruto",
+    "net": "Líquido",
+    "expectedDate": "Data prev.",
+    "receivedDate": "Recebido em",
+    "invoicePrefix": "NF {{number}}",
+    "emptyValue": "—"
+  },
+  "actions": {
+    "edit": "Editar",
+    "delete": "Excluir"
+  },
+  "emptyState": {
+    "title": "Nenhum recebimento encontrado",
+    "description": "Clique em Novo para adicionar um recebimento"
+  },
+  "modal": {
+    "editTitle": "Editar Recebimento",
+    "newTitle": "Novo Recebimento",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "fields": {
+      "description": "Descrição *",
+      "category": "Categoria *",
+      "selectPlaceholder": "Selecione...",
+      "expectedDate": "Data prevista *",
+      "grossAmount": "Valor bruto (R$) *",
+      "customer": "Cliente",
+      "customerPlaceholder": "Nome do cliente",
+      "recurrenceType": "Tipo de lançamento",
+      "invoiceNumber": "Nº da NF",
+      "invoiceNumberPlaceholder": "Ex: 12345",
+      "notes": "Observações"
+    },
+    "fixedRecurrenceHint": "Para encerrar a recorrência, exclua \"esta e as futuras\".",
+    "reserveCheckbox": "Separar {{percentage}}% para {{account}}",
+    "summary": {
+      "reserve": "Reserva",
+      "netAmount": "Valor líquido"
+    },
+    "validation": {
+      "description": "Descrição",
+      "category": "Categoria",
+      "grossAmount": "Valor bruto"
+    },
+    "confirmEdit": "Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?",
+    "confirmDeleteReceived": "Este item já está recebido. Ao excluir, o recebimento será revertido e os saldos recalculados. Deseja continuar?",
+    "confirmDelete": "Confirmar exclusão?"
+  },
+  "scopedDelete": {
+    "title": "Excluir lançamento fixo",
+    "description": "é um lançamento fixo. Deseja excluir apenas esta referência, ou esta e todas as futuras? O histórico de referências já recebidas nunca é alterado."
+  }
+}

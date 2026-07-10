@@ -1,0 +1,43 @@
+{
+  "fullBackup": {
+    "title": "Backup completo",
+    "description": "Exporta ou restaura todos os dados do sistema em um único arquivo JSON.",
+    "downloadButton": "Baixar backup",
+    "restoreButton": "Restaurar backup",
+    "restoreConfirmTitle": "Restaurar backup",
+    "restoreConfirmLabel": "Restaurar",
+    "restoreConfirmMessage": "Restaurar um backup substitui TODOS os dados atuais (contas, categorias, lançamentos, cartões) pelos do arquivo. Esta ação não pode ser desfeita. Deseja continuar?",
+    "restoreSuccess": "Backup restaurado com sucesso.",
+    "restoreError": "Erro ao restaurar backup.",
+    "downloadError": "Erro ao baixar backup."
+  },
+  "csvExport": {
+    "title": "Exportar lançamentos",
+    "description": "Gera uma planilha CSV com pagamentos, gastos extras e recebíveis do período escolhido.",
+    "periodMonth": "Mês atual",
+    "periodCustom": "Personalizado",
+    "periodAll": "Todo o período",
+    "downloadButton": "Baixar CSV",
+    "printReportLink": "Relatório para impressão (mês atual)",
+    "downloadError": "Erro ao exportar CSV."
+  },
+  "statementImport": {
+    "title": "Importar extrato bancário",
+    "description": "Envie um arquivo CSV ou OFX do seu banco para pré-visualizar e importar os lançamentos.",
+    "selectFileButton": "Selecionar arquivo (.csv, .ofx)",
+    "readError": "Erro ao ler o extrato.",
+    "emptyState": "Nenhum lançamento reconhecido no arquivo",
+    "selectAccountPlaceholder": "Selecione a conta de destino...",
+    "tableDate": "Data",
+    "tableDescription": "Descrição",
+    "tableAmount": "Valor",
+    "tableType": "Tipo",
+    "possibleDuplicate": "possível duplicata",
+    "toggleTypeTitle": "Clique para alternar entrada/saída",
+    "typeIncome": "Entrada",
+    "typeExpense": "Saída",
+    "importButton": "Importar {{count}} lançamento(s)",
+    "importSuccess": "{{count}} lançamento(s) importado(s).",
+    "importError": "Erro ao importar extrato."
+  }
+}

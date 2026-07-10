@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createAccountTypeSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
+  name: z.string().min(1, 'validation.name.required'),
 });
 
 export const updateAccountTypeSchema = z.object({

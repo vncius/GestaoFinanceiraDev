@@ -1,0 +1,40 @@
+{
+  "backLink": "Back",
+  "printButton": "Print / Save PDF",
+  "title": "Financial Report",
+  "balances": {
+    "sectionTitle": "Current Balances",
+    "total": "Grand Total"
+  },
+  "summary": {
+    "sectionTitle": "Summary for {{monthYear}}",
+    "initialBalance": "Initial balance",
+    "receivedIncome": "Income received",
+    "payments": "Payments",
+    "extraExpenses": "Extra expenses",
+    "creditCardInvoices": "Credit card invoices",
+    "totalExpenses": "Total expenses",
+    "finalBalance": "Final balance"
+  },
+  "category": {
+    "incomeByCategory": "Income by Category",
+    "expensesByCategory": "Expenses by Category",
+    "empty": "No entries in this period."
+  },
+  "annualSummary": {
+    "sectionTitle": "Annual Revenue (Business)",
+    "grossIncome": "Gross income for the year",
+    "annualLimit": "Configured annual limit",
+    "limitUsage": "Limit usage"
+  },
+  "evolution": {
+    "sectionTitle": "Recent Months Trend",
+    "month": "Month",
+    "income": "Income",
+    "expenses": "Expenses",
+    "result": "Result"
+  },
+  "footer": {
+    "generatedAt": "Generated on {{date}}"
+  }
+}

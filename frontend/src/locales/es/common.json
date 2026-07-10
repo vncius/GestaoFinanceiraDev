@@ -1,0 +1,61 @@
+{
+  "modal": {
+    "close": "Cerrar"
+  },
+  "errors": {
+    "saveFailed": "Error al guardar. Inténtalo de nuevo."
+  },
+  "scopedDelete": {
+    "cancel": "Cancelar",
+    "currentOnly": "Solo esta referencia",
+    "currentAndFuture": "Esta y las futuras"
+  },
+  "monthNavigator": {
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente"
+  },
+  "payInvoiceModal": {
+    "title": "Pagar Factura",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar pago",
+    "accountLabel": "Cuenta para débito",
+    "selectPlaceholder": "Seleccione..."
+  },
+  "toast": {
+    "closeNotification": "Cerrar notificación"
+  },
+  "dialog": {
+    "defaultTitle": "Atención",
+    "confirmTitle": "Confirmación",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "ok": "OK"
+  },
+  "validation": {
+    "missingFields": "Complete los campos obligatorios: {{fields}}."
+  },
+  "quickAdd": {
+    "title": "Registro Rápido",
+    "types": {
+      "payment": "Pago",
+      "extraExpense": "Gasto Extra",
+      "receivable": "Cobro"
+    },
+    "fields": {
+      "description": "Descripción",
+      "category": "Categoría",
+      "date": "Fecha",
+      "amount": "Monto"
+    },
+    "categoryPlaceholder": "Selecciona...",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "prevNextMonth": "Navegar entre meses",
+    "newEntry": "Nuevo registro rápido",
+    "showHelp": "Mostrar esta ayuda",
+    "closeModal": "Cerrar modal"
+  }
+}

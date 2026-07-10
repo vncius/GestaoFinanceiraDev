@@ -24,7 +24,7 @@ export const backupBundleSchema = z.object({
 
 export const importBackupSchema = z.object({
   confirm: z.literal(true, {
-    errorMap: () => ({ message: 'Confirme explicitamente a restauração (operação destrutiva).' }),
+    errorMap: () => ({ message: 'validation.confirm.required' }),
   }),
   bundle: backupBundleSchema,
 });
@@ -36,7 +36,7 @@ export const exportCsvQuerySchema = z
     all: z.coerce.boolean().optional(),
   })
   .refine((q) => q.all || (q.from && q.to), {
-    message: 'Informe from e to, ou all=true.',
+    message: 'validation.dateRange.required',
   });
 
 export const parseStatementSchema = z.object({

@@ -1,4 +1,5 @@
 import { TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Account, Receivable } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { formatCurrency } from '../../../utils/money';
@@ -31,12 +32,13 @@ export function EntriesGrid({
   onRevert: (id: string) => void;
   onDelete: (item: Receivable) => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <GridHeader
-        title="Entradas"
+        title={t('entriesGrid.title')}
         icon={<TrendingUp size={16} className="text-green-500" />}
         count={items.length}
         onAdd={onAdd}
@@ -44,20 +46,20 @@ export function EntriesGrid({
 
       {items.length === 0 ? (
         <EmptyState
-          title="Nenhuma entrada neste mês"
-          description="Clique em Novo para adicionar um recebimento"
+          title={t('entriesGrid.emptyState.title')}
+          description={t('entriesGrid.emptyState.description')}
         />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
-                <th className={`${COL_CONTA} text-left px-3 py-2.5 font-medium`}>Conta</th>
-                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>Valor Bruto</th>
-                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>Reserva</th>
-                <th className={`${COL_VALOR} text-right px-2 sm:px-3 py-2.5 font-medium`}>Valor líquido</th>
-                <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>Data prev.</th>
+                <th className="text-left px-3 sm:px-5 py-2.5 font-medium">{t('grid.columns.description')}</th>
+                <th className={`${COL_CONTA} text-left px-3 py-2.5 font-medium`}>{t('grid.columns.account')}</th>
+                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.grossAmount')}</th>
+                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.reserve')}</th>
+                <th className={`${COL_VALOR} text-right px-2 sm:px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.netAmount')}</th>
+                <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.expectedDate')}</th>
                 <th className={`${COL_ACOES} px-1 sm:px-3 py-2.5`} />
               </tr>
             </thead>
@@ -92,13 +94,13 @@ export function EntriesGrid({
                         <PaidToggle
                           paid={item.status === 'RECEIVED'}
                           onToggle={() => (item.status === 'RECEIVED' ? onRevert(item.id) : onReceive(item.id))}
-                          paidTitle="Reverter recebimento"
-                          unpaidTitle="Marcar como recebido"
+                          paidTitle={t('entriesGrid.toggle.revertReceived')}
+                          unpaidTitle={t('entriesGrid.toggle.markReceived')}
                         />
                       )}
                       <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <ActionBtn
-                          title="Editar"
+                          title={t('grid.actions.edit')}
                           onClick={() => onEdit(item)}
                           className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
@@ -106,7 +108,7 @@ export function EntriesGrid({
                         </ActionBtn>
                         {item.status !== 'CANCELED' && (
                           <ActionBtn
-                            title="Excluir"
+                            title={t('grid.actions.delete')}
                             onClick={() => onDelete(item)}
                             className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >

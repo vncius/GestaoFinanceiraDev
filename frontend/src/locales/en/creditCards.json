@@ -1,0 +1,84 @@
+{
+  "entryModal": {
+    "title": {
+      "new": "Add Entry",
+      "edit": "Edit Entry"
+    },
+    "cancelButton": "Cancel",
+    "saveButton": "Save",
+    "addButton": "Add",
+    "fields": {
+      "description": "Description *",
+      "category": "Category *",
+      "categoryPlaceholder": "Select...",
+      "purchaseDate": "Purchase date *",
+      "totalAmount": "Total amount *",
+      "type": "Type *",
+      "installmentsCount": "Number of installments *",
+      "notes": "Notes"
+    },
+    "entryTypes": {
+      "cash": "One-time",
+      "fixed": "Fixed (recurring)",
+      "installment": "Installments"
+    },
+    "confirmRecreate": "Changing the amount, date, type or installments will recreate all installments and may revert paid invoices. Do you want to continue?",
+    "validation": {
+      "description": "Description",
+      "category": "Category",
+      "totalAmount": "Total amount"
+    }
+  },
+  "invoiceHeader": {
+    "title": "Invoice — {{monthYear}}",
+    "dueDate": "Due date: {{date}}",
+    "noInvoice": "No invoice",
+    "summary": {
+      "invoiceTotal": "Invoice total",
+      "paid": "Paid",
+      "open": "Open"
+    },
+    "payButton": "Pay invoice",
+    "revertButton": "Revert payment"
+  },
+  "installments": {
+    "title": "Entries ({{count}})",
+    "addButton": "Add",
+    "emptyState": {
+      "title": "No entries this month",
+      "description": "Click Add to register a purchase"
+    },
+    "table": {
+      "description": "Description",
+      "category": "Category",
+      "purchaseDate": "Purchase date",
+      "installment": "Installment",
+      "amount": "Amount"
+    },
+    "entryType": {
+      "cash": "One-time",
+      "fixed": "Recurring"
+    },
+    "actions": {
+      "edit": "Edit entry",
+      "cancel": "Cancel entry"
+    },
+    "confirmCancel": "Cancel this entry and all of its installments?"
+  },
+  "fixedDeleteModal": {
+    "title": "Delete fixed entry",
+    "description": "is a fixed entry. Do you want to delete only the {{monthYear}} reference, or this and all future ones? The history of references already posted/paid is never changed."
+  },
+  "cardList": {
+    "currentMonth": "Current month",
+    "limit": "Limit",
+    "emptyState": {
+      "title": "No cards registered",
+      "description": "Register credit cards in Settings → Cards"
+    }
+  },
+  "selectCard": {
+    "title": "Select a card",
+    "description": "Click a card on the left to see the details"
+  }
+}

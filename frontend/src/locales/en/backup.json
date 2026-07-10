@@ -1,0 +1,43 @@
+{
+  "fullBackup": {
+    "title": "Full backup",
+    "description": "Export or restore all system data in a single JSON file.",
+    "downloadButton": "Download backup",
+    "restoreButton": "Restore backup",
+    "restoreConfirmTitle": "Restore backup",
+    "restoreConfirmLabel": "Restore",
+    "restoreConfirmMessage": "Restoring a backup replaces ALL current data (accounts, categories, entries, cards) with the data from the file. This action cannot be undone. Do you want to continue?",
+    "restoreSuccess": "Backup restored successfully.",
+    "restoreError": "Error restoring backup.",
+    "downloadError": "Error downloading backup."
+  },
+  "csvExport": {
+    "title": "Export entries",
+    "description": "Generates a CSV spreadsheet with payments, extra expenses, and receivables for the selected period.",
+    "periodMonth": "Current month",
+    "periodCustom": "Custom",
+    "periodAll": "Entire period",
+    "downloadButton": "Download CSV",
+    "printReportLink": "Printable report (current month)",
+    "downloadError": "Error exporting CSV."
+  },
+  "statementImport": {
+    "title": "Import bank statement",
+    "description": "Upload a CSV or OFX file from your bank to preview and import the entries.",
+    "selectFileButton": "Select file (.csv, .ofx)",
+    "readError": "Error reading the statement.",
+    "emptyState": "No entries recognized in the file",
+    "selectAccountPlaceholder": "Select the destination account...",
+    "tableDate": "Date",
+    "tableDescription": "Description",
+    "tableAmount": "Amount",
+    "tableType": "Type",
+    "possibleDuplicate": "possible duplicate",
+    "toggleTypeTitle": "Click to toggle income/expense",
+    "typeIncome": "Income",
+    "typeExpense": "Expense",
+    "importButton": "Import {{count}} entry(ies)",
+    "importSuccess": "{{count}} entry(ies) imported.",
+    "importError": "Error importing statement."
+  }
+}

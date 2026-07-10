@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Account, FinancialTransaction } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { formatCurrency } from '../../../utils/money';
@@ -35,6 +36,7 @@ export function TransactionGrid({
   onRevert: (id: string) => void;
   onDelete: (item: FinancialTransaction) => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   return (
@@ -42,18 +44,18 @@ export function TransactionGrid({
       <GridHeader title={title} icon={icon} count={items.length} onAdd={onAdd} />
 
       {items.length === 0 ? (
-        <EmptyState title="Nenhum registro neste mês" />
+        <EmptyState title={t('transactionGrid.emptyState.title')} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                <th className="text-left px-3 sm:px-5 py-2.5 font-medium">Descrição</th>
-                <th className={`${COL_CONTA} text-left px-3 py-2.5 font-medium`}>Conta</th>
+                <th className="text-left px-3 sm:px-5 py-2.5 font-medium">{t('grid.columns.description')}</th>
+                <th className={`${COL_CONTA} text-left px-3 py-2.5 font-medium`}>{t('grid.columns.account')}</th>
                 <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
                 <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
-                <th className={`${COL_VALOR} text-right px-3 py-2.5 font-medium`}>Valor</th>
-                <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>Data de vencimento</th>
+                <th className={`${COL_VALOR} text-right px-3 py-2.5 font-medium`}>{t('transactionGrid.columns.value')}</th>
+                <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>{t('transactionGrid.columns.dueDate')}</th>
                 <th className={`${COL_ACOES} px-2 sm:px-3 py-2.5`} />
               </tr>
             </thead>
@@ -84,14 +86,14 @@ export function TransactionGrid({
                         <PaidToggle
                           paid={item.status === 'PAID'}
                           onToggle={() => (item.status === 'PAID' ? onRevert(item.id) : onPay(item.id))}
-                          paidTitle="Reverter pagamento"
-                          unpaidTitle="Marcar como pago"
+                          paidTitle={t('grid.toggle.revertPaid')}
+                          unpaidTitle={t('transactionGrid.toggle.markPaid')}
                         />
                       )}
                       <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         {item.status !== 'CANCELED' && item.status !== 'REVERSED' && (
                           <ActionBtn
-                            title="Editar"
+                            title={t('grid.actions.edit')}
                             onClick={() => onEdit(item)}
                             className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
@@ -100,7 +102,7 @@ export function TransactionGrid({
                         )}
                         {(item.status === 'PENDING' || item.status === 'PAID') && (
                           <ActionBtn
-                            title="Excluir"
+                            title={t('grid.actions.delete')}
                             onClick={() => onDelete(item)}
                             className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >

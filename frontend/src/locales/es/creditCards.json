@@ -1,0 +1,84 @@
+{
+  "entryModal": {
+    "title": {
+      "new": "Agregar Movimiento",
+      "edit": "Editar Movimiento"
+    },
+    "cancelButton": "Cancelar",
+    "saveButton": "Guardar",
+    "addButton": "Agregar",
+    "fields": {
+      "description": "Descripción *",
+      "category": "Categoría *",
+      "categoryPlaceholder": "Seleccionar...",
+      "purchaseDate": "Fecha de compra *",
+      "totalAmount": "Monto total *",
+      "type": "Tipo *",
+      "installmentsCount": "N.º de cuotas *",
+      "notes": "Notas"
+    },
+    "entryTypes": {
+      "cash": "Al contado",
+      "fixed": "Fijo (recurrente)",
+      "installment": "En cuotas"
+    },
+    "confirmRecreate": "Cambiar el monto, la fecha, el tipo o las cuotas volverá a crear todas las cuotas y puede revertir facturas pagadas. ¿Desea continuar?",
+    "validation": {
+      "description": "Descripción",
+      "category": "Categoría",
+      "totalAmount": "Monto total"
+    }
+  },
+  "invoiceHeader": {
+    "title": "Factura — {{monthYear}}",
+    "dueDate": "Vencimiento: {{date}}",
+    "noInvoice": "Sin factura",
+    "summary": {
+      "invoiceTotal": "Total factura",
+      "paid": "Pagado",
+      "open": "Pendiente"
+    },
+    "payButton": "Pagar factura",
+    "revertButton": "Revertir pago"
+  },
+  "installments": {
+    "title": "Movimientos ({{count}})",
+    "addButton": "Agregar",
+    "emptyState": {
+      "title": "Ningún movimiento este mes",
+      "description": "Haga clic en Agregar para registrar una compra"
+    },
+    "table": {
+      "description": "Descripción",
+      "category": "Categoría",
+      "purchaseDate": "Fecha de compra",
+      "installment": "Cuota",
+      "amount": "Monto"
+    },
+    "entryType": {
+      "cash": "Al contado",
+      "fixed": "Recurrente"
+    },
+    "actions": {
+      "edit": "Editar movimiento",
+      "cancel": "Cancelar movimiento"
+    },
+    "confirmCancel": "¿Cancelar este movimiento y todas sus cuotas?"
+  },
+  "fixedDeleteModal": {
+    "title": "Eliminar movimiento fijo",
+    "description": "es un movimiento fijo. ¿Desea eliminar solo la referencia de {{monthYear}}, o esta y todas las futuras? El historial de referencias ya generadas/pagadas nunca se modifica."
+  },
+  "cardList": {
+    "currentMonth": "Mes actual",
+    "limit": "Límite",
+    "emptyState": {
+      "title": "Ninguna tarjeta registrada",
+      "description": "Registre tarjetas de crédito en Configuración → Tarjetas"
+    }
+  },
+  "selectCard": {
+    "title": "Seleccione una tarjeta",
+    "description": "Haga clic en una tarjeta a la izquierda para ver los detalles"
+  }
+}

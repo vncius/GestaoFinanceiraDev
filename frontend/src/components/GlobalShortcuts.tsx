@@ -1,22 +1,24 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMonth } from '../contexts/MonthContext';
 import { useQuickAdd } from '../contexts/QuickAddContext';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { Modal } from './ui/Modal';
 
-const SHORTCUTS = [
-  { keys: 'Alt + ←  /  Alt + →', description: 'Navegar entre meses' },
-  { keys: 'N', description: 'Novo lançamento rápido' },
-  { keys: '?', description: 'Mostrar esta ajuda' },
-  { keys: 'Esc', description: 'Fechar modal' },
-];
-
 // Registra os atalhos globais e renderiza o painel de ajuda (?). Montado
 // uma única vez em App.tsx, dentro de MonthProvider e QuickAddProvider.
 export function GlobalShortcuts() {
+  const { t } = useTranslation('common');
   const { prevMonth, nextMonth } = useMonth();
   const { openQuickAdd } = useQuickAdd();
   const [helpOpen, setHelpOpen] = useState(false);
+
+  const SHORTCUTS = [
+    { keys: 'Alt + ←  /  Alt + →', description: t('shortcuts.prevNextMonth') },
+    { keys: 'N', description: t('shortcuts.newEntry') },
+    { keys: '?', description: t('shortcuts.showHelp') },
+    { keys: 'Esc', description: t('shortcuts.closeModal') },
+  ];
 
   useGlobalShortcuts({
     onPrevMonth: prevMonth,
@@ -26,7 +28,7 @@ export function GlobalShortcuts() {
   });
 
   return (
-    <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title="Atalhos de teclado" size="sm">
+    <Modal open={helpOpen} onClose={() => setHelpOpen(false)} title={t('shortcuts.title')} size="sm">
       <ul className="space-y-2">
         {SHORTCUTS.map((s) => (
           <li key={s.keys} className="flex items-center justify-between gap-4 text-sm">

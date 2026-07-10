@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Filter } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
 
@@ -10,10 +11,11 @@ function TypeFilterToggle({
   value: CashFlowTypeFilter;
   onChange: (v: CashFlowTypeFilter) => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   const options: { value: CashFlowTypeFilter; label: string }[] = [
-    { value: 'ALL', label: 'Todos' },
-    { value: 'INCOME', label: 'Entradas' },
-    { value: 'EXPENSE', label: 'Saídas' },
+    { value: 'ALL', label: t('filterBar.typeToggle.all') },
+    { value: 'INCOME', label: t('filterBar.typeToggle.income') },
+    { value: 'EXPENSE', label: t('filterBar.typeToggle.expense') },
   ];
   return (
     <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
@@ -52,6 +54,7 @@ function CategoryFilterPopover({
   onSelectAll: () => void;
   onClearAll: () => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -98,7 +101,7 @@ function CategoryFilterPopover({
         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
       >
         <Filter size={13} />
-        Categorias
+        {t('filterBar.categories.button')}
         <span className="text-gray-400 dark:text-gray-500">
           ({selectedCount}/{categories.length})
         </span>
@@ -112,18 +115,18 @@ function CategoryFilterPopover({
               onClick={onSelectAll}
               className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
             >
-              Selecionar todas
+              {t('filterBar.categories.selectAll')}
             </button>
             <button
               type="button"
               onClick={onClearAll}
               className="text-[11px] text-gray-500 dark:text-gray-400 hover:underline"
             >
-              Limpar
+              {t('filterBar.categories.clear')}
             </button>
           </div>
-          {(typeFilter === 'ALL' || typeFilter === 'INCOME') && renderGroup('Entradas', incomeCategories)}
-          {(typeFilter === 'ALL' || typeFilter === 'EXPENSE') && renderGroup('Saídas', expenseCategories)}
+          {(typeFilter === 'ALL' || typeFilter === 'INCOME') && renderGroup(t('filterBar.categories.incomeGroup'), incomeCategories)}
+          {(typeFilter === 'ALL' || typeFilter === 'EXPENSE') && renderGroup(t('filterBar.categories.expenseGroup'), expenseCategories)}
         </div>
       )}
     </div>
@@ -147,9 +150,10 @@ export function CashFlowFilterBar({
   onSelectAllCategories: () => void;
   onClearCategories: () => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   return (
     <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3">
-      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Filtros:</span>
+      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('filterBar.label')}</span>
       <TypeFilterToggle value={typeFilter} onChange={onTypeChange} />
       <CategoryFilterPopover
         categories={categories}

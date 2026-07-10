@@ -1,4 +1,5 @@
 import { Plus, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/ui/Button';
 
 export const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -23,6 +24,7 @@ export function GridHeader({
   count: number;
   onAdd: () => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   return (
     <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
       <div className="flex items-center gap-2">
@@ -31,7 +33,7 @@ export function GridHeader({
         <span className="text-xs text-gray-400 dark:text-gray-500">({count})</span>
       </div>
       <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={onAdd}>
-        Novo
+        {t('grid.new')}
       </Button>
     </div>
   );

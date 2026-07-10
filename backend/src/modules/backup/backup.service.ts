@@ -188,7 +188,7 @@ export class BackupService {
     const isOfx = /\.ofx$/i.test(filename) || /<OFX>/i.test(content);
     const parsed = isOfx ? parseOfxStatement(content) : parseCsvStatement(content);
     if (parsed.length === 0) {
-      throw new AppError('Não foi possível reconhecer nenhum lançamento no arquivo enviado.', 400);
+      throw new AppError('Não foi possível reconhecer nenhum lançamento no arquivo enviado.', 400, 'backup.noEntriesRecognized');
     }
 
     const existing = await this.transactionsRepo.findAll(tenantId);
@@ -206,7 +206,7 @@ export class BackupService {
 
   async importStatementEntries(tenantId: string, input: ImportStatementInput): Promise<{ created: number }> {
     const account = await this.accountsRepo.findById(input.accountId, tenantId);
-    if (!account) throw new AppError('Conta não encontrada.', 404);
+    if (!account) throw new AppError('Conta não encontrada.', 404, 'backup.accountNotFound');
 
     const now = nowISO();
     const toCreate: FinancialTransaction[] = input.entries.map((entry) => ({

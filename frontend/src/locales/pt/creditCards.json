@@ -1,0 +1,84 @@
+{
+  "entryModal": {
+    "title": {
+      "new": "Adicionar Lançamento",
+      "edit": "Editar Lançamento"
+    },
+    "cancelButton": "Cancelar",
+    "saveButton": "Salvar",
+    "addButton": "Adicionar",
+    "fields": {
+      "description": "Descrição *",
+      "category": "Categoria *",
+      "categoryPlaceholder": "Selecione...",
+      "purchaseDate": "Data de lançamento *",
+      "totalAmount": "Valor total *",
+      "type": "Tipo *",
+      "installmentsCount": "Nº de parcelas *",
+      "notes": "Observações"
+    },
+    "entryTypes": {
+      "cash": "À vista",
+      "fixed": "Fixo (recorrente)",
+      "installment": "Parcelado"
+    },
+    "confirmRecreate": "Alterar valor, data, tipo ou parcelas irá recriar todas as parcelas e pode reverter faturas pagas. Deseja continuar?",
+    "validation": {
+      "description": "Descrição",
+      "category": "Categoria",
+      "totalAmount": "Valor total"
+    }
+  },
+  "invoiceHeader": {
+    "title": "Fatura — {{monthYear}}",
+    "dueDate": "Vencimento: {{date}}",
+    "noInvoice": "Sem fatura",
+    "summary": {
+      "invoiceTotal": "Total fatura",
+      "paid": "Pago",
+      "open": "Em aberto"
+    },
+    "payButton": "Pagar fatura",
+    "revertButton": "Reverter pagamento"
+  },
+  "installments": {
+    "title": "Lançamentos ({{count}})",
+    "addButton": "Adicionar",
+    "emptyState": {
+      "title": "Nenhum lançamento neste mês",
+      "description": "Clique em Adicionar para registrar uma compra"
+    },
+    "table": {
+      "description": "Descrição",
+      "category": "Categoria",
+      "purchaseDate": "Data lanç.",
+      "installment": "Parcela",
+      "amount": "Valor"
+    },
+    "entryType": {
+      "cash": "À vista",
+      "fixed": "Recorrente"
+    },
+    "actions": {
+      "edit": "Editar lançamento",
+      "cancel": "Cancelar lançamento"
+    },
+    "confirmCancel": "Cancelar este lançamento e todas as suas parcelas?"
+  },
+  "fixedDeleteModal": {
+    "title": "Excluir lançamento fixo",
+    "description": "é um lançamento fixo. Deseja excluir apenas a referência de {{monthYear}}, ou esta e todas as futuras? O histórico de referências já lançadas/pagas nunca é alterado."
+  },
+  "cardList": {
+    "currentMonth": "Mês atual",
+    "limit": "Limite",
+    "emptyState": {
+      "title": "Nenhum cartão cadastrado",
+      "description": "Cadastre cartões de crédito em Parametrizações → Cartões"
+    }
+  },
+  "selectCard": {
+    "title": "Selecione um cartão",
+    "description": "Clique em um cartão à esquerda para ver os detalhes"
+  }
+}

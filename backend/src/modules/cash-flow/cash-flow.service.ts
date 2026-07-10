@@ -350,10 +350,10 @@ export class CashFlowService {
     const tx = await this.getTransactionChecked(id, type, tenantId);
 
     if (tx.status === TransactionStatus.CANCELED) {
-      throw new AppError('Lançamentos cancelados não podem ser editados.', 400);
+      throw new AppError('Lançamentos cancelados não podem ser editados.', 400, 'transaction.canceledCannotEdit');
     }
     if (tx.status === TransactionStatus.REVERSED) {
-      throw new AppError('Lançamentos revertidos não podem ser editados.', 400);
+      throw new AppError('Lançamentos revertidos não podem ser editados.', 400, 'transaction.reversedCannotEdit');
     }
 
     let recurrencePatch: Partial<FinancialTransaction> = {};
@@ -362,6 +362,7 @@ export class CashFlowService {
         throw new AppError(
           'Não é possível reverter um lançamento fixo para único. Use a exclusão com escopo para encerrar a recorrência.',
           400,
+          'transaction.fixedCannotRevertToUnique',
         );
       }
       recurrencePatch = { recurringGroupId: id, recurringActive: true };
@@ -386,6 +387,7 @@ export class CashFlowService {
       throw new AppError(
         'Lançamentos já pagos não podem ser excluídos. Reverta primeiro.',
         400,
+        'transaction.paidCannotDelete',
       );
     }
 
@@ -394,6 +396,7 @@ export class CashFlowService {
         throw new AppError(
           'Informe se deseja excluir apenas a referência atual ou também as futuras.',
           400,
+          'transaction.deleteScopeRequired',
         );
       }
       return this.deleteFixedTransaction(tx, tenantId, scope, referenceMonth, referenceYear);
@@ -568,10 +571,10 @@ export class CashFlowService {
     const tx = await this.getTransactionChecked(id, type, tenantId);
 
     if (tx.status === TransactionStatus.PAID) {
-      throw new AppError('Lançamento já foi pago.', 400);
+      throw new AppError('Lançamento já foi pago.', 400, 'transaction.alreadyPaid');
     }
     if (tx.status === TransactionStatus.CANCELED) {
-      throw new AppError('Lançamentos cancelados não podem ser pagos.', 400);
+      throw new AppError('Lançamentos cancelados não podem ser pagos.', 400, 'transaction.canceledCannotPay');
     }
 
     const now = nowISO();
@@ -598,6 +601,7 @@ export class CashFlowService {
       throw new AppError(
         'Apenas lançamentos com status PAID podem ser revertidos.',
         400,
+        'transaction.notPaidCannotRevert',
       );
     }
 
@@ -614,11 +618,13 @@ export class CashFlowService {
     tenantId: string,
   ): Promise<FinancialTransaction> {
     const tx = await this.transactionsRepo.findById(id, tenantId);
-    if (!tx) throw new AppError('Lançamento não encontrado.', 404);
+    if (!tx) throw new AppError('Lançamento não encontrado.', 404, 'transaction.notFound');
     if (tx.type !== type) {
       throw new AppError(
         `Lançamento não é do tipo ${type}.`,
         400,
+        'transaction.wrongType',
+        { type },
       );
     }
     return tx;

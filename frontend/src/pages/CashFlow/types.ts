@@ -1,9 +1,13 @@
+import { useTranslation } from 'react-i18next';
 import { FinancialTransaction, Receivable, RecurrenceType } from '../../types';
 
-export const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
-  UNIQUE: 'Único',
-  FIXED: 'Fixo (recorrente)',
-};
+export function useRecurrenceLabels(): Record<RecurrenceType, string> {
+  const { t } = useTranslation('cashFlow');
+  return {
+    UNIQUE: t('recurrence.unique'),
+    FIXED: t('recurrence.fixed'),
+  };
+}
 
 export type ModalKind =
   | { type: 'receivable'; mode: 'create' | 'edit'; item?: Receivable }

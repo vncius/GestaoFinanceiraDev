@@ -1,0 +1,43 @@
+{
+  "fullBackup": {
+    "title": "Copia de seguridad completa",
+    "description": "Exporta o restaura todos los datos del sistema en un único archivo JSON.",
+    "downloadButton": "Descargar copia de seguridad",
+    "restoreButton": "Restaurar copia de seguridad",
+    "restoreConfirmTitle": "Restaurar copia de seguridad",
+    "restoreConfirmLabel": "Restaurar",
+    "restoreConfirmMessage": "Restaurar una copia de seguridad reemplaza TODOS los datos actuales (cuentas, categorías, movimientos, tarjetas) por los del archivo. Esta acción no se puede deshacer. ¿Desea continuar?",
+    "restoreSuccess": "Copia de seguridad restaurada con éxito.",
+    "restoreError": "Error al restaurar la copia de seguridad.",
+    "downloadError": "Error al descargar la copia de seguridad."
+  },
+  "csvExport": {
+    "title": "Exportar movimientos",
+    "description": "Genera una hoja de cálculo CSV con pagos, gastos extra y cuentas por cobrar del período seleccionado.",
+    "periodMonth": "Mes actual",
+    "periodCustom": "Personalizado",
+    "periodAll": "Todo el período",
+    "downloadButton": "Descargar CSV",
+    "printReportLink": "Informe para imprimir (mes actual)",
+    "downloadError": "Error al exportar CSV."
+  },
+  "statementImport": {
+    "title": "Importar extracto bancario",
+    "description": "Envíe un archivo CSV u OFX de su banco para previsualizar e importar los movimientos.",
+    "selectFileButton": "Seleccionar archivo (.csv, .ofx)",
+    "readError": "Error al leer el extracto.",
+    "emptyState": "No se reconoció ningún movimiento en el archivo",
+    "selectAccountPlaceholder": "Seleccione la cuenta de destino...",
+    "tableDate": "Fecha",
+    "tableDescription": "Descripción",
+    "tableAmount": "Monto",
+    "tableType": "Tipo",
+    "possibleDuplicate": "posible duplicado",
+    "toggleTypeTitle": "Haga clic para alternar entrada/salida",
+    "typeIncome": "Entrada",
+    "typeExpense": "Salida",
+    "importButton": "Importar {{count}} movimiento(s)",
+    "importSuccess": "{{count}} movimiento(s) importado(s).",
+    "importError": "Error al importar el extracto."
+  }
+}

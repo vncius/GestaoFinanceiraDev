@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -31,6 +32,7 @@ export function Modal({
   footer,
   size = 'md',
 }: ModalProps) {
+  const { t } = useTranslation('common');
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -101,7 +103,7 @@ export function Modal({
           <button
             onClick={onClose}
             className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
-            aria-label="Fechar"
+            aria-label={t('modal.close')}
           >
             <X size={18} />
           </button>

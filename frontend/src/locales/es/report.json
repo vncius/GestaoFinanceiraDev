@@ -1,0 +1,40 @@
+{
+  "backLink": "Volver",
+  "printButton": "Imprimir / Guardar PDF",
+  "title": "Informe Financiero",
+  "balances": {
+    "sectionTitle": "Saldos Actuales",
+    "total": "Total General"
+  },
+  "summary": {
+    "sectionTitle": "Resumen de {{monthYear}}",
+    "initialBalance": "Saldo inicial",
+    "receivedIncome": "Ingresos recibidos",
+    "payments": "Pagos",
+    "extraExpenses": "Gastos extras",
+    "creditCardInvoices": "Facturas de tarjeta",
+    "totalExpenses": "Total de gastos",
+    "finalBalance": "Saldo final"
+  },
+  "category": {
+    "incomeByCategory": "Ingresos por Categoría",
+    "expensesByCategory": "Gastos por Categoría",
+    "empty": "Sin movimientos en el período."
+  },
+  "annualSummary": {
+    "sectionTitle": "Facturación Anual (Empresarial)",
+    "grossIncome": "Facturación bruta del año",
+    "annualLimit": "Límite anual configurado",
+    "limitUsage": "Uso del límite"
+  },
+  "evolution": {
+    "sectionTitle": "Evolución de los Últimos Meses",
+    "month": "Mes",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "result": "Resultado"
+  },
+  "footer": {
+    "generatedAt": "Generado el {{date}}"
+  }
+}

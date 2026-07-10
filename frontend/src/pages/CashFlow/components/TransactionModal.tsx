@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle2, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Account, Category, FinancialTransaction, RecurrenceType } from '../../../types';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
@@ -10,7 +11,7 @@ import { floatToCents, centsToFloat } from '../../../utils/money';
 import { toInputDate, firstDayOfMonthISO } from '../../../utils/date';
 import { useDialog } from '../../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../../utils/validation';
-import { RECURRENCE_LABELS } from '../types';
+import { useRecurrenceLabels } from '../types';
 import { Field, INPUT } from './shared';
 
 interface TxFormState {
@@ -52,12 +53,14 @@ export function TransactionModal({
   onPay?: (id: string) => void;
   onDelete?: (item: FinancialTransaction) => void;
 }) {
+  const { t } = useTranslation('cashFlow');
+  const RECURRENCE_LABELS = useRecurrenceLabels();
   const isEdit = !!item;
   const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
   const activeAccounts = accounts.filter((a) => a.active);
   const title = type === 'payment'
-    ? (isEdit ? 'Editar Pagamento' : 'Novo Pagamento')
-    : (isEdit ? 'Editar Gasto Extraordinário' : 'Novo Gasto Extraordinário');
+    ? (isEdit ? t('transactionModal.title.editPayment') : t('transactionModal.title.newPayment'))
+    : (isEdit ? t('transactionModal.title.editExtraExpense') : t('transactionModal.title.newExtraExpense'));
 
   const init = (): TxFormState => ({
     description: item?.description ?? '',
@@ -80,9 +83,9 @@ export function TransactionModal({
     e.preventDefault();
     const amount = floatToCents(parseFloat(form.amount) || 0);
     const missing = getMissingFields([
-      { label: 'Descrição', valid: !!form.description },
-      { label: 'Categoria', valid: !!form.categoryId },
-      { label: 'Valor', valid: !!amount },
+      { label: t('transactionModal.validation.description'), valid: !!form.description },
+      { label: t('transactionModal.validation.category'), valid: !!form.categoryId },
+      { label: t('transactionModal.validation.amount'), valid: !!amount },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
@@ -110,52 +113,52 @@ export function TransactionModal({
           {isEdit && (item?.status === 'PENDING' || item?.status === 'PAID') && onDelete && (
             <button
               type="button"
-              title="Excluir"
-              aria-label="Excluir"
+              title={t('transactionModal.delete')}
+              aria-label={t('transactionModal.delete')}
               onClick={() => { onClose(); onDelete(item!); }}
               className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
             >
               <Trash2 size={16} />
             </button>
           )}
-          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button variant="secondary" onClick={onClose}>{t('transactionModal.cancel')}</Button>
           {isEdit && item?.status === 'PENDING' && onPay && (
             <Button
               variant="secondary"
               icon={<CheckCircle2 size={14} />}
               onClick={() => { onPay(item!.id); onClose(); }}
             >
-              Pagar
+              {t('transactionModal.pay')}
             </Button>
           )}
-          <Button loading={isSaving} onClick={handleSubmit as never}>Salvar</Button>
+          <Button loading={isSaving} onClick={handleSubmit as never}>{t('transactionModal.save')}</Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Descrição *">
+        <Field label={t('transactionModal.fields.description')}>
           <input className={INPUT} value={form.description} onChange={set('description')} required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Categoria *">
+          <Field label={t('transactionModal.fields.category')}>
             <select className={INPUT} value={form.categoryId} onChange={set('categoryId')} required>
-              <option value="">Selecione...</option>
+              <option value="">{t('transactionModal.fields.selectPlaceholder')}</option>
               {expenseCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="Data de lançamento *">
+          <Field label={t('transactionModal.fields.entryDate')}>
             <DateInput className={INPUT} value={form.expectedDate} onChange={(v) => setForm((f) => ({ ...f, expectedDate: v }))} required />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Valor *">
+          <Field label={t('transactionModal.fields.amount')}>
             <CurrencyInput
               className={INPUT}
               value={form.amount}
               onChange={(v) => setForm((f) => ({ ...f, amount: v }))}
             />
           </Field>
-          <Field label="Conta de débito">
+          <Field label={t('transactionModal.fields.debitAccount')}>
             <select className={INPUT} value={form.accountId} onChange={set('accountId')}>
               {activeAccounts.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
@@ -164,16 +167,16 @@ export function TransactionModal({
           </Field>
         </div>
         {isEdit && item?.recurrence === 'FIXED' ? (
-          <Field label="Tipo de lançamento">
+          <Field label={t('transactionModal.fields.recurrenceType')}>
             <div className={`${INPUT} bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400`}>
               {RECURRENCE_LABELS.FIXED}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Para encerrar a recorrência, exclua "esta e as futuras".
+              {t('transactionModal.fixedRecurrenceHint')}
             </p>
           </Field>
         ) : (
-          <Field label="Tipo de lançamento">
+          <Field label={t('transactionModal.fields.recurrenceType')}>
             <select
               className={INPUT}
               value={form.recurrence}
@@ -185,7 +188,7 @@ export function TransactionModal({
             </select>
           </Field>
         )}
-        <Field label="Observações">
+        <Field label={t('transactionModal.fields.notes')}>
           <textarea className={INPUT} rows={2} value={form.notes} onChange={set('notes')} />
         </Field>
       </form>

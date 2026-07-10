@@ -1,0 +1,61 @@
+{
+  "modal": {
+    "close": "Close"
+  },
+  "errors": {
+    "saveFailed": "Failed to save. Please try again."
+  },
+  "scopedDelete": {
+    "cancel": "Cancel",
+    "currentOnly": "This reference only",
+    "currentAndFuture": "This and future ones"
+  },
+  "monthNavigator": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "payInvoiceModal": {
+    "title": "Pay Invoice",
+    "cancel": "Cancel",
+    "confirm": "Confirm payment",
+    "accountLabel": "Account to debit",
+    "selectPlaceholder": "Select..."
+  },
+  "toast": {
+    "closeNotification": "Close notification"
+  },
+  "dialog": {
+    "defaultTitle": "Attention",
+    "confirmTitle": "Confirmation",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "ok": "OK"
+  },
+  "validation": {
+    "missingFields": "Fill in the required fields: {{fields}}."
+  },
+  "quickAdd": {
+    "title": "Quick Add",
+    "types": {
+      "payment": "Payment",
+      "extraExpense": "Extra Expense",
+      "receivable": "Receivable"
+    },
+    "fields": {
+      "description": "Description",
+      "category": "Category",
+      "date": "Date",
+      "amount": "Amount"
+    },
+    "categoryPlaceholder": "Select...",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "prevNextMonth": "Navigate between months",
+    "newEntry": "New quick entry",
+    "showHelp": "Show this help",
+    "closeModal": "Close modal"
+  }
+}

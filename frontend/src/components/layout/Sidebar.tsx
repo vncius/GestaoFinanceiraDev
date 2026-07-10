@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import {
   LayoutDashboard,
@@ -10,13 +11,13 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/cash-flow', label: 'Fluxo de Caixa', icon: TrendingUp },
-  { to: '/credit-cards', label: 'Cartões de Crédito', icon: CreditCard },
-  { to: '/receivables', label: 'Recebimentos', icon: DollarSign },
-  { to: '/backup', label: 'Backup e Exportação', icon: DatabaseBackup },
-  { to: '/settings', label: 'Parametrizações', icon: Settings },
-];
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/cash-flow', labelKey: 'nav.cashFlow', icon: TrendingUp },
+  { to: '/credit-cards', labelKey: 'nav.creditCards', icon: CreditCard },
+  { to: '/receivables', labelKey: 'nav.receivables', icon: DollarSign },
+  { to: '/backup', labelKey: 'nav.backup', icon: DatabaseBackup },
+  { to: '/settings', labelKey: 'nav.settings', icon: Settings },
+] as const;
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -24,6 +25,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
+  const { t } = useTranslation('layout');
+
   return (
     <>
       {mobileOpen && (
@@ -41,20 +44,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div>
-            <h1 className="text-base font-bold text-gray-900 dark:text-gray-50">Gestão Financeira</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Controle PJ / Pessoal</p>
+            <h1 className="text-base font-bold text-gray-900 dark:text-gray-50">{t('appName')}</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('appTagline')}</p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 -mr-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 md:hidden"
-            aria-label="Fechar menu"
+            aria-label={t('header.closeMenu')}
           >
             <X size={18} />
           </button>
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {navItems.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, labelKey, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -68,7 +71,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               }
             >
               <Icon size={18} />
-              {label}
+              {t(labelKey)}
             </NavLink>
           ))}
         </nav>

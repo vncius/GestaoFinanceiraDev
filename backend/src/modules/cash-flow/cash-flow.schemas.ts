@@ -7,10 +7,10 @@ export const cashFlowQuerySchema = z.object({
 });
 
 export const createTransactionSchema = z.object({
-  description: z.string().min(1, 'Descrição é obrigatória'),
-  categoryId: z.string().uuid('Categoria inválida'),
-  amount: z.number().int().positive('Valor deve ser positivo'),
-  expectedDate: z.string({ required_error: 'Data prevista é obrigatória' }),
+  description: z.string().min(1, 'validation.description.required'),
+  categoryId: z.string().uuid('validation.categoryId.invalid'),
+  amount: z.number().int().positive('validation.amount.positive'),
+  expectedDate: z.string({ required_error: 'validation.expectedDate.required' }),
   sourceAccountId: z.string().uuid().nullable().optional(),
   notes: z.string().nullable().optional(),
   recurrence: z.nativeEnum(RecurrenceType).default(RecurrenceType.UNIQUE),

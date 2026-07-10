@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { CardEntryType } from './credit-cards.types';
 
 export const createCreditCardSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  bank: z.string().min(1, 'Banco é obrigatório'),
+  name: z.string().min(1, 'validation.name.required'),
+  bank: z.string().min(1, 'validation.bank.required'),
   closingDay: z.number().int().min(1).max(28),
   dueDay: z.number().int().min(1).max(28),
   limit: z.number().int().min(0).default(0),
@@ -14,10 +14,10 @@ export const updateCreditCardSchema = createCreditCardSchema.partial();
 
 export const createCardEntrySchema = z
   .object({
-    description: z.string().min(1, 'Descrição é obrigatória'),
-    expenseCategoryId: z.string().uuid('Categoria inválida'),
-    totalAmount: z.number().int().positive('Valor deve ser positivo'),
-    purchaseDate: z.string({ required_error: 'Data da compra é obrigatória' }),
+    description: z.string().min(1, 'validation.description.required'),
+    expenseCategoryId: z.string().uuid('validation.expenseCategoryId.invalid'),
+    totalAmount: z.number().int().positive('validation.totalAmount.positive'),
+    purchaseDate: z.string({ required_error: 'validation.purchaseDate.required' }),
     entryType: z.nativeEnum(CardEntryType),
     installmentsCount: z.number().int().min(2).optional(),
     notes: z.string().nullable().optional(),
@@ -27,7 +27,7 @@ export const createCardEntrySchema = z
       d.entryType !== CardEntryType.INSTALLMENT ||
       (d.installmentsCount != null && d.installmentsCount >= 2),
     {
-      message: 'installmentsCount >= 2 é obrigatório para lançamentos parcelados',
+      message: 'validation.installmentsCount.required',
       path: ['installmentsCount'],
     },
   );

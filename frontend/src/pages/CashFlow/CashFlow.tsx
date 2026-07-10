@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useMonth } from '../../contexts/MonthContext';
 import { CashFlowService, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { CreateReceivablePayload } from '../../services/receivables.service';
@@ -26,6 +27,7 @@ import { TransactionModal } from './components/TransactionModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
 
 export default function CashFlow() {
+  const { t } = useTranslation('cashFlow');
   const { month, year } = useMonth();
   const navigate = useNavigate();
 
@@ -116,8 +118,8 @@ export default function CashFlow() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
-  const EFFECTED_CONFIRM = 'Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?';
-  const EFFECTED_DELETE_CONFIRM = 'Este item já está pago/recebido. Ao excluir, o pagamento será revertido e os saldos recalculados. Deseja continuar?';
+  const EFFECTED_CONFIRM = t('page.confirmEdit');
+  const EFFECTED_DELETE_CONFIRM = t('page.confirmDeleteEffected');
 
   async function saveReceivable(payload: CreateReceivablePayload) {
     if (modal?.type !== 'receivable') return;
@@ -154,7 +156,7 @@ export default function CashFlow() {
   async function handleDeleteReceivable(item: Receivable) {
     if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind: 'receivable', item }); return; }
     const isReceived = item.status === 'RECEIVED';
-    if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : 'Confirmar exclusão?'))) return;
+    if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : t('page.confirmDelete')))) return;
     if (isReceived) await revertReceivable.mutateAsync(item.id);
     deleteReceivable.mutate({ id: item.id });
   }
@@ -162,7 +164,7 @@ export default function CashFlow() {
   async function handleDeleteTransaction(kind: 'payment' | 'extra-expense', item: FinancialTransaction) {
     if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind, item }); return; }
     const isPaid = item.status === 'PAID';
-    if (!(await confirm(isPaid ? EFFECTED_DELETE_CONFIRM : 'Confirmar exclusão?'))) return;
+    if (!(await confirm(isPaid ? EFFECTED_DELETE_CONFIRM : t('page.confirmDelete')))) return;
     if (isPaid) await (kind === 'payment' ? revertPayment : revertExtra).mutateAsync(item.id);
     (kind === 'payment' ? deletePayment : deleteExtra).mutate({ id: item.id });
   }
@@ -243,7 +245,7 @@ export default function CashFlow() {
 
         {/* Pagamentos */}
         <TransactionGrid
-          title="Pagamentos"
+          title={t('page.paymentsTitle')}
           icon={<TrendingDown size={16} className="text-red-500" />}
           items={filteredPayments}
           accounts={accounts as Account[]}
@@ -256,7 +258,7 @@ export default function CashFlow() {
 
         {/* Gastos Extraordinários */}
         <TransactionGrid
-          title="Gastos Extraordinários"
+          title={t('page.extraExpensesTitle')}
           icon={<TrendingDown size={16} className="text-orange-500" />}
           items={filteredExtraExpenses}
           accounts={accounts as Account[]}
@@ -321,13 +323,11 @@ export default function CashFlow() {
       <ScopedDeleteModal
         open={!!fixedDeleteTarget}
         onClose={() => setFixedDeleteTarget(null)}
-        title="Excluir lançamento fixo"
+        title={t('page.scopedDelete.title')}
         loading={deleteReceivable.isPending || deletePayment.isPending || deleteExtra.isPending}
         description={
           <>
-            <strong>{fixedDeleteTarget?.item.description}</strong> é um lançamento fixo. Deseja excluir
-            apenas esta referência, ou esta e todas as futuras? O histórico de referências já
-            lançadas/pagas/recebidas nunca é alterado.
+            <strong>{fixedDeleteTarget?.item.description}</strong> {t('page.scopedDelete.description')}
           </>
         }
         onDeleteCurrent={() => runScopedDelete('CURRENT')}

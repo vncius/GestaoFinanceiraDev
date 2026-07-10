@@ -1,0 +1,20 @@
+{
+  "appName": "Gestão Financeira",
+  "appTagline": "Controle PJ / Pessoal",
+  "nav": {
+    "dashboard": "Dashboard",
+    "cashFlow": "Fluxo de Caixa",
+    "creditCards": "Cartões de Crédito",
+    "receivables": "Recebimentos",
+    "backup": "Backup e Exportação",
+    "settings": "Parametrizações"
+  },
+  "header": {
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo escuro",
+    "logout": "Sair",
+    "language": "Idioma"
+  }
+}

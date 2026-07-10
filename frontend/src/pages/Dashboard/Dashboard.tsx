@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Wallet,
   DollarSign,
@@ -70,6 +71,7 @@ function AlertsBar({ alerts }: { alerts: DashboardAlert[] }) {
 }
 
 function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
+  const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
   const { setMonthYear } = useMonth();
 
@@ -89,13 +91,13 @@ function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-4">
         <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Próximos Vencimentos</h3>
-        <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">15 dias</span>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('upcomingDue.title')}</h3>
+        <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{t('upcomingDue.period')}</span>
       </div>
 
       {dues.length === 0 ? (
         <EmptyState
-          title="Nenhum vencimento nos próximos 15 dias"
+          title={t('upcomingDue.empty')}
           icon={<CheckCircle2 size={20} className="text-green-500" />}
         />
       ) : (
@@ -110,7 +112,7 @@ function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDueClick(due); }
               }}
               className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-              title="Ir para o fluxo de caixa deste mês"
+              title={t('upcomingDue.goToCashFlow')}
             >
               <div className="shrink-0">{TYPE_ICON[due.type]}</div>
               <div className="min-w-0 flex-1">
@@ -133,6 +135,7 @@ function AnnualSummaryCard({
 }: {
   data: { grossIncome: number; annualLimit: number; limitUsedPercentage: number; enabled: boolean };
 }) {
+  const { t } = useTranslation('dashboard');
   const pct = data.limitUsedPercentage;
   const barColor =
     pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-green-500';
@@ -141,12 +144,12 @@ function AnnualSummaryCard({
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-4">
         <Target size={16} className="text-gray-400 dark:text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Faturamento Anual</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('annualSummary.title')}</h3>
       </div>
 
       <div className="space-y-4">
         <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Faturamento bruto recebido no ano</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('annualSummary.grossIncome')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
             {formatCurrency(data.grossIncome)}
           </p>
@@ -156,7 +159,7 @@ function AnnualSummaryCard({
           <>
             <div>
               <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                <span>Utilização do limite</span>
+                <span>{t('annualSummary.limitUsage')}</span>
                 <span
                   className={
                     pct >= 80 ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-300'
@@ -173,7 +176,7 @@ function AnnualSummaryCard({
               </div>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-gray-400 dark:text-gray-500">Limite anual configurado</span>
+              <span className="text-gray-400 dark:text-gray-500">{t('annualSummary.annualLimit')}</span>
               <span className="font-medium text-gray-700 dark:text-gray-200">
                 {formatCurrency(data.annualLimit)}
               </span>
@@ -181,7 +184,7 @@ function AnnualSummaryCard({
           </>
         ) : (
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Configure um limite anual em Parametrizações para acompanhar a utilização.
+            {t('annualSummary.noLimitConfigured')}
           </p>
         )}
       </div>
@@ -190,6 +193,7 @@ function AnnualSummaryCard({
 }
 
 function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
+  const { t } = useTranslation('dashboard');
   const maxVal = Math.max(
     ...evolution.flatMap((e) => [e.income, e.expenses]),
     1,
@@ -200,16 +204,16 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
       <div className="flex items-center gap-2 mb-5">
         <BarChart3 size={16} className="text-gray-400 dark:text-gray-500" />
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          Evolução dos Últimos Meses
+          {t('evolutionChart.title')}
         </h3>
         <div className="ml-auto flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-green-400 inline-block" />
-            Entradas
+            {t('evolutionChart.income')}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-red-400 inline-block" />
-            Saídas
+            {t('evolutionChart.expenses')}
           </span>
         </div>
       </div>
@@ -227,7 +231,7 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
                   height: `${Math.max((item.income / maxVal) * 100, item.income > 0 ? 2 : 0)}%`,
                   minHeight: item.income > 0 ? 2 : 0,
                 }}
-                title={`Entradas: ${formatCurrency(item.income)}`}
+                title={t('evolutionChart.incomeTooltip', { amount: formatCurrency(item.income) })}
               />
               <div
                 className="bg-red-400 flex-1 rounded-t-sm transition-all"
@@ -235,7 +239,7 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
                   height: `${Math.max((item.expenses / maxVal) * 100, item.expenses > 0 ? 2 : 0)}%`,
                   minHeight: item.expenses > 0 ? 2 : 0,
                 }}
-                title={`Saídas: ${formatCurrency(item.expenses)}`}
+                title={t('evolutionChart.expensesTooltip', { amount: formatCurrency(item.expenses) })}
               />
             </div>
             <span className="text-xs text-gray-400 dark:text-gray-500 text-center leading-tight">
@@ -255,7 +259,7 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
             className={`text-center text-xs font-semibold truncate ${
               item.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
             }`}
-            title={`Resultado: ${formatCurrency(item.net)}`}
+            title={t('evolutionChart.resultTooltip', { amount: formatCurrency(item.net) })}
           >
             {item.net >= 0 ? '+' : ''}
             {formatCurrency(item.net)}
@@ -280,6 +284,7 @@ function CategoryBreakdownCard({
   icon: React.ReactNode;
   items: CategoryBreakdownItem[];
 }) {
+  const { t } = useTranslation('dashboard');
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-4">
@@ -288,7 +293,7 @@ function CategoryBreakdownCard({
       </div>
 
       {items.length === 0 ? (
-        <EmptyState title="Sem lançamentos no período" />
+        <EmptyState title={t('categoryAnalysis.empty')} />
       ) : (
         <ul className="space-y-3">
           {items.map((item, i) => (
@@ -318,13 +323,14 @@ function CategoryBreakdownCard({
 }
 
 function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
+  const { t } = useTranslation('dashboard');
   const totalExpenses =
     summary.paidPayments + summary.paidExtraExpenses + summary.paidCreditCardInvoices;
 
   const segments = [
-    { label: 'Receitas', value: summary.receivedIncome, color: '#22c55e' },
-    { label: 'Gastos', value: totalExpenses, color: '#ef4444' },
-    { label: 'Reserva', value: summary.reserveInflow, color: '#3b82f6' },
+    { label: t('overview.income'), value: summary.receivedIncome, color: '#22c55e' },
+    { label: t('overview.expenses'), value: totalExpenses, color: '#ef4444' },
+    { label: t('overview.reserve'), value: summary.reserveInflow, color: '#3b82f6' },
   ];
   const total = segments.reduce((s, x) => s + x.value, 0);
 
@@ -343,7 +349,7 @@ function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
       <div className="flex items-center gap-2 mb-4">
         <PieChart size={16} className="text-gray-400 dark:text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Visão Geral do Mês</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('overview.title')}</h3>
       </div>
 
       <div className="flex items-center gap-5">
@@ -383,6 +389,7 @@ function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { t } = useTranslation('dashboard');
   const { month, year } = useMonth();
 
   const { data, isLoading, isError } = useQuery({
@@ -396,7 +403,7 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-sm text-red-500">
-          Não foi possível carregar o dashboard. Verifique se o servidor está rodando.
+          {t('error.loadFailed')}
         </p>
       </div>
     );
@@ -422,7 +429,7 @@ export default function Dashboard() {
       {/* Saldos das contas */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          Saldos Atuais
+          {t('balances.sectionTitle')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {accounts.list.map((a) => (
@@ -436,7 +443,7 @@ export default function Dashboard() {
             />
           ))}
           <StatCard
-            label="Total Geral"
+            label={t('balances.total')}
             value={formatCurrency(accounts.totalBalance)}
             icon={<DollarSign size={18} className="text-purple-600" />}
             iconBg="bg-purple-50 dark:bg-purple-900/30"
@@ -448,30 +455,30 @@ export default function Dashboard() {
       {/* Resumo do mês */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          Resumo de {formatMonthYear(month, year)}
+          {t('summary.sectionTitle', { monthYear: formatMonthYear(month, year) })}
         </h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
           <StatCard
-            label="Saldo Inicial"
+            label={t('summary.initialBalance')}
             value={formatCurrency(s.initialBalance)}
             valueColor={balanceColor(s.initialBalance)}
-            sub="Antes do mês"
+            sub={t('summary.initialBalanceSub')}
           />
           <StatCard
-            label="Saldo do Mês"
+            label={t('summary.monthBalance')}
             value={formatCurrency(s.realizedBalance)}
             valueColor={balanceColor(s.realizedBalance)}
-            sub="Consolidado"
+            sub={t('summary.monthBalanceSub')}
           />
           <StatCard
-            label="Entradas"
+            label={t('summary.income')}
             value={formatCurrency(s.receivedIncome)}
             icon={<TrendingUp size={16} className="text-green-600" />}
             iconBg="bg-green-50 dark:bg-green-900/30"
           />
           <StatCard
-            label="Saídas"
+            label={t('summary.expenses')}
             value={formatCurrency(totalPaid)}
             icon={<TrendingDown size={16} className="text-red-500" />}
             iconBg="bg-red-50 dark:bg-red-900/30"
@@ -481,9 +488,9 @@ export default function Dashboard() {
         {/* Breakdown de saídas consolidadas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {[
-            { label: 'Pagamentos', value: s.paidPayments },
-            { label: 'Gastos Extras', value: s.paidExtraExpenses },
-            { label: 'Faturas Cartão', value: s.paidCreditCardInvoices },
+            { label: t('summary.payments'), value: s.paidPayments },
+            { label: t('summary.extraExpenses'), value: s.paidExtraExpenses },
+            { label: t('summary.creditCardInvoices'), value: s.paidCreditCardInvoices },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -501,16 +508,16 @@ export default function Dashboard() {
       {/* Análise por categoria */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          Análise por Categoria
+          {t('categoryAnalysis.sectionTitle')}
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <CategoryBreakdownCard
-            title="Receitas por Categoria"
+            title={t('categoryAnalysis.incomeByCategory')}
             icon={<TrendingUp size={16} className="text-green-500" />}
             items={categoryBreakdown.income}
           />
           <CategoryBreakdownCard
-            title="Gastos por Categoria"
+            title={t('categoryAnalysis.expensesByCategory')}
             icon={<TrendingDown size={16} className="text-red-500" />}
             items={categoryBreakdown.expenses}
           />

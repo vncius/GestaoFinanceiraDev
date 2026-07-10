@@ -1,4 +1,5 @@
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { CashFlowSummary } from '../../../types';
 import { formatCurrency } from '../../../utils/money';
 
@@ -44,6 +45,7 @@ export function SummaryBar({
   expanded: boolean;
   onToggleExpanded: () => void;
 }) {
+  const { t } = useTranslation('cashFlow');
   const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
   const totalExpected = s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
 
@@ -55,16 +57,16 @@ export function SummaryBar({
     <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
       <div className="flex items-center px-2 sm:px-4 py-2">
         <SummaryRow>
-          <SummaryCell label="Inicial" value={s.initialBalance} color={initialColor} />
-          <SummaryCell label="Entradas" value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
-          <SummaryCell label="Saídas" value={totalPaid} color="text-red-500 dark:text-red-400" />
-          <SummaryCell label="Saldo Final" value={s.realizedBalance} color={saldoColor} bold border={false} />
+          <SummaryCell label={t('summaryBar.initial')} value={s.initialBalance} color={initialColor} />
+          <SummaryCell label={t('summaryBar.income')} value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
+          <SummaryCell label={t('summaryBar.expense')} value={totalPaid} color="text-red-500 dark:text-red-400" />
+          <SummaryCell label={t('summaryBar.finalBalance')} value={s.realizedBalance} color={saldoColor} bold border={false} />
         </SummaryRow>
         <button
           onClick={onToggleExpanded}
           className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title={expanded ? 'Recolher' : 'Ver previstos'}
-          aria-label={expanded ? 'Recolher' : 'Ver previstos'}
+          title={expanded ? t('summaryBar.collapse') : t('summaryBar.expand')}
+          aria-label={expanded ? t('summaryBar.collapse') : t('summaryBar.expand')}
           aria-expanded={expanded}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -75,10 +77,10 @@ export function SummaryBar({
         <>
           <div className="flex items-center px-2 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
             <SummaryRow>
-              <SummaryCell label="Saldo Inicial Previsto" value={s.projectedInitialBalance} color={initialColor} />
-              <SummaryCell label="Prev. Entradas" value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
-              <SummaryCell label="Prev. Saídas" value={totalExpected} color="text-red-500 dark:text-red-400" />
-              <SummaryCell label="Prev. Saldo" value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
+              <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
+              <SummaryCell label={t('summaryBar.expectedIncome')} value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
+              <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
+              <SummaryCell label={t('summaryBar.projectedBalance')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
             </SummaryRow>
             <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
               <ChevronDown size={14} />
@@ -86,10 +88,10 @@ export function SummaryBar({
           </div>
           <div className="flex items-center px-2 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700">
             <SummaryRow>
-              <SummaryCell label="Previsão Inicial Reserva" value={s.reserveProjectedInitialBalance} color={initialColor} />
-              <SummaryCell label="Entradas Reserva" value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
-              <SummaryCell label="Saídas Reserva" value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
-              <SummaryCell label="Saldo Reserva" value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
+              <SummaryCell label={t('summaryBar.reserveProjectedInitialBalance')} value={s.reserveProjectedInitialBalance} color={initialColor} />
+              <SummaryCell label={t('summaryBar.reserveInflow')} value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
+              <SummaryCell label={t('summaryBar.reserveOutflow')} value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
+              <SummaryCell label={t('summaryBar.reserveBalance')} value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
             </SummaryRow>
             <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
               <ChevronDown size={14} />

@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 type ToastKind = 'error' | 'success';
@@ -30,6 +31,7 @@ export function reportMutationError(message: string): void {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('common');
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const dismiss = useCallback((id: number) => {
@@ -78,7 +80,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => dismiss(toast.id)}
-              aria-label="Fechar notificação"
+              aria-label={t('toast.closeNotification')}
               className="shrink-0 opacity-70 hover:opacity-100"
             >
               <X className="w-4 h-4" />

@@ -1,0 +1,20 @@
+{
+  "appName": "Gestión Financiera",
+  "appTagline": "Control Empresarial / Personal",
+  "nav": {
+    "dashboard": "Dashboard",
+    "cashFlow": "Flujo de Caja",
+    "creditCards": "Tarjetas de Crédito",
+    "receivables": "Cobros",
+    "backup": "Copia de Seguridad y Exportación",
+    "settings": "Configuración"
+  },
+  "header": {
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "logout": "Cerrar sesión",
+    "language": "Idioma"
+  }
+}

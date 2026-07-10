@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export interface RequiredField {
   label: string;
   valid: boolean;
@@ -8,5 +10,5 @@ export function getMissingFields(fields: RequiredField[]): string[] {
 }
 
 export function missingFieldsMessage(missing: string[]): string {
-  return `Preencha os campos obrigatórios: ${missing.join(', ')}.`;
+  return i18n.t('common:validation.missingFields', { fields: missing.join(', ') });
 }
