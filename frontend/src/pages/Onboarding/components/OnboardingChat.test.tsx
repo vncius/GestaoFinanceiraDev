@@ -42,7 +42,7 @@ function renderChat(status: 'IN_PROGRESS' | 'AWAITING_CONFIRMATION' = 'IN_PROGRE
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <OnboardingChat status={status} onManual={() => {}} manualLoading={false} />
+      <OnboardingChat status={status} onManual={() => {}} manualLoading={false} onReview={() => {}} />
     </QueryClientProvider>,
   );
 }

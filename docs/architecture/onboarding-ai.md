@@ -29,6 +29,19 @@
      de configuração existentes;
    - **Responder depois** — flag em `sessionStorage` suprime o gate na sessão;
      um banner no dashboard (`OnboardingBanner`) lembra o usuário de concluir.
+3. Quando o assistente sinaliza `summaryPresented`/`AWAITING_CONFIRMATION`, o
+   chat mostra um cartão "proposta pronta" com CTA para a revisão
+   (`pages/Onboarding/components/DraftReview.tsx`). A revisão renderiza
+   **sempre o draft retornado pelo backend** — nunca texto livre da IA —
+   agrupado por seção (contas, receitas, despesas, cartões, categorias,
+   parametrizações), com edição por modal (`PUT /onboarding/draft/items/:id`,
+   revalidado no servidor), remoção (`DELETE`, bloqueada se o item for
+   referenciado por outro) e pendências calculadas no cliente (sem conta
+   principal, sem receitas). A confirmação (`POST /onboarding/confirm`) envia
+   um `idempotencyKey` novo (`crypto.randomUUID()`) por tentativa; em caso de
+   falha, o usuário pode tentar de novo com segurança — o backend retoma de
+   onde parou sem duplicar (ADR 0005) — e uma nova chave é gerada a cada
+   clique. Sucesso navega para `/dashboard`.
 3. A conversa produz um draft estruturado (ADR 0004), revisável e editável.
 4. A confirmação explícita aplica o draft via services existentes, de forma
    idempotente (ADR 0005), e o status vira `COMPLETED`.

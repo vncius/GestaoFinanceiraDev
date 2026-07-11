@@ -11,9 +11,15 @@ interface OnboardingChatProps {
   status: OnboardingStatus;
   onManual: () => void;
   manualLoading: boolean;
+  onReview: () => void;
 }
 
-export default function OnboardingChat({ status, onManual, manualLoading }: OnboardingChatProps) {
+export default function OnboardingChat({
+  status,
+  onManual,
+  manualLoading,
+  onReview,
+}: OnboardingChatProps) {
   const { t } = useTranslation('onboarding');
   const chat = useOnboardingChat();
 
@@ -62,10 +68,19 @@ export default function OnboardingChat({ status, onManual, manualLoading }: Onbo
       {summaryReady && (
         <div
           data-testid="summary-ready"
-          className="mx-4 mb-2 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-3 py-2 text-sm text-green-800 dark:text-green-300"
+          className="mx-4 mb-2 flex items-center justify-between gap-2 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-3 py-2 text-sm text-green-800 dark:text-green-300"
         >
-          <ClipboardCheck size={15} className="shrink-0" />
-          {t('chat.summaryReady')}
+          <span className="flex items-center gap-2">
+            <ClipboardCheck size={15} className="shrink-0" />
+            {t('chat.summaryReady')}
+          </span>
+          <button
+            onClick={onReview}
+            data-testid="open-review"
+            className="shrink-0 font-medium underline underline-offset-2 hover:text-green-900 dark:hover:text-green-100"
+          >
+            {t('chat.reviewCta')}
+          </button>
         </div>
       )}
 

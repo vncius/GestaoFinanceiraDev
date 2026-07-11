@@ -31,6 +31,30 @@ export interface OnboardingMessage {
   createdAt: string;
 }
 
+export interface OnboardingDraftItem {
+  draftItemId: string;
+  source: 'ai' | 'user';
+  payload: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OnboardingDraft {
+  accountTypes: OnboardingDraftItem[];
+  accounts: OnboardingDraftItem[];
+  categories: OnboardingDraftItem[];
+  incomes: OnboardingDraftItem[];
+  expenses: OnboardingDraftItem[];
+  creditCards: OnboardingDraftItem[];
+  settings: OnboardingDraftItem | null;
+}
+
+export interface ConfirmResponse {
+  status: OnboardingStatus;
+  appliedEntityIds: Record<string, string>;
+  alreadyApplied: boolean;
+}
+
 export interface SendMessagePayload {
   message: string;
   language?: 'pt' | 'en' | 'es';
@@ -58,4 +82,26 @@ export const OnboardingService = {
 
   sendMessage: (payload: SendMessagePayload): Promise<SendMessageResponse> =>
     api.post<SendMessageResponse>('/onboarding/messages', payload).then((r) => r.data),
+
+  getDraft: (): Promise<OnboardingDraft> =>
+    api.get<OnboardingDraft>('/onboarding/draft').then((r) => r.data),
+
+  updateDraftItem: (
+    draftItemId: string,
+    payload: Record<string, unknown>,
+  ): Promise<{ item: OnboardingDraftItem; draft: OnboardingDraft }> =>
+    api
+      .put<{ item: OnboardingDraftItem; draft: OnboardingDraft }>(
+        `/onboarding/draft/items/${draftItemId}`,
+        { payload },
+      )
+      .then((r) => r.data),
+
+  removeDraftItem: (draftItemId: string): Promise<{ draft: OnboardingDraft }> =>
+    api
+      .delete<{ draft: OnboardingDraft }>(`/onboarding/draft/items/${draftItemId}`)
+      .then((r) => r.data),
+
+  confirm: (idempotencyKey: string): Promise<ConfirmResponse> =>
+    api.post<ConfirmResponse>('/onboarding/confirm', { idempotencyKey }).then((r) => r.data),
 };

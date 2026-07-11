@@ -8,8 +8,9 @@ import { deferOnboarding } from '../../components/onboarding/OnboardingGate';
 import { Button } from '../../components/ui/Button';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import OnboardingChat from './components/OnboardingChat';
+import DraftReview from './components/DraftReview';
 
-type View = 'choice' | 'assistant';
+type View = 'choice' | 'assistant' | 'review';
 
 export default function Onboarding() {
   const { t } = useTranslation('onboarding');
@@ -48,17 +49,24 @@ export default function Onboarding() {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Proposta pronta cai direto na revisão; "voltar ao chat" é explícito.
+  const showReview = view === 'review' || (view === 'choice' && status === 'AWAITING_CONFIRMATION');
   // Conversa já iniciada: vai direto para a área do assistente.
-  const showAssistant = view === 'assistant' || status === 'IN_PROGRESS' || status === 'AWAITING_CONFIRMATION';
+  const showAssistant =
+    !showReview &&
+    (view === 'assistant' || status === 'IN_PROGRESS' || status === 'AWAITING_CONFIRMATION');
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl">
-        {showAssistant ? (
+        {showReview ? (
+          <DraftReview onBackToChat={() => setView('assistant')} />
+        ) : showAssistant ? (
           <OnboardingChat
             status={status ?? 'PENDING'}
             onManual={() => skipMutation.mutate()}
             manualLoading={skipMutation.isPending}
+            onReview={() => setView('review')}
           />
         ) : (
           <div className="space-y-6">
