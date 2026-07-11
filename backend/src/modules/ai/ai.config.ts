@@ -1,6 +1,6 @@
 import { AiConfigError } from './ai.errors';
 
-export type AiProviderName = 'fake' | 'anthropic';
+export type AiProviderName = 'fake' | 'anthropic' | 'openai';
 
 export interface AiConfig {
   provider: AiProviderName;
@@ -15,9 +15,13 @@ export interface AiConfig {
 
 const DEFAULTS = {
   // 'fake' como default mantém o boot do servidor independente de credenciais;
-  // o provedor real é ativado explicitamente com AI_PROVIDER=anthropic.
+  // o provedor real é ativado explicitamente com AI_PROVIDER=anthropic|openai.
   provider: 'fake' as AiProviderName,
-  model: 'claude-opus-4-8',
+  // Sem default: o modelo é específico de cada provedor (ex.: claude-opus-4-8
+  // vs gpt-4o-mini) — create-ai-provider.ts exige AI_MODEL explícito para
+  // qualquer provider real, para não aplicar silenciosamente um modelo do
+  // provedor errado.
+  model: '',
   maxOutputTokens: 1024,
   requestTimeoutMs: 45_000,
   maxToolRoundsPerTurn: 8,
@@ -34,7 +38,7 @@ function parsePositiveInt(name: string, raw: string | undefined, fallback: numbe
 
 export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): AiConfig {
   const provider = (env.AI_PROVIDER ?? DEFAULTS.provider) as AiProviderName;
-  if (provider !== 'fake' && provider !== 'anthropic') {
+  if (provider !== 'fake' && provider !== 'anthropic' && provider !== 'openai') {
     throw new AiConfigError(`AI_PROVIDER desconhecido: "${env.AI_PROVIDER}"`);
   }
 

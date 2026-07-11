@@ -4,6 +4,7 @@ import { loadAiConfig } from './ai.config';
 import { AiConfigError } from './ai.errors';
 import { FakeAiProvider } from './providers/fake-ai.provider';
 import { AnthropicAiProvider } from './providers/anthropic.provider';
+import { OpenAiProvider } from './providers/openai.provider';
 
 describe('createAiProvider', () => {
   it('cria o provider fake por default', () => {
@@ -14,23 +15,41 @@ describe('createAiProvider', () => {
 
   it('cria o provider anthropic quando configurado com chave e modelo', () => {
     const provider = createAiProvider(
-      loadAiConfig({ AI_PROVIDER: 'anthropic', AI_API_KEY: 'sk-teste' }),
+      loadAiConfig({ AI_PROVIDER: 'anthropic', AI_API_KEY: 'sk-teste', AI_MODEL: 'claude-opus-4-8' }),
     );
     expect(provider).toBeInstanceOf(AnthropicAiProvider);
     expect(provider.name).toBe('anthropic');
   });
 
   it('rejeita anthropic sem AI_API_KEY', () => {
-    expect(() => createAiProvider(loadAiConfig({ AI_PROVIDER: 'anthropic' }))).toThrow(
-      AiConfigError,
-    );
+    expect(() =>
+      createAiProvider(loadAiConfig({ AI_PROVIDER: 'anthropic', AI_MODEL: 'claude-opus-4-8' })),
+    ).toThrow(AiConfigError);
   });
 
-  it('rejeita anthropic com AI_MODEL vazio', () => {
+  it('rejeita anthropic sem AI_MODEL', () => {
     expect(() =>
-      createAiProvider(
-        loadAiConfig({ AI_PROVIDER: 'anthropic', AI_API_KEY: 'sk-teste', AI_MODEL: '' }),
-      ),
+      createAiProvider(loadAiConfig({ AI_PROVIDER: 'anthropic', AI_API_KEY: 'sk-teste' })),
+    ).toThrow(AiConfigError);
+  });
+
+  it('cria o provider openai quando configurado com chave e modelo', () => {
+    const provider = createAiProvider(
+      loadAiConfig({ AI_PROVIDER: 'openai', AI_API_KEY: 'sk-teste', AI_MODEL: 'gpt-4o-mini' }),
+    );
+    expect(provider).toBeInstanceOf(OpenAiProvider);
+    expect(provider.name).toBe('openai');
+  });
+
+  it('rejeita openai sem AI_API_KEY', () => {
+    expect(() =>
+      createAiProvider(loadAiConfig({ AI_PROVIDER: 'openai', AI_MODEL: 'gpt-4o-mini' })),
+    ).toThrow(AiConfigError);
+  });
+
+  it('rejeita openai sem AI_MODEL', () => {
+    expect(() =>
+      createAiProvider(loadAiConfig({ AI_PROVIDER: 'openai', AI_API_KEY: 'sk-teste' })),
     ).toThrow(AiConfigError);
   });
 });

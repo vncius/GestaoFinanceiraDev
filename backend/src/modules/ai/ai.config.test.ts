@@ -7,7 +7,7 @@ describe('loadAiConfig', () => {
     const config = loadAiConfig({});
     expect(config.provider).toBe('fake');
     expect(config.apiKey).toBe('');
-    expect(config.model).toBe('claude-opus-4-8');
+    expect(config.model).toBe('');
     expect(config.maxOutputTokens).toBe(1024);
     expect(config.requestTimeoutMs).toBe(45_000);
     expect(config.maxToolRoundsPerTurn).toBe(8);
@@ -30,8 +30,13 @@ describe('loadAiConfig', () => {
     expect(config.maxToolRoundsPerTurn).toBe(4);
   });
 
+  it('aceita o provider openai', () => {
+    const config = loadAiConfig({ AI_PROVIDER: 'openai' });
+    expect(config.provider).toBe('openai');
+  });
+
   it('rejeita provider desconhecido', () => {
-    expect(() => loadAiConfig({ AI_PROVIDER: 'openai' })).toThrow(AiConfigError);
+    expect(() => loadAiConfig({ AI_PROVIDER: 'gemini' })).toThrow(AiConfigError);
   });
 
   it('rejeita limites não numéricos ou não positivos', () => {

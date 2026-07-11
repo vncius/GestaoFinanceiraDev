@@ -6,7 +6,7 @@ Sistema de controle financeiro para pessoa física e jurídica: fluxo de caixa m
 
 - **Backend**: Node.js + TypeScript + Express + Zod, persistência em MongoDB Atlas (driver nativo `mongodb`, sem ORM). Valores monetários guardados em centavos (inteiros). Autenticação via Google/Apple ID-token (JWT em cookie httpOnly), com isolamento de dados por tenant.
 - **Frontend**: React 18 + Vite + TypeScript + TailwindCSS + React Router + TanStack Query + Axios. i18n em pt/en/es (i18next).
-- **IA**: integração com a Anthropic (`@anthropic-ai/sdk`) por trás de uma abstração de provedor própria — ver [`docs/architecture/ai-platform.md`](docs/architecture/ai-platform.md).
+- **IA**: integração com Anthropic (`@anthropic-ai/sdk`) ou OpenAI (`openai`) por trás de uma abstração de provedor própria (`AI_PROVIDER=anthropic|openai`) — ver [`docs/architecture/ai-platform.md`](docs/architecture/ai-platform.md).
 
 > [`docs/adr/0001-json-file-storage.md`](docs/adr/0001-json-file-storage.md) registra a decisão original de persistir em arquivos JSON; está **superado** — a aplicação migrou para MongoDB Atlas (ver o próprio ADR para a nota de atualização e o histórico de commits).
 
@@ -69,9 +69,9 @@ npm run seed
 | `JWT_SECRET`        | —                    | Segredo para assinar o cookie de sessão                            |
 | `GOOGLE_CLIENT_ID`  | —                    | OAuth Client ID do Google                                           |
 | `APPLE_CLIENT_ID`   | —                    | Services ID da Apple                                                |
-| `AI_PROVIDER`       | `fake`               | `fake` (determinístico, sem rede) ou `anthropic`                    |
-| `AI_API_KEY`        | —                    | Chave da Anthropic — obrigatória com `AI_PROVIDER=anthropic`, nunca exposta ao frontend |
-| `AI_MODEL`          | `claude-opus-4-8`    | Modelo usado pelo assistente de onboarding                          |
+| `AI_PROVIDER`       | `fake`               | `fake` (determinístico, sem rede), `anthropic` ou `openai`           |
+| `AI_API_KEY`        | —                    | Chave do provedor ativo — obrigatória com `AI_PROVIDER=anthropic\|openai`, nunca exposta ao frontend |
+| `AI_MODEL`          | —                    | Modelo do provedor ativo — obrigatório junto com `AI_API_KEY` (ex.: `claude-opus-4-8` ou `gpt-4o-mini`) |
 
 Veja `backend/.env.example` para os limites opcionais da plataforma de IA
 (timeout, tokens, tool rounds).

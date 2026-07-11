@@ -43,7 +43,8 @@ Responsável apenas por comunicação com provedores e contratos genéricos:
 | `providers/fake-ai.provider.ts` | `FakeAiProvider`: roteiro determinístico de respostas/tool calls/erros, captura requisições para asserções | implementado |
 | `create-ai-provider.ts` | Factory que seleciona a implementação pela config; wiring em `container.ts` (`aiConfig`, `aiProvider`). Default `AI_PROVIDER=fake` até a integração real | implementado |
 | `providers/anthropic.provider.ts` | Único código que conhece o SDK da Anthropic (`@anthropic-ai/sdk`): mapeia mensagens/tools neutras ↔ formato do provedor, mescla tool results paralelos em uma única mensagem user, timeout via cliente + `AbortSignal`, retry limitado (`maxRetries: 1` do SDK para 408/429/5xx), erros mapeados por status para os `AppError` de `ai.errors.ts`. Sem extended thinking (o formato neutro não transporta thinking blocks para replay no loop de tools) | implementado |
-| Registro/execução de tools | Definição de tool (nome + schema Zod + executor), resolução por nome, validação, limites de chamadas | planejado (Etapa 5) |
+| `providers/openai.provider.ts` | Único código que conhece o SDK da OpenAI (`openai`, Chat Completions API): mesmo contrato `AiProvider`, mas cada `tool_result` vira uma mensagem `role: 'tool'` separada (a OpenAI não exige o merge que a Anthropic exige), `max_completion_tokens` em vez de `max_tokens`, `finish_reason` mapeado para `AiStopReason`, mesma política de erros/timeout/retry | implementado |
+| `tool-registry.ts` / `ai-tool.types.ts` | Registro genérico de tools: definição (nome + schema Zod + executor), resolução por nome, validação, `AiToolRunner` com limite de chamadas por turno | implementado |
 
 ### Módulo `onboarding/` — primeiro domínio consumidor
 
@@ -117,9 +118,9 @@ Variáveis de ambiente **somente no backend** (`backend/.env`, com exemplo em
 
 | Variável | Uso |
 |---|---|
-| `AI_PROVIDER` | `fake` (default — determinístico, sem rede) ou `anthropic`. O default `fake` mantém o boot independente de credenciais; o provedor real é ativado explicitamente |
-| `AI_API_KEY` | Chave do provedor. Obrigatória com `AI_PROVIDER=anthropic`. Nunca enviada ao frontend, nunca logada, nunca commitada |
-| `AI_MODEL` | Modelo utilizado (default `claude-opus-4-8`) |
+| `AI_PROVIDER` | `fake` (default — determinístico, sem rede), `anthropic` ou `openai`. O default `fake` mantém o boot independente de credenciais; o provedor real é ativado explicitamente |
+| `AI_API_KEY` | Chave do provedor ativo. Obrigatória com `AI_PROVIDER=anthropic\|openai` (`create-ai-provider.ts` valida no boot). Nunca enviada ao frontend, nunca logada, nunca commitada |
+| `AI_MODEL` | Modelo do provedor ativo — **sem default**, obrigatório junto com `AI_API_KEY` para qualquer provedor real (evita aplicar silenciosamente um nome de modelo do provedor errado). Ex.: `claude-opus-4-8` (Anthropic) ou `gpt-4o-mini` (OpenAI) |
 | Demais limites (timeout, max tokens, tool rounds) | Centralizados em `ai.config.ts`, com defaults seguros e override por env quando fizer sentido |
 
 ## Tratamento de erros
@@ -146,12 +147,37 @@ devolve `{ error, code, params }` e o frontend traduz o `code` via i18next
   conjunto. Uma futura capacidade de "consultas financeiras" registraria tools
   de leitura próprias, reutilizando provider, registro, validação e limites.
 - **Troca de provedor = nova implementação de `AiProvider`** + configuração;
-  zero mudança nos domínios.
+  zero mudança nos domínios — confirmado na prática: a OpenAI foi adicionada
+  como segundo provedor real sem tocar `onboarding/` (só o módulo `ai/`).
 - **Streaming (SSE)** fica fora da primeira versão; a interface do provider
   poderá ganhar um método opcional de stream sem quebrar consumidores.
 - Fora de escopo da primeira versão (não criar código antecipado): múltiplos
   agentes, RAG/embeddings, memória permanente, troca dinâmica de provedor pelo
   usuário, painel administrativo de IA.
+
+## Como adicionar um novo provedor
+
+1. Implemente `AiProvider` (`ai-provider.types.ts`) em
+   `backend/src/modules/ai/providers/<nome>.provider.ts` — único arquivo que
+   pode importar o SDK do provedor. Traduza `AiChatRequest` (system, mensagens
+   neutras, tools com JSON Schema, `maxOutputTokens`, `AbortSignal`) para o
+   formato do provedor e a resposta de volta para `AiChatResult` (texto, tool
+   calls, `stopReason`, `usage`). Injete o cliente HTTP/SDK como parâmetro
+   opcional do construtor (ver `AnthropicMessagesApi`/`OpenAiChatApi`) para os
+   testes conseguirem simular respostas sem rede.
+2. Mapeie os erros do SDK para `AiConfigError` (credenciais),
+   `AiRateLimitedError` (429), `AiTimeoutError` (abort/timeout) ou
+   `AiProviderUnavailableError` (demais falhas) — nunca deixe o erro bruto do
+   SDK vazar (pode conter detalhes internos).
+3. Adicione o nome à união `AiProviderName` (`ai.config.ts`) e um `case` em
+   `createAiProvider` (`create-ai-provider.ts`), reusando `requireCredentials`
+   para exigir `AI_API_KEY`/`AI_MODEL` explícitos.
+4. Escreva testes de contrato (`<nome>.provider.test.ts`, mesmo padrão dos
+   existentes): mapeamento de mensagens/tools, tool calls na resposta, cada
+   `stopReason`, e os quatro erros mapeados. **Nunca chame a API real nos
+   testes.**
+5. Documente a variável de modelo no `.env.example` e na tabela de
+   Configuração acima.
 
 ## Documentos relacionados
 
