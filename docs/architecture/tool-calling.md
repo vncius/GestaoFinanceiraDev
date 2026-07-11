@@ -55,6 +55,33 @@ modelo recebe `ai.tool.limitExceeded`. Chamadas com nome desconhecido também
 consomem orçamento (evita loop infinito de tentativas). O loop da conversa
 (etapa da conversa) usa `runner.remaining` para encerrar o turno.
 
+## Tools do onboarding
+
+Registradas em `backend/src/modules/onboarding/onboarding-tools.ts`
+(`createOnboardingToolRegistry`, wiring em `container.ts`):
+
+| Tool | Kind | Efeito |
+|---|---|---|
+| `get_onboarding_context` | read | Status, draft compacto (com draftItemIds), pendências e **nomes** de contas/categorias existentes (UUIDs reais nunca circulam pelo modelo) |
+| `propose_account` | proposal | Conta no draft; `accountTypeName` resolve/cria o tipo internamente; `isMain` marca a principal |
+| `propose_income` | proposal | Receita no draft; `categoryName` resolve/cria categoria INCOME |
+| `propose_expense` | proposal | Despesa no draft; `categoryName` resolve/cria categoria EXPENSE |
+| `propose_credit_card` | proposal | Cartão no draft |
+| `propose_settings` | proposal | Configurações (singleton; substitui proposta anterior) |
+| `update_draft_item` | proposal | Patch em item por draftItemId (revalidação completa) |
+| `remove_draft_item` | proposal | Remove item (falha se referenciado) |
+| `present_setup_summary` | proposal | Sinaliza fim da coleta: `IN_PROGRESS → AWAITING_CONFIRMATION` (idempotente); retorna draft + pendências |
+
+Decisão de escopo: `propose_account_type` e `propose_category` **não** são
+tools — a resolução por nome é interna às propostas (reusa item homônimo do
+draft ou cria), reduzindo as refs que o modelo precisa administrar.
+
+Pendências calculadas (`computePendencies`): `noAccounts`, `noMainAccount`,
+`noIncomes`, `noSettings` — retornadas em toda proposta para guiar o modelo.
+
+Nenhuma dessas tools toca coleções financeiras (coberto por teste que verifica
+os repositórios após todas as propostas).
+
 ## Como adicionar uma nova tool
 
 1. Defina o schema Zod dos argumentos (reaproveite schemas do domínio quando

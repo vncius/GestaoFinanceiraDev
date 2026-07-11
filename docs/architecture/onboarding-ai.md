@@ -135,6 +135,13 @@ a UI de revisão edita como `user`, as tools da IA proporão como `ai`.
 `onboarding.draft.locked` (409); payloads inválidos caem no `validation.generic`
 do errorHandler (ZodError).
 
+## Tools do onboarding
+
+Conjunto fechado registrado em `onboarding-tools.ts` — detalhado em
+[tool-calling.md](tool-calling.md). Todas operam apenas sobre contexto de
+leitura e draft; `present_setup_summary` é o gatilho da transição
+`IN_PROGRESS → AWAITING_CONFIRMATION`.
+
 ## Fluxo conversacional e confirmação
 
 Preenchidos nas etapas correspondentes (conversa e aplicação idempotente).

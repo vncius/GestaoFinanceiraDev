@@ -35,6 +35,7 @@ import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
 import { OnboardingService } from './modules/onboarding/onboarding.service';
 import { OnboardingDraftService } from './modules/onboarding/onboarding-draft.service';
+import { createOnboardingToolRegistry } from './modules/onboarding/onboarding-tools';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
@@ -128,6 +129,12 @@ const onboardingService = new OnboardingService(
   accountsRepo,
 );
 const onboardingDraftService = new OnboardingDraftService(onboardingService, onboardingStateRepo);
+export const onboardingToolRegistry = createOnboardingToolRegistry({
+  onboardingService,
+  draftService: onboardingDraftService,
+  accountsRepo,
+  categoriesRepo,
+});
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
