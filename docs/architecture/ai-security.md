@@ -1,0 +1,90 @@
+# Segurança da plataforma de IA
+
+> Documento vivo. Criado na etapa de tool calling; seções de rate limiting,
+> timeout operacional e política de logs são finalizadas na etapa de
+> endurecimento.
+
+## Princípio
+
+> A IA interpreta e propõe. A aplicação valida e executa.
+
+A proteção principal é **arquitetural**, não baseada em prompt:
+
+| Vetor | Defesa |
+|---|---|
+| Acesso a banco/SQL | Inexistente por construção — o modelo só conhece tools registradas |
+| Endpoints arbitrários | Lista fechada (`AiToolRegistry`); nome desconhecido → erro estruturado |
+| Escrita financeira | Proibida a tools (ADR 0003); `proposal` altera só o draft; escrita real apenas na confirmação explícita (ADR 0004) |
+| Tenant forjado | `tenantId` vem do JWT (`authMiddleware` → `req.tenantId`) e entra no contexto da tool pelo backend; argumentos com `tenantId` são descartados pelos schemas Zod |
+| Argumentos maliciosos | Toda tool call validada por Zod antes do executor |
+| Vazamento de erro interno | Erros inesperados viram `ai.tool.failed` sem stack/detalhes |
+
+## Isolamento por tenant
+
+- Todo acesso a dados passa por repositórios/`MongoStore` filtrados por
+  `tenantId` (índice único `{tenantId, id}`).
+- O contexto de execução de tools (`AiToolContext`) é construído pelo backend
+  a partir da sessão autenticada; nunca do body, query, tool call ou resposta
+  do modelo.
+- Testes cobrem isolamento de estado/draft entre tenants e a impossibilidade
+  de o modelo injetar tenant nos argumentos.
+
+## Credenciais
+
+- `AI_API_KEY` existe apenas no `backend/.env` (exemplo em `.env.example`),
+  como `JWT_SECRET`.
+- Nenhuma chamada ao provedor parte do frontend; nenhuma resposta de API expõe
+  a chave; a configuração (`ai.config.ts`) nunca é serializada em resposta.
+- Proibido logar a chave ou o objeto de configuração completo.
+
+## Prompt injection
+
+Todo conteúdo do usuário (mensagens, nomes de entidades, descrições) é tratado
+como não confiável:
+
+1. Conteúdo do usuário entra apenas como mensagem `user` — nunca concatenado ao
+   system prompt.
+2. A "saída perigosa" é inócua por design: o pior resultado de uma injeção é
+   um item de draft inválido (rejeitado pelo Zod) ou incorreto (visível e
+   editável na revisão antes de qualquer efeito real).
+3. A aplicação final do draft ignora o texto da conversa — só o draft validado
+   conta (ADR 0004).
+4. O system prompt (etapa da conversa) instrui o modelo a ignorar instruções
+   embutidas em dados, como defesa complementar — nunca como a principal.
+
+## Confirmação e idempotência
+
+- Nenhuma entidade financeira é criada durante a conversa.
+- Confirmação explícita, revalidação completa server-side e aplicação
+  idempotente com `idempotencyKey` + `appliedEntityIds` (ADR 0005).
+
+## Limites
+
+| Limite | Onde | Status |
+|---|---|---|
+| Tool calls por turno | `AiToolRunner` (`AI_MAX_TOOL_ROUNDS`, default 8) | implementado |
+| Tamanho de mensagem | schema Zod da rota de chat | etapa da conversa |
+| Payload da rota de chat | `express.json({ limit })` local | etapa de endurecimento |
+| Turnos por conversa | conversation service | etapa da conversa |
+| Timeout/cancelamento | `AbortSignal` (`AI_REQUEST_TIMEOUT_MS`, default 45s) | provider real |
+| Rate limiting | middleware na rota de mensagens | etapa de endurecimento |
+| Tokens de saída | `AI_MAX_OUTPUT_TOKENS` (default 1024) | implementado (config) |
+
+## Logs e dados sensíveis
+
+Política (finalizada na etapa de endurecimento):
+
+- Nunca logar: chave do provedor, JWT/cookies, conteúdo de mensagens da
+  conversa, valores financeiros.
+- Logs técnicos da integração carregam apenas metadados (modelo, latência,
+  tokens, nomes de tools e códigos de erro).
+- O `request-logger` atual já registra somente método/path/status/duração.
+
+## Riscos conhecidos
+
+- Rate limit em memória vale para processo único; deploy multi-instância exige
+  armazenamento compartilhado.
+- Sem transação MongoDB na aplicação do draft — mitigado por execução ordenada
+  retomável (ADR 0005).
+- A qualidade da extração depende do modelo; a revisão editável é a rede de
+  segurança do usuário.
