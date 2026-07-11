@@ -221,6 +221,18 @@ Implementado em `onboarding-apply.service.ts` (`POST /onboarding/confirm`):
    nova retoma do ponto em que parou.
 6. Ao final: status `COMPLETED`, `appliedAt` registrado.
 
+## Testes de integração
+
+`onboarding.integration.test.ts` cobre o fluxo de ponta a ponta — conversa
+(`FakeAiProvider`) → tools → draft → confirmação → **services financeiros
+reais** (não fakes de criação) → repositórios em memória — validando que os
+schemas das tools e os schemas dos services batem e que refs simbólicas se
+resolvem corretamente por todas as camadas. Cenários: tenant novo com múltiplas
+informações por mensagem, edição do draft antes de confirmar, idempotência com
+falha parcial e retomada, tenant pré-existente (`COMPLETED_MANUAL`), skip
+manual, isolamento entre dois tenants, provedor indisponível, prompt
+injection, idioma e validações financeiras. Nunca chama o provedor real.
+
 ## Limitações atuais
 - Sem streaming — resposta única por turno.
 - Transferências recorrentes e objetivos financeiros estão fora da primeira
