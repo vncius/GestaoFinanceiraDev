@@ -16,6 +16,9 @@ import {
   CreditCardInvoicesMongoRepository,
 } from './modules/credit-cards/credit-cards.mongo-repository';
 
+import { loadAiConfig } from './modules/ai/ai.config';
+import { createAiProvider } from './modules/ai/create-ai-provider';
+
 import { AuthService } from './modules/auth/auth.service';
 import { AccountsService } from './modules/accounts/accounts.service';
 import { AccountTypesService } from './modules/account-types/account-types.service';
@@ -51,6 +54,11 @@ const creditCardsRepo = new CreditCardsMongoRepository();
 const creditCardEntriesRepo = new CreditCardEntriesMongoRepository();
 const creditCardInstallmentsRepo = new CreditCardInstallmentsMongoRepository();
 const creditCardInvoicesRepo = new CreditCardInvoicesMongoRepository();
+
+// ─── Plataforma de IA (ADR 0002) ────────────────────────────────────────────────
+
+export const aiConfig = loadAiConfig();
+export const aiProvider = createAiProvider(aiConfig);
 
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 

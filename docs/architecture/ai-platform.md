@@ -37,10 +37,11 @@ Responsável apenas por comunicação com provedores e contratos genéricos:
 
 | Componente | Responsabilidade | Status |
 |---|---|---|
-| `ai-provider.types.ts` | Contrato neutro: `ChatMessage`, `ToolDefinition`, `ToolCall`, resultado de completion e a interface `AiProvider` | planejado (Etapa 2) |
-| `ai.config.ts` | Configuração centralizada: modelo, max tokens, timeout, limites de tool rounds | planejado (Etapa 2) |
-| `ai.errors.ts` | Erros específicos da integração (indisponível, timeout, rate limit do provedor), mapeados para `AppError` com códigos i18n | planejado (Etapa 2) |
-| `providers/fake-ai.provider.ts` | Provider determinístico para testes (roteiros de respostas e tool calls) | planejado (Etapa 2) |
+| `ai-provider.types.ts` | Contrato neutro: `AiMessage`, `AiToolDefinition`, `AiToolCall`, `AiChatResult` e a interface `AiProvider` | implementado |
+| `ai.config.ts` | Configuração centralizada (`loadAiConfig`): provider, modelo, max tokens, timeout, limite de tool rounds — via env `AI_*` | implementado |
+| `ai.errors.ts` | Erros da integração (`AiConfigError`, `AiProviderUnavailableError`, `AiTimeoutError`, `AiRateLimitedError`), subclasses de `AppError` com códigos i18n `ai.*` | implementado |
+| `providers/fake-ai.provider.ts` | `FakeAiProvider`: roteiro determinístico de respostas/tool calls/erros, captura requisições para asserções | implementado |
+| `create-ai-provider.ts` | Factory que seleciona a implementação pela config; wiring em `container.ts` (`aiConfig`, `aiProvider`). Default `AI_PROVIDER=fake` até a integração real | implementado |
 | `providers/anthropic.provider.ts` | Único código que conhece o SDK/HTTP do provedor real | planejado (Etapa 7) |
 | Registro/execução de tools | Definição de tool (nome + schema Zod + executor), resolução por nome, validação, limites de chamadas | planejado (Etapa 5) |
 
