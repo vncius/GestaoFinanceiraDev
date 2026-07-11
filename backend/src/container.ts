@@ -34,6 +34,7 @@ import { CashFlowService } from './modules/cash-flow/cash-flow.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
 import { OnboardingService } from './modules/onboarding/onboarding.service';
+import { OnboardingDraftService } from './modules/onboarding/onboarding-draft.service';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
@@ -126,6 +127,7 @@ const onboardingService = new OnboardingService(
   onboardingMessagesRepo,
   accountsRepo,
 );
+const onboardingDraftService = new OnboardingDraftService(onboardingService, onboardingStateRepo);
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
@@ -140,5 +142,5 @@ export const controllers = {
   cashFlow: new CashFlowController(cashFlowService),
   dashboard: new DashboardController(dashboardService),
   backup: new BackupController(backupService),
-  onboarding: new OnboardingController(onboardingService),
+  onboarding: new OnboardingController(onboardingService, onboardingDraftService),
 };

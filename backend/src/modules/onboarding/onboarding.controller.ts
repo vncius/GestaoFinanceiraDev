@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { OnboardingService } from './onboarding.service';
+import { OnboardingDraftService } from './onboarding-draft.service';
+import { addDraftItemSchema, updateDraftItemSchema } from './onboarding.schemas';
 import { OnboardingState } from './onboarding.types';
 
 // Visão pública do estado: campos internos de idempotência/resumo não saem da API.
@@ -13,7 +15,10 @@ function toStatusResponse(state: OnboardingState) {
 }
 
 export class OnboardingController {
-  constructor(private readonly service: OnboardingService) {}
+  constructor(
+    private readonly service: OnboardingService,
+    private readonly draftService: OnboardingDraftService,
+  ) {}
 
   async getStatus(req: Request, res: Response): Promise<void> {
     const state = await this.service.getState(req.tenantId);
@@ -38,5 +43,35 @@ export class OnboardingController {
   async getDraft(req: Request, res: Response): Promise<void> {
     const draft = await this.service.getDraft(req.tenantId);
     res.json(draft);
+  }
+
+  // Edições manuais do draft (feitas pela UI de revisão) entram como source
+  // 'user' — a IA propõe itens por outro caminho (tools), nunca por aqui.
+
+  async addDraftItem(req: Request, res: Response): Promise<void> {
+    const input = addDraftItemSchema.parse(req.body);
+    const result = await this.draftService.addItem(
+      req.tenantId,
+      input.section,
+      input.payload,
+      'user',
+    );
+    res.status(201).json({ item: result.item, draft: result.state.draft });
+  }
+
+  async updateDraftItem(req: Request, res: Response): Promise<void> {
+    const input = updateDraftItemSchema.parse(req.body);
+    const result = await this.draftService.updateItem(
+      req.tenantId,
+      req.params.draftItemId,
+      input.payload,
+      'user',
+    );
+    res.json({ item: result.item, draft: result.state.draft });
+  }
+
+  async removeDraftItem(req: Request, res: Response): Promise<void> {
+    const state = await this.draftService.removeItem(req.tenantId, req.params.draftItemId);
+    res.json({ draft: state.draft });
   }
 }

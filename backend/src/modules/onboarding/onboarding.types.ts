@@ -38,6 +38,12 @@ export interface OnboardingDraft {
   creditCards: OnboardingDraftItem[];
   /** Configurações são singleton por tenant; no draft também. */
   settings: OnboardingDraftItem | null;
+  /**
+   * Maior número já emitido por seção. Garante que draftItemIds nunca sejam
+   * reutilizados após remoção — uma ref antiga deve falhar como inválida, não
+   * apontar silenciosamente para outro item.
+   */
+  itemCounters: Record<string, number>;
 }
 
 /** Estado do onboarding — singleton por tenant, como FinancialSettings. */
@@ -93,5 +99,6 @@ export function createEmptyDraft(): OnboardingDraft {
     expenses: [],
     creditCards: [],
     settings: null,
+    itemCounters: {},
   };
 }
