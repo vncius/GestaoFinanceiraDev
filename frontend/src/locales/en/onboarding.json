@@ -1,5 +1,8 @@
 {
   "entry": {
+    "language": {
+      "question": "Which language would you like to continue in?"
+    },
     "title": "Welcome! Let's set up your financial control",
     "subtitle": "Choose how you'd like to start. Nothing will be created without your confirmation.",
     "assistant": {

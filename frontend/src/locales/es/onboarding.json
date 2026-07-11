@@ -1,5 +1,8 @@
 {
   "entry": {
+    "language": {
+      "question": "¿En qué idioma quieres continuar?"
+    },
     "title": "¡Bienvenido(a)! Vamos a configurar tu control financiero",
     "subtitle": "Elige cómo prefieres empezar. Nada se creará sin tu confirmación.",
     "assistant": {

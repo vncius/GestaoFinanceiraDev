@@ -7,8 +7,16 @@ import { OnboardingService, OPEN_ONBOARDING_STATUSES } from '../../services/onbo
 import { deferOnboarding } from '../../components/onboarding/OnboardingGate';
 import { Button } from '../../components/ui/Button';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { Language } from '../../i18n';
 import OnboardingChat from './components/OnboardingChat';
 import DraftReview from './components/DraftReview';
+
+const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+  { value: 'pt', label: 'Português' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
+];
 
 type View = 'choice' | 'assistant' | 'review';
 
@@ -72,6 +80,8 @@ export default function Onboarding() {
           />
         ) : (
           <div className="space-y-6">
+            <LanguageStep />
+
             <div className="text-center space-y-2">
               <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50">
                 {t('entry.title')}
@@ -112,6 +122,37 @@ export default function Onboarding() {
             </p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function LanguageStep() {
+  const { t } = useTranslation('onboarding');
+  const { language, setLanguage } = useLanguage();
+
+  return (
+    <div className="flex flex-col items-center gap-2" data-testid="onboarding-language-step">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+        {t('entry.language.question')}
+      </p>
+      <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-1">
+        {LANGUAGE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            data-testid={`onboarding-language-${opt.value}`}
+            onClick={() => setLanguage(opt.value)}
+            aria-pressed={language === opt.value}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              language === opt.value
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
     </div>
   );

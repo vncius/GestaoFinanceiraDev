@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../i18n';
 import Onboarding from './Onboarding';
 import { OnboardingService } from '../../services/onboarding.service';
+import { LanguageProvider } from '../../contexts/LanguageContext';
 
 vi.mock('../../services/onboarding.service', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../services/onboarding.service')>();
@@ -25,13 +26,15 @@ function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/onboarding']}>
-        <Routes>
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/settings" element={<div>pagina-settings</div>} />
-          <Route path="/dashboard" element={<div>pagina-dashboard</div>} />
-        </Routes>
-      </MemoryRouter>
+      <LanguageProvider>
+        <MemoryRouter initialEntries={['/onboarding']}>
+          <Routes>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/settings" element={<div>pagina-settings</div>} />
+            <Route path="/dashboard" element={<div>pagina-dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      </LanguageProvider>
     </QueryClientProvider>,
   );
 }
@@ -49,6 +52,7 @@ describe('Onboarding (entrada)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   it('exibe as três opções e o aviso sobre IA', async () => {
@@ -92,5 +96,24 @@ describe('Onboarding (entrada)', () => {
     getStatus.mockRejectedValue(new Error('falhou'));
     renderPage();
     expect(await screen.findByText(/status da configuração/i)).toBeInTheDocument();
+  });
+
+  it('pergunta o idioma antes de apresentar as opções, com Português selecionado por padrão', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    renderPage();
+
+    expect(await screen.findByTestId('onboarding-language-step')).toBeInTheDocument();
+    expect(screen.getByTestId('onboarding-language-pt')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('onboarding-language-en')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('trocar o idioma reflete na configuração global (persistida) do sistema', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    renderPage();
+
+    fireEvent.click(await screen.findByTestId('onboarding-language-en'));
+
+    await waitFor(() => expect(localStorage.getItem('language')).toBe('en'));
+    expect(screen.getByTestId('onboarding-language-en')).toHaveAttribute('aria-pressed', 'true');
   });
 });
