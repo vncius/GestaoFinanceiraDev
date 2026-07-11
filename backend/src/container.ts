@@ -15,6 +15,10 @@ import {
   CreditCardInstallmentsMongoRepository,
   CreditCardInvoicesMongoRepository,
 } from './modules/credit-cards/credit-cards.mongo-repository';
+import {
+  OnboardingStateMongoRepository,
+  OnboardingMessagesMongoRepository,
+} from './modules/onboarding/onboarding.mongo-repository';
 
 import { loadAiConfig } from './modules/ai/ai.config';
 import { createAiProvider } from './modules/ai/create-ai-provider';
@@ -29,6 +33,7 @@ import { CreditCardsService } from './modules/credit-cards/credit-cards.service'
 import { CashFlowService } from './modules/cash-flow/cash-flow.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
+import { OnboardingService } from './modules/onboarding/onboarding.service';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
@@ -40,6 +45,7 @@ import { CreditCardsController } from './modules/credit-cards/credit-cards.contr
 import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { BackupController } from './modules/backup/backup.controller';
+import { OnboardingController } from './modules/onboarding/onboarding.controller';
 
 // ─── Repositórios (uma instância por coleção do MongoDB) ────────────────────────
 
@@ -54,6 +60,8 @@ const creditCardsRepo = new CreditCardsMongoRepository();
 const creditCardEntriesRepo = new CreditCardEntriesMongoRepository();
 const creditCardInstallmentsRepo = new CreditCardInstallmentsMongoRepository();
 const creditCardInvoicesRepo = new CreditCardInvoicesMongoRepository();
+const onboardingStateRepo = new OnboardingStateMongoRepository();
+const onboardingMessagesRepo = new OnboardingMessagesMongoRepository();
 
 // ─── Plataforma de IA (ADR 0002) ────────────────────────────────────────────────
 
@@ -113,6 +121,12 @@ const backupService = new BackupService(
   creditCardInvoicesRepo,
 );
 
+const onboardingService = new OnboardingService(
+  onboardingStateRepo,
+  onboardingMessagesRepo,
+  accountsRepo,
+);
+
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const controllers = {
@@ -126,4 +140,5 @@ export const controllers = {
   cashFlow: new CashFlowController(cashFlowService),
   dashboard: new DashboardController(dashboardService),
   backup: new BackupController(backupService),
+  onboarding: new OnboardingController(onboardingService),
 };

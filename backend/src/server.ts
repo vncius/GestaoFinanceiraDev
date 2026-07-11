@@ -20,6 +20,7 @@ import cashFlowRouter from './modules/cash-flow/cash-flow.routes';
 import creditCardsRouter from './modules/credit-cards/credit-cards.routes';
 import dashboardRouter from './modules/dashboard/dashboard.routes';
 import backupRouter from './modules/backup/backup.routes';
+import onboardingRouter from './modules/onboarding/onboarding.routes';
 
 const app = express();
 const PORT = process.env.PORT ?? 3100;
@@ -53,6 +54,7 @@ app.use('/cash-flow', cashFlowRouter);
 app.use('/credit-cards', creditCardsRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/backup', backupRouter);
+app.use('/onboarding', onboardingRouter);
 
 app.use(errorHandler);
 
