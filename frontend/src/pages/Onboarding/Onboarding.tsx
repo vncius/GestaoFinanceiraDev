@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Clock, Settings2, Sparkles } from 'lucide-react';
+import { Clock, Settings2, Sparkles } from 'lucide-react';
 import { OnboardingService, OPEN_ONBOARDING_STATUSES } from '../../services/onboarding.service';
 import { deferOnboarding } from '../../components/onboarding/OnboardingGate';
 import { Button } from '../../components/ui/Button';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
+import OnboardingChat from './components/OnboardingChat';
 
 type View = 'choice' | 'assistant';
 
@@ -54,8 +55,8 @@ export default function Onboarding() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl">
         {showAssistant ? (
-          <AssistantPlaceholder
-            onBack={() => setView('choice')}
+          <OnboardingChat
+            status={status ?? 'PENDING'}
             onManual={() => skipMutation.mutate()}
             manualLoading={skipMutation.isPending}
           />
@@ -139,34 +140,3 @@ function ChoiceCard({
   );
 }
 
-// Substituído pelo chat na etapa da interface conversacional.
-function AssistantPlaceholder({
-  onBack,
-  onManual,
-  manualLoading,
-}: {
-  onBack: () => void;
-  onManual: () => void;
-  manualLoading: boolean;
-}) {
-  const { t } = useTranslation('onboarding');
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center space-y-4">
-      <Sparkles size={28} className="mx-auto text-blue-600 dark:text-blue-400" />
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-        {t('assistantPlaceholder.title')}
-      </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {t('assistantPlaceholder.description')}
-      </p>
-      <div className="flex items-center justify-center gap-3 pt-2">
-        <Button variant="ghost" icon={<ArrowLeft size={14} />} onClick={onBack}>
-          {t('assistantPlaceholder.back')}
-        </Button>
-        <Button variant="primary" loading={manualLoading} onClick={onManual}>
-          {t('assistantPlaceholder.manualCta')}
-        </Button>
-      </div>
-    </div>
-  );
-}

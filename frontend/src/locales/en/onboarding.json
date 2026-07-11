@@ -16,11 +16,20 @@
     },
     "aiDisclaimer": "The assistant uses artificial intelligence and can make mistakes. You review and confirm everything before any data is created."
   },
-  "assistantPlaceholder": {
-    "title": "The assistant chat is almost ready",
-    "description": "This part of the experience is being finished. In the meantime, you can set things up manually.",
-    "manualCta": "Set up manually",
-    "back": "Back"
+  "chat": {
+    "title": "Setup assistant",
+    "threadLabel": "Conversation with the assistant",
+    "emptyHint": "Tell me a bit about your finances to get started: which accounts you use, where your income comes from, your fixed expenses…",
+    "inputLabel": "Your message",
+    "inputPlaceholder": "Type your message…",
+    "send": "Send",
+    "sendLabel": "Send message",
+    "typing": "The assistant is typing",
+    "sendFailed": "The message could not be sent.",
+    "retry": "Resend",
+    "manualCta": "I'd rather set up manually",
+    "summaryReady": "Your setup proposal is ready for review.",
+    "disclaimer": "The assistant uses AI and can make mistakes. Nothing is created without your confirmation."
   },
   "banner": {
     "message": "Your initial setup is still pending.",

@@ -22,6 +22,27 @@ export interface OnboardingStatusResponse {
   updatedAt: string;
 }
 
+export interface OnboardingMessage {
+  id: string;
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  turn: number;
+  status: 'OK' | 'FAILED' | 'CANCELED';
+  createdAt: string;
+}
+
+export interface SendMessagePayload {
+  message: string;
+  language?: 'pt' | 'en' | 'es';
+}
+
+export interface SendMessageResponse {
+  assistantMessage: OnboardingMessage;
+  status: OnboardingStatus;
+  summaryPresented: boolean;
+  draft: unknown;
+}
+
 export const OnboardingService = {
   getStatus: (): Promise<OnboardingStatusResponse> =>
     api.get<OnboardingStatusResponse>('/onboarding/status').then((r) => r.data),
@@ -31,4 +52,10 @@ export const OnboardingService = {
 
   completeManual: (): Promise<OnboardingStatusResponse> =>
     api.post<OnboardingStatusResponse>('/onboarding/complete-manual').then((r) => r.data),
+
+  getConversation: (): Promise<OnboardingMessage[]> =>
+    api.get<OnboardingMessage[]>('/onboarding/conversation').then((r) => r.data),
+
+  sendMessage: (payload: SendMessagePayload): Promise<SendMessageResponse> =>
+    api.post<SendMessageResponse>('/onboarding/messages', payload).then((r) => r.data),
 };

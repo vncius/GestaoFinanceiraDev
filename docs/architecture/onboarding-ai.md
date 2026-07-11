@@ -14,7 +14,17 @@
    redirecionados.
 2. A página de entrada (`pages/Onboarding/Onboarding.tsx`) oferece três
    caminhos, com aviso explícito de que a IA pode cometer erros:
-   - **Configurar com assistente** — conversa com a IA;
+   - **Configurar com assistente** — chat com a IA
+     (`pages/Onboarding/components/OnboardingChat.tsx`): histórico persistido
+     (retomada automática), mensagem otimista + indicador de digitação, falha
+     mantém a mensagem com botão de reenviar (o backend só persiste turnos
+     concluídos, então o reenvio é seguro), textarea com limite de 2000
+     caracteres e contador, Enter envia/Shift+Enter quebra linha, `role="log"`
+     + `aria-live` para leitores de tela, conteúdo da IA renderizado sempre
+     como texto puro (nunca HTML — coberto por teste de XSS), aviso permanente
+     de que a IA pode errar e CTA de configuração manual no cabeçalho. Quando o
+     status vira `AWAITING_CONFIRMATION`, um cartão sinaliza que a proposta
+     está pronta para revisão;
    - **Configurar manualmente** — `POST /onboarding/skip` e segue para as telas
      de configuração existentes;
    - **Responder depois** — flag em `sessionStorage` suprime o gate na sessão;

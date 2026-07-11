@@ -16,11 +16,20 @@
     },
     "aiDisclaimer": "O assistente usa inteligência artificial e pode cometer erros. Você revisa e confirma tudo antes de qualquer dado ser criado."
   },
-  "assistantPlaceholder": {
-    "title": "O chat do assistente está quase pronto",
-    "description": "Esta parte da experiência está sendo finalizada. Enquanto isso, você pode configurar manualmente.",
-    "manualCta": "Configurar manualmente",
-    "back": "Voltar"
+  "chat": {
+    "title": "Assistente de configuração",
+    "threadLabel": "Conversa com o assistente",
+    "emptyHint": "Conte um pouco sobre suas finanças para começar: quais contas você usa, de onde vem sua renda, seus gastos fixos…",
+    "inputLabel": "Sua mensagem",
+    "inputPlaceholder": "Escreva sua mensagem…",
+    "send": "Enviar",
+    "sendLabel": "Enviar mensagem",
+    "typing": "O assistente está escrevendo",
+    "sendFailed": "Não foi possível enviar a mensagem.",
+    "retry": "Reenviar",
+    "manualCta": "Prefiro configurar manualmente",
+    "summaryReady": "Sua proposta de configuração está pronta para revisão.",
+    "disclaimer": "O assistente usa IA e pode cometer erros. Nada é criado sem a sua confirmação."
   },
   "banner": {
     "message": "Sua configuração inicial ainda está pendente.",
