@@ -32,6 +32,10 @@
       "closed": "The onboarding conversation is no longer available.",
       "turnLimit": "Conversation message limit reached. Review and confirm your setup."
     },
+    "messages": {
+      "rateLimited": "Too many messages in a short time. Wait a moment and try again.",
+      "dailyLimitExceeded": "Daily message limit reached. Try again tomorrow or set things up manually."
+    },
     "draft": {
       "locked": "The proposal can no longer be changed.",
       "itemNotFound": "Item not found in the proposal.",

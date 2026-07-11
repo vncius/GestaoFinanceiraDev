@@ -32,6 +32,10 @@
       "closed": "A conversa de onboarding não está mais disponível.",
       "turnLimit": "Limite de mensagens da conversa atingido. Revise e confirme sua configuração."
     },
+    "messages": {
+      "rateLimited": "Muitas mensagens em pouco tempo. Aguarde um instante e tente de novo.",
+      "dailyLimitExceeded": "Limite diário de mensagens atingido. Tente novamente amanhã ou configure manualmente."
+    },
     "draft": {
       "locked": "A proposta não pode mais ser alterada.",
       "itemNotFound": "Item não encontrado na proposta.",

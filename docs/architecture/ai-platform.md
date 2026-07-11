@@ -135,8 +135,9 @@ devolve `{ error, code, params }` e o frontend traduz o `code` via i18next
 - Tool call inválida → o erro volta ao modelo como resultado da tool (uma
   chance de autocorreção); persistindo, o turno falha de forma controlada sem
   corromper estado.
-- Nenhum erro técnico expõe conteúdo financeiro em logs (política detalhada em
-  `ai-security.md`, criado na etapa de tool calling).
+- Nenhum erro técnico expõe conteúdo financeiro em logs. Rate limiting, limite
+  de payload da rota de chat e o log de auditoria (só metadados, sem
+  conteúdo/tenant) estão detalhados em `ai-security.md`.
 
 ## Estratégia de evolução
 

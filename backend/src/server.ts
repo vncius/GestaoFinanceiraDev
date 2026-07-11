@@ -30,6 +30,10 @@ const PORT = process.env.PORT ?? 3100;
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
 
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
+// Limite apertado para a rota de chat do onboarding — precisa rodar ANTES do
+// parser global: body-parser pula a mensagens já parseadas (req._body), então
+// montar esta versão primeiro faz o limite de 16kb prevalecer só nessa rota.
+app.use('/onboarding/messages', express.json({ limit: '16kb' }));
 // Limite maior que o default (100kb) porque a restauração de backup e a
 // importação de extrato mandam o dataset completo/arquivo no corpo da requisição.
 app.use(express.json({ limit: '20mb' }));

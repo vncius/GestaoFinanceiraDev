@@ -4,6 +4,7 @@ import { nowISO } from '../../shared/utils/date.utils';
 import { AiConfig } from '../ai/ai.config';
 import { AiMessage, AiProvider } from '../ai/ai-provider.types';
 import { AiToolRegistry, AiToolRunner } from '../ai/tool-registry';
+import { logAiAudit } from '../ai/ai-audit.log';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingContextService } from './onboarding-context.service';
 import { buildOnboardingSystemPrompt } from './onboarding-prompts';
@@ -86,45 +87,68 @@ export class OnboardingConversationService {
     let assistantText = '';
     let summaryPresented = false;
     const maxChatCalls = this.aiConfig.maxToolRoundsPerTurn + 1;
+    const usedToolNames = new Set<string>();
+    const startedAt = Date.now();
 
-    for (let call = 0; call < maxChatCalls; call++) {
-      const timeout = AbortSignal.timeout(this.aiConfig.requestTimeoutMs);
-      const result = await this.aiProvider.chat({
-        system,
-        messages,
-        tools,
-        maxOutputTokens: this.aiConfig.maxOutputTokens,
-        signal: timeout,
-      });
-
-      if (result.toolCalls.length === 0) {
-        assistantText = result.text;
-        break;
-      }
-
-      messages.push({
-        role: 'assistant',
-        content: result.text,
-        toolCalls: result.toolCalls,
-      });
-
-      for (const toolCall of result.toolCalls) {
-        const toolResult = await runner.run(toolCall);
-        if (toolResult.ok && toolCall.name === 'present_setup_summary') {
-          summaryPresented = true;
-        }
-        messages.push({
-          role: 'tool_result',
-          toolCallId: toolCall.id,
-          content: JSON.stringify(toolResult.output),
-          isError: !toolResult.ok,
+    try {
+      for (let call = 0; call < maxChatCalls; call++) {
+        const timeout = AbortSignal.timeout(this.aiConfig.requestTimeoutMs);
+        const result = await this.aiProvider.chat({
+          system,
+          messages,
+          tools,
+          maxOutputTokens: this.aiConfig.maxOutputTokens,
+          signal: timeout,
         });
-      }
 
-      // Guarda de segurança: se o modelo insistir em tools além do teto de
-      // chamadas ao provedor, encerra o turno com o último texto disponível.
-      assistantText = result.text;
+        if (result.toolCalls.length === 0) {
+          assistantText = result.text;
+          break;
+        }
+
+        messages.push({
+          role: 'assistant',
+          content: result.text,
+          toolCalls: result.toolCalls,
+        });
+
+        for (const toolCall of result.toolCalls) {
+          usedToolNames.add(toolCall.name);
+          const toolResult = await runner.run(toolCall);
+          if (toolResult.ok && toolCall.name === 'present_setup_summary') {
+            summaryPresented = true;
+          }
+          messages.push({
+            role: 'tool_result',
+            toolCallId: toolCall.id,
+            content: JSON.stringify(toolResult.output),
+            isError: !toolResult.ok,
+          });
+        }
+
+        // Guarda de segurança: se o modelo insistir em tools além do teto de
+        // chamadas ao provedor, encerra o turno com o último texto disponível.
+        assistantText = result.text;
+      }
+    } catch (error) {
+      // Só metadados — nunca conteúdo da conversa (ai-security.md).
+      logAiAudit({
+        provider: this.aiProvider.name,
+        turn,
+        durationMs: Date.now() - startedAt,
+        tools: [...usedToolNames],
+        outcome: 'error',
+      });
+      throw error;
     }
+
+    logAiAudit({
+      provider: this.aiProvider.name,
+      turn,
+      durationMs: Date.now() - startedAt,
+      tools: [...usedToolNames],
+      outcome: 'ok',
+    });
 
     const now = nowISO();
     await this.messagesRepo.create({

@@ -74,21 +74,26 @@ como não confiável:
 |---|---|---|
 | Tool calls por turno | `AiToolRunner` (`AI_MAX_TOOL_ROUNDS`, default 8) | implementado |
 | Tamanho de mensagem | `postMessageSchema` (≤ 2000 chars) | implementado |
-| Payload da rota de chat | `express.json({ limit })` local | etapa de endurecimento |
+| Payload da rota de chat | `express.json({ limit: '16kb' })` montado em `/onboarding/messages` **antes** do parser global de 20mb (`server.ts`) — body-parser pula corpos já parseados, então o limite apertado prevalece só nessa rota | implementado |
 | Turnos por conversa | conversation service (60; `onboarding.conversation.turnLimit`) | implementado |
-| Timeout/cancelamento | timeout do cliente SDK + `AbortSignal.timeout` por chamada (`AI_REQUEST_TIMEOUT_MS`, default 45s) | implementado |
-| Rate limiting | middleware na rota de mensagens | etapa de endurecimento |
+| Timeout/cancelamento | timeout do cliente SDK + `AbortSignal.timeout` por chamada (`AI_REQUEST_TIMEOUT_MS`, default 45s); cancelamento explícito pelo usuário fica fora da v1 (sem streaming, sem UI de "parar") | implementado (timeout); cancelamento adiado |
+| Rate limiting | `createRateLimiter` (`shared/middlewares/rate-limit.middleware.ts`) em memória, por tenant, aplicado a `POST /onboarding/messages`: 10 msg/min (`onboarding.messages.rateLimited`) + 200 msg/dia (`onboarding.messages.dailyLimitExceeded`) | implementado |
 | Tokens de saída | `AI_MAX_OUTPUT_TOKENS` (default 1024) | implementado |
 
 ## Logs e dados sensíveis
 
-Política (finalizada na etapa de endurecimento):
-
 - Nunca logar: chave do provedor, JWT/cookies, conteúdo de mensagens da
   conversa, valores financeiros.
-- Logs técnicos da integração carregam apenas metadados (modelo, latência,
-  tokens, nomes de tools e códigos de erro).
-- O `request-logger` atual já registra somente método/path/status/duração.
+- `logAiAudit` (`backend/src/modules/ai/ai-audit.log.ts`) emite uma linha de
+  log estruturada por turno da conversa (`[ai-audit] provider=... turn=...
+  durationMs=... tools=... outcome=ok|error`) — só metadados: provedor, número
+  do turno, duração, nomes das tools usadas e resultado. **Sem `tenantId`,
+  sem texto do usuário/assistente, sem valores.** Deliberadamente uma linha de
+  `console.log`, não uma coleção no banco nem um painel — métrica básica de
+  latência/consumo sem construir uma plataforma de observabilidade.
+- O `request-logger` já registra somente método/path/status/duração.
+- Erros inesperados de tools nunca vazam detalhes internos ao modelo nem aos
+  logs (`ai.tool.failed` genérico — ver `tool-calling.md`).
 
 ## Riscos conhecidos
 
