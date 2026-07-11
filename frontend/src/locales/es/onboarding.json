@@ -1,0 +1,31 @@
+{
+  "entry": {
+    "title": "¡Bienvenido(a)! Vamos a configurar tu control financiero",
+    "subtitle": "Elige cómo prefieres empezar. Nada se creará sin tu confirmación.",
+    "assistant": {
+      "title": "Configurar con el asistente",
+      "description": "Conversa con el asistente de IA: entiende tu realidad financiera y prepara una propuesta para que la revises y confirmes."
+    },
+    "manual": {
+      "title": "Configurar manualmente",
+      "description": "¿Prefieres hacerlo tú mismo? Ve directo a los ajustes y registra cuentas, categorías e ingresos."
+    },
+    "later": {
+      "title": "Responder después",
+      "description": "Explora la aplicación primero. Puedes volver cuando quieras."
+    },
+    "aiDisclaimer": "El asistente usa inteligencia artificial y puede cometer errores. Tú revisas y confirmas todo antes de que se cree cualquier dato."
+  },
+  "assistantPlaceholder": {
+    "title": "El chat del asistente está casi listo",
+    "description": "Esta parte de la experiencia se está finalizando. Mientras tanto, puedes configurar manualmente.",
+    "manualCta": "Configurar manualmente",
+    "back": "Volver"
+  },
+  "banner": {
+    "message": "Tu configuración inicial sigue pendiente.",
+    "cta": "Completar configuración"
+  },
+  "loadError": "No se pudo cargar el estado de la configuración.",
+  "retry": "Intentar de nuevo"
+}

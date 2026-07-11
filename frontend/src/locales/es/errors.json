@@ -22,7 +22,37 @@
     "type": { "invalid": "Tipo de categoría inválido" },
     "confirm": { "required": "Confirma explícitamente la restauración (operación destructiva)." },
     "dateRange": { "required": "Indica la fecha inicial y final, o selecciona todos los registros." },
-    "initialBalance": { "min": "El saldo inicial debe ser mayor o igual a cero" }
+    "initialBalance": { "min": "El saldo inicial debe ser mayor o igual a cero" },
+    "message": { "required": "Escribe un mensaje", "max": "El mensaje es demasiado largo (máximo 2000 caracteres)" },
+    "idempotencyKey": { "invalid": "Clave de confirmación inválida" }
+  },
+  "onboarding": {
+    "invalidTransition": "Transición de estado inválida para el onboarding.",
+    "conversation": {
+      "closed": "La conversación de onboarding ya no está disponible.",
+      "turnLimit": "Límite de mensajes de la conversación alcanzado. Revisa y confirma tu configuración."
+    },
+    "draft": {
+      "locked": "La propuesta ya no puede modificarse.",
+      "itemNotFound": "Elemento no encontrado en la propuesta.",
+      "invalidRef": "Referencia inválida entre elementos de la propuesta.",
+      "duplicateName": "Ya existe un elemento con ese nombre en la propuesta.",
+      "mainAccountDuplicate": "Solo una cuenta puede marcarse como principal.",
+      "refInUse": "Este elemento es usado por otro elemento de la propuesta y no puede eliminarse."
+    },
+    "confirm": {
+      "invalidState": "La propuesta aún no está lista para confirmación.",
+      "alreadyCompleted": "La configuración inicial ya fue completada.",
+      "inProgress": "La confirmación ya está en curso.",
+      "emptyDraft": "La propuesta está vacía — agrega al menos una cuenta.",
+      "mainAccountRequired": "Define exactamente una cuenta principal antes de confirmar."
+    }
+  },
+  "ai": {
+    "notConfigured": "El asistente de IA no está configurado en este servidor.",
+    "providerUnavailable": "El asistente no está disponible en este momento. Inténtalo de nuevo en unos instantes o configura manualmente.",
+    "timeout": "El asistente tardó demasiado en responder. Inténtalo de nuevo.",
+    "rateLimited": "Demasiados mensajes en poco tiempo. Espera un momento e inténtalo de nuevo."
   },
   "creditCard": {
     "notFound": "Tarjeta no encontrada.",

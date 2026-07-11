@@ -1,0 +1,172 @@
+import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, Clock, Settings2, Sparkles } from 'lucide-react';
+import { OnboardingService, OPEN_ONBOARDING_STATUSES } from '../../services/onboarding.service';
+import { deferOnboarding } from '../../components/onboarding/OnboardingGate';
+import { Button } from '../../components/ui/Button';
+import { PageLoading } from '../../components/ui/LoadingSpinner';
+
+type View = 'choice' | 'assistant';
+
+export default function Onboarding() {
+  const { t } = useTranslation('onboarding');
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [view, setView] = useState<View>('choice');
+
+  const statusQuery = useQuery({
+    queryKey: ['onboarding', 'status'],
+    queryFn: OnboardingService.getStatus,
+  });
+
+  const skipMutation = useMutation({
+    mutationFn: OnboardingService.skip,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding'] });
+      navigate('/settings');
+    },
+  });
+
+  if (statusQuery.isLoading) return <PageLoading />;
+
+  if (statusQuery.isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900 p-6">
+        <p className="text-sm text-gray-600 dark:text-gray-300">{t('loadError')}</p>
+        <Button variant="secondary" onClick={() => statusQuery.refetch()}>
+          {t('retry')}
+        </Button>
+      </div>
+    );
+  }
+
+  const status = statusQuery.data?.status;
+  if (status && !OPEN_ONBOARDING_STATUSES.includes(status)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Conversa já iniciada: vai direto para a área do assistente.
+  const showAssistant = view === 'assistant' || status === 'IN_PROGRESS' || status === 'AWAITING_CONFIRMATION';
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-6">
+      <div className="w-full max-w-2xl">
+        {showAssistant ? (
+          <AssistantPlaceholder
+            onBack={() => setView('choice')}
+            onManual={() => skipMutation.mutate()}
+            manualLoading={skipMutation.isPending}
+          />
+        ) : (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50">
+                {t('entry.title')}
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('entry.subtitle')}</p>
+            </div>
+
+            <div className="grid gap-4">
+              <ChoiceCard
+                icon={<Sparkles size={20} className="text-blue-600 dark:text-blue-400" />}
+                title={t('entry.assistant.title')}
+                description={t('entry.assistant.description')}
+                onClick={() => setView('assistant')}
+                testId="choice-assistant"
+              />
+              <ChoiceCard
+                icon={<Settings2 size={20} className="text-gray-600 dark:text-gray-300" />}
+                title={t('entry.manual.title')}
+                description={t('entry.manual.description')}
+                onClick={() => skipMutation.mutate()}
+                loading={skipMutation.isPending}
+                testId="choice-manual"
+              />
+              <ChoiceCard
+                icon={<Clock size={20} className="text-gray-600 dark:text-gray-300" />}
+                title={t('entry.later.title')}
+                description={t('entry.later.description')}
+                onClick={() => {
+                  deferOnboarding();
+                  navigate('/dashboard');
+                }}
+                testId="choice-later"
+              />
+            </div>
+
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+              {t('entry.aiDisclaimer')}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChoiceCard({
+  icon,
+  title,
+  description,
+  onClick,
+  loading = false,
+  testId,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  loading?: boolean;
+  testId: string;
+}) {
+  return (
+    <button
+      data-testid={testId}
+      onClick={onClick}
+      disabled={loading}
+      className="w-full text-left rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5">{icon}</div>
+        <div>
+          <p className="font-medium text-gray-900 dark:text-gray-50">{title}</p>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// Substituído pelo chat na etapa da interface conversacional.
+function AssistantPlaceholder({
+  onBack,
+  onManual,
+  manualLoading,
+}: {
+  onBack: () => void;
+  onManual: () => void;
+  manualLoading: boolean;
+}) {
+  const { t } = useTranslation('onboarding');
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center space-y-4">
+      <Sparkles size={28} className="mx-auto text-blue-600 dark:text-blue-400" />
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+        {t('assistantPlaceholder.title')}
+      </h2>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        {t('assistantPlaceholder.description')}
+      </p>
+      <div className="flex items-center justify-center gap-3 pt-2">
+        <Button variant="ghost" icon={<ArrowLeft size={14} />} onClick={onBack}>
+          {t('assistantPlaceholder.back')}
+        </Button>
+        <Button variant="primary" loading={manualLoading} onClick={onManual}>
+          {t('assistantPlaceholder.manualCta')}
+        </Button>
+      </div>
+    </div>
+  );
+}

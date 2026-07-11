@@ -22,7 +22,37 @@
     "type": { "invalid": "Invalid category type" },
     "confirm": { "required": "Explicitly confirm the restore (destructive operation)." },
     "dateRange": { "required": "Provide a start and end date, or select all entries." },
-    "initialBalance": { "min": "Initial balance must be greater than or equal to zero" }
+    "initialBalance": { "min": "Initial balance must be greater than or equal to zero" },
+    "message": { "required": "Type a message", "max": "Message is too long (2000 characters max)" },
+    "idempotencyKey": { "invalid": "Invalid confirmation key" }
+  },
+  "onboarding": {
+    "invalidTransition": "Invalid onboarding status transition.",
+    "conversation": {
+      "closed": "The onboarding conversation is no longer available.",
+      "turnLimit": "Conversation message limit reached. Review and confirm your setup."
+    },
+    "draft": {
+      "locked": "The proposal can no longer be changed.",
+      "itemNotFound": "Item not found in the proposal.",
+      "invalidRef": "Invalid reference between proposal items.",
+      "duplicateName": "An item with this name already exists in the proposal.",
+      "mainAccountDuplicate": "Only one account can be marked as main.",
+      "refInUse": "This item is used by another proposal item and cannot be removed."
+    },
+    "confirm": {
+      "invalidState": "The proposal is not ready for confirmation yet.",
+      "alreadyCompleted": "The initial setup has already been completed.",
+      "inProgress": "Confirmation is already in progress.",
+      "emptyDraft": "The proposal is empty — add at least one account.",
+      "mainAccountRequired": "Set exactly one main account before confirming."
+    }
+  },
+  "ai": {
+    "notConfigured": "The AI assistant is not configured on this server.",
+    "providerUnavailable": "The assistant is unavailable right now. Try again shortly or set things up manually.",
+    "timeout": "The assistant took too long to respond. Please try again.",
+    "rateLimited": "Too many messages in a short time. Wait a moment and try again."
   },
   "creditCard": {
     "notFound": "Card not found.",

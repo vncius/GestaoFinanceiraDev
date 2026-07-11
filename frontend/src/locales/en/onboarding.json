@@ -1,0 +1,31 @@
+{
+  "entry": {
+    "title": "Welcome! Let's set up your financial control",
+    "subtitle": "Choose how you'd like to start. Nothing will be created without your confirmation.",
+    "assistant": {
+      "title": "Set up with the assistant",
+      "description": "Chat with the AI assistant: it understands your financial reality and prepares a proposal for you to review and confirm."
+    },
+    "manual": {
+      "title": "Set up manually",
+      "description": "Prefer to do it yourself? Go straight to settings and register accounts, categories and income."
+    },
+    "later": {
+      "title": "Answer later",
+      "description": "Explore the app first. You can come back anytime."
+    },
+    "aiDisclaimer": "The assistant uses artificial intelligence and can make mistakes. You review and confirm everything before any data is created."
+  },
+  "assistantPlaceholder": {
+    "title": "The assistant chat is almost ready",
+    "description": "This part of the experience is being finished. In the meantime, you can set things up manually.",
+    "manualCta": "Set up manually",
+    "back": "Back"
+  },
+  "banner": {
+    "message": "Your initial setup is still pending.",
+    "cta": "Finish setup"
+  },
+  "loadError": "Could not load the setup status.",
+  "retry": "Try again"
+}

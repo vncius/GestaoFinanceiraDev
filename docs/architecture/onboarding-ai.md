@@ -5,14 +5,20 @@
 
 ## Jornada do usuário
 
-1. Novo usuário faz login (Google/Apple) e a aplicação consulta
-   `GET /onboarding/status`.
-2. Com status `PENDING`, o frontend oferece três caminhos:
-   - **Configurar com assistente** — conversa com a IA (etapas futuras);
+1. Novo usuário faz login (Google/Apple). O `OnboardingGate`
+   (`frontend/src/components/onboarding/OnboardingGate.tsx`, montado dentro do
+   `ProtectedRoute`) consulta `GET /onboarding/status` e redireciona para
+   `/onboarding` (rota fora do Layout, sem sidebar) enquanto o status estiver
+   em aberto (`PENDING`/`IN_PROGRESS`/`AWAITING_CONFIRMATION`). Tenants
+   pré-existentes recebem `COMPLETED_MANUAL` retroativo no backend e nunca são
+   redirecionados.
+2. A página de entrada (`pages/Onboarding/Onboarding.tsx`) oferece três
+   caminhos, com aviso explícito de que a IA pode cometer erros:
+   - **Configurar com assistente** — conversa com a IA;
    - **Configurar manualmente** — `POST /onboarding/skip` e segue para as telas
      de configuração existentes;
-   - **Responder depois** — permanece `PENDING`; a aplicação segue utilizável e
-     lembra o usuário depois.
+   - **Responder depois** — flag em `sessionStorage` suprime o gate na sessão;
+     um banner no dashboard (`OnboardingBanner`) lembra o usuário de concluir.
 3. A conversa produz um draft estruturado (ADR 0004), revisável e editável.
 4. A confirmação explícita aplica o draft via services existentes, de forma
    idempotente (ADR 0005), e o status vira `COMPLETED`.

@@ -4,7 +4,9 @@ import { MonthProvider } from './contexts/MonthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { ToastProvider } from './contexts/ToastContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import OnboardingGate from './components/onboarding/OnboardingGate';
 import Layout from './components/layout/Layout';
+import Onboarding from './pages/Onboarding/Onboarding';
 import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import CashFlow from './pages/CashFlow/CashFlow';
@@ -24,17 +26,22 @@ export default function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Layout />}>
-                    <Route index element={<Navigate to="/dashboard" replace />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="cash-flow" element={<CashFlow />} />
-                    <Route path="credit-cards" element={<CreditCards />} />
-                    <Route path="receivables" element={<Receivables />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="backup" element={<Backup />} />
+                  {/* Gate de onboarding: novos tenants são levados para /onboarding. */}
+                  <Route element={<OnboardingGate />}>
+                    <Route path="/" element={<Layout />}>
+                      <Route index element={<Navigate to="/dashboard" replace />} />
+                      <Route path="dashboard" element={<Dashboard />} />
+                      <Route path="cash-flow" element={<CashFlow />} />
+                      <Route path="credit-cards" element={<CreditCards />} />
+                      <Route path="receivables" element={<Receivables />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="backup" element={<Backup />} />
+                    </Route>
+                    {/* Fora do Layout: página de relatório para impressão, sem sidebar/header. */}
+                    <Route path="/report" element={<Report />} />
+                    {/* Fora do Layout: jornada de primeiro acesso, sem sidebar. */}
+                    <Route path="/onboarding" element={<Onboarding />} />
                   </Route>
-                  {/* Fora do Layout: página de relatório para impressão, sem sidebar/header. */}
-                  <Route path="/report" element={<Report />} />
                 </Route>
               </Routes>
             </MonthProvider>

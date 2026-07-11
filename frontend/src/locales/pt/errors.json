@@ -22,7 +22,37 @@
     "type": { "invalid": "Tipo de categoria inválido" },
     "confirm": { "required": "Confirme explicitamente a restauração (operação destrutiva)." },
     "dateRange": { "required": "Informe as datas inicial e final, ou marque todos os lançamentos." },
-    "initialBalance": { "min": "Saldo inicial deve ser maior ou igual a zero" }
+    "initialBalance": { "min": "Saldo inicial deve ser maior ou igual a zero" },
+    "message": { "required": "Digite uma mensagem", "max": "A mensagem é muito longa (máximo de 2000 caracteres)" },
+    "idempotencyKey": { "invalid": "Chave de confirmação inválida" }
+  },
+  "onboarding": {
+    "invalidTransition": "Transição de status inválida para o onboarding.",
+    "conversation": {
+      "closed": "A conversa de onboarding não está mais disponível.",
+      "turnLimit": "Limite de mensagens da conversa atingido. Revise e confirme sua configuração."
+    },
+    "draft": {
+      "locked": "A proposta não pode mais ser alterada.",
+      "itemNotFound": "Item não encontrado na proposta.",
+      "invalidRef": "Referência inválida entre itens da proposta.",
+      "duplicateName": "Já existe um item com esse nome na proposta.",
+      "mainAccountDuplicate": "Apenas uma conta pode ser marcada como principal.",
+      "refInUse": "Este item é usado por outro item da proposta e não pode ser removido."
+    },
+    "confirm": {
+      "invalidState": "A proposta ainda não está pronta para confirmação.",
+      "alreadyCompleted": "A configuração inicial já foi concluída.",
+      "inProgress": "A confirmação já está em andamento.",
+      "emptyDraft": "A proposta está vazia — adicione ao menos uma conta.",
+      "mainAccountRequired": "Defina exatamente uma conta principal antes de confirmar."
+    }
+  },
+  "ai": {
+    "notConfigured": "O assistente de IA não está configurado neste servidor.",
+    "providerUnavailable": "O assistente está indisponível no momento. Tente novamente em instantes ou configure manualmente.",
+    "timeout": "O assistente demorou demais para responder. Tente novamente.",
+    "rateLimited": "Muitas mensagens em pouco tempo. Aguarde um instante e tente de novo."
   },
   "creditCard": {
     "notFound": "Cartão não encontrado.",

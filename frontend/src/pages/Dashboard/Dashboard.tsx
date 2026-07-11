@@ -27,6 +27,7 @@ import {
   UpcomingDue,
 } from '../../types';
 import { StatCard } from '../../components/ui/StatCard';
+import OnboardingBanner from '../../components/onboarding/OnboardingBanner';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency } from '../../utils/money';
@@ -424,6 +425,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Lembrete de onboarding pendente ("responder depois") */}
+      <OnboardingBanner />
+
       {/* Alertas */}
       <AlertsBar alerts={alerts} />
 

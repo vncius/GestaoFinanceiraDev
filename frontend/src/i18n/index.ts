@@ -12,6 +12,7 @@ import ptCreditCards from '../locales/pt/creditCards.json';
 import ptCashFlow from '../locales/pt/cashFlow.json';
 import ptAuth from '../locales/pt/auth.json';
 import ptErrors from '../locales/pt/errors.json';
+import ptOnboarding from '../locales/pt/onboarding.json';
 
 import enCommon from '../locales/en/common.json';
 import enLayout from '../locales/en/layout.json';
@@ -24,6 +25,7 @@ import enCreditCards from '../locales/en/creditCards.json';
 import enCashFlow from '../locales/en/cashFlow.json';
 import enAuth from '../locales/en/auth.json';
 import enErrors from '../locales/en/errors.json';
+import enOnboarding from '../locales/en/onboarding.json';
 
 import esCommon from '../locales/es/common.json';
 import esLayout from '../locales/es/layout.json';
@@ -36,6 +38,7 @@ import esCreditCards from '../locales/es/creditCards.json';
 import esCashFlow from '../locales/es/cashFlow.json';
 import esAuth from '../locales/es/auth.json';
 import esErrors from '../locales/es/errors.json';
+import esOnboarding from '../locales/es/onboarding.json';
 
 export type Language = 'pt' | 'en' | 'es';
 
@@ -61,6 +64,7 @@ i18n.use(initReactI18next).init({
       cashFlow: ptCashFlow,
       auth: ptAuth,
       errors: ptErrors,
+      onboarding: ptOnboarding,
     },
     en: {
       common: enCommon,
@@ -74,6 +78,7 @@ i18n.use(initReactI18next).init({
       cashFlow: enCashFlow,
       auth: enAuth,
       errors: enErrors,
+      onboarding: enOnboarding,
     },
     es: {
       common: esCommon,
@@ -87,6 +92,7 @@ i18n.use(initReactI18next).init({
       cashFlow: esCashFlow,
       auth: esAuth,
       errors: esErrors,
+      onboarding: esOnboarding,
     },
   },
   lng: getInitialLanguage(),
@@ -103,6 +109,7 @@ i18n.use(initReactI18next).init({
     'cashFlow',
     'auth',
     'errors',
+    'onboarding',
   ],
   defaultNS: 'common',
   interpolation: { escapeValue: false },

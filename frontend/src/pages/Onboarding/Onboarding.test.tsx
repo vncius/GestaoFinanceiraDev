@@ -1,0 +1,96 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import '../../i18n';
+import Onboarding from './Onboarding';
+import { OnboardingService } from '../../services/onboarding.service';
+
+vi.mock('../../services/onboarding.service', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../services/onboarding.service')>();
+  return {
+    ...original,
+    OnboardingService: {
+      getStatus: vi.fn(),
+      skip: vi.fn(),
+      completeManual: vi.fn(),
+    },
+  };
+});
+
+const getStatus = vi.mocked(OnboardingService.getStatus);
+const skip = vi.mocked(OnboardingService.skip);
+
+function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/settings" element={<div>pagina-settings</div>} />
+          <Route path="/dashboard" element={<div>pagina-dashboard</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+function statusResponse(status: string) {
+  return {
+    status,
+    language: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  } as Awaited<ReturnType<typeof OnboardingService.getStatus>>;
+}
+
+describe('Onboarding (entrada)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+  });
+
+  it('exibe as três opções e o aviso sobre IA', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    renderPage();
+
+    expect(await screen.findByTestId('choice-assistant')).toBeInTheDocument();
+    expect(screen.getByTestId('choice-manual')).toBeInTheDocument();
+    expect(screen.getByTestId('choice-later')).toBeInTheDocument();
+    expect(screen.getByText(/pode cometer erros/i)).toBeInTheDocument();
+  });
+
+  it('"configurar manualmente" chama skip e navega para as parametrizações', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    skip.mockResolvedValue(statusResponse('SKIPPED'));
+    renderPage();
+
+    fireEvent.click(await screen.findByTestId('choice-manual'));
+
+    await waitFor(() => expect(skip).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('pagina-settings')).toBeInTheDocument();
+  });
+
+  it('"responder depois" marca a sessão e vai para o dashboard', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    renderPage();
+
+    fireEvent.click(await screen.findByTestId('choice-later'));
+
+    expect(sessionStorage.getItem('onboardingDeferred')).toBe('1');
+    expect(await screen.findByText('pagina-dashboard')).toBeInTheDocument();
+  });
+
+  it('onboarding concluído redireciona para o dashboard', async () => {
+    getStatus.mockResolvedValue(statusResponse('COMPLETED'));
+    renderPage();
+    expect(await screen.findByText('pagina-dashboard')).toBeInTheDocument();
+  });
+
+  it('erro ao carregar status mostra retry', async () => {
+    getStatus.mockRejectedValue(new Error('falhou'));
+    renderPage();
+    expect(await screen.findByText(/status da configuração/i)).toBeInTheDocument();
+  });
+});
