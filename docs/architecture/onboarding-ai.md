@@ -80,7 +80,7 @@ Montados em `/onboarding` **após** o `authMiddleware`
 | `PUT /onboarding/draft/items/:draftItemId` | Edita item (patch mesclado + revalidação completa) | implementado |
 | `DELETE /onboarding/draft/items/:draftItemId` | Remove item (bloqueado se referenciado) | implementado |
 | `POST /onboarding/messages` | Turno de conversa com a IA (`{ message, language? }`; retorna mensagem do assistente, status, draft e `summaryPresented`) | implementado |
-| Confirmação idempotente | — | planejado (etapa de aplicação) |
+| `POST /onboarding/confirm` | Aplica o draft (`{ idempotencyKey }`, UUID por tentativa) e conclui (→ `COMPLETED`) | implementado |
 
 A resposta de status expõe apenas `status`, `language`, `createdAt` e
 `updatedAt` — campos internos (chave de idempotência, resumo da conversa,
@@ -168,15 +168,31 @@ rodadas de tools, propostas das rodadas anteriores permanecem no draft (sem
 mensagens correspondentes). Inócuo por design — o draft é visível e editável
 na revisão.
 
-## Confirmação
+## Confirmação e aplicação (ADR 0004 + ADR 0005)
 
-Preenchido na etapa de aplicação idempotente. Decisões já registradas:
-ADR 0003 (tools não escrevem dados financeiros), ADR 0004 (draft +
-confirmação), ADR 0005 (idempotência).
+Implementado em `onboarding-apply.service.ts` (`POST /onboarding/confirm`):
+
+1. **Pré-condições**: status `AWAITING_CONFIRMATION`; lock em memória bloqueia
+   confirmação concorrente do mesmo tenant (`onboarding.confirm.inProgress`).
+2. **Validação final**: draft com ≥ 1 conta (`emptyDraft`), exatamente uma
+   conta principal (`mainAccountRequired`), todas as refs resolvíveis — antes
+   de qualquer escrita.
+3. **Execução ordenada** reusando exclusivamente os services existentes:
+   tipos de conta → contas → categorias → settings (recebe `mainAccountId`) →
+   cartões → receitas (refs de reserva/categoria/destino resolvidas para UUIDs
+   reais) → despesas. Datas-âncora de recorrência = dia informado no mês
+   corrente (`ensureFixedOccurrences` materializa o restante).
+4. **Idempotência**: `appliedEntityIds` (draftItemId → id real) persistido
+   **após cada criação**; itens já aplicados são pulados na retomada. Entidade
+   existente com o mesmo nome é **reusada**, nunca duplicada (cobre a categoria
+   protegida "Nota Fiscal" criada pelo `SettingsService`).
+5. **Chaves**: mesma `idempotencyKey` após conclusão → replay do resultado
+   (`alreadyApplied: true`); chave nova após conclusão → `409
+   onboarding.confirm.alreadyCompleted`. Após falha parcial, qualquer chave
+   nova retoma do ponto em que parou.
+6. Ao final: status `COMPLETED`, `appliedAt` registrado.
 
 ## Limitações atuais
-
-- Confirmação/aplicação do draft ainda não implementada (próxima etapa).
 - Sem streaming — resposta única por turno.
 - Transferências recorrentes e objetivos financeiros estão fora da primeira
   versão (não existem no domínio atual).

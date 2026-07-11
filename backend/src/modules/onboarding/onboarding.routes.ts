@@ -10,6 +10,7 @@ router.post('/skip', asyncHandler((req, res) => controller.skip(req, res)));
 router.post('/complete-manual', asyncHandler((req, res) => controller.completeManual(req, res)));
 router.get('/conversation', asyncHandler((req, res) => controller.getConversation(req, res)));
 router.post('/messages', asyncHandler((req, res) => controller.postMessage(req, res)));
+router.post('/confirm', asyncHandler((req, res) => controller.confirm(req, res)));
 router.get('/draft', asyncHandler((req, res) => controller.getDraft(req, res)));
 router.post('/draft/items', asyncHandler((req, res) => controller.addDraftItem(req, res)));
 router.put('/draft/items/:draftItemId', asyncHandler((req, res) => controller.updateDraftItem(req, res)));

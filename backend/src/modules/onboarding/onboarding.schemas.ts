@@ -105,3 +105,11 @@ export const postMessageSchema = z.object({
 });
 
 export type PostMessageInput = z.infer<typeof postMessageSchema>;
+
+// Confirmação da configuração (ADR 0005): uma chave por tentativa, gerada no
+// frontend; repetir a mesma chave após conclusão devolve o resultado anterior.
+export const confirmSchema = z.object({
+  idempotencyKey: z.string().uuid('validation.idempotencyKey.invalid'),
+});
+
+export type ConfirmInput = z.infer<typeof confirmSchema>;

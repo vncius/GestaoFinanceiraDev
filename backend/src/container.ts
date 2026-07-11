@@ -38,6 +38,7 @@ import { OnboardingDraftService } from './modules/onboarding/onboarding-draft.se
 import { createOnboardingToolRegistry } from './modules/onboarding/onboarding-tools';
 import { OnboardingContextService } from './modules/onboarding/onboarding-context.service';
 import { OnboardingConversationService } from './modules/onboarding/onboarding-conversation.service';
+import { OnboardingApplyService } from './modules/onboarding/onboarding-apply.service';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
@@ -137,6 +138,19 @@ export const onboardingToolRegistry = createOnboardingToolRegistry({
   accountsRepo,
   categoriesRepo,
 });
+const onboardingApplyService = new OnboardingApplyService(onboardingService, onboardingStateRepo, {
+  accountTypesService,
+  accountsService,
+  categoriesService,
+  settingsService,
+  creditCardsService,
+  receivablesService,
+  cashFlowService,
+  accountTypesRepo,
+  accountsRepo,
+  categoriesRepo,
+  creditCardsRepo,
+});
 const onboardingConversationService = new OnboardingConversationService(
   aiProvider,
   aiConfig,
@@ -164,5 +178,6 @@ export const controllers = {
     onboardingService,
     onboardingDraftService,
     onboardingConversationService,
+    onboardingApplyService,
   ),
 };

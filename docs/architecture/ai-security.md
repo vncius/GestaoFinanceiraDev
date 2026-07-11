@@ -60,8 +60,13 @@ como não confiável:
 ## Confirmação e idempotência
 
 - Nenhuma entidade financeira é criada durante a conversa.
-- Confirmação explícita, revalidação completa server-side e aplicação
-  idempotente com `idempotencyKey` + `appliedEntityIds` (ADR 0005).
+- Confirmação explícita (`POST /onboarding/confirm`), revalidação completa
+  server-side (contas, conta principal única, refs) e aplicação idempotente:
+  `idempotencyKey` por tentativa, `appliedEntityIds` persistido a cada criação
+  (retomada após falha parcial sem duplicatas), reuso de entidades homônimas
+  existentes e lock contra confirmação concorrente (ADR 0005).
+- O lock de concorrência é em memória — válido para o processo único atual;
+  deploy multi-instância exigiria lock distribuído (risco conhecido).
 
 ## Limites
 

@@ -2,7 +2,13 @@ import { Request, Response } from 'express';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingDraftService } from './onboarding-draft.service';
 import { OnboardingConversationService } from './onboarding-conversation.service';
-import { addDraftItemSchema, postMessageSchema, updateDraftItemSchema } from './onboarding.schemas';
+import { OnboardingApplyService } from './onboarding-apply.service';
+import {
+  addDraftItemSchema,
+  confirmSchema,
+  postMessageSchema,
+  updateDraftItemSchema,
+} from './onboarding.schemas';
 import { OnboardingState } from './onboarding.types';
 
 // Visão pública do estado: campos internos de idempotência/resumo não saem da API.
@@ -20,7 +26,14 @@ export class OnboardingController {
     private readonly service: OnboardingService,
     private readonly draftService: OnboardingDraftService,
     private readonly conversationService: OnboardingConversationService,
+    private readonly applyService: OnboardingApplyService,
   ) {}
+
+  async confirm(req: Request, res: Response): Promise<void> {
+    const input = confirmSchema.parse(req.body);
+    const result = await this.applyService.confirm(req.tenantId, input.idempotencyKey);
+    res.json(result);
+  }
 
   async postMessage(req: Request, res: Response): Promise<void> {
     const input = postMessageSchema.parse(req.body);
