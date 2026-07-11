@@ -7,7 +7,7 @@ describe('loadAiConfig', () => {
     const config = loadAiConfig({});
     expect(config.provider).toBe('fake');
     expect(config.apiKey).toBe('');
-    expect(config.model).toBe('');
+    expect(config.model).toBe('claude-opus-4-8');
     expect(config.maxOutputTokens).toBe(1024);
     expect(config.requestTimeoutMs).toBe(45_000);
     expect(config.maxToolRoundsPerTurn).toBe(8);

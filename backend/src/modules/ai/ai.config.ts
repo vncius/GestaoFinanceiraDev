@@ -14,10 +14,10 @@ export interface AiConfig {
 }
 
 const DEFAULTS = {
-  // 'fake' até a integração do provedor real: mantém o boot do servidor
-  // independente de credenciais e permite desenvolver o restante da plataforma.
+  // 'fake' como default mantém o boot do servidor independente de credenciais;
+  // o provedor real é ativado explicitamente com AI_PROVIDER=anthropic.
   provider: 'fake' as AiProviderName,
-  model: '',
+  model: 'claude-opus-4-8',
   maxOutputTokens: 1024,
   requestTimeoutMs: 45_000,
   maxToolRoundsPerTurn: 8,

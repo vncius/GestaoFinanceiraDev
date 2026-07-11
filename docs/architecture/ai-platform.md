@@ -42,7 +42,7 @@ Responsável apenas por comunicação com provedores e contratos genéricos:
 | `ai.errors.ts` | Erros da integração (`AiConfigError`, `AiProviderUnavailableError`, `AiTimeoutError`, `AiRateLimitedError`), subclasses de `AppError` com códigos i18n `ai.*` | implementado |
 | `providers/fake-ai.provider.ts` | `FakeAiProvider`: roteiro determinístico de respostas/tool calls/erros, captura requisições para asserções | implementado |
 | `create-ai-provider.ts` | Factory que seleciona a implementação pela config; wiring em `container.ts` (`aiConfig`, `aiProvider`). Default `AI_PROVIDER=fake` até a integração real | implementado |
-| `providers/anthropic.provider.ts` | Único código que conhece o SDK/HTTP do provedor real | planejado (Etapa 7) |
+| `providers/anthropic.provider.ts` | Único código que conhece o SDK da Anthropic (`@anthropic-ai/sdk`): mapeia mensagens/tools neutras ↔ formato do provedor, mescla tool results paralelos em uma única mensagem user, timeout via cliente + `AbortSignal`, retry limitado (`maxRetries: 1` do SDK para 408/429/5xx), erros mapeados por status para os `AppError` de `ai.errors.ts`. Sem extended thinking (o formato neutro não transporta thinking blocks para replay no loop de tools) | implementado |
 | Registro/execução de tools | Definição de tool (nome + schema Zod + executor), resolução por nome, validação, limites de chamadas | planejado (Etapa 5) |
 
 ### Módulo `onboarding/` — primeiro domínio consumidor
@@ -117,8 +117,9 @@ Variáveis de ambiente **somente no backend** (`backend/.env`, com exemplo em
 
 | Variável | Uso |
 |---|---|
-| `AI_API_KEY` | Chave do provedor. Nunca enviada ao frontend, nunca logada, nunca commitada |
-| `AI_MODEL` | Modelo utilizado |
+| `AI_PROVIDER` | `fake` (default — determinístico, sem rede) ou `anthropic`. O default `fake` mantém o boot independente de credenciais; o provedor real é ativado explicitamente |
+| `AI_API_KEY` | Chave do provedor. Obrigatória com `AI_PROVIDER=anthropic`. Nunca enviada ao frontend, nunca logada, nunca commitada |
+| `AI_MODEL` | Modelo utilizado (default `claude-opus-4-8`) |
 | Demais limites (timeout, max tokens, tool rounds) | Centralizados em `ai.config.ts`, com defaults seguros e override por env quando fizer sentido |
 
 ## Tratamento de erros
