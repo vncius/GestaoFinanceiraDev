@@ -5,6 +5,7 @@ import { AccountsRepository } from '../accounts/accounts.repository';
 import { AccountTypesRepository } from '../account-types/account-types.repository';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { SettingsRepository } from '../settings/settings.repository';
+import { OnboardingStateRepository, OnboardingMessagesRepository } from '../onboarding/onboarding.repository';
 import { ReceivablesRepository } from '../receivables/receivables.repository';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
@@ -44,6 +45,8 @@ export class BackupService {
     private readonly creditCardEntriesRepo: CreditCardEntriesRepository,
     private readonly creditCardInstallmentsRepo: CreditCardInstallmentsRepository,
     private readonly creditCardInvoicesRepo: CreditCardInvoicesRepository,
+    private readonly onboardingStateRepo: OnboardingStateRepository,
+    private readonly onboardingMessagesRepo: OnboardingMessagesRepository,
   ) {}
 
   // ─── Backup completo (JSON) ────────────────────────────────────────────────────
@@ -132,7 +135,9 @@ export class BackupService {
 
   // Apaga TODOS os dados e parametrizações do tenant. A collection de usuários
   // não é tocada — o login continua válido. As configurações padrão são
-  // recriadas automaticamente no próximo GET /settings.
+  // recriadas automaticamente no próximo GET /settings. O estado e a conversa
+  // de onboarding também são apagados, para que o tenant volte a ser tratado
+  // como "vazio" e possa refazer o onboarding (com IA ou manual) do zero.
   async resetTenant(tenantId: string): Promise<void> {
     await Promise.all([
       this.accountsRepo.replaceAll(tenantId, []),
@@ -145,6 +150,8 @@ export class BackupService {
       this.creditCardInstallmentsRepo.replaceAll(tenantId, []),
       this.creditCardInvoicesRepo.replaceAll(tenantId, []),
       this.settingsRepo.deleteAll(tenantId),
+      this.onboardingStateRepo.deleteAll(tenantId),
+      this.onboardingMessagesRepo.deleteAll(tenantId),
     ]);
   }
 

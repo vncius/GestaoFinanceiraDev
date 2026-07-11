@@ -124,6 +124,8 @@ const backupService = new BackupService(
   creditCardEntriesRepo,
   creditCardInstallmentsRepo,
   creditCardInvoicesRepo,
+  onboardingStateRepo,
+  onboardingMessagesRepo,
 );
 
 const onboardingService = new OnboardingService(

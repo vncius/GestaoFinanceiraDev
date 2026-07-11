@@ -68,19 +68,18 @@ export default function OnboardingChat({
       {summaryReady && (
         <div
           data-testid="summary-ready"
-          className="mx-4 mb-2 flex items-center justify-between gap-2 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-3 py-2 text-sm text-green-800 dark:text-green-300"
+          className="mx-4 mb-2 flex flex-col gap-2 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 px-3 py-2.5 text-sm text-green-800 dark:text-green-300"
         >
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 font-medium">
             <ClipboardCheck size={15} className="shrink-0" />
             {t('chat.summaryReady')}
           </span>
-          <button
-            onClick={onReview}
-            data-testid="open-review"
-            className="shrink-0 font-medium underline underline-offset-2 hover:text-green-900 dark:hover:text-green-100"
-          >
+          <span className="text-xs text-green-700/80 dark:text-green-300/80">
+            {t('chat.summaryReadyHint')}
+          </span>
+          <Button size="sm" onClick={onReview} data-testid="open-review" className="self-start">
             {t('chat.reviewCta')}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -88,7 +87,7 @@ export default function OnboardingChat({
 
       {/* Aviso permanente */}
       <p className="px-4 pb-3 text-center text-xs text-gray-400 dark:text-gray-500">
-        {t('chat.disclaimer')}
+        {summaryReady ? t('chat.disclaimerSummaryReady') : t('chat.disclaimer')}
       </p>
     </div>
   );

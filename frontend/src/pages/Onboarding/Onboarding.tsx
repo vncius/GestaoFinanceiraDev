@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Clock, Settings2, Sparkles } from 'lucide-react';
@@ -15,8 +15,10 @@ type View = 'choice' | 'assistant' | 'review';
 export default function Onboarding() {
   const { t } = useTranslation('onboarding');
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const [view, setView] = useState<View>('choice');
+  const startAssistant = (location.state as { startAssistant?: boolean } | null)?.startAssistant === true;
+  const [view, setView] = useState<View>(startAssistant ? 'assistant' : 'choice');
 
   const statusQuery = useQuery({
     queryKey: ['onboarding', 'status'],

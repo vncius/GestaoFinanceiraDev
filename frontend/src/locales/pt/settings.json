@@ -46,7 +46,11 @@
     "resetConfirmWord": "REDEFINIR",
     "resetConfirmInputLabel": "Digite {{word}} para confirmar",
     "resetSuccess": "Conta redefinida com sucesso.",
-    "resetError": "Erro ao redefinir a conta."
+    "resetError": "Erro ao redefinir a conta.",
+    "resetOnboardingOfferTitle": "Configurar novamente?",
+    "resetOnboardingOfferMessage": "Sua conta foi redefinida e está vazia. Deseja configurá-la novamente com o assistente de IA?",
+    "resetOnboardingOfferConfirm": "Sim, usar o assistente",
+    "resetOnboardingOfferCancel": "Não, agora não"
   },
   "accounts": {
     "newButton": "Nova Conta",

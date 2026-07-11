@@ -46,7 +46,11 @@
     "resetConfirmWord": "RESTABLECER",
     "resetConfirmInputLabel": "Escriba {{word}} para confirmar",
     "resetSuccess": "Cuenta restablecida con éxito.",
-    "resetError": "Error al restablecer la cuenta."
+    "resetError": "Error al restablecer la cuenta.",
+    "resetOnboardingOfferTitle": "¿Configurar de nuevo?",
+    "resetOnboardingOfferMessage": "Su cuenta fue restablecida y está vacía. ¿Desea configurarla de nuevo con el asistente de IA?",
+    "resetOnboardingOfferConfirm": "Sí, usar el asistente",
+    "resetOnboardingOfferCancel": "No, ahora no"
   },
   "accounts": {
     "newButton": "Nueva Cuenta",

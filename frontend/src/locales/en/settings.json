@@ -46,7 +46,11 @@
     "resetConfirmWord": "RESET",
     "resetConfirmInputLabel": "Type {{word}} to confirm",
     "resetSuccess": "Account reset successfully.",
-    "resetError": "Error resetting the account."
+    "resetError": "Error resetting the account.",
+    "resetOnboardingOfferTitle": "Set up again?",
+    "resetOnboardingOfferMessage": "Your account was reset and is now empty. Would you like to set it up again with the AI assistant?",
+    "resetOnboardingOfferConfirm": "Yes, use the assistant",
+    "resetOnboardingOfferCancel": "No, not now"
   },
   "accounts": {
     "newButton": "New Account",

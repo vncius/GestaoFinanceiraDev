@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Trash2, Plus, Check, AlertTriangle } from 'lucide-react';
@@ -66,7 +67,9 @@ interface GeneralFormState {
 function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('settings');
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
+  const { confirm } = useDialog();
   const [text, setText] = useState('');
   const [resetting, setResetting] = useState(false);
 
@@ -84,6 +87,12 @@ function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => vo
       await qc.invalidateQueries();
       showSuccess(t('general.resetSuccess'));
       onClose();
+      const wantsOnboarding = await confirm(t('general.resetOnboardingOfferMessage'), {
+        title: t('general.resetOnboardingOfferTitle'),
+        confirmLabel: t('general.resetOnboardingOfferConfirm'),
+        cancelLabel: t('general.resetOnboardingOfferCancel'),
+      });
+      if (wantsOnboarding) navigate('/onboarding', { state: { startAssistant: true } });
     } catch (err) {
       showError(err instanceof Error ? err.message : t('general.resetError'));
     } finally {

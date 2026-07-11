@@ -28,9 +28,11 @@
     "sendFailed": "No se pudo enviar el mensaje.",
     "retry": "Reenviar",
     "manualCta": "Prefiero configurar manualmente",
-    "summaryReady": "Tu propuesta de configuración está lista para revisión.",
+    "summaryReady": "¡Tu propuesta de configuración está lista!",
+    "summaryReadyHint": "No es necesario enviar más mensajes ahora — haz clic en el botón de abajo para revisar y confirmar.",
     "reviewCta": "Revisar propuesta",
-    "disclaimer": "El asistente usa IA y puede cometer errores. Nada se crea sin tu confirmación."
+    "disclaimer": "El asistente usa IA y puede cometer errores. Nada se crea sin tu confirmación.",
+    "disclaimerSummaryReady": "Tu propuesta está lista arriba. Haz clic en \"Revisar propuesta\" para continuar — o escribe aquí si quieres ajustar algo antes."
   },
   "review": {
     "title": "Revisa tu configuración",

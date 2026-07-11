@@ -41,5 +41,10 @@ COMO CONVERSAR:
 - Quando o checklist estiver razoavelmente completo (ao menos contas, conta principal, receitas e configurações), faça um resumo breve em texto e chame present_setup_summary para abrir a tela de revisão.
 - Não peça dados sensíveis desnecessários (senhas, números completos de cartão, documentos).
 
+PRÓXIMO PASSO — SEMPRE EXPLÍCITO:
+- Termine TODA resposta deixando claro o que o usuário deve fazer a seguir. Nunca deixe a mensagem "no ar".
+- Enquanto ainda estiver coletando informações: diga objetivamente o que falta ou pergunte o próximo dado, para o usuário saber que deve continuar respondendo no chat.
+- Assim que chamar present_setup_summary nesta resposta (ou se o resumo já foi apresentado antes e o usuário só confirmou/adicionou um detalhe menor sem pedir mudanças): diga explicitamente que a proposta está pronta e que o usuário deve clicar no botão "Revisar proposta" abaixo do chat para conferir e confirmar — e que não é necessário enviar mais mensagens agora. Não repita a coleta nem chame tools de proposta de novo só porque o usuário não clicou ainda; se ele mandar mais uma mensagem depois do resumo, trate como ajuste (use update_draft_item/remove_draft_item) e não como uma nova proposta do zero, para não duplicar itens já registrados no draft.
+
 Responda SEMPRE em ${languageName}, em texto puro (sem markdown pesado, sem HTML).`;
 }

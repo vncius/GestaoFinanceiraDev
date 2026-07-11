@@ -30,6 +30,8 @@ import {
   CreditCardInvoice,
 } from '../credit-cards/credit-cards.types';
 import { BackupBundle } from './backup.types';
+import { OnboardingStateRepository, OnboardingMessagesRepository } from '../onboarding/onboarding.repository';
+import { OnboardingMessage, OnboardingState } from '../onboarding/onboarding.types';
 
 const TENANT_ID = 'tenant-a';
 const OTHER_TENANT_ID = 'tenant-b';
@@ -131,6 +133,29 @@ class FakeCreditCardInvoicesRepo extends InMemoryRepo<CreditCardInvoice> impleme
   }
 }
 
+class FakeOnboardingStateRepo implements OnboardingStateRepository {
+  items: OnboardingState[] = [];
+  async get(tenantId: string) { return this.items.find((s) => s.tenantId === tenantId) ?? null; }
+  async upsert(data: OnboardingState) {
+    const index = this.items.findIndex((s) => s.tenantId === data.tenantId);
+    if (index === -1) { this.items.push(data); return data; }
+    this.items[index] = { ...this.items[index], ...data };
+    return this.items[index];
+  }
+  async deleteAll(tenantId: string) {
+    this.items = this.items.filter((s) => s.tenantId !== tenantId);
+  }
+}
+
+class FakeOnboardingMessagesRepo implements OnboardingMessagesRepository {
+  items: OnboardingMessage[] = [];
+  async findAll(tenantId: string) { return this.items.filter((m) => m.tenantId === tenantId); }
+  async create(data: OnboardingMessage) { this.items.push(data); return data; }
+  async deleteAll(tenantId: string) {
+    this.items = this.items.filter((m) => m.tenantId !== tenantId);
+  }
+}
+
 function buildService() {
   const accountsRepo = new FakeAccountsRepo();
   const accountTypesRepo = new FakeAccountTypesRepo();
@@ -142,6 +167,8 @@ function buildService() {
   const creditCardEntriesRepo = new FakeCreditCardEntriesRepo();
   const creditCardInstallmentsRepo = new FakeCreditCardInstallmentsRepo();
   const creditCardInvoicesRepo = new FakeCreditCardInvoicesRepo();
+  const onboardingStateRepo = new FakeOnboardingStateRepo();
+  const onboardingMessagesRepo = new FakeOnboardingMessagesRepo();
 
   const service = new BackupService(
     accountsRepo,
@@ -154,9 +181,21 @@ function buildService() {
     creditCardEntriesRepo,
     creditCardInstallmentsRepo,
     creditCardInvoicesRepo,
+    onboardingStateRepo,
+    onboardingMessagesRepo,
   );
 
-  return { service, accountsRepo, accountTypesRepo, categoriesRepo, settingsRepo, receivablesRepo, transactionsRepo };
+  return {
+    service,
+    accountsRepo,
+    accountTypesRepo,
+    categoriesRepo,
+    settingsRepo,
+    receivablesRepo,
+    transactionsRepo,
+    onboardingStateRepo,
+    onboardingMessagesRepo,
+  };
 }
 
 function makeAccount(tenantId: string, overrides: Partial<Account> = {}): Account {
@@ -340,6 +379,8 @@ describe('BackupService — account reset', () => {
     await ctx.categoriesRepo.create(makeCategory(TENANT_ID));
     await ctx.transactionsRepo.create(makeTransaction(TENANT_ID));
     ctx.settingsRepo.items.push({ tenantId: TENANT_ID } as never);
+    ctx.onboardingStateRepo.items.push({ tenantId: TENANT_ID } as never);
+    ctx.onboardingMessagesRepo.items.push({ tenantId: TENANT_ID } as never);
 
     await ctx.service.resetTenant(TENANT_ID);
 
@@ -348,12 +389,15 @@ describe('BackupService — account reset', () => {
     expect(await ctx.categoriesRepo.findAll(TENANT_ID)).toHaveLength(0);
     expect(await ctx.transactionsRepo.findAll(TENANT_ID)).toHaveLength(0);
     expect(await ctx.settingsRepo.get(TENANT_ID)).toBeNull();
+    expect(await ctx.onboardingStateRepo.get(TENANT_ID)).toBeNull();
+    expect(await ctx.onboardingMessagesRepo.findAll(TENANT_ID)).toHaveLength(0);
   });
 
   it('does not touch other tenants\' data', async () => {
     await ctx.accountsRepo.create(makeAccount(TENANT_ID));
     await ctx.accountsRepo.create(makeAccount(OTHER_TENANT_ID, { name: 'Preservada' }));
     ctx.settingsRepo.items.push({ tenantId: OTHER_TENANT_ID } as never);
+    ctx.onboardingStateRepo.items.push({ tenantId: OTHER_TENANT_ID } as never);
 
     await ctx.service.resetTenant(TENANT_ID);
 
@@ -361,6 +405,18 @@ describe('BackupService — account reset', () => {
     expect(preserved).toHaveLength(1);
     expect(preserved[0].name).toBe('Preservada');
     expect(await ctx.settingsRepo.get(OTHER_TENANT_ID)).not.toBeNull();
+    expect(await ctx.onboardingStateRepo.get(OTHER_TENANT_ID)).not.toBeNull();
+  });
+
+  it('resets the onboarding status so the tenant can be routed back into onboarding', async () => {
+    ctx.onboardingStateRepo.items.push({
+      tenantId: TENANT_ID,
+      status: 'COMPLETED',
+    } as never);
+
+    await ctx.service.resetTenant(TENANT_ID);
+
+    expect(await ctx.onboardingStateRepo.get(TENANT_ID)).toBeNull();
   });
 });
 
