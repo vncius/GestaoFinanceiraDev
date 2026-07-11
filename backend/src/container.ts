@@ -36,6 +36,8 @@ import { BackupService } from './modules/backup/backup.service';
 import { OnboardingService } from './modules/onboarding/onboarding.service';
 import { OnboardingDraftService } from './modules/onboarding/onboarding-draft.service';
 import { createOnboardingToolRegistry } from './modules/onboarding/onboarding-tools';
+import { OnboardingContextService } from './modules/onboarding/onboarding-context.service';
+import { OnboardingConversationService } from './modules/onboarding/onboarding-conversation.service';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
@@ -135,6 +137,15 @@ export const onboardingToolRegistry = createOnboardingToolRegistry({
   accountsRepo,
   categoriesRepo,
 });
+const onboardingConversationService = new OnboardingConversationService(
+  aiProvider,
+  aiConfig,
+  onboardingToolRegistry,
+  onboardingService,
+  new OnboardingContextService(),
+  onboardingStateRepo,
+  onboardingMessagesRepo,
+);
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
@@ -149,5 +160,9 @@ export const controllers = {
   cashFlow: new CashFlowController(cashFlowService),
   dashboard: new DashboardController(dashboardService),
   backup: new BackupController(backupService),
-  onboarding: new OnboardingController(onboardingService, onboardingDraftService),
+  onboarding: new OnboardingController(
+    onboardingService,
+    onboardingDraftService,
+    onboardingConversationService,
+  ),
 };

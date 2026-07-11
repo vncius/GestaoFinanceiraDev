@@ -97,3 +97,11 @@ export const updateDraftItemSchema = z.object({
 
 export type AddDraftItemInput = z.infer<typeof addDraftItemSchema>;
 export type UpdateDraftItemInput = z.infer<typeof updateDraftItemSchema>;
+
+// Turno de conversa. Limite de caracteres é a primeira barreira de custo/abuso.
+export const postMessageSchema = z.object({
+  message: z.string().min(1, 'validation.message.required').max(2000, 'validation.message.max'),
+  language: z.enum(['pt', 'en', 'es']).optional(),
+});
+
+export type PostMessageInput = z.infer<typeof postMessageSchema>;

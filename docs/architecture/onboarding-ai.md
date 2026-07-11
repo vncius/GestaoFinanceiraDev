@@ -79,7 +79,7 @@ Montados em `/onboarding` **após** o `authMiddleware`
 | `POST /onboarding/draft/items` | Adiciona item ao draft (`{ section, payload }`) | implementado |
 | `PUT /onboarding/draft/items/:draftItemId` | Edita item (patch mesclado + revalidação completa) | implementado |
 | `DELETE /onboarding/draft/items/:draftItemId` | Remove item (bloqueado se referenciado) | implementado |
-| Turno de conversa com a IA | — | planejado (etapa da conversa) |
+| `POST /onboarding/messages` | Turno de conversa com a IA (`{ message, language? }`; retorna mensagem do assistente, status, draft e `summaryPresented`) | implementado |
 | Confirmação idempotente | — | planejado (etapa de aplicação) |
 
 A resposta de status expõe apenas `status`, `language`, `createdAt` e
@@ -142,14 +142,41 @@ Conjunto fechado registrado em `onboarding-tools.ts` — detalhado em
 leitura e draft; `present_setup_summary` é o gatilho da transição
 `IN_PROGRESS → AWAITING_CONFIRMATION`.
 
-## Fluxo conversacional e confirmação
+## Fluxo conversacional
 
-Preenchidos nas etapas correspondentes (conversa e aplicação idempotente).
-Decisões já registradas: ADR 0003 (tools não escrevem dados financeiros),
-ADR 0004 (draft + confirmação), ADR 0005 (idempotência).
+Implementado em `onboarding-conversation.service.ts` (montagem do contexto em
+[ai-context.md](ai-context.md)):
+
+1. `POST /onboarding/messages` valida a mensagem (≤ 2000 chars) e o idioma.
+2. Primeiro turno transiciona `PENDING → IN_PROGRESS` e persiste o idioma;
+   vindo da revisão, `AWAITING_CONFIRMATION → IN_PROGRESS`. Status finais
+   respondem `409 onboarding.conversation.closed`.
+3. O serviço monta system prompt + contexto + janela de histórico e roda o
+   loop de tool calls (orçamento `AI_MAX_TOOL_ROUNDS`); erros de tool voltam ao
+   modelo para autocorreção.
+4. `present_setup_summary` transiciona para `AWAITING_CONFIRMATION` e a
+   resposta marca `summaryPresented: true` — gatilho da tela de revisão.
+5. Mensagens (usuário + assistente, mesmo `turn`) são persistidas **somente ao
+   fim do turno bem-sucedido**: falha do provedor não corrompe a conversa e o
+   frontend pode reenviar a mesma mensagem.
+
+**Limites**: 60 turnos por conversa (`429 onboarding.conversation.turnLimit`),
+timeout `AI_REQUEST_TIMEOUT_MS` por chamada ao provedor.
+
+**Limitação conhecida**: se o provedor falhar no meio de um turno com várias
+rodadas de tools, propostas das rodadas anteriores permanecem no draft (sem
+mensagens correspondentes). Inócuo por design — o draft é visível e editável
+na revisão.
+
+## Confirmação
+
+Preenchido na etapa de aplicação idempotente. Decisões já registradas:
+ADR 0003 (tools não escrevem dados financeiros), ADR 0004 (draft +
+confirmação), ADR 0005 (idempotência).
 
 ## Limitações atuais
 
-- Sem conversa com IA ainda — estado, draft editável e transições.
+- Confirmação/aplicação do draft ainda não implementada (próxima etapa).
+- Sem streaming — resposta única por turno.
 - Transferências recorrentes e objetivos financeiros estão fora da primeira
   versão (não existem no domínio atual).

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingDraftService } from './onboarding-draft.service';
-import { addDraftItemSchema, updateDraftItemSchema } from './onboarding.schemas';
+import { OnboardingConversationService } from './onboarding-conversation.service';
+import { addDraftItemSchema, postMessageSchema, updateDraftItemSchema } from './onboarding.schemas';
 import { OnboardingState } from './onboarding.types';
 
 // Visão pública do estado: campos internos de idempotência/resumo não saem da API.
@@ -18,7 +19,24 @@ export class OnboardingController {
   constructor(
     private readonly service: OnboardingService,
     private readonly draftService: OnboardingDraftService,
+    private readonly conversationService: OnboardingConversationService,
   ) {}
+
+  async postMessage(req: Request, res: Response): Promise<void> {
+    const input = postMessageSchema.parse(req.body);
+    const result = await this.conversationService.sendMessage(
+      req.tenantId,
+      input.message,
+      input.language,
+    );
+    const draft = await this.service.getDraft(req.tenantId);
+    res.json({
+      assistantMessage: result.assistantMessage,
+      status: result.status,
+      summaryPresented: result.summaryPresented,
+      draft,
+    });
+  }
 
   async getStatus(req: Request, res: Response): Promise<void> {
     const state = await this.service.getState(req.tenantId);
