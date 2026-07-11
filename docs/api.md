@@ -6,7 +6,9 @@ Todos os endpoints (exceto `/health`) retornam JSON. Erros de validação (Zod) 
 
 Valores monetários são sempre inteiros em centavos, tanto no corpo das requisições quanto nas respostas.
 
-**Multi-tenant**: toda requisição é resolvida para um tenant via o header `X-Tenant-Id`. Sem esse header (caso normal hoje, já que não há autenticação), o backend usa um tenant default fixo (`backend/src/shared/tenant/tenant.constants.ts`) — o comportamento é idêntico ao de um sistema single-tenant até que exista login.
+**Autenticação e multi-tenant**: toda rota (exceto `/health` e `/auth/*`) exige um cookie de sessão válido, obtido via `POST /auth/google` ou `POST /auth/apple` (ID-token do provedor). O `tenantId` é resolvido a partir do JWT da sessão pelo `authMiddleware` — nunca de um header do cliente. O primeiro usuário do sistema herda o tenant default (`backend/src/shared/tenant/tenant.constants.ts`); os demais recebem um tenant novo por usuário.
+
+**Onboarding e IA**: endpoints de `/onboarding/*` (chat conversacional, draft e confirmação da configuração inicial) estão documentados em [`docs/architecture/onboarding-ai.md`](architecture/onboarding-ai.md), não nesta referência.
 
 - [Accounts](#accounts)
 - [Categories](#categories)

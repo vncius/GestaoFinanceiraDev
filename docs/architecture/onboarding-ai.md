@@ -1,7 +1,33 @@
 # Onboarding conversacional — Arquitetura
 
-> Documento vivo. Criado na etapa de estado/persistência; seções de conversa,
-> draft e confirmação são preenchidas nas etapas que as implementam.
+> Documento vivo, atualizado a cada etapa da implementação (estado, draft,
+> tools, conversa, confirmação, frontend). Ver `## Limitações atuais` para o
+> que fica fora da primeira versão.
+
+## Diagrama do fluxo
+
+```mermaid
+flowchart TD
+    A[Login Google/Apple] --> B{OnboardingGate:<br/>status em aberto?}
+    B -- não --> Z[Dashboard]
+    B -- sim --> C[/onboarding — escolha/]
+    C -- assistente --> D[Chat com a IA]
+    C -- manual --> E[POST /skip] --> F[/settings manual/]
+    C -- depois --> G[sessionStorage deferred] --> Z
+
+    D -- POST /onboarding/messages --> D
+    D -- tool: present_setup_summary --> H[AWAITING_CONFIRMATION]
+    H --> I[Revisão do draft<br/>editar / remover]
+    I -- voltar ao chat --> D
+    I -- POST /onboarding/confirm<br/>idempotencyKey --> J[OnboardingApplyService]
+    J --> K[(Services financeiros<br/>reais: Accounts, Receivables,<br/>CashFlow, CreditCards...)]
+    J --> L[status COMPLETED]
+    L --> Z
+```
+
+A IA (retângulos "Chat"/"tool") nunca toca a caixa `Services financeiros
+reais` diretamente — só o `OnboardingApplyService`, depois da confirmação
+explícita do usuário (ADR 0003, ADR 0004).
 
 ## Jornada do usuário
 

@@ -1,13 +1,14 @@
 # Gestão Financeira PJ/Pessoal
 
-Sistema de controle financeiro para pessoa física e jurídica: fluxo de caixa mensal, contas a receber, cartões de crédito (com fatura e parcelamento) e dashboard com indicadores.
+Sistema de controle financeiro para pessoa física e jurídica: fluxo de caixa mensal, contas a receber, cartões de crédito (com fatura e parcelamento), dashboard com indicadores e um assistente de IA que conduz o onboarding de novos usuários.
 
 ## Stack
 
-- **Backend**: Node.js + TypeScript + Express + Zod, persistência em arquivos JSON (`backend/data/`). Valores monetários guardados em centavos (inteiros).
-- **Frontend**: React 18 + Vite + TypeScript + TailwindCSS + React Router + TanStack Query + Axios.
+- **Backend**: Node.js + TypeScript + Express + Zod, persistência em MongoDB Atlas (driver nativo `mongodb`, sem ORM). Valores monetários guardados em centavos (inteiros). Autenticação via Google/Apple ID-token (JWT em cookie httpOnly), com isolamento de dados por tenant.
+- **Frontend**: React 18 + Vite + TypeScript + TailwindCSS + React Router + TanStack Query + Axios. i18n em pt/en/es (i18next).
+- **IA**: integração com a Anthropic (`@anthropic-ai/sdk`) por trás de uma abstração de provedor própria — ver [`docs/architecture/ai-platform.md`](docs/architecture/ai-platform.md).
 
-Veja [`docs/adr/0001-json-file-storage.md`](docs/adr/0001-json-file-storage.md) para o porquê da persistência em arquivo em vez de banco de dados.
+> [`docs/adr/0001-json-file-storage.md`](docs/adr/0001-json-file-storage.md) registra a decisão original de persistir em arquivos JSON; está **superado** — a aplicação migrou para MongoDB Atlas (ver o próprio ADR para a nota de atualização e o histórico de commits).
 
 ## Pré-requisitos
 
@@ -59,10 +60,21 @@ npm run seed
 
 **`backend/.env`** (veja `backend/.env.example`):
 
-| Variável      | Default                  | Descrição                                   |
-|---------------|---------------------------|----------------------------------------------|
-| `PORT`        | `3100`                    | Porta do servidor Express                     |
-| `CORS_ORIGIN` | `http://localhost:3101`   | Origem permitida para requisições CORS        |
+| Variável           | Default            | Descrição                                                        |
+|--------------------|---------------------|--------------------------------------------------------------------|
+| `PORT`              | `3100`              | Porta do servidor Express                                          |
+| `CORS_ORIGIN`       | `http://localhost:3101` | Origem permitida para requisições CORS                        |
+| `MONGODB_URI`       | —                    | String de conexão do MongoDB Atlas                                 |
+| `MONGODB_DB_NAME`   | `gestao_financeira` | Nome do banco                                                       |
+| `JWT_SECRET`        | —                    | Segredo para assinar o cookie de sessão                            |
+| `GOOGLE_CLIENT_ID`  | —                    | OAuth Client ID do Google                                           |
+| `APPLE_CLIENT_ID`   | —                    | Services ID da Apple                                                |
+| `AI_PROVIDER`       | `fake`               | `fake` (determinístico, sem rede) ou `anthropic`                    |
+| `AI_API_KEY`        | —                    | Chave da Anthropic — obrigatória com `AI_PROVIDER=anthropic`, nunca exposta ao frontend |
+| `AI_MODEL`          | `claude-opus-4-8`    | Modelo usado pelo assistente de onboarding                          |
+
+Veja `backend/.env.example` para os limites opcionais da plataforma de IA
+(timeout, tokens, tool rounds).
 
 **`frontend/.env`** (veja `frontend/.env.example`):
 
@@ -86,6 +98,21 @@ cd backend && npm run build && npm start
 cd frontend && npm run build && npm run preview
 ```
 
+## Onboarding conversacional com IA
+
+Novos usuários (tenants sem dados) podem configurar a aplicação conversando
+com um assistente em vez de preencher telas manualmente. A IA só conversa,
+lê contexto autorizado do próprio tenant e propõe alterações num **draft**;
+a criação real dos dados só acontece depois que o usuário revisa e confirma
+explicitamente. Veja a documentação completa em `docs/architecture/`:
+
+- [`ai-platform.md`](docs/architecture/ai-platform.md) — arquitetura da plataforma de IA (componentes, abstração de provedor, fluxo de requisição)
+- [`onboarding-ai.md`](docs/architecture/onboarding-ai.md) — jornada do usuário, estados, draft, confirmação, diagrama do fluxo
+- [`tool-calling.md`](docs/architecture/tool-calling.md) — como as tools funcionam e como adicionar uma nova
+- [`ai-context.md`](docs/architecture/ai-context.md) — o que é (e o que nunca é) enviado ao modelo
+- [`ai-security.md`](docs/architecture/ai-security.md) — isolamento por tenant, limites, idempotência, logs
+- [`docs/adr/0002` a `0005`](docs/adr/) — decisões arquiteturais da plataforma de IA
+
 ## Documentação adicional
 
 - [`docs/api.md`](docs/api.md) — referência dos endpoints do backend
@@ -98,15 +125,14 @@ cd frontend && npm run build && npm run preview
 ```
 backend/
   src/
-    modules/        # um módulo por domínio (accounts, cash-flow, credit-cards, ...)
-    shared/          # persistência (JsonFileStore), erros, middlewares, utils
+    modules/         # um módulo por domínio (accounts, cash-flow, credit-cards, ai, onboarding, ...)
+    shared/          # persistência (MongoStore), erros, middlewares, utils
     container.ts     # wiring central de repositórios/serviços/controllers
-  data/              # arquivos JSON de dados (gitignored)
 frontend/
   src/
-    pages/           # uma pasta por página (Dashboard, CashFlow, CreditCards, ...)
+    pages/           # uma pasta por página (Dashboard, CashFlow, CreditCards, Onboarding, ...)
     components/ui/   # componentes de UI reutilizáveis
-    contexts/         # Theme, Month, Dialog, Toast
+    contexts/         # Auth, Theme, Month, Dialog, Toast, Language
     services/         # clientes HTTP por módulo do backend
-docs/                # documentação (API, lógica de domínio, ADRs)
+docs/                # documentação (API, lógica de domínio, ADRs, arquitetura da IA)
 ```

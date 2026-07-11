@@ -1,6 +1,11 @@
 # ADR 0001: Persistência em arquivos JSON em vez de banco de dados
 
-- **Status**: Aceito
+- **Status**: Superado — a aplicação migrou para MongoDB Atlas (commits
+  `f5b17f1`/`3d30e93`, que também adicionaram autenticação Google/Apple e
+  isolamento por tenant). Este documento é mantido como registro histórico da
+  decisão original; a persistência atual usa `MongoStore<T>`
+  (`backend/src/shared/persistence/mongo-store.ts`), não mais
+  `JsonFileStore<T>`. Ver `README.md` para a stack atual.
 - **Data**: registrado retroativamente — a decisão já estava implementada quando este documento foi escrito; não havia registro formal do porquê.
 
 ## Contexto
