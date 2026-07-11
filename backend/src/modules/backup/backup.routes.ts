@@ -7,6 +7,7 @@ const controller = controllers.backup;
 
 router.get('/export', asyncHandler((req, res) => controller.exportBackup(req, res)));
 router.post('/import', asyncHandler((req, res) => controller.importBackup(req, res)));
+router.post('/reset', asyncHandler((req, res) => controller.resetAccount(req, res)));
 router.get('/export-csv', asyncHandler((req, res) => controller.exportCsv(req, res)));
 router.post('/statement/parse', asyncHandler((req, res) => controller.parseStatement(req, res)));
 router.post('/statement/import', asyncHandler((req, res) => controller.importStatement(req, res)));

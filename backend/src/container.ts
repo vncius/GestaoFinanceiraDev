@@ -94,6 +94,7 @@ const dashboardService = new DashboardService(
 );
 const backupService = new BackupService(
   accountsRepo,
+  accountTypesRepo,
   categoriesRepo,
   settingsRepo,
   receivablesRepo,

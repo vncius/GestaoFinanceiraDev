@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BackupService } from './backup.service';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { Account } from '../accounts/accounts.types';
+import { AccountTypesRepository } from '../account-types/account-types.repository';
+import { AccountType } from '../account-types/account-types.types';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { Category, CategoryType } from '../categories/categories.types';
 import { SettingsRepository } from '../settings/settings.repository';
@@ -68,6 +70,10 @@ class FakeAccountsRepo extends InMemoryRepo<Account> implements AccountsReposito
   async findActive(tenantId: string) { return this.items.filter((a) => a.tenantId === tenantId && a.active); }
 }
 
+class FakeAccountTypesRepo extends InMemoryRepo<AccountType> implements AccountTypesRepository {
+  async findActive(tenantId: string) { return this.items.filter((t) => t.tenantId === tenantId && t.active); }
+}
+
 class FakeCategoriesRepo extends InMemoryRepo<Category> implements CategoriesRepository {
   async findActive(tenantId: string) { return this.items.filter((c) => c.tenantId === tenantId && c.active); }
   async findByType(tenantId: string, type: CategoryType) { return this.items.filter((c) => c.tenantId === tenantId && c.type === type); }
@@ -81,6 +87,9 @@ class FakeSettingsRepo implements SettingsRepository {
     if (index === -1) { this.items.push(data); return data; }
     this.items[index] = { ...this.items[index], ...data };
     return this.items[index];
+  }
+  async deleteAll(tenantId: string) {
+    this.items = this.items.filter((s) => s.tenantId !== tenantId);
   }
 }
 
@@ -124,6 +133,7 @@ class FakeCreditCardInvoicesRepo extends InMemoryRepo<CreditCardInvoice> impleme
 
 function buildService() {
   const accountsRepo = new FakeAccountsRepo();
+  const accountTypesRepo = new FakeAccountTypesRepo();
   const categoriesRepo = new FakeCategoriesRepo();
   const settingsRepo = new FakeSettingsRepo();
   const receivablesRepo = new FakeReceivablesRepo();
@@ -135,6 +145,7 @@ function buildService() {
 
   const service = new BackupService(
     accountsRepo,
+    accountTypesRepo,
     categoriesRepo,
     settingsRepo,
     receivablesRepo,
@@ -145,7 +156,7 @@ function buildService() {
     creditCardInvoicesRepo,
   );
 
-  return { service, accountsRepo, categoriesRepo, settingsRepo, receivablesRepo, transactionsRepo };
+  return { service, accountsRepo, accountTypesRepo, categoriesRepo, settingsRepo, receivablesRepo, transactionsRepo };
 }
 
 function makeAccount(tenantId: string, overrides: Partial<Account> = {}): Account {
@@ -308,6 +319,48 @@ describe('BackupService — export/import backup', () => {
     const preserved = await ctx.accountsRepo.findAll(OTHER_TENANT_ID);
     expect(preserved).toHaveLength(1);
     expect(preserved[0].name).toBe('Preservada');
+  });
+});
+
+describe('BackupService — account reset', () => {
+  let ctx: ReturnType<typeof buildService>;
+
+  const makeAccountType = (tenantId: string): AccountType => {
+    const now = new Date().toISOString();
+    return { id: randomUUID(), tenantId, name: 'Corrente', active: true, createdAt: now, updatedAt: now };
+  };
+
+  beforeEach(() => {
+    ctx = buildService();
+  });
+
+  it('wipes all data and settings of the tenant', async () => {
+    await ctx.accountsRepo.create(makeAccount(TENANT_ID));
+    await ctx.accountTypesRepo.create(makeAccountType(TENANT_ID));
+    await ctx.categoriesRepo.create(makeCategory(TENANT_ID));
+    await ctx.transactionsRepo.create(makeTransaction(TENANT_ID));
+    ctx.settingsRepo.items.push({ tenantId: TENANT_ID } as never);
+
+    await ctx.service.resetTenant(TENANT_ID);
+
+    expect(await ctx.accountsRepo.findAll(TENANT_ID)).toHaveLength(0);
+    expect(await ctx.accountTypesRepo.findAll(TENANT_ID)).toHaveLength(0);
+    expect(await ctx.categoriesRepo.findAll(TENANT_ID)).toHaveLength(0);
+    expect(await ctx.transactionsRepo.findAll(TENANT_ID)).toHaveLength(0);
+    expect(await ctx.settingsRepo.get(TENANT_ID)).toBeNull();
+  });
+
+  it('does not touch other tenants\' data', async () => {
+    await ctx.accountsRepo.create(makeAccount(TENANT_ID));
+    await ctx.accountsRepo.create(makeAccount(OTHER_TENANT_ID, { name: 'Preservada' }));
+    ctx.settingsRepo.items.push({ tenantId: OTHER_TENANT_ID } as never);
+
+    await ctx.service.resetTenant(TENANT_ID);
+
+    const preserved = await ctx.accountsRepo.findAll(OTHER_TENANT_ID);
+    expect(preserved).toHaveLength(1);
+    expect(preserved[0].name).toBe('Preservada');
+    expect(await ctx.settingsRepo.get(OTHER_TENANT_ID)).not.toBeNull();
   });
 });
 

@@ -29,6 +29,12 @@ export const importBackupSchema = z.object({
   bundle: backupBundleSchema,
 });
 
+export const resetAccountSchema = z.object({
+  confirm: z.literal(true, {
+    errorMap: () => ({ message: 'validation.confirm.required' }),
+  }),
+});
+
 export const exportCsvQuerySchema = z
   .object({
     from: z.string().optional(),

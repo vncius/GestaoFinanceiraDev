@@ -35,8 +35,18 @@
     "controlStartMonthLabel": "Mes de inicio del control",
     "controlStartYearLabel": "Año de inicio",
     "pjLimitsHint": "Active \"Gestionar Límites PJ\" para configurar el límite anual de facturación y el período de control.",
+    "managePjLimitsTooltip": "Control del límite anual de facturación para autónomos/PJ. Al activarlo, crea la categoría protegida \"Nota Fiscal\" y monitorea el tope anual de ingresos en el Dashboard.",
     "saveButton": "Guardar configuración",
-    "savedMessage": "¡Guardado!"
+    "savedMessage": "¡Guardado!",
+    "dangerZoneTitle": "Zona de peligro",
+    "resetButton": "Restablecer cuenta",
+    "resetDescription": "Elimina todos los datos y configuraciones de su cuenta: cuentas, categorías, movimientos, tarjetas, cobros y configuraciones. Esta acción no se puede deshacer — recomendamos descargar una copia de seguridad antes, en Copia de Seguridad y Exportación.",
+    "resetConfirmTitle": "Restablecer cuenta",
+    "resetConfirmMessage": "Esta acción eliminará TODOS los datos y configuraciones de su cuenta y no se puede deshacer.",
+    "resetConfirmWord": "RESTABLECER",
+    "resetConfirmInputLabel": "Escriba {{word}} para confirmar",
+    "resetSuccess": "Cuenta restablecida con éxito.",
+    "resetError": "Error al restablecer la cuenta."
   },
   "accounts": {
     "newButton": "Nueva Cuenta",

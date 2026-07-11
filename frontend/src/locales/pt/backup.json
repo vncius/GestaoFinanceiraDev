@@ -23,7 +23,6 @@
     "periodSummary": "Serão exportados os lançamentos de {{from}} até {{to}}.",
     "periodSummaryAll": "Serão exportados todos os lançamentos, sem filtro de período.",
     "downloadButton": "Baixar CSV",
-    "printReportLink": "Relatório para impressão (mês atual)",
     "downloadError": "Erro ao exportar CSV."
   },
   "statementImport": {

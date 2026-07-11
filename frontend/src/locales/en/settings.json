@@ -35,8 +35,18 @@
     "controlStartMonthLabel": "Control start month",
     "controlStartYearLabel": "Start year",
     "pjLimitsHint": "Enable \"Manage Business Limits\" to configure the annual revenue limit and control period.",
+    "managePjLimitsTooltip": "Annual revenue limit control for self-employed/small business. When enabled, it creates the protected \"Nota Fiscal\" category and tracks the yearly revenue cap on the Dashboard.",
     "saveButton": "Save settings",
-    "savedMessage": "Saved!"
+    "savedMessage": "Saved!",
+    "dangerZoneTitle": "Danger zone",
+    "resetButton": "Reset account",
+    "resetDescription": "Deletes all data and settings from your account: accounts, categories, entries, cards, receivables, and settings. This action cannot be undone — we recommend downloading a backup first, under Backup and Export.",
+    "resetConfirmTitle": "Reset account",
+    "resetConfirmMessage": "This action will delete ALL data and settings from your account and cannot be undone.",
+    "resetConfirmWord": "RESET",
+    "resetConfirmInputLabel": "Type {{word}} to confirm",
+    "resetSuccess": "Account reset successfully.",
+    "resetError": "Error resetting the account."
   },
   "accounts": {
     "newButton": "New Account",

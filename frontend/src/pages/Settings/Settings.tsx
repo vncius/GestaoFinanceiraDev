@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Trash2, Plus, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus, Check, AlertTriangle } from 'lucide-react';
 import { SettingsService } from '../../services/settings.service';
+import { BackupService } from '../../services/backup.service';
 import { AccountsService, CreateAccountPayload } from '../../services/accounts.service';
 import { AccountTypesService, CreateAccountTypePayload } from '../../services/account-types.service';
 import { CategoriesService, CreateCategoryPayload } from '../../services/categories.service';
@@ -13,18 +14,20 @@ import {
 import { Account, AccountTypeItem, Category, CreditCard, FinancialSettings } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { HelpTip } from '../../components/ui/Tooltip';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../contexts/ToastContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 type SettingsTab = 'general' | 'accounts' | 'accountTypes' | 'categories' | 'cards';
 
-const TAB_ORDER: SettingsTab[] = ['general', 'accounts', 'accountTypes', 'categories', 'cards'];
+const TAB_ORDER: SettingsTab[] = ['general', 'accounts', 'cards', 'categories', 'accountTypes'];
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -60,6 +63,67 @@ interface GeneralFormState {
   pjLimitControlEnabled: boolean;
 }
 
+function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation('settings');
+  const qc = useQueryClient();
+  const { showError, showSuccess } = useToast();
+  const [text, setText] = useState('');
+  const [resetting, setResetting] = useState(false);
+
+  const [lastOpen, setLastOpen] = useState(false);
+  if (open && !lastOpen) { setText(''); setLastOpen(true); }
+  if (!open && lastOpen) setLastOpen(false);
+
+  const word = t('general.resetConfirmWord');
+  const canConfirm = text.trim().toUpperCase() === word.toUpperCase();
+
+  async function handleReset() {
+    setResetting(true);
+    try {
+      await BackupService.resetAccount();
+      await qc.invalidateQueries();
+      showSuccess(t('general.resetSuccess'));
+      onClose();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('general.resetError'));
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t('general.resetConfirmTitle')}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button variant="danger" disabled={!canConfirm} loading={resetting} onClick={handleReset}>
+            {t('general.resetButton')}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          {t('general.resetConfirmMessage')}
+        </p>
+        <Field label={t('general.resetConfirmInputLabel', { word })}>
+          <input
+            className={INPUT}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={word}
+            autoComplete="off"
+          />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
 function GeneralTab({
   settings,
   accounts,
@@ -69,6 +133,7 @@ function GeneralTab({
 }) {
   const { t } = useTranslation('settings');
   const qc = useQueryClient();
+  const [resetOpen, setResetOpen] = useState(false);
 
   const initForm = (s: FinancialSettings): GeneralFormState => ({
     mainAccountId: s.mainAccountId ?? '',
@@ -152,6 +217,7 @@ function GeneralTab({
               className="rounded"
             />
             {t('general.managePjLimitsLabel')}
+            <HelpTip text={t('general.managePjLimitsTooltip')} />
           </label>
 
           {form.pjLimitControlEnabled ? (
@@ -207,6 +273,19 @@ function GeneralTab({
           </span>
         )}
       </div>
+
+      <SectionCard title={t('general.dangerZoneTitle')}>
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {t('general.resetDescription')}
+          </p>
+          <Button variant="danger" icon={<AlertTriangle size={14} />} onClick={() => setResetOpen(true)}>
+            {t('general.resetButton')}
+          </Button>
+        </div>
+      </SectionCard>
+
+      <ResetAccountModal open={resetOpen} onClose={() => setResetOpen(false)} />
     </div>
   );
 }

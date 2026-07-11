@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Download, Upload, FileSpreadsheet, Database, ArrowUpDown, Printer } from 'lucide-react';
+import { Download, Upload, FileSpreadsheet, Database, ArrowUpDown } from 'lucide-react';
 import { BackupService, readFileAsText, StatementEntry } from '../../services/backup.service';
 import { AccountsService } from '../../services/accounts.service';
 import { Button } from '../../components/ui/Button';
@@ -207,14 +207,6 @@ function CsvExportSection() {
         <Button icon={<Download size={14} />} loading={downloading} onClick={handleDownload}>
           {t('csvExport.downloadButton')}
         </Button>
-        <a
-          href={`/report?month=${month}&year=${year}`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-        >
-          <Printer size={13} /> {t('csvExport.printReportLink')}
-        </a>
       </div>
     </SectionCard>
   );

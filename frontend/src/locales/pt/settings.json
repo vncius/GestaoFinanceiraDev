@@ -35,8 +35,18 @@
     "controlStartMonthLabel": "Mês início controle",
     "controlStartYearLabel": "Ano início",
     "pjLimitsHint": "Ative \"Gerir Limites PJ\" para configurar limite anual de faturamento e período de controle.",
+    "managePjLimitsTooltip": "Controle do limite anual de faturamento para MEI/PJ. Quando ativo, cria a categoria protegida \"Nota Fiscal\" e acompanha o teto anual de receitas no Dashboard.",
     "saveButton": "Salvar configurações",
-    "savedMessage": "Salvo!"
+    "savedMessage": "Salvo!",
+    "dangerZoneTitle": "Zona de perigo",
+    "resetButton": "Redefinir conta",
+    "resetDescription": "Apaga todos os dados e parametrizações da sua conta: contas, categorias, lançamentos, cartões, recebimentos e configurações. Esta ação não pode ser desfeita — recomendamos baixar um backup antes, em Backup e Exportação.",
+    "resetConfirmTitle": "Redefinir conta",
+    "resetConfirmMessage": "Esta ação apagará TODOS os dados e parametrizações da sua conta e não pode ser desfeita.",
+    "resetConfirmWord": "REDEFINIR",
+    "resetConfirmInputLabel": "Digite {{word}} para confirmar",
+    "resetSuccess": "Conta redefinida com sucesso.",
+    "resetError": "Erro ao redefinir a conta."
   },
   "accounts": {
     "newButton": "Nova Conta",

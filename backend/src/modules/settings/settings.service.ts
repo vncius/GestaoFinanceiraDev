@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS: Omit<FinancialSettings, 'id' | 'tenantId' | 'createdAt' 
   annualRevenueLimit: 0,
   controlStartMonth: new Date().getMonth() + 1,
   controlStartYear: new Date().getFullYear(),
-  pjLimitControlEnabled: true,
+  pjLimitControlEnabled: false,
 };
 
 export class SettingsService {

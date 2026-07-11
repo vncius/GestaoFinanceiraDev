@@ -15,6 +15,7 @@ import {
   BarChart3,
   Target,
   PieChart,
+  Printer,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import { DashboardService } from '../../services/dashboard.service';
@@ -428,9 +429,19 @@ export default function Dashboard() {
 
       {/* Saldos das contas */}
       <section>
-        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          {t('balances.sectionTitle')}
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            {t('balances.sectionTitle')}
+          </h2>
+          <a
+            href={`/report?month=${month}&year=${year}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+          >
+            <Printer size={13} /> {t('printReport')}
+          </a>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {accounts.list.map((a) => (
             <StatCard

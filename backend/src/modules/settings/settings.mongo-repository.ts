@@ -17,4 +17,8 @@ export class SettingsMongoRepository implements SettingsRepository {
     }
     return this.store.create(data);
   }
+
+  async deleteAll(tenantId: string): Promise<void> {
+    await this.store.replaceAllForTenant(tenantId, []);
+  }
 }

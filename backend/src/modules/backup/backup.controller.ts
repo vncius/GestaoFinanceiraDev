@@ -6,6 +6,7 @@ import {
   importBackupSchema,
   importStatementSchema,
   parseStatementSchema,
+  resetAccountSchema,
 } from './backup.schemas';
 
 export class BackupController {
@@ -25,6 +26,12 @@ export class BackupController {
     // de um export gerado pelo próprio sistema.
     const result = await this.service.importBackup(req.tenantId, input.bundle as unknown as BackupBundle);
     res.json(result);
+  }
+
+  async resetAccount(req: Request, res: Response): Promise<void> {
+    resetAccountSchema.parse(req.body);
+    await this.service.resetTenant(req.tenantId);
+    res.json({ ok: true });
   }
 
   async exportCsv(req: Request, res: Response): Promise<void> {

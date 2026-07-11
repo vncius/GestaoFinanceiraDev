@@ -1,4 +1,5 @@
 {
+  "printReport": "Printable report",
   "error": {
     "loadFailed": "Could not load the dashboard. Check whether the server is running."
   },

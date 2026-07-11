@@ -35,6 +35,9 @@ export const BackupService = {
   restoreBackup: (bundle: unknown): Promise<{ counts: Record<string, number> }> =>
     api.post('/backup/import', { confirm: true, bundle }).then((r) => r.data),
 
+  resetAccount: (): Promise<{ ok: boolean }> =>
+    api.post('/backup/reset', { confirm: true }).then((r) => r.data),
+
   downloadCsv: async (range: CsvExportRange): Promise<void> => {
     const res = await api.get('/backup/export-csv', { params: range, responseType: 'blob' });
     triggerDownload(res.data, extractFilename(res.headers['content-disposition'], 'lancamentos.csv'));

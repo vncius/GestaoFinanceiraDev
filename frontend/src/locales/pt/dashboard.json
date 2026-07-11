@@ -1,4 +1,5 @@
 {
+  "printReport": "Relatório para impressão",
   "error": {
     "loadFailed": "Não foi possível carregar o dashboard. Verifique se o servidor está rodando."
   },

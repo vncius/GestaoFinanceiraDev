@@ -23,7 +23,6 @@
     "periodSummary": "Se exportarán los movimientos desde {{from}} hasta {{to}}.",
     "periodSummaryAll": "Se exportarán todos los movimientos, sin filtro de período.",
     "downloadButton": "Descargar CSV",
-    "printReportLink": "Informe para imprimir (mes actual)",
     "downloadError": "Error al exportar CSV."
   },
   "statementImport": {

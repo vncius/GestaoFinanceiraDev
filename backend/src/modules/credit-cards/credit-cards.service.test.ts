@@ -127,6 +127,7 @@ class FakeSettingsRepo implements SettingsRepository {
   async upsert(data: never) {
     return data;
   }
+  async deleteAll() {}
 }
 
 function buildService() {

@@ -2,6 +2,7 @@ import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
 import { AccountsRepository } from '../accounts/accounts.repository';
+import { AccountTypesRepository } from '../account-types/account-types.repository';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { SettingsRepository } from '../settings/settings.repository';
 import { ReceivablesRepository } from '../receivables/receivables.repository';
@@ -34,6 +35,7 @@ const TX_TYPE_LABELS: Record<TransactionType, string> = {
 export class BackupService {
   constructor(
     private readonly accountsRepo: AccountsRepository,
+    private readonly accountTypesRepo: AccountTypesRepository,
     private readonly categoriesRepo: CategoriesRepository,
     private readonly settingsRepo: SettingsRepository,
     private readonly receivablesRepo: ReceivablesRepository,
@@ -124,6 +126,26 @@ export class BackupService {
         creditCardInvoices: data.creditCardInvoices.length,
       },
     };
+  }
+
+  // ─── Redefinição de conta ──────────────────────────────────────────────────────
+
+  // Apaga TODOS os dados e parametrizações do tenant. A collection de usuários
+  // não é tocada — o login continua válido. As configurações padrão são
+  // recriadas automaticamente no próximo GET /settings.
+  async resetTenant(tenantId: string): Promise<void> {
+    await Promise.all([
+      this.accountsRepo.replaceAll(tenantId, []),
+      this.accountTypesRepo.replaceAll(tenantId, []),
+      this.categoriesRepo.replaceAll(tenantId, []),
+      this.receivablesRepo.replaceAll(tenantId, []),
+      this.transactionsRepo.replaceAll(tenantId, []),
+      this.creditCardsRepo.replaceAll(tenantId, []),
+      this.creditCardEntriesRepo.replaceAll(tenantId, []),
+      this.creditCardInstallmentsRepo.replaceAll(tenantId, []),
+      this.creditCardInvoicesRepo.replaceAll(tenantId, []),
+      this.settingsRepo.deleteAll(tenantId),
+    ]);
   }
 
   // ─── Exportação CSV de lançamentos ─────────────────────────────────────────────

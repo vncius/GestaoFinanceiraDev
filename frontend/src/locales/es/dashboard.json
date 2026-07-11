@@ -1,4 +1,5 @@
 {
+  "printReport": "Informe para imprimir",
   "error": {
     "loadFailed": "No se pudo cargar el panel. Verifique si el servidor está en ejecución."
   },
