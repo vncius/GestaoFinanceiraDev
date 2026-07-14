@@ -3,6 +3,7 @@
 // reimportar) os mesmos repositórios de arquivo em cada módulo.
 
 import { UsersMongoRepository } from './modules/auth/users.mongo-repository';
+import { AuditLogMongoRepository } from './modules/audit-log/audit-log.mongo-repository';
 import { AccountsMongoRepository } from './modules/accounts/accounts.mongo-repository';
 import { AccountTypesMongoRepository } from './modules/account-types/account-types.mongo-repository';
 import { CategoriesMongoRepository } from './modules/categories/categories.mongo-repository';
@@ -24,6 +25,7 @@ import { loadAiConfig } from './modules/ai/ai.config';
 import { createAiProvider } from './modules/ai/create-ai-provider';
 
 import { AuthService } from './modules/auth/auth.service';
+import { AuditLogService } from './modules/audit-log/audit-log.service';
 import { AccountsService } from './modules/accounts/accounts.service';
 import { AccountTypesService } from './modules/account-types/account-types.service';
 import { CategoriesService } from './modules/categories/categories.service';
@@ -55,6 +57,7 @@ import { OnboardingController } from './modules/onboarding/onboarding.controller
 // ─── Repositórios (uma instância por coleção do MongoDB) ────────────────────────
 
 const usersRepo = new UsersMongoRepository();
+const auditLogRepo = new AuditLogMongoRepository();
 const accountsRepo = new AccountsMongoRepository();
 const accountTypesRepo = new AccountTypesMongoRepository();
 const categoriesRepo = new CategoriesMongoRepository();
@@ -76,6 +79,7 @@ export const aiProvider = createAiProvider(aiConfig);
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 
 export const authService = new AuthService(usersRepo);
+const auditLogService = new AuditLogService(auditLogRepo);
 const accountsService = new AccountsService(accountsRepo);
 const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
@@ -166,7 +170,7 @@ const onboardingConversationService = new OnboardingConversationService(
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const controllers = {
-  auth: new AuthController(authService),
+  auth: new AuthController(authService, auditLogService),
   accounts: new AccountsController(accountsService),
   accountTypes: new AccountTypesController(accountTypesService),
   categories: new CategoriesController(categoriesService),
