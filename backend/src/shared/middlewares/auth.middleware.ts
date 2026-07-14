@@ -4,7 +4,7 @@ import { authService } from '../../container';
 const COOKIE_NAME = 'session';
 
 // Resolve usuário/tenant da requisição a partir do cookie de sessão emitido
-// no login (Google/Apple). Aplicado a todas as rotas montadas após ele em
+// no login (Google). Aplicado a todas as rotas montadas após ele em
 // server.ts — as rotas de /auth ficam de fora por serem públicas.
 export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
   const token = req.cookies?.[COOKIE_NAME];

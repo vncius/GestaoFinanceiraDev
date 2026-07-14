@@ -6,7 +6,6 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   loginWithGoogle: (idToken: string) => Promise<void>;
-  loginWithApple: (idToken: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -33,12 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
   }
 
-  async function loginWithApple(idToken: string, name?: string) {
-    const u = await AuthService.loginWithApple(idToken, name);
-    queryClient.clear();
-    setUser(u);
-  }
-
   async function logout() {
     await AuthService.logout();
     queryClient.clear();
@@ -46,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithApple, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart TD
-    A[Login Google/Apple] --> B{OnboardingGate:<br/>status em aberto?}
+    A[Login Google] --> B{OnboardingGate:<br/>status em aberto?}
     B -- não --> Z[Dashboard]
     B -- sim --> C[/onboarding — escolha/]
     C -- assistente --> D[Chat com a IA]
@@ -31,7 +31,7 @@ explícita do usuário (ADR 0003, ADR 0004).
 
 ## Jornada do usuário
 
-1. Novo usuário faz login (Google/Apple). O `OnboardingGate`
+1. Novo usuário faz login (Google). O `OnboardingGate`
    (`frontend/src/components/onboarding/OnboardingGate.tsx`, montado dentro do
    `ProtectedRoute`) consulta `GET /onboarding/status` e redireciona para
    `/onboarding` (rota fora do Layout, sem sidebar) enquanto o status estiver

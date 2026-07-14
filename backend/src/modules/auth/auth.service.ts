@@ -7,7 +7,6 @@ import { UsersMongoRepository } from './users.mongo-repository';
 import { User } from './auth.types';
 
 const googleJWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
-const appleJWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 
 export interface SessionPayload {
   sub: string;
@@ -45,29 +44,6 @@ export class AuthService {
     return { user, session };
   }
 
-  async loginWithApple(idToken: string, name?: string): Promise<{ user: User; session: string }> {
-    const clientId = process.env.APPLE_CLIENT_ID;
-    if (!clientId) throw new Error('APPLE_CLIENT_ID não configurado.');
-
-    const payload = await jwtVerify(idToken, appleJWKS, {
-      issuer: 'https://appleid.apple.com',
-      audience: clientId,
-    })
-      .then((r) => r.payload)
-      .catch(() => {
-        throw new AppError('Token da Apple inválido', 401, 'auth.invalidAppleToken');
-      });
-
-    const email = payload.email as string | undefined;
-    if (!email) throw new AppError('Token da Apple sem e-mail', 401, 'auth.appleTokenMissingEmail');
-
-    // A Apple só envia o nome uma única vez, no primeiro login (fora do id_token,
-    // via response.user no frontend), por isso ele chega como parâmetro separado.
-    const user = await this.findOrCreateUser('apple', payload.sub as string, email, name ?? email);
-    const session = await this.issueSession(user);
-    return { user, session };
-  }
-
   async me(userId: string): Promise<User> {
     const user = await this.usersRepo.findById(userId);
     if (!user) throw new AppError('Usuário não encontrado', 404, 'auth.userNotFound');
@@ -92,7 +68,7 @@ export class AuthService {
   }
 
   private async findOrCreateUser(
-    provider: 'google' | 'apple',
+    provider: 'google',
     providerId: string,
     email: string,
     name: string,
@@ -101,10 +77,10 @@ export class AuthService {
     if (existing) {
       if (existing.provider !== provider || existing.providerId !== providerId) {
         throw new AppError(
-          `Este e-mail já está cadastrado via ${existing.provider === 'google' ? 'Google' : 'Apple'}`,
+          `Este e-mail já está cadastrado via ${existing.provider}`,
           409,
           'auth.emailAlreadyRegistered',
-          { provider: existing.provider === 'google' ? 'Google' : 'Apple' },
+          { provider: existing.provider },
         );
       }
       return existing;

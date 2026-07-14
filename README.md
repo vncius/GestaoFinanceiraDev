@@ -4,7 +4,7 @@ Sistema de controle financeiro para pessoa física e jurídica: fluxo de caixa m
 
 ## Stack
 
-- **Backend**: Node.js + TypeScript + Express + Zod, persistência em MongoDB Atlas (driver nativo `mongodb`, sem ORM). Valores monetários guardados em centavos (inteiros). Autenticação via Google/Apple ID-token (JWT em cookie httpOnly), com isolamento de dados por tenant.
+- **Backend**: Node.js + TypeScript + Express + Zod, persistência em MongoDB Atlas (driver nativo `mongodb`, sem ORM). Valores monetários guardados em centavos (inteiros). Autenticação via Google ID-token (JWT em cookie httpOnly), com isolamento de dados por tenant.
 - **Frontend**: React 18 + Vite + TypeScript + TailwindCSS + React Router + TanStack Query + Axios. i18n em pt/en/es (i18next).
 - **IA**: integração com Anthropic (`@anthropic-ai/sdk`) ou OpenAI (`openai`) por trás de uma abstração de provedor própria (`AI_PROVIDER=anthropic|openai`) — ver [`docs/architecture/ai-platform.md`](docs/architecture/ai-platform.md).
 
@@ -68,7 +68,6 @@ npm run seed
 | `MONGODB_DB_NAME`   | `gestao_financeira` | Nome do banco                                                       |
 | `JWT_SECRET`        | —                    | Segredo para assinar o cookie de sessão                            |
 | `GOOGLE_CLIENT_ID`  | —                    | OAuth Client ID do Google                                           |
-| `APPLE_CLIENT_ID`   | —                    | Services ID da Apple                                                |
 | `AI_PROVIDER`       | `fake`               | `fake` (determinístico, sem rede), `anthropic` ou `openai`           |
 | `AI_API_KEY`        | —                    | Chave do provedor ativo — obrigatória com `AI_PROVIDER=anthropic\|openai`, nunca exposta ao frontend |
 | `AI_MODEL`          | —                    | Modelo do provedor ativo — obrigatório junto com `AI_API_KEY` (ex.: `claude-opus-4-8` ou `gpt-4o-mini`) |

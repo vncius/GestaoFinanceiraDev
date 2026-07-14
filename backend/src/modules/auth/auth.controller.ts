@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { googleLoginSchema, appleLoginSchema } from './auth.schemas';
+import { googleLoginSchema } from './auth.schemas';
 import { PublicUser, User } from './auth.types';
 
 const COOKIE_NAME = 'session';
@@ -25,13 +25,6 @@ export class AuthController {
   async google(req: Request, res: Response): Promise<void> {
     const { idToken } = googleLoginSchema.parse(req.body);
     const { user, session } = await this.service.loginWithGoogle(idToken);
-    this.setSessionCookie(res, session);
-    res.json({ user: toPublicUser(user) });
-  }
-
-  async apple(req: Request, res: Response): Promise<void> {
-    const { idToken, name } = appleLoginSchema.parse(req.body);
-    const { user, session } = await this.service.loginWithApple(idToken, name);
     this.setSessionCookie(res, session);
     res.json({ user: toPublicUser(user) });
   }

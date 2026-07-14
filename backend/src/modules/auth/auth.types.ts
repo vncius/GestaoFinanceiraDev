@@ -3,7 +3,7 @@ export interface User {
   tenantId: string;
   email: string;
   name: string;
-  provider: 'google' | 'apple';
+  provider: 'google';
   providerId: string;
   createdAt: string;
   updatedAt: string;

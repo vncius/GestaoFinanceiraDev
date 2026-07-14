@@ -102,8 +102,6 @@
   "auth": {
     "invalidGoogleToken": "Invalid Google token",
     "googleTokenMissingEmail": "Google token has no email",
-    "invalidAppleToken": "Invalid Apple token",
-    "appleTokenMissingEmail": "Apple token has no email",
     "userNotFound": "User not found",
     "invalidSession": "Invalid or expired session",
     "emailAlreadyRegistered": "This email is already registered via {{provider}}"

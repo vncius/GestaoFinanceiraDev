@@ -13,11 +13,6 @@ export const AuthService = {
     return data.user;
   },
 
-  async loginWithApple(idToken: string, name?: string): Promise<AuthUser> {
-    const { data } = await api.post('/auth/apple', { idToken, name });
-    return data.user;
-  },
-
   async me(): Promise<AuthUser | null> {
     try {
       const { data } = await api.get('/auth/me');
