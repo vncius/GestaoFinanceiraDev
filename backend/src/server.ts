@@ -23,7 +23,7 @@ import backupRouter from './modules/backup/backup.routes';
 import onboardingRouter from './modules/onboarding/onboarding.routes';
 
 const app = express();
-const PORT = process.env.PORT ?? 3100;
+const PORT = Number(process.env.PORT) || 3100;
 
 // Origem do frontend Vite. Configurável via env para deploys fora de
 // localhost; em dev aponta para a porta padrão definida em vite.config.ts.
