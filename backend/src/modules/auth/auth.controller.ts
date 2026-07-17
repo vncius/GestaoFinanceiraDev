@@ -16,12 +16,15 @@ export class AuthController {
     private readonly service: AuthService,
     private readonly auditLog: AuditLogService,
   ) {}
+  
 
   private setSessionCookie(res: Response, token: string): void {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: THIRTY_DAYS_MS,
     });
   }
