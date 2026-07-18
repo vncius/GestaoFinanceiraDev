@@ -33,7 +33,7 @@ const TAB_ORDER: SettingsTab[] = ['general', 'accounts', 'cards', 'categories', 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
@@ -193,7 +193,14 @@ function GeneralTab({
     <div className="space-y-5 max-w-2xl">
       <SectionCard title={t('general.linkedAccountsTitle')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label={t('general.mainAccountLabel')}>
+          <Field
+            label={
+              <span className="inline-flex items-center gap-1">
+                {t('general.mainAccountLabel')}
+                <HelpTip text={t('general.mainAccountTooltip')} />
+              </span>
+            }
+          >
             <select className={INPUT} value={form.mainAccountId} onChange={set('mainAccountId')}>
               <option value="">{t('general.mainAccountNone')}</option>
               {activeAccounts.map((a) => (
@@ -418,6 +425,7 @@ function AccountModal({
             className="rounded"
           />
           {t('accounts.modal.autoReserveLabel')}
+          <HelpTip text={t('accounts.modal.autoReserveTooltip')} />
         </label>
         {form.autoReserveEnabled && (
           <Field label={t('accounts.modal.autoReservePercentageLabel')}>

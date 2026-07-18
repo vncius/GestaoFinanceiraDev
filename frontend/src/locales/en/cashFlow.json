@@ -16,19 +16,23 @@
   },
   "summaryBar": {
     "initial": "Initial",
+    "initialTooltip": "Main account balance at the start of the month, before any income or expense.",
     "income": "Income",
     "expense": "Expenses",
     "finalBalance": "Final Balance",
+    "finalBalanceTooltip": "Main account balance already settled (paid/received) so far.",
     "collapse": "Collapse",
     "expand": "View forecast",
     "projectedInitialBalance": "Projected Initial Balance",
     "expectedIncome": "Exp. Income",
     "expectedExpense": "Exp. Expenses",
     "projectedBalance": "Proj. Balance",
+    "projectedBalanceTooltip": "Projected main account balance including entries not yet settled.",
     "reserveProjectedInitialBalance": "Projected Initial Reserve",
     "reserveInflow": "Reserve Inflow",
     "reserveOutflow": "Reserve Outflow",
-    "reserveBalance": "Reserve Balance"
+    "reserveBalance": "Reserve Balance",
+    "reserveBalanceTooltip": "Balance accumulated in auto-reserve accounts, kept separate from the main account balance."
   },
   "grid": {
     "new": "New",

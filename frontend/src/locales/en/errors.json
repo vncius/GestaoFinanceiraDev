@@ -116,7 +116,8 @@
     "accountNotFound": "Account not found."
   },
   "account": {
-    "notFound": "Account not found"
+    "notFound": "Account not found",
+    "mainReserveConflict": "The main account and the reserve account can't be the same. Choose different accounts so balances don't get mixed up."
   },
   "accountType": {
     "notFound": "Account type not found"

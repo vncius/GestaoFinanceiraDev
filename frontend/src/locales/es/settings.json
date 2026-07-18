@@ -27,6 +27,7 @@
   "general": {
     "linkedAccountsTitle": "Cuentas Vinculadas",
     "mainAccountLabel": "Cuenta principal",
+    "mainAccountTooltip": "Cuenta utilizada para recibir la mayoría de los ingresos y desde donde salen la mayoría de los pagos. No puede ser la misma cuenta marcada como reserva automática, para no mezclar los saldos.",
     "mainAccountNone": "Ninguna",
     "minimumMainBalanceLabel": "Saldo mínimo de la cuenta principal (R$)",
     "limitsAndPeriodTitle": "Límites y Período",
@@ -69,6 +70,7 @@
       "typeNone": "Sin tipo",
       "initialBalanceLabel": "Saldo inicial (R$)",
       "autoReserveLabel": "Participa en la separación automática de reserva",
+      "autoReserveTooltip": "Una cuenta de reserva separa automáticamente un porcentaje de cada ingreso para ahorrar dinero. Use una cuenta diferente de la principal para que los saldos no se mezclen.",
       "autoReservePercentageLabel": "Porcentaje separado automáticamente (%)"
     }
   },

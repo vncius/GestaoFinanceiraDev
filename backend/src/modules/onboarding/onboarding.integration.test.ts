@@ -266,10 +266,10 @@ function buildEnvironment() {
   const creditCardInstallmentsRepo = new FakeCreditCardInstallmentsRepo();
   const creditCardInvoicesRepo = new FakeCreditCardInvoicesRepo();
 
-  const accountsService = new AccountsService(accountsRepo);
+  const accountsService = new AccountsService(accountsRepo, settingsRepo);
   const accountTypesService = new AccountTypesService(accountTypesRepo);
   const categoriesService = new CategoriesService(categoriesRepo);
-  const settingsService = new SettingsService(settingsRepo, categoriesRepo);
+  const settingsService = new SettingsService(settingsRepo, categoriesRepo, accountsRepo);
   const receivablesService = new ReceivablesService(
     receivablesRepo,
     transactionsRepo,

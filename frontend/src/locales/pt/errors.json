@@ -116,7 +116,8 @@
     "accountNotFound": "Conta não encontrada."
   },
   "account": {
-    "notFound": "Conta não encontrada"
+    "notFound": "Conta não encontrada",
+    "mainReserveConflict": "A conta principal e a conta de reserva não podem ser a mesma. Escolha contas diferentes para não bugar os saldos."
   },
   "accountType": {
     "notFound": "Tipo de conta não encontrado"

@@ -27,6 +27,7 @@
   "general": {
     "linkedAccountsTitle": "Linked Accounts",
     "mainAccountLabel": "Main account",
+    "mainAccountTooltip": "The account used to receive most income and pay most bills. It can't be the same account marked as auto-reserve, to avoid mixing up balances.",
     "mainAccountNone": "None",
     "minimumMainBalanceLabel": "Minimum main account balance ($)",
     "limitsAndPeriodTitle": "Limits and Period",
@@ -69,6 +70,7 @@
       "typeNone": "No type",
       "initialBalanceLabel": "Initial balance ($)",
       "autoReserveLabel": "Included in automatic reserve split",
+      "autoReserveTooltip": "A reserve account automatically sets aside a percentage of each income to save money. Use an account different from the main account so balances stay separate and don't get mixed up.",
       "autoReservePercentageLabel": "Auto-reserved percentage (%)"
     }
   },

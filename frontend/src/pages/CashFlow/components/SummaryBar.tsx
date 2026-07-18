@@ -2,15 +2,18 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CashFlowSummary } from '../../../types';
 import { formatCurrency } from '../../../utils/money';
+import { HelpTip } from '../../../components/ui/Tooltip';
 
 function SummaryCell({
   label,
+  tooltip,
   value,
   color,
   bold = false,
   border = true,
 }: {
   label: string;
+  tooltip?: string;
   value: number;
   color: string;
   bold?: boolean;
@@ -20,8 +23,11 @@ function SummaryCell({
     <div
       className={`flex flex-col items-center justify-center text-center px-2 py-1 lg:py-0 lg:w-[150px] lg:shrink-0 ${border ? 'lg:border-r border-gray-100 dark:border-gray-700' : ''}`}
     >
-      <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">{label}</span>
-      <span className={`text-xs whitespace-nowrap ${bold ? 'font-bold' : 'font-semibold'} ${color}`}>
+      <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 leading-tight">
+        {label}
+        {tooltip && <HelpTip text={tooltip} />}
+      </span>
+      <span className={`whitespace-nowrap ${bold ? 'text-sm font-bold' : 'text-xs font-semibold'} ${color}`}>
         {formatCurrency(value)}
       </span>
     </div>
@@ -57,10 +63,10 @@ export function SummaryBar({
     <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
       <div className="flex items-center px-2 sm:px-4 py-2">
         <SummaryRow>
-          <SummaryCell label={t('summaryBar.initial')} value={s.initialBalance} color={initialColor} />
+          <SummaryCell label={t('summaryBar.initial')} tooltip={t('summaryBar.initialTooltip')} value={s.initialBalance} color={initialColor} />
           <SummaryCell label={t('summaryBar.income')} value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
           <SummaryCell label={t('summaryBar.expense')} value={totalPaid} color="text-red-500 dark:text-red-400" />
-          <SummaryCell label={t('summaryBar.finalBalance')} value={s.realizedBalance} color={saldoColor} bold border={false} />
+          <SummaryCell label={t('summaryBar.finalBalance')} tooltip={t('summaryBar.finalBalanceTooltip')} value={s.realizedBalance} color={saldoColor} bold border={false} />
         </SummaryRow>
         <button
           onClick={onToggleExpanded}
@@ -80,7 +86,7 @@ export function SummaryBar({
               <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
               <SummaryCell label={t('summaryBar.expectedIncome')} value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
               <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
-              <SummaryCell label={t('summaryBar.projectedBalance')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
+              <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
             </SummaryRow>
             <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
               <ChevronDown size={14} />
@@ -91,7 +97,7 @@ export function SummaryBar({
               <SummaryCell label={t('summaryBar.reserveProjectedInitialBalance')} value={s.reserveProjectedInitialBalance} color={initialColor} />
               <SummaryCell label={t('summaryBar.reserveInflow')} value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
               <SummaryCell label={t('summaryBar.reserveOutflow')} value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
-              <SummaryCell label={t('summaryBar.reserveBalance')} value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
+              <SummaryCell label={t('summaryBar.reserveBalance')} tooltip={t('summaryBar.reserveBalanceTooltip')} value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
             </SummaryRow>
             <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
               <ChevronDown size={14} />
