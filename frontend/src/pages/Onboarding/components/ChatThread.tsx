@@ -38,9 +38,17 @@ export default function ChatThread({
       className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
     >
       {messages.length === 0 && !pendingMessage && !failedMessage && (
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
-          {t('chat.emptyHint')}
-        </p>
+        <div className="max-w-md mx-auto py-6 space-y-4">
+          <div className="rounded-2xl rounded-bl-sm bg-gray-100 dark:bg-gray-700 px-4 py-3.5 text-sm text-gray-700 dark:text-gray-200 space-y-2">
+            <p className="font-semibold text-gray-900 dark:text-gray-50">{t('chat.welcomeTitle')}</p>
+            <p>{t('chat.welcomeMainAccount')}</p>
+            <p>{t('chat.welcomeReserveAccount')}</p>
+            <p>{t('chat.welcomeCreditCard')}</p>
+          </div>
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            {t('chat.emptyHint')}
+          </p>
+        </div>
       )}
 
       {messages.map((message) => (

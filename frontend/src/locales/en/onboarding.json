@@ -22,6 +22,10 @@
   "chat": {
     "title": "Setup assistant",
     "threadLabel": "Conversation with the assistant",
+    "welcomeTitle": "Before we start, a few quick concepts:",
+    "welcomeMainAccount": "🏦 Main account — the bank account you use day to day, where most of your income comes in and most payments go out.",
+    "welcomeReserveAccount": "💰 Reserve account — a separate account (ideally at another bank) that automatically sets aside a percentage of your income for taxes, emergencies, etc. It can never be the same as the main account.",
+    "welcomeCreditCard": "💳 Credit card — tell us the bank, closing day and due day so the system can calculate each invoice correctly.",
     "emptyHint": "Tell me a bit about your finances to get started: which accounts you use, where your income comes from, your fixed expenses…",
     "inputLabel": "Your message",
     "inputPlaceholder": "Type your message…",

@@ -67,7 +67,7 @@ export default function CashFlow() {
   // ── Summary bar state ────────────────────────────────────────────────────────
   // Vive no componente da página (que não desmonta ao trocar de mês) para que
   // o estado expandido/recolhido sobreviva à troca de referência.
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
 
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');

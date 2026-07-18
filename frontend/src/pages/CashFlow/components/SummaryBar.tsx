@@ -60,8 +60,8 @@ export function SummaryBar({
   const initialColor = 'text-gray-600 dark:text-gray-300';
 
   return (
-    <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
-      <div className="flex items-center px-2 sm:px-4 py-2">
+    <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-800 border-t-2 border-blue-100 dark:border-blue-900/50 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
+      <div className="flex items-center px-2 sm:px-4 py-2.5">
         <SummaryRow>
           <SummaryCell label={t('summaryBar.initial')} tooltip={t('summaryBar.initialTooltip')} value={s.initialBalance} color={initialColor} />
           <SummaryCell label={t('summaryBar.income')} value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
@@ -70,11 +70,11 @@ export function SummaryBar({
         </SummaryRow>
         <button
           onClick={onToggleExpanded}
-          className="shrink-0 ml-2 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          title={expanded ? t('summaryBar.collapse') : t('summaryBar.expand')}
+          className="shrink-0 ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
           aria-label={expanded ? t('summaryBar.collapse') : t('summaryBar.expand')}
           aria-expanded={expanded}
         >
+          <span className="hidden sm:inline">{expanded ? t('summaryBar.collapse') : t('summaryBar.expand')}</span>
           {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
       </div>
