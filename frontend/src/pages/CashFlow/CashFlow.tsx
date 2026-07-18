@@ -16,6 +16,7 @@ import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { monthYearFromDate } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
+import { PageFooter } from '../../contexts/PageFooterContext';
 import { ModalKind, CashFlowTypeFilter } from './types';
 import { useCashFlowMutations } from './useCashFlowMutations';
 import { SummaryBar } from './components/SummaryBar';
@@ -67,7 +68,7 @@ export default function CashFlow() {
   // ── Summary bar state ────────────────────────────────────────────────────────
   // Vive no componente da página (que não desmonta ao trocar de mês) para que
   // o estado expandido/recolhido sobreviva à troca de referência.
-  const [summaryExpanded, setSummaryExpanded] = useState(true);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');
@@ -219,8 +220,8 @@ export default function CashFlow() {
   const rxSaving = createReceivable.isPending || updateReceivable.isPending;
 
   return (
-    <div className="flex flex-col min-h-full">
-      <div className="flex-1 space-y-4 pb-4">
+    <div>
+      <div className="space-y-4">
         {/* Filtros */}
         <CashFlowFilterBar
           typeFilter={typeFilter}
@@ -280,11 +281,13 @@ export default function CashFlow() {
       </div>
 
       {/* Summary bar */}
-      <SummaryBar
-        summary={summary}
-        expanded={summaryExpanded}
-        onToggleExpanded={() => setSummaryExpanded((e) => !e)}
-      />
+      <PageFooter>
+        <SummaryBar
+          summary={summary}
+          expanded={summaryExpanded}
+          onToggleExpanded={() => setSummaryExpanded((e) => !e)}
+        />
+      </PageFooter>
 
       {/* Receivable Modal */}
       <ReceivableModal

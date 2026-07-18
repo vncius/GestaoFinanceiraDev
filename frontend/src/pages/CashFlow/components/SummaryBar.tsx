@@ -42,6 +42,20 @@ function SummaryRow({ children }: { children: React.ReactNode }) {
   );
 }
 
+const TOGGLE_BUTTON_CLASS =
+  'shrink-0 ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors';
+
+// Espelha exatamente a marcação do botão de alternância (mesmo texto/ícone)
+// para que as linhas recolhidas ocupem a mesma largura e a barra não desalinhe.
+function ToggleSpacer({ label }: { label: string }) {
+  return (
+    <span aria-hidden="true" className={`${TOGGLE_BUTTON_CLASS} invisible border-transparent`}>
+      <span className="hidden sm:inline">{label}</span>
+      <ChevronDown size={14} />
+    </span>
+  );
+}
+
 export function SummaryBar({
   summary: s,
   expanded,
@@ -60,8 +74,8 @@ export function SummaryBar({
   const initialColor = 'text-gray-600 dark:text-gray-300';
 
   return (
-    <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-800 border-t-2 border-blue-100 dark:border-blue-900/50 shadow-md dark:shadow-gray-900 z-10 rounded-xl">
-      <div className="flex items-center px-2 sm:px-4 py-2.5">
+    <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center px-3 sm:px-6 py-2.5">
         <SummaryRow>
           <SummaryCell label={t('summaryBar.initial')} tooltip={t('summaryBar.initialTooltip')} value={s.initialBalance} color={initialColor} />
           <SummaryCell label={t('summaryBar.income')} value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
@@ -70,7 +84,7 @@ export function SummaryBar({
         </SummaryRow>
         <button
           onClick={onToggleExpanded}
-          className="shrink-0 ml-2 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors"
+          className={`${TOGGLE_BUTTON_CLASS} bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700`}
           aria-label={expanded ? t('summaryBar.collapse') : t('summaryBar.expand')}
           aria-expanded={expanded}
         >
@@ -81,27 +95,23 @@ export function SummaryBar({
 
       {expanded && (
         <>
-          <div className="flex items-center px-2 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
+          <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
             <SummaryRow>
               <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
               <SummaryCell label={t('summaryBar.expectedIncome')} value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
               <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
               <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
             </SummaryRow>
-            <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
-              <ChevronDown size={14} />
-            </div>
+            <ToggleSpacer label={t('summaryBar.collapse')} />
           </div>
-          <div className="flex items-center px-2 sm:px-4 py-2 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700">
             <SummaryRow>
               <SummaryCell label={t('summaryBar.reserveProjectedInitialBalance')} value={s.reserveProjectedInitialBalance} color={initialColor} />
               <SummaryCell label={t('summaryBar.reserveInflow')} value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
               <SummaryCell label={t('summaryBar.reserveOutflow')} value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
               <SummaryCell label={t('summaryBar.reserveBalance')} tooltip={t('summaryBar.reserveBalanceTooltip')} value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
             </SummaryRow>
-            <div aria-hidden="true" className="invisible shrink-0 ml-2 p-1.5 rounded-lg">
-              <ChevronDown size={14} />
-            </div>
+            <ToggleSpacer label={t('summaryBar.collapse')} />
           </div>
         </>
       )}

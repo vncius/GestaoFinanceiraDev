@@ -10,6 +10,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Language } from '../../i18n';
 import { QuickAddProvider } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
+import { PageFooterProvider } from '../../contexts/PageFooterContext';
 
 const ROUTE_META: Record<string, { titleKey: string; showMonthNav?: boolean }> = {
   '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true },
@@ -98,9 +99,11 @@ export default function Layout() {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-3 sm:p-6">
-            <Outlet />
-          </main>
+          <PageFooterProvider>
+            <main className="flex-1 overflow-auto p-3 sm:p-6">
+              <Outlet />
+            </main>
+          </PageFooterProvider>
         </div>
       </div>
     </QuickAddProvider>
