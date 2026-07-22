@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ThumbsUp, ThumbsDown, Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import {
   ReceivablesService,
   CreateReceivablePayload,
@@ -15,6 +15,8 @@ import { Modal } from '../../components/ui/Modal';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { PaidToggle } from '../../components/ui/PaidToggle';
+import { IconActionButton } from '../../components/ui/IconActionButton';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, toInputDate, todayISO, monthYearFromDate } from '../../utils/date';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -35,25 +37,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
       {children}
     </div>
-  );
-}
-
-function PaidToggle({ paid, onToggle }: { paid: boolean; onToggle: () => void }) {
-  const { t } = useTranslation('receivables');
-  const label = paid ? t('toggle.revert') : t('toggle.markReceived');
-  return (
-    <button
-      title={label}
-      aria-label={label}
-      onClick={onToggle}
-      className={`p-1 sm:p-1.5 rounded-md transition-colors ${
-        paid
-          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
-          : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
-      }`}
-    >
-      {paid ? <ThumbsUp size={16} /> : <ThumbsDown size={16} />}
-    </button>
   );
 }
 
@@ -348,6 +331,15 @@ export default function Receivables() {
     onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
 
+  const pendingToggleId =
+    (receiveMut.isPending && (receiveMut.variables as string)) ||
+    (revertMut.isPending && (revertMut.variables as string)) ||
+    null;
+  const pendingDeleteId =
+    (deleteMut.isPending && (deleteMut.variables?.id as string)) ||
+    (revertMut.isPending && (revertMut.variables as string)) ||
+    null;
+
   const { confirm } = useDialog();
 
   const EFFECTED_CONFIRM = t('modal.confirmEdit');
@@ -486,30 +478,33 @@ export default function Receivables() {
                         {item.status !== 'CANCELED' && (
                           <PaidToggle
                             paid={item.status === 'RECEIVED'}
+                            loading={pendingToggleId === item.id}
                             onToggle={() =>
                               item.status === 'RECEIVED' ? revertMut.mutate(item.id) : receiveMut.mutate(item.id)
                             }
+                            paidTitle={t('toggle.revert')}
+                            unpaidTitle={t('toggle.markReceived')}
                           />
                         )}
                         <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {item.status !== 'CANCELED' && (
-                            <button
+                            <IconActionButton
                               title={t('actions.edit')}
-                              aria-label={t('actions.edit')}
                               onClick={() => setModal({ item })}
-                              className="p-1 sm:p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                              disabled={pendingDeleteId === item.id}
+                              className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
                               <Pencil size={14} />
-                            </button>
+                            </IconActionButton>
                           )}
-                          <button
+                          <IconActionButton
                             title={t('actions.delete')}
-                            aria-label={t('actions.delete')}
                             onClick={() => handleDelete(item)}
-                            className="p-1 sm:p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                            loading={pendingDeleteId === item.id}
+                            className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >
                             <Trash2 size={14} />
-                          </button>
+                          </IconActionButton>
                         </div>
                       </div>
                     </td>

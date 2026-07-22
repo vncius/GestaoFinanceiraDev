@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCcw } from 'lucide-react';
+import { Loader2, RotateCcw } from 'lucide-react';
 import { OnboardingMessage } from '../../../services/onboarding.service';
 
 interface ChatThreadProps {
@@ -8,6 +8,7 @@ interface ChatThreadProps {
   pendingMessage: string | null;
   failedMessage: string | null;
   sendError: Error | null;
+  sending?: boolean;
   onRetry: (message: string) => void;
 }
 
@@ -20,6 +21,7 @@ export default function ChatThread({
   pendingMessage,
   failedMessage,
   sendError,
+  sending = false,
   onRetry,
 }: ChatThreadProps) {
   const { t } = useTranslation('onboarding');
@@ -77,9 +79,11 @@ export default function ChatThread({
               <span role="alert">{sendError?.message ?? t('chat.sendFailed')}</span>
               <button
                 onClick={() => onRetry(failedMessage)}
-                className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
+                disabled={sending}
+                className="inline-flex items-center gap-1 font-medium underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <RotateCcw size={12} /> {t('chat.retry')}
+                {sending ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+                {t('chat.retry')}
               </button>
             </div>
           </div>

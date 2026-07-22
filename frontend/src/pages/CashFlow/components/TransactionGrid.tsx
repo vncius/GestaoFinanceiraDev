@@ -25,6 +25,8 @@ export function TransactionGrid({
   onPay,
   onRevert,
   onDelete,
+  pendingToggleId,
+  pendingDeleteId,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -35,6 +37,8 @@ export function TransactionGrid({
   onPay: (id: string) => void;
   onRevert: (id: string) => void;
   onDelete: (item: FinancialTransaction) => void;
+  pendingToggleId?: string | null;
+  pendingDeleteId?: string | null;
 }) {
   const { t } = useTranslation('cashFlow');
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
@@ -85,6 +89,7 @@ export function TransactionGrid({
                       {(item.status === 'PENDING' || item.status === 'PAID') && (
                         <PaidToggle
                           paid={item.status === 'PAID'}
+                          loading={pendingToggleId === item.id}
                           onToggle={() => (item.status === 'PAID' ? onRevert(item.id) : onPay(item.id))}
                           paidTitle={t('grid.toggle.revertPaid')}
                           unpaidTitle={t('transactionGrid.toggle.markPaid')}
@@ -95,6 +100,7 @@ export function TransactionGrid({
                           <ActionBtn
                             title={t('grid.actions.edit')}
                             onClick={() => onEdit(item)}
+                            disabled={pendingDeleteId === item.id}
                             className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Pencil size={14} />
@@ -104,6 +110,7 @@ export function TransactionGrid({
                           <ActionBtn
                             title={t('grid.actions.delete')}
                             onClick={() => onDelete(item)}
+                            loading={pendingDeleteId === item.id}
                             className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >
                             <Trash2 size={14} />

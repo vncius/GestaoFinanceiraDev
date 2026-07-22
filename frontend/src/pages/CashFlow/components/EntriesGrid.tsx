@@ -23,6 +23,8 @@ export function EntriesGrid({
   onReceive,
   onRevert,
   onDelete,
+  pendingToggleId,
+  pendingDeleteId,
 }: {
   items: Receivable[];
   accounts: Account[];
@@ -31,6 +33,8 @@ export function EntriesGrid({
   onReceive: (id: string) => void;
   onRevert: (id: string) => void;
   onDelete: (item: Receivable) => void;
+  pendingToggleId?: string | null;
+  pendingDeleteId?: string | null;
 }) {
   const { t } = useTranslation('cashFlow');
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
@@ -93,6 +97,7 @@ export function EntriesGrid({
                       {item.status !== 'CANCELED' && (
                         <PaidToggle
                           paid={item.status === 'RECEIVED'}
+                          loading={pendingToggleId === item.id}
                           onToggle={() => (item.status === 'RECEIVED' ? onRevert(item.id) : onReceive(item.id))}
                           paidTitle={t('entriesGrid.toggle.revertReceived')}
                           unpaidTitle={t('entriesGrid.toggle.markReceived')}
@@ -102,6 +107,7 @@ export function EntriesGrid({
                         <ActionBtn
                           title={t('grid.actions.edit')}
                           onClick={() => onEdit(item)}
+                          disabled={pendingDeleteId === item.id}
                           className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Pencil size={14} />
@@ -110,6 +116,7 @@ export function EntriesGrid({
                           <ActionBtn
                             title={t('grid.actions.delete')}
                             onClick={() => onDelete(item)}
+                            loading={pendingDeleteId === item.id}
                             className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >
                             <Trash2 size={14} />

@@ -1,6 +1,9 @@
-import { Plus, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/ui/Button';
+import { IconActionButton } from '../../../components/ui/IconActionButton';
+
+export { PaidToggle } from '../../../components/ui/PaidToggle';
 
 export const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
@@ -43,52 +46,21 @@ export function ActionBtn({
   title,
   onClick,
   className = '',
+  loading = false,
+  disabled = false,
   children,
 }: {
   title: string;
   onClick: () => void;
   className?: string;
+  loading?: boolean;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      className={`p-1 sm:p-1.5 rounded-md transition-colors ${className}`}
-    >
+    <IconActionButton title={title} onClick={onClick} className={className} loading={loading} disabled={disabled}>
       {children}
-    </button>
-  );
-}
-
-export function PaidToggle({
-  paid,
-  urgent = false,
-  onToggle,
-  paidTitle,
-  unpaidTitle,
-}: {
-  paid: boolean;
-  urgent?: boolean;
-  onToggle: () => void;
-  paidTitle: string;
-  unpaidTitle: string;
-}) {
-  return (
-    <ActionBtn
-      title={paid ? paidTitle : unpaidTitle}
-      onClick={onToggle}
-      className={
-        paid
-          ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
-          : urgent
-          ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
-          : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
-      }
-    >
-      {paid ? <ThumbsUp size={16} /> : <ThumbsDown size={16} />}
-    </ActionBtn>
+    </IconActionButton>
   );
 }
 

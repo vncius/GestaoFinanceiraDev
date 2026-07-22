@@ -28,6 +28,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DateInput } from '../../components/ui/DateInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
+import { IconActionButton } from '../../components/ui/IconActionButton';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, formatMonthYear, firstDayOfMonthISO, toInputDate } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
@@ -160,15 +161,13 @@ function EntryModal({
       footer={
         <>
           {isEdit && onDelete && (
-            <button
-              type="button"
+            <IconActionButton
               title={t('installments.actions.cancel')}
-              aria-label={t('installments.actions.cancel')}
               onClick={() => { onClose(); onDelete(item!); }}
-              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 !rounded-lg"
             >
               <Trash2 size={16} />
-            </button>
+            </IconActionButton>
           )}
           <Button variant="secondary" onClick={onClose}>{t('entryModal.cancelButton')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{isEdit ? t('entryModal.saveButton') : t('entryModal.addButton')}</Button>
@@ -316,6 +315,9 @@ function CardDetail({
     mutationFn: (invoiceId: string) => CreditCardsService.revertInvoice(card.id, invoiceId),
     onSuccess: invalidate,
   });
+
+  const pendingDeleteEntryId =
+    deleteEntryMut.isPending ? (deleteEntryMut.variables?.entryId as string) ?? null : null;
 
   async function handleDeleteEntry(entry: CreditCardEntry) {
     if (entry.entryType === 'FIXED') {
@@ -465,24 +467,24 @@ function CardDetail({
                       <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           {entry?.active && (
-                            <button
+                            <IconActionButton
                               title={t('installments.actions.edit')}
-                              aria-label={t('installments.actions.edit')}
                               onClick={() => { setEntryToEdit(entry); }}
-                              className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                              disabled={pendingDeleteEntryId === entry.id}
+                              className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
                               <Pencil size={14} />
-                            </button>
+                            </IconActionButton>
                           )}
                           {entry?.active && (
-                            <button
+                            <IconActionButton
                               title={t('installments.actions.cancel')}
-                              aria-label={t('installments.actions.cancel')}
                               onClick={() => handleDeleteEntry(entry)}
-                              className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                              loading={pendingDeleteEntryId === entry.id}
+                              className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                             >
                               <Trash2 size={14} />
-                            </button>
+                            </IconActionButton>
                           )}
                         </div>
                       </td>

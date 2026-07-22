@@ -61,6 +61,7 @@ export default function OnboardingChat({
         pendingMessage={chat.pendingMessage}
         failedMessage={chat.failedMessage}
         sendError={chat.sendError}
+        sending={chat.sending}
         onRetry={chat.send}
       />
 

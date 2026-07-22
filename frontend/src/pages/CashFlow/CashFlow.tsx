@@ -219,6 +219,37 @@ export default function CashFlow() {
 
   const rxSaving = createReceivable.isPending || updateReceivable.isPending;
 
+  // ── Per-row pending ids (evita clique duplo em ações de linha) ──────────────
+  const entriesPendingToggleId =
+    (receiveItem.isPending && (receiveItem.variables as string)) ||
+    (revertReceivable.isPending && (revertReceivable.variables as string)) ||
+    null;
+  const entriesPendingDeleteId =
+    (deleteReceivable.isPending && (deleteReceivable.variables?.id as string)) ||
+    (revertReceivable.isPending && (revertReceivable.variables as string)) ||
+    null;
+
+  const paymentsPendingToggleId =
+    (payPayment.isPending && (payPayment.variables as string)) ||
+    (revertPayment.isPending && (revertPayment.variables as string)) ||
+    null;
+  const paymentsPendingDeleteId =
+    (deletePayment.isPending && (deletePayment.variables?.id as string)) ||
+    (revertPayment.isPending && (revertPayment.variables as string)) ||
+    null;
+
+  const extrasPendingToggleId =
+    (payExtra.isPending && (payExtra.variables as string)) ||
+    (revertExtra.isPending && (revertExtra.variables as string)) ||
+    null;
+  const extrasPendingDeleteId =
+    (deleteExtra.isPending && (deleteExtra.variables?.id as string)) ||
+    (revertExtra.isPending && (revertExtra.variables as string)) ||
+    null;
+
+  const invoicesPendingRevertId =
+    (revertInvoice.isPending && (revertInvoice.variables?.invoiceId as string)) || null;
+
   return (
     <div>
       <div className="space-y-4">
@@ -242,6 +273,8 @@ export default function CashFlow() {
           onReceive={(id) => receiveItem.mutate(id)}
           onRevert={(id) => revertReceivable.mutate(id)}
           onDelete={handleDeleteReceivable}
+          pendingToggleId={entriesPendingToggleId}
+          pendingDeleteId={entriesPendingDeleteId}
         />
 
         {/* Pagamentos */}
@@ -255,6 +288,8 @@ export default function CashFlow() {
           onPay={(id) => payPayment.mutate(id)}
           onRevert={(id) => revertPayment.mutate(id)}
           onDelete={(item) => handleDeleteTransaction('payment', item)}
+          pendingToggleId={paymentsPendingToggleId}
+          pendingDeleteId={paymentsPendingDeleteId}
         />
 
         {/* Gastos Extraordinários */}
@@ -268,6 +303,8 @@ export default function CashFlow() {
           onPay={(id) => payExtra.mutate(id)}
           onRevert={(id) => revertExtra.mutate(id)}
           onDelete={(item) => handleDeleteTransaction('extra-expense', item)}
+          pendingToggleId={extrasPendingToggleId}
+          pendingDeleteId={extrasPendingDeleteId}
         />
 
         {/* Cartões de Crédito */}
@@ -277,6 +314,7 @@ export default function CashFlow() {
           onPay={(inv) => setInvoicePayTarget(inv)}
           onRevert={(inv) => revertInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}
           onOpenInvoice={handleOpenInvoice}
+          pendingRevertId={invoicesPendingRevertId}
         />
       </div>
 

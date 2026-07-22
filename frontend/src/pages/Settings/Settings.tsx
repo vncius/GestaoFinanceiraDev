@@ -15,6 +15,7 @@ import {
 import { Account, AccountTypeItem, Category, CreditCard, FinancialSettings } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
+import { IconActionButton } from '../../components/ui/IconActionButton';
 import { HelpTip } from '../../components/ui/Tooltip';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -487,6 +488,8 @@ function AccountsTab() {
     if (await confirm(t('accounts.deactivateConfirm'))) deleteMut.mutate(a.id);
   }
 
+  const pendingDeactivateId = deleteMut.isPending ? (deleteMut.variables as string) : null;
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -549,23 +552,23 @@ function AccountsTab() {
                     </td>
                     <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
+                        <IconActionButton
                           title={t('actions.edit')}
-                          aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: a })}
-                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          disabled={pendingDeactivateId === a.id}
+                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Pencil size={14} />
-                        </button>
+                        </IconActionButton>
                         {a.active && (
-                          <button
+                          <IconActionButton
                             title={t('actions.deactivate')}
-                            aria-label={t('actions.deactivate')}
                             onClick={() => handleDeactivate(a)}
-                            className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                            loading={pendingDeactivateId === a.id}
+                            className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >
                             <Trash2 size={14} />
-                          </button>
+                          </IconActionButton>
                         )}
                       </div>
                     </td>
@@ -637,15 +640,13 @@ function AccountTypeModal({
       footer={
         <>
           {item && onDelete && (
-            <button
-              type="button"
+            <IconActionButton
               title={t('actions.remove')}
-              aria-label={t('actions.remove')}
               onClick={() => { onClose(); onDelete(); }}
-              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+              className="md:hidden mr-auto p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 !rounded-lg"
             >
               <Trash2 size={16} />
-            </button>
+            </IconActionButton>
           )}
           <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
           <Button loading={isSaving} onClick={handleSubmit as never}>{t('actions.save')}</Button>
@@ -702,6 +703,8 @@ function AccountTypesTab() {
     if (await confirm(t('accountTypes.removeConfirm'))) deleteMut.mutate(at.id);
   }
 
+  const pendingRemoveId = deleteMut.isPending ? (deleteMut.variables as string) : null;
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -728,22 +731,22 @@ function AccountTypesTab() {
                     <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">{at.name}</td>
                     <td className="px-1 sm:px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                       <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                        <button
+                        <IconActionButton
                           title={t('actions.edit')}
-                          aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: at })}
-                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          disabled={pendingRemoveId === at.id}
+                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Pencil size={14} />
-                        </button>
-                        <button
+                        </IconActionButton>
+                        <IconActionButton
                           title={t('actions.remove')}
-                          aria-label={t('actions.remove')}
                           onClick={() => handleRemove(at)}
-                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                          loading={pendingRemoveId === at.id}
+                          className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </IconActionButton>
                       </div>
                     </td>
                   </tr>
@@ -866,12 +869,14 @@ function CategorySection({
   onAdd,
   onEdit,
   onDelete,
+  pendingDeactivateId,
 }: {
   type: Category['type'];
   categories: Category[];
   onAdd: (type: Category['type']) => void;
   onEdit: (item: Category) => void;
   onDelete: (item: Category) => void;
+  pendingDeactivateId?: string | null;
 }) {
   const { t } = useTranslation('settings');
   const items = categories.filter((c) => c.type === type);
@@ -926,23 +931,23 @@ function CategorySection({
                   </td>
                   <td className="px-1 sm:px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                      <button
+                      <IconActionButton
                         title={t('actions.edit')}
-                        aria-label={t('actions.edit')}
                         onClick={() => onEdit(c)}
-                        className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        disabled={pendingDeactivateId === c.id}
+                        className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <Pencil size={14} />
-                      </button>
+                      </IconActionButton>
                       {c.active && !c.protected && (
-                        <button
+                        <IconActionButton
                           title={t('actions.deactivate')}
-                          aria-label={t('actions.deactivate')}
                           onClick={() => onDelete(c)}
-                          className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                          loading={pendingDeactivateId === c.id}
+                          className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </IconActionButton>
                       )}
                     </div>
                   </td>
@@ -992,6 +997,8 @@ function CategoriesTab() {
     if (await confirm(t('categories.deactivateConfirm'))) deleteMut.mutate(c.id);
   }
 
+  const pendingDeactivateId = deleteMut.isPending ? (deleteMut.variables as string) : null;
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -1002,6 +1009,7 @@ function CategoriesTab() {
         onAdd={(type) => setModal({ defaultType: type })}
         onEdit={(item) => setModal({ item })}
         onDelete={handleDeactivate}
+        pendingDeactivateId={pendingDeactivateId}
       />
       <CategorySection
         type="EXPENSE"
@@ -1009,6 +1017,7 @@ function CategoriesTab() {
         onAdd={(type) => setModal({ defaultType: type })}
         onEdit={(item) => setModal({ item })}
         onDelete={handleDeactivate}
+        pendingDeactivateId={pendingDeactivateId}
       />
 
       <CategoryModal
@@ -1213,6 +1222,8 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
     if (await confirm(t('cards.deactivateConfirm'))) deleteMut.mutate(card.id);
   }
 
+  const pendingDeactivateId = deleteMut.isPending ? (deleteMut.variables as string) : null;
+
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   if (isLoading) return <PageLoading />;
@@ -1279,23 +1290,23 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
                     </td>
                     <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
+                        <IconActionButton
                           title={t('actions.edit')}
-                          aria-label={t('actions.edit')}
                           onClick={() => setModal({ item: card })}
-                          className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                          disabled={pendingDeactivateId === card.id}
+                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Pencil size={14} />
-                        </button>
+                        </IconActionButton>
                         {card.active && (
-                          <button
+                          <IconActionButton
                             title={t('actions.deactivate')}
-                            aria-label={t('actions.deactivate')}
                             onClick={() => handleDeactivate(card)}
-                            className="p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md"
+                            loading={pendingDeactivateId === card.id}
+                            className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >
                             <Trash2 size={14} />
-                          </button>
+                          </IconActionButton>
                         )}
                       </div>
                     </td>

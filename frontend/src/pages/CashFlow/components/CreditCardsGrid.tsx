@@ -19,12 +19,14 @@ export function CreditCardsGrid({
   onPay,
   onRevert,
   onOpenInvoice,
+  pendingRevertId,
 }: {
   items: CreditCardInvoice[];
   cardNames: Map<string, string>;
   onPay: (invoice: CreditCardInvoice) => void;
   onRevert: (invoice: CreditCardInvoice) => void;
   onOpenInvoice: (invoice: CreditCardInvoice) => void;
+  pendingRevertId?: string | null;
 }) {
   const { t } = useTranslation('cashFlow');
   if (items.length === 0) return null;
@@ -72,6 +74,7 @@ export function CreditCardsGrid({
                       <PaidToggle
                         paid={inv.status === 'PAID'}
                         urgent={inv.status === 'OVERDUE'}
+                        loading={pendingRevertId === inv.id}
                         onToggle={() => (inv.status === 'PAID' ? onRevert(inv) : onPay(inv))}
                         paidTitle={t('grid.toggle.revertPaid')}
                         unpaidTitle={inv.status === 'OVERDUE' ? t('creditCardsGrid.toggle.payOverdue') : t('creditCardsGrid.toggle.pay')}

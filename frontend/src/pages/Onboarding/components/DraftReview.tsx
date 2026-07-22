@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowLeft, Check, Pencil, Star, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, Loader2, Pencil, Star, Trash2 } from 'lucide-react';
 import {
   OnboardingDraft,
   OnboardingDraftItem,
@@ -88,6 +88,8 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
     mutationFn: (draftItemId: string) => OnboardingService.removeDraftItem(draftItemId),
     onSuccess: invalidate,
   });
+
+  const pendingRemoveId = removeMutation.isPending ? removeMutation.variables : null;
 
   const confirmMutation = useMutation({
     // Uma chave nova por tentativa; após falha parcial o backend retoma de
@@ -179,6 +181,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             ]}
             onEdit={() => setEditing({ section: 'accounts', item })}
             onRemove={() => removeMutation.mutate(item.draftItemId)}
+            removing={pendingRemoveId === item.draftItemId}
           />
         ))}
       </SectionCard>
@@ -199,6 +202,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             ]}
             onEdit={() => setEditing({ section: 'incomes', item })}
             onRemove={() => removeMutation.mutate(item.draftItemId)}
+            removing={pendingRemoveId === item.draftItemId}
           />
         ))}
       </SectionCard>
@@ -217,6 +221,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             ]}
             onEdit={() => setEditing({ section: 'expenses', item })}
             onRemove={() => removeMutation.mutate(item.draftItemId)}
+            removing={pendingRemoveId === item.draftItemId}
           />
         ))}
       </SectionCard>
@@ -239,6 +244,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             ]}
             onEdit={() => setEditing({ section: 'creditCards', item })}
             onRemove={() => removeMutation.mutate(item.draftItemId)}
+            removing={pendingRemoveId === item.draftItemId}
           />
         ))}
       </SectionCard>
@@ -256,6 +262,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             ]}
             onEdit={() => setEditing({ section: 'categories', item })}
             onRemove={() => removeMutation.mutate(item.draftItemId)}
+            removing={pendingRemoveId === item.draftItemId}
           />
         ))}
       </SectionCard>
@@ -276,6 +283,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             ]}
             onEdit={() => setEditing({ section: 'settings', item: draft.settings as OnboardingDraftItem })}
             onRemove={() => removeMutation.mutate((draft.settings as OnboardingDraftItem).draftItemId)}
+            removing={pendingRemoveId === (draft.settings as OnboardingDraftItem).draftItemId}
           />
         </SectionCard>
       )}
@@ -349,12 +357,14 @@ function ItemRow({
   details,
   onEdit,
   onRemove,
+  removing = false,
 }: {
   itemId: string;
   title: React.ReactNode;
   details: (string | null)[];
   onEdit: () => void;
   onRemove: () => void;
+  removing?: boolean;
 }) {
   const { t } = useTranslation('onboarding');
   return (
@@ -368,19 +378,21 @@ function ItemRow({
       <div className="flex shrink-0 items-center gap-1">
         <button
           onClick={onEdit}
+          disabled={removing}
           aria-label={t('review.edit')}
           data-testid={`edit-${itemId}`}
-          className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors"
+          className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Pencil size={14} />
         </button>
         <button
           onClick={onRemove}
+          disabled={removing}
           aria-label={t('review.remove')}
           data-testid={`remove-${itemId}`}
-          className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors"
+          className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Trash2 size={14} />
+          {removing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
         </button>
       </div>
     </div>
