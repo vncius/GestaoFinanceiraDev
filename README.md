@@ -79,7 +79,21 @@ Veja `backend/.env.example` para os limites opcionais da plataforma de IA
 
 | Variável        | Default                  | Descrição                    |
 |-----------------|---------------------------|-------------------------------|
-| `VITE_API_URL`  | `http://localhost:3100`   | URL base da API consumida pelo frontend |
+| `VITE_API_URL`  | `http://localhost:3100`   | URL base da API consumida pelo frontend. Em produção (Cloudflare Pages) usar `/api` — ver abaixo |
+
+**Deploy no Cloudflare Pages** — variável de ambiente do *projeto* (não do build Vite,
+configurada no dashboard do Cloudflare em Settings → Environment variables), consumida
+por `frontend/functions/api/[[path]].ts`:
+
+| Variável      | Descrição                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| `API_ORIGIN`  | URL pública do backend no Render (ex.: `https://gestao-financeira-backend.onrender.com`) |
+
+Essa Function faz proxy same-origin de `/api/*` para o backend, para que o cookie de
+sessão deixe de ser tratado como cookie de terceiro em navegadores mobile (Safari/iOS
+bloqueia isso por padrão). Com o proxy ativo, o build de produção deve usar
+`VITE_API_URL=/api` (relativo) em vez da URL direta do Render. Detalhes e alternativas
+em [`docs/architecture/stack-template-and-deploy.md`](docs/architecture/stack-template-and-deploy.md#8-problema-conhecido-cookie-de-sessão-bloqueado-em-navegadores-mobile).
 
 ## Testes
 

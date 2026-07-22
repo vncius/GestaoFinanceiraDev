@@ -7,6 +7,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 ## [Unreleased]
 
 ### Added
+- `frontend/functions/api/[[path]].ts` — Cloudflare Pages Function que faz proxy same-origin de `/api/*` para o backend no Render, corrigindo o bloqueio do cookie de sessão em navegadores mobile (Safari/iOS trata front e back em domínios distintos como cookie de terceiro e bloqueia por padrão, independente de `SameSite=None`). Requer env var `API_ORIGIN` no projeto Cloudflare Pages e `VITE_API_URL=/api` no build de produção. Detalhes em `docs/architecture/stack-template-and-deploy.md` (seção 8).
 - Preparação de multi-tenant: todas as 9 entidades, repositórios, serviços e controllers do backend agora tratam `tenantId` como parâmetro real (não hardcoded), resolvido via header `X-Tenant-Id` com fallback para um tenant default fixo (`backend/src/shared/tenant/tenant.constants.ts`). Sem autenticação/login ainda — é só a camada de dados já pronta para isso.
 - Módulo de backup/export/import (`/backup/*`): backup completo em JSON (export/import, com confirmação obrigatória por ser destrutivo), exportação de lançamentos em CSV por período ou tudo, e importação de extrato bancário (CSV genérico + OFX 1.x, com pré-visualização e detecção de possíveis duplicatas antes de confirmar). Nova página `/backup` no frontend.
 - Página `/report`: relatório financeiro para impressão/exportação em PDF via `window.print()` do navegador (sem depender de biblioteca de geração de PDF).
