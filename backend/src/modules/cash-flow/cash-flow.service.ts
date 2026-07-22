@@ -74,28 +74,42 @@ export class CashFlowService {
       (inv) => inv.status !== InvoiceStatus.CANCELED && inSelectedMonth(monthKey(inv.month, inv.year)),
     );
     const rangeInvoices = allInvoices.filter(
-      (inv) => inv.status !== InvoiceStatus.CANCELED && inProjectionRange(monthKey(inv.month, inv.year)),
+      (inv) =>
+        inv.status !== InvoiceStatus.CANCELED &&
+        inv.status !== InvoiceStatus.PAID &&
+        inProjectionRange(monthKey(inv.month, inv.year)),
     );
 
     const entries = allReceivables.filter(
       (r) => r.status !== ReceivableStatus.CANCELED && inSelectedMonth(dateKey(r.expectedPaymentDate)),
     );
     const rangeEntries = allReceivables.filter(
-      (r) => r.status !== ReceivableStatus.CANCELED && inProjectionRange(dateKey(r.expectedPaymentDate)),
+      (r) =>
+        r.status !== ReceivableStatus.CANCELED &&
+        r.status !== ReceivableStatus.RECEIVED &&
+        inProjectionRange(dateKey(r.expectedPaymentDate)),
     );
 
     const payments = allTransactions.filter(
       (t) => t.type === TransactionType.PAYMENT && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
     );
     const rangePayments = allTransactions.filter(
-      (t) => t.type === TransactionType.PAYMENT && !this.isExcludedFromFlow(t) && inProjectionRange(dateKey(t.expectedDate)),
+      (t) =>
+        t.type === TransactionType.PAYMENT &&
+        !this.isExcludedFromFlow(t) &&
+        t.status !== TransactionStatus.PAID &&
+        inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const extraExpenses = allTransactions.filter(
       (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
     );
     const rangeExtraExpenses = allTransactions.filter(
-      (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcludedFromFlow(t) && inProjectionRange(dateKey(t.expectedDate)),
+      (t) =>
+        t.type === TransactionType.EXTRA_EXPENSE &&
+        !this.isExcludedFromFlow(t) &&
+        t.status !== TransactionStatus.PAID &&
+        inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const monthStart = new Date(year, month - 1, 1);
