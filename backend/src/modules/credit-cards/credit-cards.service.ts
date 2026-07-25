@@ -3,6 +3,8 @@ import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
 import { getInvoiceMonth, addMonths, monthKey } from './credit-cards.date-utils';
 import { SettingsRepository } from '../settings/settings.repository';
+import { CategoriesRepository } from '../categories/categories.repository';
+import { CategoryType } from '../categories/categories.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   OriginType,
@@ -64,7 +66,20 @@ export class CreditCardsService {
     private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly settingsRepo: SettingsRepository,
+    private readonly categoriesRepo: CategoriesRepository,
   ) {}
+
+  // CRUD manual: categoria inválida/inativa/tipo errado é rejeitada com erro
+  // explícito (o dropdown do form já só oferece categorias EXPENSE ativas —
+  // chegar aqui com um id inválido só acontece por adulteração de request ou
+  // condição de corrida, então recusar é mais seguro que substituir
+  // silenciosamente pela vontade do usuário).
+  private async validateExpenseCategoryId(categoryId: string, tenantId: string): Promise<void> {
+    const category = await this.categoriesRepo.findById(categoryId, tenantId);
+    if (!category || !category.active || category.type !== CategoryType.EXPENSE) {
+      throw new AppError('Categoria inválida ou inativa.', 400, 'creditCardEntry.category.invalid');
+    }
+  }
 
   // ─── Cards CRUD ───────────────────────────────────────────────────────────────
 
@@ -199,11 +214,21 @@ export class CreditCardsService {
 
     const entryIds = new Set(active.map((i) => i.creditCardEntryId));
     const entries = allEntries.filter((e) => entryIds.has(e.id));
+    const entryMap = new Map(entries.map((e) => [e.id, e]));
 
-    const invoiceTotal = active.reduce((s, i) => s + i.amount, 0);
-    const paidAmount = active
-      .filter((i) => i.status === InstallmentStatus.PAID)
+    // invoiceTotal é o valor bruto faturado (compras/estornos) — exclui o
+    // lançamento PAYMENT gerado ao pagar a fatura, senão o total "sumiria"
+    // após o pagamento e telas como Dashboard/Fluxo de Caixa (que também
+    // leem esse mesmo valor via invoice.totalAmount) perderiam o histórico
+    // do quanto foi gasto no mês. O "zerar" fica visível aqui em paidAmount/
+    // openAmount, e o próprio lançamento PAYMENT aparece na lista de
+    // entries/installments retornada — como uma linha de crédito no extrato.
+    const invoiceTotal = active
+      .filter((i) => entryMap.get(i.creditCardEntryId)?.entryType !== CardEntryType.PAYMENT)
       .reduce((s, i) => s + i.amount, 0);
+    const paidAmount = active
+      .filter((i) => entryMap.get(i.creditCardEntryId)?.entryType === CardEntryType.PAYMENT)
+      .reduce((s, i) => s + Math.abs(i.amount), 0);
 
     return {
       card,
@@ -228,6 +253,7 @@ export class CreditCardsService {
     input: CreateCardEntryInput,
   ): Promise<{ entry: CreditCardEntry; installments: CreditCardInstallment[] }> {
     const card = await this.findById(cardId, tenantId);
+    await this.validateExpenseCategoryId(input.expenseCategoryId, tenantId);
 
     const firstMonth = getInvoiceMonth(input.purchaseDate, card.closingDay);
 
@@ -320,6 +346,16 @@ export class CreditCardsService {
   ): Promise<CreditCardEntry> {
     const entry = await this.getEntryChecked(cardId, entryId, tenantId);
     if (!entry.active) throw new AppError('Lançamento inativo.', 400, 'creditCardEntry.inactive');
+    if (entry.entryType === CardEntryType.PAYMENT) {
+      throw new AppError(
+        'Lançamento gerado automaticamente pelo pagamento da fatura não pode ser editado diretamente. Reverta o pagamento da fatura.',
+        400,
+        'creditCardEntry.paymentManaged',
+      );
+    }
+    if (input.expenseCategoryId) {
+      await this.validateExpenseCategoryId(input.expenseCategoryId, tenantId);
+    }
 
     const now = nowISO();
 
@@ -354,32 +390,9 @@ export class CreditCardsService {
       }
     }
 
-    // 2. Estorna pagamentos de faturas pagas e volta status para OPEN
-    for (const invoiceId of affectedInvoiceIds) {
-      const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
-      if (!invoice) continue;
-      if (invoice.status === InvoiceStatus.PAID) {
-        const linked = await this.transactionsRepo.findByOrigin(
-          tenantId,
-          OriginType.CREDIT_CARD_INVOICE,
-          invoiceId,
-        );
-        for (const tx of linked) {
-          if (tx.status !== TransactionStatus.REVERSED) {
-            await this.transactionsRepo.update(tx.id, {
-              status: TransactionStatus.REVERSED,
-              updatedAt: now,
-            }, tenantId);
-          }
-        }
-        await this.invoicesRepo.update(invoiceId, {
-          status: InvoiceStatus.OPEN,
-          paymentDate: null,
-          paymentAccountId: null,
-          updatedAt: now,
-        }, tenantId);
-      }
-    }
+    // 2. Estorna pagamento (transação + lançamento PAYMENT interno) de
+    // faturas já pagas e volta status para OPEN
+    await this.reopenPaidInvoices(affectedInvoiceIds, tenantId, now);
     await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
 
     // 3. Determina novos valores
@@ -470,6 +483,13 @@ export class CreditCardsService {
   ): Promise<void> {
     const entry = await this.getEntryChecked(cardId, entryId, tenantId);
     if (!entry.active) throw new AppError('Lançamento já está inativo.', 400, 'creditCardEntry.alreadyInactive');
+    if (entry.entryType === CardEntryType.PAYMENT) {
+      throw new AppError(
+        'Lançamento gerado automaticamente pelo pagamento da fatura não pode ser excluído diretamente. Reverta o pagamento da fatura.',
+        400,
+        'creditCardEntry.paymentManaged',
+      );
+    }
 
     if (entry.entryType === CardEntryType.FIXED) {
       if (!scope || !referenceMonth || !referenceYear) {
@@ -482,6 +502,23 @@ export class CreditCardsService {
       return this.deleteFixedEntry(entry, tenantId, scope, referenceMonth, referenceYear);
     }
 
+    if (entry.entryType === CardEntryType.INSTALLMENT) {
+      // Parcelamento: excluir a partir do mês em que o usuário está (a
+      // referência atual da tela) cancela esse mês e os seguintes, mas NUNCA
+      // mexe em parcelas de meses anteriores — mesmas parcelas já refletidas/
+      // fechadas continuam intactas, só a dívida remanescente é encerrada.
+      if (!referenceMonth || !referenceYear) {
+        throw new AppError(
+          'Informe o mês/ano de referência para excluir a partir dele.',
+          400,
+          'creditCardEntry.referenceRequired',
+        );
+      }
+      return this.deleteInstallmentEntryFromReference(entry, tenantId, referenceMonth, referenceYear);
+    }
+
+    // CASH / REFUND: sempre uma parcela só (no mês do próprio lançamento) —
+    // excluir sempre cancela por completo, sem necessidade de referência.
     const now = nowISO();
 
     const installments = await this.installmentsRepo.findByEntryId(tenantId, entryId);
@@ -497,7 +534,46 @@ export class CreditCardsService {
       }
     }
 
+    await this.reopenPaidInvoices(affectedInvoiceIds, tenantId, now);
+
     await this.entriesRepo.update(entryId, { active: false, updatedAt: now }, tenantId);
+
+    await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
+  }
+
+  // Cancela as parcelas de um lançamento parcelado (INSTALLMENT) a partir do
+  // mês de referência (inclusive) em diante, preservando parcelas de meses
+  // anteriores intactas (já refletidas/fechadas). Se não sobrar nenhuma
+  // parcela ativa anterior à referência, o lançamento é desativado por
+  // completo; senão continua ativo, representando só a parte já ocorrida.
+  private async deleteInstallmentEntryFromReference(
+    entry: CreditCardEntry,
+    tenantId: string,
+    referenceMonth: number,
+    referenceYear: number,
+  ): Promise<void> {
+    const now = nowISO();
+    const refKey = monthKey(referenceMonth, referenceYear);
+
+    const installments = await this.installmentsRepo.findByEntryId(tenantId, entry.id);
+    const active = installments.filter((i) => i.status !== InstallmentStatus.CANCELED);
+    const toCancel = active.filter((i) => monthKey(i.month, i.year) >= refKey);
+    const remaining = active.filter((i) => monthKey(i.month, i.year) < refKey);
+
+    const affectedInvoiceIds = new Set<string>();
+    for (const inst of toCancel) {
+      if (inst.creditCardInvoiceId) affectedInvoiceIds.add(inst.creditCardInvoiceId);
+      await this.installmentsRepo.update(inst.id, {
+        status: InstallmentStatus.CANCELED,
+        updatedAt: now,
+      }, tenantId);
+    }
+
+    await this.reopenPaidInvoices(affectedInvoiceIds, tenantId, now);
+
+    if (remaining.length === 0) {
+      await this.entriesRepo.update(entry.id, { active: false, updatedAt: now }, tenantId);
+    }
 
     await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
   }
@@ -533,11 +609,35 @@ export class CreditCardsService {
       }, tenantId);
     }
 
+    await this.reopenPaidInvoices(affectedInvoiceIds, tenantId, now);
+
     if (scope === 'CURRENT_AND_FUTURE') {
       await this.entriesRepo.update(entry.id, { active: false, updatedAt: now }, tenantId);
     }
 
     await this.recalcInvoiceTotals(tenantId, affectedInvoiceIds);
+  }
+
+  // Reverte o pagamento (transação + lançamento PAYMENT interno) de qualquer
+  // fatura já paga entre as informadas e a reabre (status OPEN). Chamado
+  // sempre que parcelas de um lançamento são canceladas/recriadas
+  // (updateEntry, deleteEntry, deleteFixedEntry) — sem isso, cancelar a
+  // parcela de uma fatura já paga deixaria o status PAID com total
+  // desatualizado e a transação de pagamento sem correspondência real.
+  private async reopenPaidInvoices(invoiceIds: Iterable<string>, tenantId: string, now: string): Promise<void> {
+    for (const invoiceId of invoiceIds) {
+      const invoice = await this.invoicesRepo.findById(invoiceId, tenantId);
+      if (!invoice) continue;
+      if (invoice.status === InvoiceStatus.PAID) {
+        await this.revertInvoicePayment(invoiceId, tenantId, now);
+        await this.invoicesRepo.update(invoiceId, {
+          status: InvoiceStatus.OPEN,
+          paymentDate: null,
+          paymentAccountId: null,
+          updatedAt: now,
+        }, tenantId);
+      }
+    }
   }
 
   // ─── Invoice payment ──────────────────────────────────────────────────────────
@@ -591,12 +691,85 @@ export class CreditCardsService {
       updatedAt: now,
     });
 
+    // Lançamento de crédito DENTRO da própria fatura, igual um extrato de
+    // banco mostra o pagamento como uma linha que abate o saldo — ver
+    // CardEntryType.PAYMENT e getCardFlow (que expõe o zeramento via
+    // summary.paidAmount/openAmount, mantendo invoice.totalAmount como o
+    // valor bruto faturado). Fatura sem valor não gera lançamento de crédito.
+    if (invoice.totalAmount !== 0) {
+      const paymentEntryId = generateId();
+      await this.entriesRepo.create({
+        id: paymentEntryId,
+        tenantId,
+        creditCardId: cardId,
+        description: `Pagamento fatura ${card.name} ${invoice.month}/${invoice.year}`,
+        expenseCategoryId: '',
+        totalAmount: -invoice.totalAmount,
+        purchaseDate: paymentDate,
+        entryType: CardEntryType.PAYMENT,
+        installmentsCount: 1,
+        closingDayUsed: card.closingDay,
+        notes: null,
+        externalRef: null,
+        active: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await this.installmentsRepo.createMany([{
+        id: generateId(),
+        tenantId,
+        creditCardEntryId: paymentEntryId,
+        installmentNumber: 1,
+        totalInstallments: 1,
+        amount: -invoice.totalAmount,
+        month: invoice.month,
+        year: invoice.year,
+        status: InstallmentStatus.PAID,
+        creditCardInvoiceId: invoice.id,
+        createdAt: now,
+        updatedAt: now,
+      }]);
+    }
+
     return this.invoicesRepo.update(invoiceId, {
       status: InvoiceStatus.PAID,
       paymentDate,
       paymentAccountId,
       updatedAt: now,
     }, tenantId);
+  }
+
+  // Reverte o pagamento de uma fatura: estorna a FinancialTransaction (nunca
+  // apagada, só marcada REVERSED) e soft-deleta o lançamento PAYMENT interno
+  // criado por payInvoice. Único caminho autorizado a remover um entry
+  // PAYMENT — updateEntry/deleteEntry bloqueiam edição/exclusão direta dele.
+  // Reaproveitado por revertInvoice e por updateEntry (ao editar um entry
+  // comum de uma fatura já paga).
+  private async revertInvoicePayment(invoiceId: string, tenantId: string, now: string): Promise<void> {
+    const linked = await this.transactionsRepo.findByOrigin(
+      tenantId,
+      OriginType.CREDIT_CARD_INVOICE,
+      invoiceId,
+    );
+    for (const tx of linked) {
+      if (tx.status !== TransactionStatus.REVERSED) {
+        await this.transactionsRepo.update(tx.id, {
+          status: TransactionStatus.REVERSED,
+          updatedAt: now,
+        }, tenantId);
+      }
+    }
+
+    const installments = await this.installmentsRepo.findByInvoiceId(tenantId, invoiceId);
+    for (const inst of installments) {
+      if (inst.status === InstallmentStatus.CANCELED) continue;
+      const entry = await this.entriesRepo.findById(inst.creditCardEntryId, tenantId);
+      if (entry?.entryType !== CardEntryType.PAYMENT) continue;
+      await this.installmentsRepo.update(inst.id, { status: InstallmentStatus.CANCELED, updatedAt: now }, tenantId);
+      if (entry.active) {
+        await this.entriesRepo.update(entry.id, { active: false, updatedAt: now }, tenantId);
+      }
+    }
   }
 
   async revertInvoice(
@@ -614,19 +787,8 @@ export class CreditCardsService {
 
     const now = nowISO();
 
-    const linked = await this.transactionsRepo.findByOrigin(
-      tenantId,
-      OriginType.CREDIT_CARD_INVOICE,
-      invoiceId,
-    );
-    for (const tx of linked) {
-      if (tx.status !== TransactionStatus.REVERSED) {
-        await this.transactionsRepo.update(tx.id, {
-          status: TransactionStatus.REVERSED,
-          updatedAt: now,
-        }, tenantId);
-      }
-    }
+    await this.revertInvoicePayment(invoiceId, tenantId, now);
+    await this.recalcInvoiceTotals(tenantId, [invoiceId]);
 
     return this.invoicesRepo.update(invoiceId, {
       status: InvoiceStatus.OPEN,
@@ -644,6 +806,18 @@ export class CreditCardsService {
   // indeterminado: em vez de criar todas as parcelas de uma vez, cada nova
   // referência é gerada sob demanda, conforme o usuário navega até o mês
   // (getCardFlow/findAll), até o limite do mês/ano solicitado.
+  // Lançamentos fixos são materializados sob demanda: tanto findAll (lista de
+  // cartões) quanto getCardFlow (detalhe do cartão) chamam esta função para o
+  // mesmo mês sempre que a tela carrega com um cartão selecionado — as duas
+  // requisições rodam de verdade em paralelo. Sem serialização, ambas leem o
+  // "ainda não existe parcela de setembro" ao mesmo tempo e cada uma cria sua
+  // própria cópia, duplicando o lançamento. Como a aplicação roda num único
+  // processo Node, um lock em memória por lançamento resolve isso na origem:
+  // a segunda chamada simplesmente espera a primeira terminar em vez de
+  // refazer o mesmo trabalho, então só uma extensão por lançamento roda por
+  // vez e nunca há o que duplicar.
+  private readonly fixedInstallmentLocks = new Map<string, Promise<void>>();
+
   private async ensureFixedInstallments(
     tenantId: string,
     entry: CreditCardEntry,
@@ -653,6 +827,31 @@ export class CreditCardsService {
   ): Promise<void> {
     if (entry.entryType !== CardEntryType.FIXED || !entry.active) return;
 
+    const lockKey = `${tenantId}|${entry.id}`;
+    const pending = this.fixedInstallmentLocks.get(lockKey);
+    if (pending) {
+      // Já existe uma extensão em andamento para este lançamento — espera
+      // terminar e reavalia: o mês pedido pode já ter sido coberto por ela.
+      await pending;
+      return this.ensureFixedInstallments(tenantId, entry, card, targetMonth, targetYear);
+    }
+
+    const run = this.materializeFixedInstallments(tenantId, entry, card, targetMonth, targetYear);
+    this.fixedInstallmentLocks.set(lockKey, run);
+    try {
+      await run;
+    } finally {
+      this.fixedInstallmentLocks.delete(lockKey);
+    }
+  }
+
+  private async materializeFixedInstallments(
+    tenantId: string,
+    entry: CreditCardEntry,
+    card: CreditCard,
+    targetMonth: number,
+    targetYear: number,
+  ): Promise<void> {
     const existing = await this.installmentsRepo.findByEntryId(tenantId, entry.id);
     if (existing.length === 0) return;
 
@@ -749,7 +948,17 @@ export class CreditCardsService {
     const ids = [...new Set(invoiceIds)];
     if (ids.length === 0) return;
 
-    const all = await this.installmentsRepo.findAll(tenantId);
+    const [all, allEntries] = await Promise.all([
+      this.installmentsRepo.findAll(tenantId),
+      this.entriesRepo.findAll(tenantId),
+    ]);
+    // invoice.totalAmount é o valor bruto faturado (compras/estornos) — o
+    // lançamento PAYMENT (crédito interno do pagamento) nunca entra nesse
+    // somatório, senão a fatura "zeraria" para sempre após ser paga. Ver
+    // decisão em getCardFlow.
+    const paymentEntryIds = new Set(
+      allEntries.filter((e) => e.entryType === CardEntryType.PAYMENT).map((e) => e.id),
+    );
     const now = nowISO();
 
     for (const invoiceId of ids) {
@@ -757,7 +966,8 @@ export class CreditCardsService {
         .filter(
           (i) =>
             i.creditCardInvoiceId === invoiceId &&
-            i.status !== InstallmentStatus.CANCELED,
+            i.status !== InstallmentStatus.CANCELED &&
+            !paymentEntryIds.has(i.creditCardEntryId),
         )
         .reduce((s, i) => s + i.amount, 0);
       await this.invoicesRepo.update(invoiceId, {

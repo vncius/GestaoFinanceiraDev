@@ -311,11 +311,10 @@ function CardDetail({
       entryId: string;
       scope?: 'CURRENT' | 'CURRENT_AND_FUTURE';
     }) =>
-      CreditCardsService.deleteEntry(
-        card.id,
-        entryId,
-        scope ? { scope, month, year } : undefined,
-      ),
+      // month/year (referência atualmente aberta na tela) sempre vai junto:
+      // lançamentos parcelados/fixos usam isso para excluir só a partir
+      // dessa referência em diante, nunca mexendo em meses anteriores.
+      CreditCardsService.deleteEntry(card.id, entryId, { scope, month, year }),
     onSuccess: () => { invalidate(); setFixedDeleteTarget(null); },
   });
   const payMut = useMutation({
@@ -334,7 +333,15 @@ function CardDetail({
   async function handleDeleteEntry(entry: CreditCardEntry) {
     if (entry.entryType === 'FIXED') {
       setFixedDeleteTarget(entry);
-    } else if (await confirm(t('installments.confirmCancel'))) {
+      return;
+    }
+    // Parcelamento: deixa explícito que só cancela a partir do mês aberto na
+    // tela em diante — meses anteriores (já refletidos/fechados) não mudam.
+    const message =
+      entry.entryType === 'INSTALLMENT'
+        ? t('installments.confirmCancelFromReference', { monthYear: formatMonthYear(month, year) })
+        : t('installments.confirmCancel');
+    if (await confirm(message)) {
       deleteEntryMut.mutate({ entryId: entry.id });
     }
   }
@@ -346,22 +353,21 @@ function CardDetail({
   const entryMap = new Map(entries.map((e) => [e.id, e]));
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
   const activeInstallments = installments.filter((i) => i.status !== 'CANCELED');
-  const activeEntries = entries.filter((e) => e.active);
+  // PAYMENT (crédito interno do pagamento da fatura) nunca entra em "Limpar
+  // Fatura" — só some revertendo o pagamento.
+  const activeEntries = entries.filter((e) => e.active && e.entryType !== 'PAYMENT');
   const hasFixedEntry = activeEntries.some((e) => e.entryType === 'FIXED');
 
   // Limpar fatura reaproveita a mesma regra de exclusão individual: itens
   // fixos/recorrentes pedem um escopo (só esta referência ou também as
-  // futuras) via ScopedDeleteModal; os demais tipos são sempre cancelados
-  // por inteiro (deleteEntry já ignora o scope quando o tipo não é FIXED).
+  // futuras) via ScopedDeleteModal; parcelamentos cancelam a partir deste
+  // mês em diante, preservando meses anteriores; CASH/REFUND são sempre
+  // cancelados por inteiro (só têm uma parcela mesmo).
   async function runClearInvoice(scope?: 'CURRENT' | 'CURRENT_AND_FUTURE') {
     setClearingInvoice(true);
     try {
       for (const entry of activeEntries) {
-        await CreditCardsService.deleteEntry(
-          card.id,
-          entry.id,
-          scope ? { scope, month, year } : undefined,
-        );
+        await CreditCardsService.deleteEntry(card.id, entry.id, { scope, month, year });
       }
       invalidate();
     } catch (err) {
@@ -513,17 +519,21 @@ function CardDetail({
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {activeInstallments.map((inst) => {
                   const entry = entryMap.get(inst.creditCardEntryId);
+                  // Lançamento PAYMENT (crédito interno do pagamento da
+                  // fatura) nunca é editável/excluível diretamente — só
+                  // revertendo o pagamento da fatura.
+                  const isEditable = !!entry?.active && entry.entryType !== 'PAYMENT';
                   return (
                     <tr
                       key={inst.id}
-                      className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${entry?.active ? 'cursor-pointer' : ''}`}
-                      onClick={() => { if (entry?.active) setEntryToEdit(entry); }}
+                      className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${isEditable ? 'cursor-pointer' : ''}`}
+                      onClick={() => { if (isEditable) setEntryToEdit(entry); }}
                     >
                       <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[110px] lg:max-w-none truncate">
                         {entry?.description ?? '—'}
                       </td>
                       <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
-                        {entry ? (catMap.get(entry.expenseCategoryId) ?? '—') : '—'}
+                        {entry && entry.entryType !== 'PAYMENT' ? (catMap.get(entry.expenseCategoryId) ?? '—') : '—'}
                       </td>
                       <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                         {entry ? formatDate(entry.purchaseDate) : '—'}
@@ -535,6 +545,8 @@ function CardDetail({
                           ? t('installments.entryType.fixed')
                           : entry?.entryType === 'REFUND'
                           ? t('installments.entryType.refund')
+                          : entry?.entryType === 'PAYMENT'
+                          ? t('installments.entryType.payment')
                           : `${inst.installmentNumber}/${inst.totalInstallments}`}
                       </td>
                       <td
@@ -548,21 +560,21 @@ function CardDetail({
                       </td>
                       <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
                         <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {entry?.active && (
+                          {isEditable && (
                             <IconActionButton
                               title={t('installments.actions.edit')}
                               onClick={() => { setEntryToEdit(entry); }}
-                              disabled={pendingDeleteEntryId === entry.id}
+                              disabled={pendingDeleteEntryId === entry!.id}
                               className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
                               <Pencil size={14} />
                             </IconActionButton>
                           )}
-                          {entry?.active && (
+                          {isEditable && (
                             <IconActionButton
                               title={t('installments.actions.cancel')}
-                              onClick={() => handleDeleteEntry(entry)}
-                              loading={pendingDeleteEntryId === entry.id}
+                              onClick={() => handleDeleteEntry(entry!)}
+                              loading={pendingDeleteEntryId === entry!.id}
                               className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                             >
                               <Trash2 size={14} />
@@ -607,6 +619,8 @@ function CardDetail({
         cardId={card.id}
         categories={categories}
         onImported={invalidate}
+        referenceMonth={month}
+        referenceYear={year}
       />
 
       <ScopedDeleteModal

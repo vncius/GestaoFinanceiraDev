@@ -201,6 +201,9 @@ class FakeCreditCardInstallmentsRepo
   async findByCardAndMonth(tenantId: string) {
     return this.items.filter((i) => i.tenantId === tenantId);
   }
+  async findByInvoiceId(tenantId: string, invoiceId: string) {
+    return this.items.filter((i) => i.tenantId === tenantId && i.creditCardInvoiceId === invoiceId);
+  }
 }
 class FakeCreditCardInvoicesRepo
   extends InMemoryRepo<CreditCardInvoice>
@@ -284,6 +287,7 @@ function buildEnvironment() {
     creditCardInvoicesRepo,
     transactionsRepo,
     settingsRepo,
+    categoriesRepo,
   );
   const cashFlowService = new CashFlowService(
     receivablesRepo,

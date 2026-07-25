@@ -12,7 +12,7 @@ import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardEntriesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInstallmentsRepository } from '../credit-cards/credit-cards.repository';
-import { InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
+import { CardEntryType, InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CategoriesRepository } from '../categories/categories.repository';
 import {
   AlertSeverity,
@@ -308,6 +308,10 @@ export class DashboardService {
         continue;
       if (inst.status === InstallmentStatus.CANCELED) continue;
       const entry = cardEntryMap.get(inst.creditCardEntryId);
+      // PAYMENT é o crédito interno do pagamento da fatura, não uma
+      // despesa — excluído do breakdown (senão corrompe o total com um
+      // valor negativo sem categoria de despesa real).
+      if (entry?.entryType === CardEntryType.PAYMENT) continue;
       const key = entry?.expenseCategoryId ?? '';
       expensesByCategory.set(key, (expensesByCategory.get(key) ?? 0) + inst.amount);
     }

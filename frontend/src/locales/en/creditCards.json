@@ -60,19 +60,21 @@
     "entryType": {
       "cash": "One-time",
       "fixed": "Recurring",
-      "refund": "Refund"
+      "refund": "Refund",
+      "payment": "Invoice payment"
     },
     "actions": {
       "edit": "Edit entry",
       "cancel": "Cancel entry"
     },
     "confirmCancel": "Cancel this entry and all of its installments?",
+    "confirmCancelFromReference": "Cancel this installment plan from {{monthYear}} onward? Installments from earlier months are left untouched.",
     "clearButton": "Clear Invoice",
     "confirmClearInvoice": "Clear all {{count}} entr(y/ies) in this invoice? This action cannot be undone.",
     "clearInvoiceError": "Could not clear all entries in this invoice.",
     "clearInvoiceScopeModal": {
       "title": "Clear fixed entries",
-      "description": "This invoice ({{monthYear}}) includes fixed/recurring entries. Do you want to delete only the current reference of those, or also the future ones? All other entries (one-time, installments, refunds) will always be fully canceled."
+      "description": "This invoice ({{monthYear}}) includes fixed/recurring entries. Do you want to delete only the current reference of those, or also the future ones? Installment entries are canceled from this month onward (earlier months are untouched); one-time and refund entries are always fully canceled."
     }
   },
   "invoiceImport": {
@@ -98,11 +100,14 @@
     "createFutureInstallments": "Create the {{count}} future installments?",
     "warnings": {
       "duplicate": "Possible duplicate",
-      "previousPayment": "Possibly a previous invoice payment"
+      "previousPayment": "Possibly a previous invoice payment",
+      "targetMismatch": "Warning: this will land on the {{target}} invoice, different from the one currently open ({{reference}}). Check the card's closing day before including it."
     },
+    "overwriteCheckbox": "Overwrite existing entry",
     "cancelButton": "Cancel",
     "confirmButton": "Import selected ({{count}})",
     "importSuccess": "{{count}} entr(y/ies) imported successfully.",
+    "importSuccessWithOverwrite": "{{created}} entr(y/ies) imported and {{updated}} overwritten successfully.",
     "parseError": "Could not process the uploaded file."
   },
   "fixedDeleteModal": {

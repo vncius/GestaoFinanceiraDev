@@ -10,6 +10,7 @@ export interface ConfirmInvoiceImportEntry {
   createFutureInstallments: boolean;
   installmentInfo?: InvoiceImportInstallmentInfo | null;
   externalRef?: string | null;
+  overwriteEntryId?: string | null;
 }
 
 export const CreditCardInvoiceImportService = {
@@ -23,6 +24,6 @@ export const CreditCardInvoiceImportService = {
   confirmImport: (
     cardId: string,
     entries: ConfirmInvoiceImportEntry[],
-  ): Promise<{ created: number }> =>
+  ): Promise<{ created: number; updated: number }> =>
     api.post(`/credit-cards/${cardId}/invoice-import/confirm`, { entries }).then((r) => r.data),
 };

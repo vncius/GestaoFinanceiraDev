@@ -60,19 +60,21 @@
     "entryType": {
       "cash": "Al contado",
       "fixed": "Recurrente",
-      "refund": "Reembolso"
+      "refund": "Reembolso",
+      "payment": "Pago de factura"
     },
     "actions": {
       "edit": "Editar movimiento",
       "cancel": "Cancelar movimiento"
     },
     "confirmCancel": "¿Cancelar este movimiento y todas sus cuotas?",
+    "confirmCancelFromReference": "¿Cancelar este financiamiento a partir de {{monthYear}}? Las cuotas de meses anteriores no se modifican.",
     "clearButton": "Limpiar Factura",
     "confirmClearInvoice": "¿Limpiar los {{count}} movimiento(s) de esta factura? Esta acción no se puede deshacer.",
     "clearInvoiceError": "No se pudieron limpiar todos los movimientos de esta factura.",
     "clearInvoiceScopeModal": {
       "title": "Limpiar movimientos fijos",
-      "description": "Esta factura ({{monthYear}}) incluye movimientos fijos/recurrentes. ¿Desea eliminar solo la referencia actual de esos ítems, o también las futuras? Los demás movimientos (al contado, en cuotas, reembolsos) siempre se cancelarán por completo."
+      "description": "Esta factura ({{monthYear}}) incluye movimientos fijos/recurrentes. ¿Desea eliminar solo la referencia actual de esos ítems, o también las futuras? Los movimientos en cuotas se cancelan a partir de este mes en adelante (los meses anteriores no cambian); los de contado y reembolsos siempre se cancelan por completo."
     }
   },
   "invoiceImport": {
@@ -98,11 +100,14 @@
     "createFutureInstallments": "¿Crear las {{count}} cuotas futuras?",
     "warnings": {
       "duplicate": "Posible duplicado",
-      "previousPayment": "Posible pago de factura anterior"
+      "previousPayment": "Posible pago de factura anterior",
+      "targetMismatch": "Atención: caerá en la factura {{target}}, diferente de la factura abierta ({{reference}}). Verifique el día de cierre de la tarjeta antes de incluirlo."
     },
+    "overwriteCheckbox": "Sobrescribir movimiento existente",
     "cancelButton": "Cancelar",
     "confirmButton": "Importar seleccionados ({{count}})",
     "importSuccess": "{{count}} movimiento(s) importado(s) con éxito.",
+    "importSuccessWithOverwrite": "{{created}} movimiento(s) importado(s) y {{updated}} sobrescrito(s) con éxito.",
     "parseError": "No se pudo procesar el archivo enviado."
   },
   "fixedDeleteModal": {

@@ -25,6 +25,11 @@ import { parseInvoiceOfx } from './credit-card-invoice-import-ofx.parser';
 import { InvoiceImportPreviewEntry, ParsedOfxCardTransaction } from './credit-card-invoice-import.types';
 import { ConfirmInvoiceImportEntry, ConfirmInvoiceImportInput } from './credit-card-invoice-import.schemas';
 
+// Reconhece a categoria "outros/outras" já cadastrada (ex.: "Outros
+// pagamentos", do seed padrão) para usar como fallback — casa "outro",
+// "outros", "outra", "outras" em qualquer posição do nome, sem acento.
+const FALLBACK_CATEGORY_NAME_PATTERN = /outr[oa]s?/i;
+
 export class CreditCardInvoiceImportService {
   constructor(
     private readonly creditCardsService: CreditCardsService,
@@ -35,6 +40,16 @@ export class CreditCardInvoiceImportService {
     private readonly aiProvider: AiProvider,
     private readonly aiConfig: AiConfig,
   ) {}
+
+  // A importação nunca cria uma categoria nova — reaproveita uma categoria
+  // EXPENSE ativa já cadastrada pelo usuário/seed cujo nome sugira "outros"
+  // (ex.: "Outros pagamentos"). Se o tenant não tiver nenhuma, retorna null
+  // e o lançamento fica sem sugestão automática (usuário escolhe manualmente).
+  private async findFallbackCategoryId(tenantId: string): Promise<string | null> {
+    const categories = await this.categoriesRepo.findByType(tenantId, CategoryType.EXPENSE);
+    const match = categories.find((c) => c.active && FALLBACK_CATEGORY_NAME_PATTERN.test(c.name));
+    return match?.id ?? null;
+  }
 
   // ─── Parse (preview) ────────────────────────────────────────────────────────
 
@@ -57,8 +72,20 @@ export class CreditCardInvoiceImportService {
     }
 
     const existingEntries = await this.entriesRepo.findByCardId(tenantId, cardId);
-    const existingExternalRefs = new Set(
-      existingEntries.map((e) => e.externalRef).filter((ref): ref is string => !!ref),
+    // Só entries ativos participam da checagem de duplicado: um entry
+    // "limpo" (soft-deleted via deleteEntry) foi removido deliberadamente
+    // pelo usuário e não deve bloquear reimportação do mesmo FITID. Também
+    // exclui PAYMENT (lançamento interno de baixa da fatura, nunca vem de
+    // FITID de compra) por clareza, embora seu externalRef seja sempre null.
+    const activeEntries = existingEntries.filter(
+      (e) => e.active && e.entryType !== CardEntryType.PAYMENT,
+    );
+    // Map (não Set) porque a reimportação com sobrescrita precisa saber QUAL
+    // entry ativo corresponde ao FITID já existente.
+    const existingExternalRefs = new Map(
+      activeEntries
+        .filter((e): e is CreditCardEntry & { externalRef: string } => !!e.externalRef)
+        .map((e) => [e.externalRef, e.id]),
     );
 
     // Chave fraca por mês/ano/valor, SEM depender da descrição: o usuário
@@ -68,7 +95,7 @@ export class CreditCardInvoiceImportService {
     // quebraria a detecção de duplicata em importações seguintes. FITID
     // (externalRef, ver acima) continua sendo o sinal forte quando o banco
     // o fornece; esta chave é só o fallback para quando ele não vem no OFX.
-    const activeEntryIds = new Set(existingEntries.filter((e) => e.active).map((e) => e.id));
+    const activeEntryIds = new Set(activeEntries.map((e) => e.id));
     const existingInstallments = await this.installmentsRepo.findAll(tenantId);
     const weakKeys = new Set(
       existingInstallments
@@ -76,15 +103,17 @@ export class CreditCardInvoiceImportService {
         .map((i) => `${i.month}|${i.year}|${i.amount}`),
     );
 
+    const fallbackCategoryId = await this.findFallbackCategoryId(tenantId);
     const categories = await this.categoriesRepo.findByType(tenantId, CategoryType.EXPENSE);
     const activeCategories = categories.filter((c) => c.active);
 
-    const suggestions = await this.suggestCategories(parsed, activeCategories);
+    const suggestions = await this.suggestCategories(parsed, activeCategories, fallbackCategoryId);
 
     return parsed.map((tx, index): InvoiceImportPreviewEntry => {
       const { month: targetMonth, year: targetYear } = getInvoiceMonth(tx.date, card.closingDay);
 
-      const strongDuplicate = !!tx.externalRef && existingExternalRefs.has(tx.externalRef);
+      const existingEntryId = tx.externalRef ? existingExternalRefs.get(tx.externalRef) ?? null : null;
+      const strongDuplicate = !!existingEntryId;
       // installment.amount é persistido com o sinal invertido em relação ao
       // OFX (compra: negativa no banco -> positiva salva; estorno: positiva
       // no banco -> negativa salva, ver createSingleInstallmentEntry), então
@@ -106,8 +135,9 @@ export class CreditCardInvoiceImportService {
         amountCents: tx.amountCents,
         suggestedEntryType,
         installmentInfo: tx.installmentInfo,
-        suggestedCategoryId: suggestions[index] ?? null,
+        suggestedCategoryId: suggestions[index] ?? fallbackCategoryId,
         possibleDuplicate,
+        existingEntryId,
         possiblePreviousInvoicePayment: tx.possiblePreviousInvoicePayment,
         externalRef: tx.externalRef,
         targetMonth,
@@ -122,16 +152,34 @@ export class CreditCardInvoiceImportService {
   private async suggestCategories(
     entries: ParsedOfxCardTransaction[],
     categories: { id: string; name: string }[],
+    fallbackCategoryId: string | null,
   ): Promise<Record<number, string | null>> {
-    const empty: Record<number, string | null> = {};
-    if (categories.length === 0) return empty;
+    // Sem uma categoria "outros" já cadastrada para usar de fallback, um
+    // índice não resolvido pela IA fica null — o usuário escolhe manualmente
+    // no preview (a importação nunca cria uma categoria nova).
+    const allFallback: Record<number, string | null> = {};
+    for (let i = 0; i < entries.length; i++) allFallback[i] = fallbackCategoryId;
+    if (categories.length === 0) return allFallback;
 
     const startedAt = Date.now();
     try {
       const system =
-        'Você é um classificador de despesas de fatura de cartão de crédito. ' +
-        'Dada uma lista de categorias disponíveis (id e nome) e uma lista de lançamentos ' +
-        '(index e descrição), responda SOMENTE com um JSON array no formato ' +
+        'Você é um classificador de despesas de fatura de cartão de crédito brasileiro. ' +
+        'Você recebe uma lista de categorias cadastradas pelo usuário (id e nome) e uma lista ' +
+        'de lançamentos (index e descrição — geralmente o nome do estabelecimento/serviço como ' +
+        'aparece no extrato do banco, em caixa alta, às vezes abreviado). ' +
+        'Para cada lançamento, escolha a categoria cujo nome corresponde ao tipo de gasto que a ' +
+        'descrição indica CLARAMENTE — ex.: um nome de serviço terminado em "SUB"/"SUBSCRIPTION" ' +
+        '(como "AMAZON PRIME SUB" ou "OPENAI SUB") sugere assinatura recorrente; menções a peça, ' +
+        'manutenção ou item de veículo (ex.: "BATERIA GOL G2", "POSTO", "AUTOPECAS") sugerem ' +
+        'carro/transporte; nome de mercado/supermercado sugere alimentação; e assim por diante — ' +
+        'só quando existir uma categoria correspondente na lista recebida. ' +
+        'Não force uma categoria por aproximação: se a descrição for genérica, ambígua, ou não ' +
+        'houver indício claro do tipo de gasto (ou nenhuma categoria da lista corresponda bem), ' +
+        'responda categoryId null para aquele índice — é sempre preferível deixar sem sugestão a ' +
+        'sugerir uma categoria errada, já que o usuário revisa e pode escolher manualmente. Nunca ' +
+        'invente uma categoria fora da lista recebida. ' +
+        'Responda SOMENTE com um JSON array no formato ' +
         '[{"index": 0, "categoryId": "<id da categoria mais provável, ou null>"}], ' +
         'na mesma ordem recebida, um item por lançamento. Use exatamente o "id" da ' +
         'categoria (não o nome). Não inclua texto além do JSON.';
@@ -160,7 +208,10 @@ export class CreditCardInvoiceImportService {
       // vez do id exato mesmo quando instruído a não fazer isso.
       const byName = new Map(categories.map((c) => [c.name.trim().toLowerCase(), c.id]));
 
-      const map: Record<number, string | null> = {};
+      // Parte do fallback e só sobrescreve o que a IA de fato resolveu —
+      // cobre tanto os índices ausentes na resposta quanto os que vieram com
+      // um categoryId não reconhecível.
+      const map: Record<number, string | null> = { ...allFallback };
       for (const item of parsed) {
         if (typeof item.index !== 'number' || !item.categoryId) continue;
         const resolvedId = byId.get(item.categoryId) ?? byName.get(item.categoryId.trim().toLowerCase());
@@ -171,9 +222,10 @@ export class CreditCardInvoiceImportService {
       return map;
     } catch {
       // IA indisponível, timeout, ou resposta fora do formato esperado —
-      // segue sem sugestão, o usuário categoriza manualmente no preview.
+      // todas as linhas caem em "Outras"; o usuário pode trocar manualmente
+      // no preview.
       logAiAudit({ provider: this.aiProvider.name, turn: 1, durationMs: Date.now() - startedAt, tools: [], outcome: 'error' });
-      return empty;
+      return allFallback;
     }
   }
 
@@ -183,20 +235,60 @@ export class CreditCardInvoiceImportService {
     cardId: string,
     tenantId: string,
     input: ConfirmInvoiceImportInput,
-  ): Promise<{ created: number }> {
+  ): Promise<{ created: number; updated: number }> {
     const card = await this.creditCardsService.findById(cardId, tenantId);
     const now = nowISO();
 
+    const fallbackCategoryId = await this.findFallbackCategoryId(tenantId);
+
     const invoiceIdsToRecalc = new Set<string>();
     let created = 0;
+    let updated = 0;
 
     for (const row of input.entries) {
-      created += await this.createFromRow(card.id, card.closingDay, card.dueDay, tenantId, row, now, invoiceIdsToRecalc);
+      const categoryId = await this.resolveExpenseCategoryId(row.categoryId, tenantId, fallbackCategoryId);
+      const resolvedRow = { ...row, categoryId };
+      const result = await this.createFromRow(
+        card.id,
+        card.closingDay,
+        card.dueDay,
+        tenantId,
+        resolvedRow,
+        now,
+        invoiceIdsToRecalc,
+      );
+      created += result.created;
+      updated += result.updated;
     }
 
     await this.recalcInvoiceTotals(tenantId, invoiceIdsToRecalc);
 
-    return { created };
+    return { created, updated };
+  }
+
+  // Importação em lote nunca falha o lote inteiro por uma categoria
+  // inválida/inativa/de tipo errado — cai silenciosamente na categoria
+  // "outros" já cadastrada (ao contrário do CRUD manual, onde
+  // CreditCardsService rejeita com erro explícito: lá o dropdown já só
+  // oferece categorias válidas, então chegar com um id inválido indica
+  // adulteração/condição de corrida). Nunca cria uma categoria nova — se o
+  // tenant não tiver nenhuma categoria "outros", falha pedindo para o
+  // usuário escolher uma categoria válida manualmente.
+  private async resolveExpenseCategoryId(
+    categoryId: string,
+    tenantId: string,
+    fallbackCategoryId: string | null,
+  ): Promise<string> {
+    const category = await this.categoriesRepo.findById(categoryId, tenantId);
+    if (category && category.active && category.type === CategoryType.EXPENSE) {
+      return categoryId;
+    }
+    if (fallbackCategoryId) return fallbackCategoryId;
+    throw new AppError(
+      'Categoria inválida e nenhuma categoria "outros" cadastrada foi encontrada para usar como padrão. Selecione uma categoria válida.',
+      400,
+      'creditCardImport.categoryInvalidNoFallback',
+    );
   }
 
   private async createFromRow(
@@ -207,28 +299,47 @@ export class CreditCardInvoiceImportService {
     row: ConfirmInvoiceImportEntry,
     now: string,
     invoiceIdsToRecalc: Set<string>,
-  ): Promise<number> {
+  ): Promise<{ created: number; updated: number }> {
     // Nunca confia no targetMonth/targetYear que o preview mandou de volta —
     // recalcula a partir da data + fechamento do cartão, no servidor.
     const { month, year } = getInvoiceMonth(row.date, closingDay);
 
+    let totalAmount: number;
+    let entryType: CardEntryType;
+    let installmentsCount: number;
+
     if (row.entryType === 'REFUND') {
-      await this.createSingleInstallmentEntry(cardId, tenantId, {
-        description: row.description,
-        expenseCategoryId: row.categoryId,
-        totalAmount: -Math.abs(row.amountCents),
-        purchaseDate: row.date,
-        entryType: CardEntryType.REFUND,
-        closingDayUsed: closingDay,
-        externalRef: row.externalRef ?? null,
-        month,
-        year,
-        dueDay,
-      }, invoiceIdsToRecalc, now);
-      return 1;
+      totalAmount = -Math.abs(row.amountCents);
+      entryType = CardEntryType.REFUND;
+      installmentsCount = 1;
+    } else if (row.entryType === 'INSTALLMENT' && row.createFutureInstallments && row.installmentInfo) {
+      // Aproximação: só conhecemos o valor da parcela atual, não o valor
+      // original da compra (não vem no OFX) — mesma lógica de
+      // createInstallmentEntryFromCurrent.
+      totalAmount = Math.abs(row.amountCents) * row.installmentInfo.total;
+      entryType = CardEntryType.INSTALLMENT;
+      installmentsCount = row.installmentInfo.total;
+    } else {
+      // CASH, ou parcela detectada mas o usuário optou por não gerar as
+      // futuras — vira um lançamento à vista de uma parcela só, neste mês.
+      totalAmount = Math.abs(row.amountCents);
+      entryType = CardEntryType.CASH;
+      installmentsCount = 1;
     }
 
-    if (row.entryType === 'INSTALLMENT' && row.createFutureInstallments && row.installmentInfo) {
+    if (row.overwriteEntryId) {
+      await this.overwriteEntry(cardId, row.overwriteEntryId, tenantId, {
+        description: row.description,
+        expenseCategoryId: row.categoryId,
+        totalAmount,
+        purchaseDate: row.date,
+        entryType,
+        installmentsCount,
+      });
+      return { created: 0, updated: 1 };
+    }
+
+    if (entryType === CardEntryType.INSTALLMENT) {
       await this.createInstallmentEntryFromCurrent(cardId, tenantId, {
         description: row.description,
         expenseCategoryId: row.categoryId,
@@ -236,30 +347,66 @@ export class CreditCardInvoiceImportService {
         purchaseDate: row.date,
         closingDayUsed: closingDay,
         externalRef: row.externalRef ?? null,
-        current: row.installmentInfo.current,
-        total: row.installmentInfo.total,
+        current: row.installmentInfo!.current,
+        total: row.installmentInfo!.total,
         month,
         year,
         dueDay,
       }, invoiceIdsToRecalc, now);
-      return 1;
+      return { created: 1, updated: 0 };
     }
 
-    // CASH, ou parcela detectada mas o usuário optou por não gerar as
-    // futuras — vira um lançamento à vista de uma parcela só, neste mês.
     await this.createSingleInstallmentEntry(cardId, tenantId, {
       description: row.description,
       expenseCategoryId: row.categoryId,
-      totalAmount: Math.abs(row.amountCents),
+      totalAmount,
       purchaseDate: row.date,
-      entryType: CardEntryType.CASH,
+      entryType,
       closingDayUsed: closingDay,
       externalRef: row.externalRef ?? null,
       month,
       year,
       dueDay,
     }, invoiceIdsToRecalc, now);
-    return 1;
+    return { created: 1, updated: 0 };
+  }
+
+  // Sobrescrita de reimportação (mesmo FITID de uma importação anterior):
+  // reaproveita CreditCardsService.updateEntry, que já cancela+recria as
+  // parcelas do zero quando algum campo relevante muda — isso cobre
+  // automaticamente "1ª importação gerou parcelas futuras, 2ª não marcou
+  // createFutureInstallments" (o novo installmentsCount=1 substitui as
+  // futuras) e também reverte o pagamento se a fatura já estava paga.
+  private async overwriteEntry(
+    cardId: string,
+    entryId: string,
+    tenantId: string,
+    data: {
+      description: string;
+      expenseCategoryId: string;
+      totalAmount: number;
+      purchaseDate: string;
+      entryType: CardEntryType;
+      installmentsCount: number;
+    },
+  ): Promise<void> {
+    const target = await this.entriesRepo.findById(entryId, tenantId);
+    if (!target || target.creditCardId !== cardId || !target.active || target.entryType === CardEntryType.PAYMENT) {
+      throw new AppError(
+        'O lançamento a sobrescrever não existe mais ou não pertence a este cartão. Recarregue o preview e tente novamente.',
+        400,
+        'creditCardImport.overwriteTargetInvalid',
+      );
+    }
+
+    await this.creditCardsService.updateEntry(cardId, entryId, tenantId, {
+      description: data.description,
+      expenseCategoryId: data.expenseCategoryId,
+      totalAmount: data.totalAmount,
+      purchaseDate: data.purchaseDate,
+      entryType: data.entryType,
+      installmentsCount: data.entryType === CardEntryType.INSTALLMENT ? data.installmentsCount : undefined,
+    });
   }
 
   private async createSingleInstallmentEntry(
@@ -425,12 +572,26 @@ export class CreditCardInvoiceImportService {
     const ids = [...new Set(invoiceIds)];
     if (ids.length === 0) return;
 
-    const all = await this.installmentsRepo.findAll(tenantId);
+    const [all, allEntries] = await Promise.all([
+      this.installmentsRepo.findAll(tenantId),
+      this.entriesRepo.findAll(tenantId),
+    ]);
+    // Mesma exclusão de CreditCardsService.recalcInvoiceTotals: o
+    // lançamento PAYMENT (crédito interno do pagamento da fatura) nunca
+    // entra no valor bruto faturado.
+    const paymentEntryIds = new Set(
+      allEntries.filter((e) => e.entryType === CardEntryType.PAYMENT).map((e) => e.id),
+    );
     const now = nowISO();
 
     for (const invoiceId of ids) {
       const total = all
-        .filter((i) => i.creditCardInvoiceId === invoiceId && i.status !== InstallmentStatus.CANCELED)
+        .filter(
+          (i) =>
+            i.creditCardInvoiceId === invoiceId &&
+            i.status !== InstallmentStatus.CANCELED &&
+            !paymentEntryIds.has(i.creditCardEntryId),
+        )
         .reduce((s, i) => s + i.amount, 0);
       await this.invoicesRepo.update(invoiceId, { totalAmount: total, updatedAt: now }, tenantId);
     }

@@ -19,6 +19,10 @@ const confirmInvoiceImportEntrySchema = z.object({
   createFutureInstallments: z.boolean().default(false),
   installmentInfo: installmentInfoSchema.nullable().optional(),
   externalRef: z.string().nullable().optional(),
+  // id do lançamento ativo existente a sobrescrever (mesmo FITID de uma
+  // importação anterior) em vez de criar um novo — ver
+  // InvoiceImportPreviewEntry.existingEntryId.
+  overwriteEntryId: z.string().uuid().nullable().optional(),
 });
 
 export const confirmInvoiceImportSchema = z.object({

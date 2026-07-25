@@ -122,7 +122,7 @@ export interface FinancialTransaction {
 }
 
 // ── Credit Cards ──────────────────────────────────────────────────────────────
-export type CardEntryType = 'CASH' | 'FIXED' | 'INSTALLMENT' | 'REFUND';
+export type CardEntryType = 'CASH' | 'FIXED' | 'INSTALLMENT' | 'REFUND' | 'PAYMENT';
 export type InstallmentStatus = 'OPEN' | 'PAID' | 'CANCELED';
 export type InvoiceStatus = 'OPEN' | 'CLOSED' | 'PAID' | 'OVERDUE' | 'CANCELED';
 
@@ -220,6 +220,7 @@ export interface InvoiceImportPreviewEntry {
   installmentInfo: InvoiceImportInstallmentInfo | null;
   suggestedCategoryId: string | null;
   possibleDuplicate: boolean;
+  existingEntryId: string | null;
   possiblePreviousInvoicePayment: boolean;
   externalRef: string | null;
   targetMonth: number;

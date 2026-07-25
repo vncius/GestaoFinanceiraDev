@@ -106,6 +106,7 @@ const creditCardsService = new CreditCardsService(
   creditCardInvoicesRepo,
   transactionsRepo,
   settingsRepo,
+  categoriesRepo,
 );
 const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
   creditCardsService,

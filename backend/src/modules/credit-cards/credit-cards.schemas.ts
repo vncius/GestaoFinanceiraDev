@@ -23,6 +23,13 @@ export const createCardEntrySchema = z
     notes: z.string().nullable().optional(),
   })
   .superRefine((d, ctx) => {
+    if (d.entryType === CardEntryType.PAYMENT) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'validation.entryType.systemManaged',
+        path: ['entryType'],
+      });
+    }
     if (d.entryType === CardEntryType.INSTALLMENT && (d.installmentsCount == null || d.installmentsCount < 2)) {
       ctx.addIssue({
         code: 'custom',
@@ -48,15 +55,25 @@ export const createCardEntrySchema = z
     }
   });
 
-export const updateCardEntrySchema = z.object({
-  description: z.string().min(1).optional(),
-  expenseCategoryId: z.string().uuid().optional(),
-  totalAmount: z.number().int().refine((v) => v !== 0, 'validation.totalAmount.nonZero').optional(),
-  purchaseDate: z.string().optional(),
-  entryType: z.nativeEnum(CardEntryType).optional(),
-  installmentsCount: z.number().int().min(2).optional(),
-  notes: z.string().nullable().optional(),
-});
+export const updateCardEntrySchema = z
+  .object({
+    description: z.string().min(1).optional(),
+    expenseCategoryId: z.string().uuid().optional(),
+    totalAmount: z.number().int().refine((v) => v !== 0, 'validation.totalAmount.nonZero').optional(),
+    purchaseDate: z.string().optional(),
+    entryType: z.nativeEnum(CardEntryType).optional(),
+    installmentsCount: z.number().int().min(2).optional(),
+    notes: z.string().nullable().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.entryType === CardEntryType.PAYMENT) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'validation.entryType.systemManaged',
+        path: ['entryType'],
+      });
+    }
+  });
 
 export const cardFlowQuerySchema = z.object({
   month: z.coerce.number().int().min(1).max(12),

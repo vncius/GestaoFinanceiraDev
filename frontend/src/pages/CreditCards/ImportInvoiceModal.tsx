@@ -7,7 +7,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 import { readFileAsText } from '../../utils/file';
 import { formatCurrency } from '../../utils/money';
-import { formatDate } from '../../utils/date';
+import { formatDate, formatMonthYear } from '../../utils/date';
 import { Category, InvoiceImportPreviewEntry } from '../../types';
 import { CreditCardInvoiceImportService } from '../../services/credit-card-invoice-import.service';
 
@@ -19,6 +19,15 @@ interface PreviewRow extends InvoiceImportPreviewEntry {
   entryType: 'CASH' | 'REFUND';
   categoryId: string;
   createFutureInstallments: boolean;
+  overwrite: boolean;
+  // Calculado no cliente (não vem do backend): true quando a fatura em que
+  // este lançamento cairia (targetMonth/targetYear, calculado a partir do
+  // fechamento do cartão) é diferente da fatura que o usuário está
+  // visualizando ao abrir a importação. Um fechamento mal configurado faz
+  // lançamentos caírem silenciosamente em faturas erradas (inclusive
+  // meses já fechados/pagos) — este aviso é a trava para o usuário perceber
+  // antes de confirmar.
+  targetMismatch: boolean;
 }
 
 export function ImportInvoiceModal({
@@ -27,12 +36,16 @@ export function ImportInvoiceModal({
   cardId,
   categories,
   onImported,
+  referenceMonth,
+  referenceYear,
 }: {
   open: boolean;
   onClose: () => void;
   cardId: string;
   categories: Category[];
   onImported: () => void;
+  referenceMonth: number;
+  referenceYear: number;
 }) {
   const { t } = useTranslation('creditCards');
   const { showError, showSuccess } = useToast();
@@ -65,15 +78,20 @@ export function ImportInvoiceModal({
       const content = await readFileAsText(file);
       const { entries } = await CreditCardInvoiceImportService.parseInvoice(cardId, file.name, content);
       setRows(
-        entries.map((entry) => ({
-          ...entry,
-          include: !entry.possibleDuplicate && !entry.possiblePreviousInvoicePayment,
-          entryType: entry.suggestedEntryType === 'REFUND' ? 'REFUND' : 'CASH',
-          categoryId: entry.suggestedCategoryId ?? '',
-          // Não recria histórico automaticamente — o usuário decide, linha a
-          // linha, se quer gerar as parcelas futuras de uma compra em andamento.
-          createFutureInstallments: false,
-        })),
+        entries.map((entry) => {
+          const targetMismatch = entry.targetMonth !== referenceMonth || entry.targetYear !== referenceYear;
+          return {
+            ...entry,
+            include: !entry.possibleDuplicate && !entry.possiblePreviousInvoicePayment && !targetMismatch,
+            entryType: entry.suggestedEntryType === 'REFUND' ? 'REFUND' : 'CASH',
+            categoryId: entry.suggestedCategoryId ?? '',
+            // Não recria histórico automaticamente — o usuário decide, linha a
+            // linha, se quer gerar as parcelas futuras de uma compra em andamento.
+            createFutureInstallments: false,
+            overwrite: false,
+            targetMismatch,
+          };
+        }),
       );
     } catch (err) {
       showError(err instanceof Error ? err.message : t('invoiceImport.parseError'));
@@ -102,7 +120,7 @@ export function ImportInvoiceModal({
 
     setImporting(true);
     try {
-      const { created } = await CreditCardInvoiceImportService.confirmImport(
+      const { created, updated } = await CreditCardInvoiceImportService.confirmImport(
         cardId,
         selected.map((r) => ({
           date: r.date,
@@ -113,9 +131,14 @@ export function ImportInvoiceModal({
           createFutureInstallments: r.createFutureInstallments,
           installmentInfo: r.installmentInfo,
           externalRef: r.externalRef,
+          overwriteEntryId: r.overwrite ? r.existingEntryId : null,
         })),
       );
-      showSuccess(t('invoiceImport.importSuccess', { count: created }));
+      showSuccess(
+        updated > 0
+          ? t('invoiceImport.importSuccessWithOverwrite', { created, updated })
+          : t('invoiceImport.importSuccess', { count: created }),
+      );
       onImported();
       handleClose();
     } catch (err) {
@@ -180,9 +203,11 @@ export function ImportInvoiceModal({
                 {rows.map((row) => (
                   <tr
                     key={row.key}
-                    className={`${row.possibleDuplicate || row.possiblePreviousInvoicePayment ? 'bg-amber-50 dark:bg-amber-900/20' : ''} ${
-                      row.include ? '' : 'opacity-50'
-                    }`}
+                    className={`${
+                      row.possibleDuplicate || row.possiblePreviousInvoicePayment || row.targetMismatch
+                        ? 'bg-amber-50 dark:bg-amber-900/20'
+                        : ''
+                    } ${row.include ? '' : 'opacity-50'}`}
                   >
                     <td className="px-3 py-2 align-top">
                       <input
@@ -210,10 +235,34 @@ export function ImportInvoiceModal({
                           })}
                         </div>
                       )}
+                      {row.targetMismatch && (
+                        <div className="text-[10px] font-medium text-red-600 dark:text-red-400 mt-0.5">
+                          {t('invoiceImport.warnings.targetMismatch', {
+                            target: formatMonthYear(row.targetMonth, row.targetYear),
+                            reference: formatMonthYear(referenceMonth, referenceYear),
+                          })}
+                        </div>
+                      )}
                       {row.possibleDuplicate && (
                         <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
                           {t('invoiceImport.warnings.duplicate')}
                         </div>
+                      )}
+                      {row.existingEntryId && (
+                        <label className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 mt-1">
+                          <input
+                            type="checkbox"
+                            checked={row.overwrite}
+                            onChange={(e) =>
+                              updateRow(row.key, {
+                                overwrite: e.target.checked,
+                                include: e.target.checked ? true : row.include,
+                              })
+                            }
+                            className="rounded"
+                          />
+                          {t('invoiceImport.overwriteCheckbox')}
+                        </label>
                       )}
                       {row.possiblePreviousInvoicePayment && (
                         <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">

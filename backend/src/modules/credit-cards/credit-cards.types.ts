@@ -3,6 +3,11 @@ export enum CardEntryType {
   FIXED = 'FIXED',
   INSTALLMENT = 'INSTALLMENT',
   REFUND = 'REFUND',
+  // Lançamento de crédito gerado automaticamente ao pagar uma fatura (ver
+  // CreditCardsService.payInvoice) — aparece na lista de lançamentos da
+  // fatura como uma linha que abate o total, igual um extrato de banco.
+  // Nunca criado/editado manualmente (bloqueado em schema e service).
+  PAYMENT = 'PAYMENT',
 }
 
 export enum InstallmentStatus {

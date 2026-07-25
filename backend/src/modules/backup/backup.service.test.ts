@@ -124,6 +124,7 @@ class FakeCreditCardInstallmentsRepo extends InMemoryRepo<CreditCardInstallment>
   async findByEntryId(tenantId: string, entryId: string) { return this.items.filter((i) => i.tenantId === tenantId && i.creditCardEntryId === entryId); }
   async findByMonth(tenantId: string, month: number, year: number) { return this.items.filter((i) => i.tenantId === tenantId && i.month === month && i.year === year); }
   async findByCardAndMonth(tenantId: string) { return this.items.filter((i) => i.tenantId === tenantId); }
+  async findByInvoiceId(tenantId: string, invoiceId: string) { return this.items.filter((i) => i.tenantId === tenantId && i.creditCardInvoiceId === invoiceId); }
 }
 
 class FakeCreditCardInvoicesRepo extends InMemoryRepo<CreditCardInvoice> implements CreditCardInvoicesRepository {

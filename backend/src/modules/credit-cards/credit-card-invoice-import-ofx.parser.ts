@@ -52,12 +52,20 @@ export function parseInvoiceOfx(content: string): ParsedOfxCardTransaction[] {
 
       const amountCents = Math.round(amountFloat * 100);
 
+      // O sufixo "NN/MM" fica só como installmentInfo (estruturado, usado no
+      // badge do frontend) — nunca é salvo no texto da descrição, pra não
+      // duplicar a informação e confundir o usuário.
+      const installmentInfo = amountCents < 0 ? detectInstallment(description) : null;
+      const cleanDescription = installmentInfo
+        ? description.replace(INSTALLMENT_PATTERN, '').trim()
+        : description;
+
       return {
         date,
-        description,
+        description: cleanDescription,
         amountCents,
         externalRef: fitId,
-        installmentInfo: amountCents < 0 ? detectInstallment(description) : null,
+        installmentInfo,
         possiblePreviousInvoicePayment: amountCents > 0 && PREVIOUS_PAYMENT_PATTERN.test(description),
       };
     })

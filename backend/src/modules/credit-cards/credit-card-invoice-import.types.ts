@@ -16,6 +16,10 @@ export interface InvoiceImportPreviewEntry {
   installmentInfo: InstallmentInfo | null;
   suggestedCategoryId: string | null;
   possibleDuplicate: boolean;
+  // id do lançamento ativo já existente com o mesmo externalRef (FITID),
+  // quando possibleDuplicate veio de uma duplicata forte — usado para
+  // oferecer "sobrescrever" em vez de só bloquear/ignorar a linha.
+  existingEntryId: string | null;
   possiblePreviousInvoicePayment: boolean;
   externalRef: string | null;
   targetMonth: number;

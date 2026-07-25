@@ -71,6 +71,11 @@ export class CreditCardInstallmentsMongoRepository
     return all.filter((i) => i.creditCardEntryId === entryId);
   }
 
+  async findByInvoiceId(tenantId: string, invoiceId: string) {
+    const all = await this.store.findAll(tenantId);
+    return all.filter((i) => i.creditCardInvoiceId === invoiceId);
+  }
+
   async findByMonth(tenantId: string, month: number, year: number) {
     const all = await this.store.findAll(tenantId);
     return all.filter((i) => i.month === month && i.year === year);

@@ -70,7 +70,7 @@ export const CreditCardsService = {
   deleteEntry: (
     cardId: string,
     entryId: string,
-    scopeParams?: { scope: 'CURRENT' | 'CURRENT_AND_FUTURE'; month: number; year: number },
+    scopeParams?: { scope?: 'CURRENT' | 'CURRENT_AND_FUTURE'; month: number; year: number },
   ): Promise<void> =>
     api
       .delete(`/credit-cards/${cardId}/entries/${entryId}`, { params: scopeParams })

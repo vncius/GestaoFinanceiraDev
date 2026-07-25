@@ -60,19 +60,21 @@
     "entryType": {
       "cash": "À vista",
       "fixed": "Recorrente",
-      "refund": "Estorno"
+      "refund": "Estorno",
+      "payment": "Pagamento de fatura"
     },
     "actions": {
       "edit": "Editar lançamento",
       "cancel": "Cancelar lançamento"
     },
     "confirmCancel": "Cancelar este lançamento e todas as suas parcelas?",
+    "confirmCancelFromReference": "Cancelar este parcelamento a partir de {{monthYear}}? Parcelas de meses anteriores não são alteradas.",
     "clearButton": "Limpar Fatura",
     "confirmClearInvoice": "Limpar todos os {{count}} lançamento(s) desta fatura? Esta ação não pode ser desfeita.",
     "clearInvoiceError": "Não foi possível limpar todos os lançamentos desta fatura.",
     "clearInvoiceScopeModal": {
       "title": "Limpar lançamentos fixos",
-      "description": "Esta fatura ({{monthYear}}) inclui lançamentos fixos/recorrentes. Deseja excluir apenas a referência atual desses itens, ou também as futuras? Os demais lançamentos (à vista, parcelados, estornos) serão sempre cancelados por completo."
+      "description": "Esta fatura ({{monthYear}}) inclui lançamentos fixos/recorrentes. Deseja excluir apenas a referência atual desses itens, ou também as futuras? Lançamentos parcelados são cancelados a partir deste mês em diante (meses anteriores não mudam); à vista e estornos são sempre cancelados por completo."
     }
   },
   "invoiceImport": {
@@ -98,11 +100,14 @@
     "createFutureInstallments": "Criar as {{count}} parcelas futuras?",
     "warnings": {
       "duplicate": "Possível duplicado",
-      "previousPayment": "Possível pagamento de fatura anterior"
+      "previousPayment": "Possível pagamento de fatura anterior",
+      "targetMismatch": "Atenção: cairá na fatura {{target}}, diferente da fatura aberta ({{reference}}). Confira o dia de fechamento do cartão antes de incluir."
     },
+    "overwriteCheckbox": "Sobrescrever lançamento existente",
     "cancelButton": "Cancelar",
     "confirmButton": "Importar selecionados ({{count}})",
     "importSuccess": "{{count}} lançamento(s) importado(s) com sucesso.",
+    "importSuccessWithOverwrite": "{{created}} lançamento(s) importado(s) e {{updated}} sobrescrito(s) com sucesso.",
     "parseError": "Não foi possível processar o arquivo enviado."
   },
   "fixedDeleteModal": {
