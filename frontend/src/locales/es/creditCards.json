@@ -101,7 +101,7 @@
     "warnings": {
       "duplicate": "Posible duplicado",
       "previousPayment": "Posible pago de factura anterior",
-      "targetMismatch": "Atención: caerá en la factura {{target}}, diferente de la factura abierta ({{reference}}). Verifique el día de cierre de la tarjeta antes de incluirlo."
+      "targetMismatchBanner": "Atención: {{count}} movimiento(s) de este archivo caerán en la factura {{target}}, diferente de la factura abierta ({{reference}}). Verifique el día de cierre de la tarjeta antes de incluirlos."
     },
     "overwriteCheckbox": "Sobrescribir movimiento existente",
     "cancelButton": "Cancelar",

@@ -164,21 +164,33 @@ export class CreditCardInvoiceImportService {
     const startedAt = Date.now();
     try {
       const system =
-        'Você é um classificador de despesas de fatura de cartão de crédito brasileiro. ' +
+        'Você é um classificador de despesas de fatura de cartão de crédito brasileiro, ' +
+        'rigoroso e cético — errar categorizando é pior do que não sugerir nada. ' +
         'Você recebe uma lista de categorias cadastradas pelo usuário (id e nome) e uma lista ' +
-        'de lançamentos (index e descrição — geralmente o nome do estabelecimento/serviço como ' +
-        'aparece no extrato do banco, em caixa alta, às vezes abreviado). ' +
-        'Para cada lançamento, escolha a categoria cujo nome corresponde ao tipo de gasto que a ' +
-        'descrição indica CLARAMENTE — ex.: um nome de serviço terminado em "SUB"/"SUBSCRIPTION" ' +
-        '(como "AMAZON PRIME SUB" ou "OPENAI SUB") sugere assinatura recorrente; menções a peça, ' +
-        'manutenção ou item de veículo (ex.: "BATERIA GOL G2", "POSTO", "AUTOPECAS") sugerem ' +
-        'carro/transporte; nome de mercado/supermercado sugere alimentação; e assim por diante — ' +
-        'só quando existir uma categoria correspondente na lista recebida. ' +
-        'Não force uma categoria por aproximação: se a descrição for genérica, ambígua, ou não ' +
-        'houver indício claro do tipo de gasto (ou nenhuma categoria da lista corresponda bem), ' +
-        'responda categoryId null para aquele índice — é sempre preferível deixar sem sugestão a ' +
-        'sugerir uma categoria errada, já que o usuário revisa e pode escolher manualmente. Nunca ' +
-        'invente uma categoria fora da lista recebida. ' +
+        'de lançamentos (index, descrição — o nome do estabelecimento/serviço como aparece no ' +
+        'extrato do banco, em caixa alta, às vezes abreviado —, installment e refund). ' +
+        'REGRAS OBRIGATÓRIAS, nesta ordem: ' +
+        '1) "installment": true significa que é UMA PARCELA DE UMA COMPRA ÚNICA (ex.: um produto ' +
+        'comprado parcelado em várias vezes) — isso NUNCA é assinatura/recorrência, mesmo que o ' +
+        'nome do estabelecimento pareça um serviço por assinatura; categorize pelo que foi ' +
+        'comprado (loja/produto), não como assinatura. ' +
+        '2) Só use uma categoria de assinatura/recorrência quando a própria descrição indicar ' +
+        'claramente recorrência (ex.: termina em "SUB", "SUBSCRIPTION", "ASSINATURA", ou é um ' +
+        'serviço de streaming/software conhecido) E installment for false. ' +
+        '3) Taxas, tarifas, impostos e encargos bancários (ex.: "IOF", "TARIFA", "TAXA", "JUROS", ' +
+        '"ANUIDADE") vão para uma categoria de taxas/tarifas se existir uma na lista; nunca são ' +
+        'assinatura. ' +
+        '4) Descrição de peça, manutenção, combustível ou serviço de veículo (ex.: "BATERIA", ' +
+        '"POSTO", "AUTOPECAS", "OFICINA", nome de montadora/modelo de carro) indica carro; nome de ' +
+        'companhia aérea, agência de viagem, hotel indica viagem — use a categoria mais específica ' +
+        'disponível na lista (viagem antes de transporte genérico, se ambas existirem). ' +
+        '5) Nome de mercado/supermercado indica alimentação. ' +
+        '6) Para QUALQUER lançamento: só escolha uma categoria quando a descrição der um indício ' +
+        'CLARO e você tiver confiança real — nunca escolha "porque é a mais parecida" ou "porque ' +
+        'foi a que usei no lançamento anterior". Se a descrição for genérica, ambígua, você não ' +
+        'tiver confiança, ou nenhuma categoria da lista corresponder bem, responda categoryId ' +
+        'null para aquele índice. Cada lançamento é avaliado de forma independente dos outros. ' +
+        'Nunca invente uma categoria fora da lista recebida. ' +
         'Responda SOMENTE com um JSON array no formato ' +
         '[{"index": 0, "categoryId": "<id da categoria mais provável, ou null>"}], ' +
         'na mesma ordem recebida, um item por lançamento. Use exatamente o "id" da ' +
@@ -186,7 +198,12 @@ export class CreditCardInvoiceImportService {
 
       const userContent = JSON.stringify({
         categories: categories.map((c) => ({ id: c.id, name: c.name })),
-        entries: entries.map((e, index) => ({ index, description: e.description })),
+        entries: entries.map((e, index) => ({
+          index,
+          description: e.description,
+          installment: !!e.installmentInfo,
+          refund: e.amountCents > 0,
+        })),
       });
 
       // O orçamento padrão de tokens (compartilhado com o chat de onboarding)
@@ -200,6 +217,9 @@ export class CreditCardInvoiceImportService {
         system,
         messages: [{ role: 'user', content: userContent }],
         maxOutputTokens,
+        // Classificação, não conversa: mesma entrada deve sempre dar a mesma
+        // categoria, sem variação aleatória entre importações.
+        temperature: 0,
       });
 
       const parsed = JSON.parse(extractJson(result.text)) as Array<{ index: number; categoryId: string | null }>;

@@ -57,6 +57,7 @@ export class AnthropicAiProvider implements AiProvider {
       max_tokens: request.maxOutputTokens,
       system: request.system,
       messages: toAnthropicMessages(request.messages),
+      ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
     };
     if (request.tools && request.tools.length > 0) {
       params.tools = request.tools.map((tool) => ({

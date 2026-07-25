@@ -600,6 +600,26 @@ describe('CreditCardsService — invoice payment (PAYMENT entry)', () => {
     expect(entries.some((e) => e.entryType === CardEntryType.PAYMENT)).toBe(false);
   });
 
+  it('treats a legacy invoice marked PAID without a PAYMENT entry as fully paid in the summary', async () => {
+    // Simula uma fatura paga antes do lançamento PAYMENT existir: status
+    // PAID persistido diretamente, sem passar por payInvoice.
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
+    await ctx.service.createEntry(card.id, TENANT_ID, {
+      description: 'Compra',
+      expenseCategoryId: category.id,
+      totalAmount: 10000,
+      purchaseDate: '2026-03-05',
+      entryType: CardEntryType.CASH,
+    });
+    const invoice = (await ctx.invoicesRepo.findByCardId(TENANT_ID, card.id))[0];
+    await ctx.invoicesRepo.update(invoice.id, { status: InvoiceStatus.PAID }, TENANT_ID);
+
+    const flow = await ctx.service.getCardFlow(card.id, TENANT_ID, invoice.month, invoice.year);
+    expect(flow.summary.invoiceTotal).toBe(10000);
+    expect(flow.summary.paidAmount).toBe(10000);
+    expect(flow.summary.openAmount).toBe(0);
+  });
+
   it('deleting an installment entry that spans an already-paid month reverts that invoice payment instead of leaving it stale', async () => {
     const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
     // Uma compra parcelada em 3x cria parcelas em março, abril e maio.

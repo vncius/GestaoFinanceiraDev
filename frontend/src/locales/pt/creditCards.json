@@ -101,7 +101,7 @@
     "warnings": {
       "duplicate": "Possível duplicado",
       "previousPayment": "Possível pagamento de fatura anterior",
-      "targetMismatch": "Atenção: cairá na fatura {{target}}, diferente da fatura aberta ({{reference}}). Confira o dia de fechamento do cartão antes de incluir."
+      "targetMismatchBanner": "Atenção: {{count}} lançamento(s) deste arquivo cairão na fatura {{target}}, diferente da fatura aberta ({{reference}}). Confira o dia de fechamento do cartão antes de incluir."
     },
     "overwriteCheckbox": "Sobrescrever lançamento existente",
     "cancelButton": "Cancelar",

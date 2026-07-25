@@ -149,6 +149,13 @@ export function ImportInvoiceModal({
   }
 
   const selectedCount = rows?.filter((r) => r.include).length ?? 0;
+  // Um único aviso no topo da grade em vez de repetir por linha: o arquivo
+  // OFX inteiro normalmente é exportado pelo banco para uma única
+  // referência, então quando há divergência ela costuma afetar o lote
+  // todo — repetir a mesma mensagem em cada linha só é ruído.
+  const mismatchedRows = rows?.filter((r) => r.targetMismatch) ?? [];
+  const mismatchCount = mismatchedRows.length;
+  const firstMismatchTarget = mismatchedRows[0];
 
   return (
     <Modal
@@ -187,8 +194,18 @@ export function ImportInvoiceModal({
         {rows && rows.length === 0 && <EmptyState title={t('invoiceImport.noEntries')} />}
 
         {rows && rows.length > 0 && (
-          <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-            <table className="w-full text-sm">
+          <>
+            {mismatchCount > 0 && (
+              <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs font-medium text-red-700 dark:text-red-400">
+                {t('invoiceImport.warnings.targetMismatchBanner', {
+                  count: mismatchCount,
+                  target: formatMonthYear(firstMismatchTarget!.targetMonth, firstMismatchTarget!.targetYear),
+                  reference: formatMonthYear(referenceMonth, referenceYear),
+                })}
+              </div>
+            )}
+            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+              <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="px-3 py-2 text-left">{t('invoiceImport.table.include')}</th>
@@ -232,14 +249,6 @@ export function ImportInvoiceModal({
                           {t('invoiceImport.installmentBadge', {
                             current: row.installmentInfo.current,
                             total: row.installmentInfo.total,
-                          })}
-                        </div>
-                      )}
-                      {row.targetMismatch && (
-                        <div className="text-[10px] font-medium text-red-600 dark:text-red-400 mt-0.5">
-                          {t('invoiceImport.warnings.targetMismatch', {
-                            target: formatMonthYear(row.targetMonth, row.targetYear),
-                            reference: formatMonthYear(referenceMonth, referenceYear),
                           })}
                         </div>
                       )}
@@ -318,8 +327,9 @@ export function ImportInvoiceModal({
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </Modal>

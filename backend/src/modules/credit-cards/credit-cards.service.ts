@@ -226,9 +226,16 @@ export class CreditCardsService {
     const invoiceTotal = active
       .filter((i) => entryMap.get(i.creditCardEntryId)?.entryType !== CardEntryType.PAYMENT)
       .reduce((s, i) => s + i.amount, 0);
-    const paidAmount = active
+    const paymentAmount = active
       .filter((i) => entryMap.get(i.creditCardEntryId)?.entryType === CardEntryType.PAYMENT)
       .reduce((s, i) => s + Math.abs(i.amount), 0);
+    // Faturas marcadas como pagas ANTES do lançamento PAYMENT existir (essa
+    // função só passou a criá-lo a partir de agora) não têm essa parcela de
+    // baixa — sem este fallback, ficariam para sempre com paidAmount=0 e
+    // openAmount=total mesmo já estando pagas. O status persistido da
+    // fatura é a fonte de verdade quando não há PAYMENT correspondente.
+    const paidAmount =
+      paymentAmount === 0 && invoice?.status === InvoiceStatus.PAID ? invoiceTotal : paymentAmount;
 
     return {
       card,

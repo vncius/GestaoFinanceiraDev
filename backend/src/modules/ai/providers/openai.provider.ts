@@ -61,6 +61,7 @@ export class OpenAiProvider implements AiProvider {
       model: this.config.model,
       max_completion_tokens: request.maxOutputTokens,
       messages: toOpenAiMessages(request.system, request.messages),
+      ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
     };
     if (request.tools && request.tools.length > 0) {
       params.tools = request.tools.map((tool) => ({

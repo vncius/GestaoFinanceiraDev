@@ -30,6 +30,14 @@ export interface AiChatRequest {
   messages: AiMessage[];
   tools?: AiToolDefinition[];
   maxOutputTokens: number;
+  /**
+   * 0 = determinístico (mesma entrada tende a sempre dar a mesma saída);
+   * omitido usa o default do provedor. Útil para tarefas de classificação
+   * (ex.: categorização de lançamentos) onde variação entre chamadas
+   * idênticas é indesejada; não deve ser usado no chat conversacional do
+   * onboarding, que se beneficia da variação natural do default.
+   */
+  temperature?: number;
   /** Cancelamento/timeout controlado por quem chama. */
   signal?: AbortSignal;
 }

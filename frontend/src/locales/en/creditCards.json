@@ -101,7 +101,7 @@
     "warnings": {
       "duplicate": "Possible duplicate",
       "previousPayment": "Possibly a previous invoice payment",
-      "targetMismatch": "Warning: this will land on the {{target}} invoice, different from the one currently open ({{reference}}). Check the card's closing day before including it."
+      "targetMismatchBanner": "Warning: {{count}} entr(y/ies) in this file will land on the {{target}} invoice, different from the one currently open ({{reference}}). Check the card's closing day before including them."
     },
     "overwriteCheckbox": "Overwrite existing entry",
     "cancelButton": "Cancel",
