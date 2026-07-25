@@ -43,7 +43,7 @@ export default function Layout() {
   return (
     <QuickAddProvider>
       <GlobalShortcuts />
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
+      <div className="flex h-dvh bg-gray-50 dark:bg-gray-950 overflow-hidden">
         <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
@@ -56,7 +56,7 @@ export default function Layout() {
               <Menu size={18} />
             </button>
 
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate shrink-0 md:flex-1">
+            <h2 className="hidden md:block text-sm font-semibold text-gray-800 dark:text-gray-100 truncate shrink-0 md:flex-1">
               {title}
             </h2>
 
@@ -98,6 +98,10 @@ export default function Layout() {
               </button>
             </div>
           </header>
+
+          <h2 className="md:hidden text-sm font-semibold text-gray-800 dark:text-gray-100 truncate bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0">
+            {title}
+          </h2>
 
           <PageFooterProvider>
             <main className="flex-1 overflow-auto p-3 sm:p-6">
