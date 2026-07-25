@@ -15,8 +15,8 @@ Módulo: `backend/src/modules/credit-cards/credit-cards.service.ts`.
 
 Toda compra tem uma `purchaseDate` e o cartão tem um `closingDay` (dia do fechamento, 1–28). `getInvoiceMonth` decide o mês/ano da fatura:
 
-- Se o dia da compra é **≤ closingDay**, a compra entra na fatura do mês corrente.
-- Se é **> closingDay**, entra na fatura do mês seguinte (rolando o ano se for compra em dezembro).
+- Se o dia da compra é **< closingDay**, a compra entra na fatura do mês corrente.
+- Se é **≥ closingDay**, entra na fatura do mês seguinte (rolando o ano se for compra em dezembro). O próprio dia do fechamento já conta como início do ciclo seguinte (é assim que os bancos exportam o OFX: `DTSTART` do extrato coincide com o dia do fechamento anterior).
 
 ```ts
 private getInvoiceMonth(purchaseDateISO: string, closingDay: number): { month: number; year: number }

@@ -267,6 +267,19 @@ describe('CreditCardInvoiceImportService — parseInvoice', () => {
     expect(entries[0].installmentInfo).toEqual({ current: 3, total: 12 });
   });
 
+  it('bills a purchase made exactly on the closing day into the next invoice, not the current one', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 3 });
+    const content = buildOfx([
+      { fitId: '1', date: '20260703', amount: '-77.00', name: 'COMPRA NO DIA DO FECHAMENTO' },
+      { fitId: '2', date: '20260702', amount: '-10.00', name: 'COMPRA UM DIA ANTES DO FECHAMENTO' },
+    ]);
+
+    const entries = await ctx.importService.parseInvoice(card.id, TENANT_ID, 'fatura.ofx', content);
+
+    expect(entries[0]).toMatchObject({ targetMonth: 8, targetYear: 2026 });
+    expect(entries[1]).toMatchObject({ targetMonth: 7, targetYear: 2026 });
+  });
+
   it('flags a strong duplicate by FITID even when the stored description was edited by the user', async () => {
     const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
     const now = new Date().toISOString();
@@ -306,7 +319,7 @@ describe('CreditCardInvoiceImportService — parseInvoice', () => {
       creditCardId: card.id,
       description: 'Compras do mês - mercado',
       expenseCategoryId: randomUUID(),
-      totalAmount: -15000,
+      totalAmount: 15000,
       purchaseDate: '2026-03-05',
       entryType: CardEntryType.CASH,
       installmentsCount: 1,
@@ -323,7 +336,7 @@ describe('CreditCardInvoiceImportService — parseInvoice', () => {
       creditCardEntryId: entryId,
       installmentNumber: 1,
       totalInstallments: 1,
-      amount: -15000,
+      amount: 15000,
       month: 3,
       year: 2026,
       status: InstallmentStatus.OPEN,

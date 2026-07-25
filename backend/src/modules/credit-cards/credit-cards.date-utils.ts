@@ -15,7 +15,7 @@ export function getInvoiceMonth(
   const month = Number(monthStr);
   const day = Number(dayStr);
 
-  if (day <= closingDay) {
+  if (day < closingDay) {
     return { month, year };
   }
   if (month === 12) {

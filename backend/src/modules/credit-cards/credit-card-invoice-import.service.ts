@@ -85,7 +85,11 @@ export class CreditCardInvoiceImportService {
       const { month: targetMonth, year: targetYear } = getInvoiceMonth(tx.date, card.closingDay);
 
       const strongDuplicate = !!tx.externalRef && existingExternalRefs.has(tx.externalRef);
-      const weakKey = `${targetMonth}|${targetYear}|${tx.amountCents}`;
+      // installment.amount é persistido com o sinal invertido em relação ao
+      // OFX (compra: negativa no banco -> positiva salva; estorno: positiva
+      // no banco -> negativa salva, ver createSingleInstallmentEntry), então
+      // a chave precisa do mesmo sinal invertido para bater com weakKeys.
+      const weakKey = `${targetMonth}|${targetYear}|${-tx.amountCents}`;
       const possibleDuplicate = strongDuplicate || weakKeys.has(weakKey);
 
       const suggestedEntryType =
