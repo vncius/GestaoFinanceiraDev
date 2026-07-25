@@ -301,3 +301,65 @@ describe('CreditCardsService — installment splitting and invoice totals', () =
     expect(installments[0].status).toBe(InstallmentStatus.CANCELED);
   });
 });
+
+describe('CreditCardsService — REFUND (estorno)', () => {
+  let ctx: ReturnType<typeof buildService>;
+
+  beforeEach(() => {
+    ctx = buildService();
+  });
+
+  it('subtracts a REFUND entry from the invoice total (fatura 2000 - estorno 500 = 1500)', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
+    await ctx.service.createEntry(card.id, TENANT_ID, {
+      description: 'Compra grande',
+      expenseCategoryId: randomUUID(),
+      totalAmount: 200000,
+      purchaseDate: '2026-03-05',
+      entryType: CardEntryType.CASH,
+    });
+    await ctx.service.createEntry(card.id, TENANT_ID, {
+      description: 'Estorno de compra',
+      expenseCategoryId: randomUUID(),
+      totalAmount: -50000,
+      purchaseDate: '2026-03-06',
+      entryType: CardEntryType.REFUND,
+    });
+
+    const invoices = await ctx.invoicesRepo.findByCardId(TENANT_ID, card.id);
+    expect(invoices).toHaveLength(1);
+    expect(invoices[0].totalAmount).toBe(150000);
+  });
+
+  it('creates a single installment for a REFUND entry, ignoring installmentsCount', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
+    const { installments } = await ctx.service.createEntry(card.id, TENANT_ID, {
+      description: 'Estorno',
+      expenseCategoryId: randomUUID(),
+      totalAmount: -10000,
+      purchaseDate: '2026-03-05',
+      entryType: CardEntryType.REFUND,
+    });
+
+    expect(installments).toHaveLength(1);
+    expect(installments[0].amount).toBe(-10000);
+  });
+
+  it('rejects updating an entry to REFUND with a positive amount', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
+    const { entry } = await ctx.service.createEntry(card.id, TENANT_ID, {
+      description: 'Compra',
+      expenseCategoryId: randomUUID(),
+      totalAmount: 10000,
+      purchaseDate: '2026-03-05',
+      entryType: CardEntryType.CASH,
+    });
+
+    await expect(
+      ctx.service.updateEntry(card.id, entry.id, TENANT_ID, {
+        entryType: CardEntryType.REFUND,
+        totalAmount: 10000,
+      }),
+    ).rejects.toThrow();
+  });
+});

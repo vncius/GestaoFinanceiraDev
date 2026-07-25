@@ -4,6 +4,7 @@ import { controllers } from '../../container';
 
 const router = Router();
 const controller = controllers.creditCards;
+const invoiceImportController = controllers.creditCardInvoiceImport;
 
 // cards CRUD
 router.get('/', asyncHandler((req, res) => controller.findAll(req, res)));
@@ -22,5 +23,9 @@ router.delete('/:id/entries/:entryId', asyncHandler((req, res) => controller.del
 // invoices
 router.post('/:id/invoices/:invoiceId/pay', asyncHandler((req, res) => controller.payInvoice(req, res)));
 router.post('/:id/invoices/:invoiceId/revert', asyncHandler((req, res) => controller.revertInvoice(req, res)));
+
+// importação de fatura via OFX
+router.post('/:id/invoice-import/parse', asyncHandler((req, res) => invoiceImportController.parse(req, res)));
+router.post('/:id/invoice-import/confirm', asyncHandler((req, res) => invoiceImportController.confirm(req, res)));
 
 export default router;

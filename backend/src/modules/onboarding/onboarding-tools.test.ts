@@ -6,6 +6,7 @@ import { Account } from '../accounts/accounts.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { Category, CategoryType } from '../categories/categories.types';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { createOnboardingToolRegistry } from './onboarding-tools';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingDraftService } from './onboarding-draft.service';
@@ -87,6 +88,7 @@ describe('onboarding tools', () => {
       stateRepo,
       new InMemoryMessagesRepo(),
       accountsRepo as unknown as AccountsRepository,
+      { seedDefaults: async () => {} } as unknown as TenantBootstrapService,
     );
     const draftService = new OnboardingDraftService(onboardingService, stateRepo);
     registry = createOnboardingToolRegistry({

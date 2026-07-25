@@ -20,7 +20,8 @@
     "entryTypes": {
       "cash": "One-time",
       "fixed": "Fixed (recurring)",
-      "installment": "Installments"
+      "installment": "Installments",
+      "refund": "Refund/Credit"
     },
     "confirmRecreate": "Changing the amount, date, type or installments will recreate all installments and may revert paid invoices. Do you want to continue?",
     "validation": {
@@ -44,6 +45,7 @@
   "installments": {
     "title": "Entries ({{count}})",
     "addButton": "Add",
+    "importButton": "Import Invoice (OFX)",
     "emptyState": {
       "title": "No entries this month",
       "description": "Click Add to register a purchase"
@@ -57,13 +59,51 @@
     },
     "entryType": {
       "cash": "One-time",
-      "fixed": "Recurring"
+      "fixed": "Recurring",
+      "refund": "Refund"
     },
     "actions": {
       "edit": "Edit entry",
       "cancel": "Cancel entry"
     },
-    "confirmCancel": "Cancel this entry and all of its installments?"
+    "confirmCancel": "Cancel this entry and all of its installments?",
+    "clearButton": "Clear Invoice",
+    "confirmClearInvoice": "Clear all {{count}} entr(y/ies) in this invoice? This action cannot be undone.",
+    "clearInvoiceError": "Could not clear all entries in this invoice.",
+    "clearInvoiceScopeModal": {
+      "title": "Clear fixed entries",
+      "description": "This invoice ({{monthYear}}) includes fixed/recurring entries. Do you want to delete only the current reference of those, or also the future ones? All other entries (one-time, installments, refunds) will always be fully canceled."
+    }
+  },
+  "invoiceImport": {
+    "title": "Import Invoice (OFX)",
+    "selectFileButton": "Select OFX file",
+    "changeFileButton": "Choose another file",
+    "loading": "Processing file and suggesting categories...",
+    "noEntries": "No entries found in the file.",
+    "table": {
+      "include": "Include",
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "type": "Type",
+      "category": "Category"
+    },
+    "typeOptions": {
+      "cash": "Expense",
+      "refund": "Refund/Credit"
+    },
+    "categoryPlaceholder": "Select...",
+    "installmentBadge": "Installment {{current}}/{{total}}",
+    "createFutureInstallments": "Create the {{count}} future installments?",
+    "warnings": {
+      "duplicate": "Possible duplicate",
+      "previousPayment": "Possibly a previous invoice payment"
+    },
+    "cancelButton": "Cancel",
+    "confirmButton": "Import selected ({{count}})",
+    "importSuccess": "{{count}} entr(y/ies) imported successfully.",
+    "parseError": "Could not process the uploaded file."
   },
   "fixedDeleteModal": {
     "title": "Delete fixed entry",

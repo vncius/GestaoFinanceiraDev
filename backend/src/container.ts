@@ -32,6 +32,7 @@ import { CategoriesService } from './modules/categories/categories.service';
 import { SettingsService } from './modules/settings/settings.service';
 import { ReceivablesService } from './modules/receivables/receivables.service';
 import { CreditCardsService } from './modules/credit-cards/credit-cards.service';
+import { CreditCardInvoiceImportService } from './modules/credit-cards/credit-card-invoice-import.service';
 import { CashFlowService } from './modules/cash-flow/cash-flow.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
@@ -41,6 +42,7 @@ import { createOnboardingToolRegistry } from './modules/onboarding/onboarding-to
 import { OnboardingContextService } from './modules/onboarding/onboarding-context.service';
 import { OnboardingConversationService } from './modules/onboarding/onboarding-conversation.service';
 import { OnboardingApplyService } from './modules/onboarding/onboarding-apply.service';
+import { TenantBootstrapService } from './modules/tenant-bootstrap/tenant-bootstrap.service';
 
 import { AuthController } from './modules/auth/auth.controller';
 import { AccountsController } from './modules/accounts/accounts.controller';
@@ -49,6 +51,7 @@ import { CategoriesController } from './modules/categories/categories.controller
 import { SettingsController } from './modules/settings/settings.controller';
 import { ReceivablesController } from './modules/receivables/receivables.controller';
 import { CreditCardsController } from './modules/credit-cards/credit-cards.controller';
+import { CreditCardInvoiceImportController } from './modules/credit-cards/credit-card-invoice-import.controller';
 import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { BackupController } from './modules/backup/backup.controller';
@@ -78,12 +81,18 @@ export const aiProvider = createAiProvider(aiConfig);
 
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 
-export const authService = new AuthService(usersRepo);
 const auditLogService = new AuditLogService(auditLogRepo);
 const accountsService = new AccountsService(accountsRepo, settingsRepo);
 const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
 const settingsService = new SettingsService(settingsRepo, categoriesRepo, accountsRepo);
+const tenantBootstrapService = new TenantBootstrapService(
+  accountTypesService,
+  accountsService,
+  categoriesService,
+  settingsService,
+);
+export const authService = new AuthService(usersRepo);
 const receivablesService = new ReceivablesService(
   receivablesRepo,
   transactionsRepo,
@@ -97,6 +106,15 @@ const creditCardsService = new CreditCardsService(
   creditCardInvoicesRepo,
   transactionsRepo,
   settingsRepo,
+);
+const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
+  creditCardsService,
+  creditCardEntriesRepo,
+  creditCardInstallmentsRepo,
+  creditCardInvoicesRepo,
+  categoriesRepo,
+  aiProvider,
+  aiConfig,
 );
 const cashFlowService = new CashFlowService(
   receivablesRepo,
@@ -136,6 +154,7 @@ const onboardingService = new OnboardingService(
   onboardingStateRepo,
   onboardingMessagesRepo,
   accountsRepo,
+  tenantBootstrapService,
 );
 const onboardingDraftService = new OnboardingDraftService(onboardingService, onboardingStateRepo);
 export const onboardingToolRegistry = createOnboardingToolRegistry({
@@ -177,6 +196,7 @@ export const controllers = {
   settings: new SettingsController(settingsService),
   receivables: new ReceivablesController(receivablesService),
   creditCards: new CreditCardsController(creditCardsService),
+  creditCardInvoiceImport: new CreditCardInvoiceImportController(creditCardInvoiceImportService),
   cashFlow: new CashFlowController(cashFlowService),
   dashboard: new DashboardController(dashboardService),
   backup: new BackupController(backupService),

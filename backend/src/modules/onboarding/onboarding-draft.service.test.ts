@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { Account } from '../accounts/accounts.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CategoryType } from '../categories/categories.types';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingDraftService } from './onboarding-draft.service';
 import { OnboardingMessagesRepository, OnboardingStateRepository } from './onboarding.repository';
@@ -58,6 +59,7 @@ describe('OnboardingDraftService', () => {
       stateRepo,
       new InMemoryMessagesRepo(),
       new EmptyAccountsRepo() as unknown as AccountsRepository,
+      { seedDefaults: async () => {} } as unknown as TenantBootstrapService,
     );
     service = new OnboardingDraftService(onboardingService, stateRepo);
   });

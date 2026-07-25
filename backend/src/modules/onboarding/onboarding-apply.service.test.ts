@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Account } from '../accounts/accounts.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CategoryType } from '../categories/categories.types';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingDraftService } from './onboarding-draft.service';
 import { OnboardingApplyService, OnboardingApplyServices } from './onboarding-apply.service';
@@ -92,6 +93,7 @@ function setup() {
     stateRepo,
     new InMemoryMessagesRepo(),
     emptyAccountsRepo as unknown as AccountsRepository,
+    { seedDefaults: async () => {} } as unknown as TenantBootstrapService,
   );
   const draftService = new OnboardingDraftService(onboardingService, stateRepo);
 

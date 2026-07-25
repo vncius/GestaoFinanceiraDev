@@ -16,26 +16,42 @@ export const createCardEntrySchema = z
   .object({
     description: z.string().min(1, 'validation.description.required'),
     expenseCategoryId: z.string().uuid('validation.expenseCategoryId.invalid'),
-    totalAmount: z.number().int().positive('validation.totalAmount.positive'),
+    totalAmount: z.number().int().refine((v) => v !== 0, 'validation.totalAmount.nonZero'),
     purchaseDate: z.string({ required_error: 'validation.purchaseDate.required' }),
     entryType: z.nativeEnum(CardEntryType),
     installmentsCount: z.number().int().min(2).optional(),
     notes: z.string().nullable().optional(),
   })
-  .refine(
-    (d) =>
-      d.entryType !== CardEntryType.INSTALLMENT ||
-      (d.installmentsCount != null && d.installmentsCount >= 2),
-    {
-      message: 'validation.installmentsCount.required',
-      path: ['installmentsCount'],
-    },
-  );
+  .superRefine((d, ctx) => {
+    if (d.entryType === CardEntryType.INSTALLMENT && (d.installmentsCount == null || d.installmentsCount < 2)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'validation.installmentsCount.required',
+        path: ['installmentsCount'],
+      });
+    }
+    // Estorno é sempre um valor negativo (reduz o total da fatura); os
+    // demais tipos representam despesa e devem ser sempre positivos.
+    if (d.entryType === CardEntryType.REFUND && d.totalAmount >= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'validation.totalAmount.mustBeNegativeForRefund',
+        path: ['totalAmount'],
+      });
+    }
+    if (d.entryType !== CardEntryType.REFUND && d.totalAmount <= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'validation.totalAmount.positive',
+        path: ['totalAmount'],
+      });
+    }
+  });
 
 export const updateCardEntrySchema = z.object({
   description: z.string().min(1).optional(),
   expenseCategoryId: z.string().uuid().optional(),
-  totalAmount: z.number().int().positive().optional(),
+  totalAmount: z.number().int().refine((v) => v !== 0, 'validation.totalAmount.nonZero').optional(),
   purchaseDate: z.string().optional(),
   entryType: z.nativeEnum(CardEntryType).optional(),
   installmentsCount: z.number().int().min(2).optional(),

@@ -122,7 +122,7 @@ export interface FinancialTransaction {
 }
 
 // ── Credit Cards ──────────────────────────────────────────────────────────────
-export type CardEntryType = 'CASH' | 'FIXED' | 'INSTALLMENT';
+export type CardEntryType = 'CASH' | 'FIXED' | 'INSTALLMENT' | 'REFUND';
 export type InstallmentStatus = 'OPEN' | 'PAID' | 'CANCELED';
 export type InvoiceStatus = 'OPEN' | 'CLOSED' | 'PAID' | 'OVERDUE' | 'CANCELED';
 
@@ -156,6 +156,7 @@ export interface CreditCardEntry {
   installmentsCount: number;
   closingDayUsed: number;
   notes: string | null;
+  externalRef: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -201,6 +202,28 @@ export interface CardFlowResponse {
     paidAmount: number;
     openAmount: number;
   };
+}
+
+// ── Importação de fatura (OFX) ───────────────────────────────────────────────
+
+export interface InvoiceImportInstallmentInfo {
+  current: number;
+  total: number;
+}
+
+export interface InvoiceImportPreviewEntry {
+  key: string;
+  date: string;
+  description: string;
+  amountCents: number;
+  suggestedEntryType: 'CASH' | 'INSTALLMENT' | 'REFUND';
+  installmentInfo: InvoiceImportInstallmentInfo | null;
+  suggestedCategoryId: string | null;
+  possibleDuplicate: boolean;
+  possiblePreviousInvoicePayment: boolean;
+  externalRef: string | null;
+  targetMonth: number;
+  targetYear: number;
 }
 
 // ── Cash Flow ─────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ export enum CardEntryType {
   CASH = 'CASH',
   FIXED = 'FIXED',
   INSTALLMENT = 'INSTALLMENT',
+  REFUND = 'REFUND',
 }
 
 export enum InstallmentStatus {
@@ -41,9 +42,13 @@ export interface CreditCardEntry {
   totalAmount: number;                   // centavos
   purchaseDate: string;                  // ISO
   entryType: CardEntryType;
-  installmentsCount: number;             // 1 para à vista/fixo
+  installmentsCount: number;             // 1 para à vista/fixo/estorno
   closingDayUsed: number;                // dia de fechamento do cartão vigente na criação/recriação das parcelas
   notes: string | null;
+  // FITID do OFX quando o lançamento vier de uma importação de fatura;
+  // null para lançamentos digitados manualmente. Usado para deduplicar
+  // reimportações do mesmo arquivo/período.
+  externalRef: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;

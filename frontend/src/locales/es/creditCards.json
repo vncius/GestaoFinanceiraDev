@@ -20,7 +20,8 @@
     "entryTypes": {
       "cash": "Al contado",
       "fixed": "Fijo (recurrente)",
-      "installment": "En cuotas"
+      "installment": "En cuotas",
+      "refund": "Reembolso/Crédito"
     },
     "confirmRecreate": "Cambiar el monto, la fecha, el tipo o las cuotas volverá a crear todas las cuotas y puede revertir facturas pagadas. ¿Desea continuar?",
     "validation": {
@@ -44,6 +45,7 @@
   "installments": {
     "title": "Movimientos ({{count}})",
     "addButton": "Agregar",
+    "importButton": "Importar Factura (OFX)",
     "emptyState": {
       "title": "Ningún movimiento este mes",
       "description": "Haga clic en Agregar para registrar una compra"
@@ -57,13 +59,51 @@
     },
     "entryType": {
       "cash": "Al contado",
-      "fixed": "Recurrente"
+      "fixed": "Recurrente",
+      "refund": "Reembolso"
     },
     "actions": {
       "edit": "Editar movimiento",
       "cancel": "Cancelar movimiento"
     },
-    "confirmCancel": "¿Cancelar este movimiento y todas sus cuotas?"
+    "confirmCancel": "¿Cancelar este movimiento y todas sus cuotas?",
+    "clearButton": "Limpiar Factura",
+    "confirmClearInvoice": "¿Limpiar los {{count}} movimiento(s) de esta factura? Esta acción no se puede deshacer.",
+    "clearInvoiceError": "No se pudieron limpiar todos los movimientos de esta factura.",
+    "clearInvoiceScopeModal": {
+      "title": "Limpiar movimientos fijos",
+      "description": "Esta factura ({{monthYear}}) incluye movimientos fijos/recurrentes. ¿Desea eliminar solo la referencia actual de esos ítems, o también las futuras? Los demás movimientos (al contado, en cuotas, reembolsos) siempre se cancelarán por completo."
+    }
+  },
+  "invoiceImport": {
+    "title": "Importar Factura (OFX)",
+    "selectFileButton": "Seleccionar archivo OFX",
+    "changeFileButton": "Elegir otro archivo",
+    "loading": "Procesando archivo y sugiriendo categorías...",
+    "noEntries": "No se encontraron movimientos en el archivo.",
+    "table": {
+      "include": "Incluir",
+      "date": "Fecha",
+      "description": "Descripción",
+      "amount": "Monto",
+      "type": "Tipo",
+      "category": "Categoría"
+    },
+    "typeOptions": {
+      "cash": "Gasto",
+      "refund": "Reembolso/Crédito"
+    },
+    "categoryPlaceholder": "Seleccionar...",
+    "installmentBadge": "Cuota {{current}}/{{total}}",
+    "createFutureInstallments": "¿Crear las {{count}} cuotas futuras?",
+    "warnings": {
+      "duplicate": "Posible duplicado",
+      "previousPayment": "Posible pago de factura anterior"
+    },
+    "cancelButton": "Cancelar",
+    "confirmButton": "Importar seleccionados ({{count}})",
+    "importSuccess": "{{count}} movimiento(s) importado(s) con éxito.",
+    "parseError": "No se pudo procesar el archivo enviado."
   },
   "fixedDeleteModal": {
     "title": "Eliminar movimiento fijo",

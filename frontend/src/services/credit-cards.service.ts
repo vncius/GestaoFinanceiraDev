@@ -20,7 +20,7 @@ export interface CreateCardEntryPayload {
   expenseCategoryId: string;
   totalAmount: number;
   purchaseDate: string;
-  entryType: 'CASH' | 'FIXED' | 'INSTALLMENT';
+  entryType: 'CASH' | 'FIXED' | 'INSTALLMENT' | 'REFUND';
   installmentsCount?: number;
   notes?: string | null;
 }

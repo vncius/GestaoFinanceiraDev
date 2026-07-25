@@ -3,6 +3,7 @@ import { Account } from '../accounts/accounts.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { Category } from '../categories/categories.types';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { loadAiConfig } from '../ai/ai.config';
 import { AiProviderUnavailableError } from '../ai/ai.errors';
 import { FakeAiProvider } from '../ai/providers/fake-ai.provider';
@@ -84,6 +85,7 @@ function setup(options: { maxToolRounds?: string; maxTurns?: number } = {}) {
     stateRepo,
     messagesRepo,
     accountsRepo as unknown as AccountsRepository,
+    { seedDefaults: async () => {} } as unknown as TenantBootstrapService,
   );
   const draftService = new OnboardingDraftService(onboardingService, stateRepo);
   const registry = createOnboardingToolRegistry({

@@ -20,7 +20,8 @@
     "entryTypes": {
       "cash": "À vista",
       "fixed": "Fixo (recorrente)",
-      "installment": "Parcelado"
+      "installment": "Parcelado",
+      "refund": "Estorno/Crédito"
     },
     "confirmRecreate": "Alterar valor, data, tipo ou parcelas irá recriar todas as parcelas e pode reverter faturas pagas. Deseja continuar?",
     "validation": {
@@ -44,6 +45,7 @@
   "installments": {
     "title": "Lançamentos ({{count}})",
     "addButton": "Adicionar",
+    "importButton": "Importar Fatura (OFX)",
     "emptyState": {
       "title": "Nenhum lançamento neste mês",
       "description": "Clique em Adicionar para registrar uma compra"
@@ -57,13 +59,51 @@
     },
     "entryType": {
       "cash": "À vista",
-      "fixed": "Recorrente"
+      "fixed": "Recorrente",
+      "refund": "Estorno"
     },
     "actions": {
       "edit": "Editar lançamento",
       "cancel": "Cancelar lançamento"
     },
-    "confirmCancel": "Cancelar este lançamento e todas as suas parcelas?"
+    "confirmCancel": "Cancelar este lançamento e todas as suas parcelas?",
+    "clearButton": "Limpar Fatura",
+    "confirmClearInvoice": "Limpar todos os {{count}} lançamento(s) desta fatura? Esta ação não pode ser desfeita.",
+    "clearInvoiceError": "Não foi possível limpar todos os lançamentos desta fatura.",
+    "clearInvoiceScopeModal": {
+      "title": "Limpar lançamentos fixos",
+      "description": "Esta fatura ({{monthYear}}) inclui lançamentos fixos/recorrentes. Deseja excluir apenas a referência atual desses itens, ou também as futuras? Os demais lançamentos (à vista, parcelados, estornos) serão sempre cancelados por completo."
+    }
+  },
+  "invoiceImport": {
+    "title": "Importar Fatura (OFX)",
+    "selectFileButton": "Selecionar arquivo OFX",
+    "changeFileButton": "Escolher outro arquivo",
+    "loading": "Processando arquivo e sugerindo categorias...",
+    "noEntries": "Nenhum lançamento encontrado no arquivo.",
+    "table": {
+      "include": "Incluir",
+      "date": "Data",
+      "description": "Descrição",
+      "amount": "Valor",
+      "type": "Tipo",
+      "category": "Categoria"
+    },
+    "typeOptions": {
+      "cash": "Despesa",
+      "refund": "Estorno/Crédito"
+    },
+    "categoryPlaceholder": "Selecione...",
+    "installmentBadge": "Parcela {{current}}/{{total}}",
+    "createFutureInstallments": "Criar as {{count}} parcelas futuras?",
+    "warnings": {
+      "duplicate": "Possível duplicado",
+      "previousPayment": "Possível pagamento de fatura anterior"
+    },
+    "cancelButton": "Cancelar",
+    "confirmButton": "Importar selecionados ({{count}})",
+    "importSuccess": "{{count}} lançamento(s) importado(s) com sucesso.",
+    "parseError": "Não foi possível processar o arquivo enviado."
   },
   "fixedDeleteModal": {
     "title": "Excluir lançamento fixo",

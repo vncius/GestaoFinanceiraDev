@@ -26,7 +26,10 @@ em mobile (seção 8).
   `https://www.googleapis.com/oauth2/v3/certs`), sessão própria emitida como JWT HS256
   (`jose SignJWT`), guardado em cookie `httpOnly`. Ver `backend/src/modules/auth/`.
 - **Multi-tenant**: `tenantId` embutido no JWT da sessão, nunca em header de cliente.
-  Primeiro usuário do sistema herda um tenant default; os demais recebem tenant novo.
+  Cada novo usuário recebe um tenant novo e vazio; dados padrão (conta, tipos de conta
+  e categorias) só são criados automaticamente se o usuário optar por "Configuração
+  Manual" no onboarding em vez do assistente de IA — ver
+  `backend/src/modules/tenant-bootstrap/` e `OnboardingService.skip()`.
 - **IA**: abstração de provedor própria (`AI_PROVIDER=fake|anthropic|openai`) — ver
   `docs/architecture/ai-platform.md`.
 - **Padrões de arquitetura**:

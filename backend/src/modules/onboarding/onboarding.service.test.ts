@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AppError } from '../../shared/errors/app-error';
 import { Account } from '../accounts/accounts.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingMessagesRepository, OnboardingStateRepository } from './onboarding.repository';
 import {
@@ -94,6 +95,13 @@ function makeAccount(tenantId: string): Account {
   } as Account;
 }
 
+class FakeTenantBootstrap {
+  calls: string[] = [];
+  async seedDefaults(tenantId: string): Promise<void> {
+    this.calls.push(tenantId);
+  }
+}
+
 function makeMessage(tenantId: string, turn: number, createdAt: string): OnboardingMessage {
   return {
     id: `msg-${Math.random()}`,
@@ -110,13 +118,20 @@ describe('OnboardingService', () => {
   let stateRepo: InMemoryStateRepo;
   let messagesRepo: InMemoryMessagesRepo;
   let accountsRepo: InMemoryAccountsRepo;
+  let tenantBootstrap: FakeTenantBootstrap;
   let service: OnboardingService;
 
   beforeEach(() => {
     stateRepo = new InMemoryStateRepo();
     messagesRepo = new InMemoryMessagesRepo();
     accountsRepo = new InMemoryAccountsRepo();
-    service = new OnboardingService(stateRepo, messagesRepo, accountsRepo);
+    tenantBootstrap = new FakeTenantBootstrap();
+    service = new OnboardingService(
+      stateRepo,
+      messagesRepo,
+      accountsRepo,
+      tenantBootstrap as unknown as TenantBootstrapService,
+    );
   });
 
   describe('getState', () => {
@@ -154,6 +169,11 @@ describe('OnboardingService', () => {
     it('skip a partir de PENDING', async () => {
       const state = await service.skip(TENANT_ID);
       expect(state.status).toBe(OnboardingStatus.SKIPPED);
+    });
+
+    it('skip aciona o seedDefaults — é o único caminho que cria a base padrão automaticamente', async () => {
+      await service.skip(TENANT_ID);
+      expect(tenantBootstrap.calls).toEqual([TENANT_ID]);
     });
 
     it('completeManual a partir de SKIPPED', async () => {

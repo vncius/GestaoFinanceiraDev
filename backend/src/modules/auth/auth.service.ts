@@ -2,7 +2,6 @@ import { createRemoteJWKSet, jwtVerify, SignJWT } from 'jose';
 import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
-import { DEFAULT_TENANT_ID } from '../../shared/tenant/tenant.constants';
 import { UsersMongoRepository } from './users.mongo-repository';
 import { User } from './auth.types';
 
@@ -86,13 +85,10 @@ export class AuthService {
       return existing;
     }
 
-    const isFirstUser = (await this.usersRepo.count()) === 0;
     const now = nowISO();
     const user: User = {
       id: generateId(),
-      // Primeiro usuário do sistema herda o tenant default: todos os dados
-      // criados antes de existir login (sob DEFAULT_TENANT_ID) passam a ser dele.
-      tenantId: isFirstUser ? DEFAULT_TENANT_ID : generateId(),
+      tenantId: generateId(),
       email,
       name,
       provider,

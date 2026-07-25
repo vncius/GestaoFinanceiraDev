@@ -16,10 +16,6 @@ export class UsersMongoRepository {
     return collection;
   }
 
-  async count(): Promise<number> {
-    return this.collection().countDocuments();
-  }
-
   async findByEmail(email: string): Promise<User | null> {
     return this.collection().findOne({ email } as never, { projection: { _id: 0 } });
   }

@@ -2,6 +2,7 @@ import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
 import { AccountsRepository } from '../accounts/accounts.repository';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { OnboardingMessagesRepository, OnboardingStateRepository } from './onboarding.repository';
 import {
   createEmptyDraft,
@@ -41,6 +42,7 @@ export class OnboardingService {
     private readonly stateRepo: OnboardingStateRepository,
     private readonly messagesRepo: OnboardingMessagesRepository,
     private readonly accountsRepo: AccountsRepository,
+    private readonly tenantBootstrap: TenantBootstrapService,
   ) {}
 
   /**
@@ -69,9 +71,17 @@ export class OnboardingService {
     });
   }
 
-  /** Usuário dispensou o assistente para configurar manualmente. */
+  /**
+   * Usuário dispensou o assistente para configurar manualmente. Esse é o
+   * único gatilho de seedDefaults: só quando o usuário opta explicitamente
+   * por não usar o assistente de IA é que a base mínima (conta principal,
+   * tipos de conta, categorias) é criada automaticamente — se ele seguir
+   * pelo assistente, é a IA quem propõe/cria essas entidades.
+   */
   async skip(tenantId: string): Promise<OnboardingState> {
-    return this.transition(tenantId, OnboardingStatus.SKIPPED);
+    const state = await this.transition(tenantId, OnboardingStatus.SKIPPED);
+    await this.tenantBootstrap.seedDefaults(tenantId);
+    return state;
   }
 
   /** Configuração manual concluída (fora do assistente). */

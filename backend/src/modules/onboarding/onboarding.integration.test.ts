@@ -43,6 +43,7 @@ import {
   CreditCardInvoice,
 } from '../credit-cards/credit-cards.types';
 import { CreditCardsService } from '../credit-cards/credit-cards.service';
+import { TenantBootstrapService } from '../tenant-bootstrap/tenant-bootstrap.service';
 import { loadAiConfig } from '../ai/ai.config';
 import { AiProviderUnavailableError } from '../ai/ai.errors';
 import { FakeAiProvider } from '../ai/providers/fake-ai.provider';
@@ -298,6 +299,7 @@ function buildEnvironment() {
     onboardingStateRepo,
     onboardingMessagesRepo,
     accountsRepo,
+    { seedDefaults: async () => {} } as unknown as TenantBootstrapService,
   );
   const draftService = new OnboardingDraftService(onboardingService, onboardingStateRepo);
   const toolRegistry = createOnboardingToolRegistry({

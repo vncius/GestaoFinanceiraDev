@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
+import { getInvoiceMonth, addMonths, monthKey } from './credit-cards.date-utils';
 import { SettingsRepository } from '../settings/settings.repository';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
@@ -228,10 +229,10 @@ export class CreditCardsService {
   ): Promise<{ entry: CreditCardEntry; installments: CreditCardInstallment[] }> {
     const card = await this.findById(cardId, tenantId);
 
-    const firstMonth = this.getInvoiceMonth(input.purchaseDate, card.closingDay);
+    const firstMonth = getInvoiceMonth(input.purchaseDate, card.closingDay);
 
     let count: number;
-    if (input.entryType === CardEntryType.CASH) {
+    if (input.entryType === CardEntryType.CASH || input.entryType === CardEntryType.REFUND) {
       count = 1;
     } else if (input.entryType === CardEntryType.FIXED) {
       // Fixo é recorrente por tempo indeterminado: cria apenas a referência
@@ -257,6 +258,7 @@ export class CreditCardsService {
       installmentsCount: count,
       closingDayUsed: card.closingDay,
       notes: input.notes ?? null,
+      externalRef: null,
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -266,7 +268,7 @@ export class CreditCardsService {
     const invoiceIdsToRecalc = new Set<string>();
 
     for (let i = 0; i < count; i++) {
-      const { month, year } = this.addMonths(
+      const { month, year } = addMonths(
         firstMonth.month,
         firstMonth.year,
         i,
@@ -385,8 +387,18 @@ export class CreditCardsService {
     const newPurchaseDate = input.purchaseDate ?? entry.purchaseDate;
     const newEntryType = (input.entryType ?? entry.entryType) as CardEntryType;
 
+    // O schema só valida o sinal na criação (lá o entryType é sempre
+    // obrigatório); aqui o update é parcial, então a checagem precisa do
+    // valor efetivo já resolvido (newEntryType/newTotalAmount).
+    if (newEntryType === CardEntryType.REFUND && newTotalAmount >= 0) {
+      throw new AppError('Estorno deve ter valor negativo.', 400, 'creditCardEntry.totalAmount.mustBeNegativeForRefund');
+    }
+    if (newEntryType !== CardEntryType.REFUND && newTotalAmount <= 0) {
+      throw new AppError('Valor do lançamento deve ser positivo.', 400, 'creditCardEntry.totalAmount.positive');
+    }
+
     let count: number;
-    if (newEntryType === CardEntryType.CASH) {
+    if (newEntryType === CardEntryType.CASH || newEntryType === CardEntryType.REFUND) {
       count = 1;
     } else if (newEntryType === CardEntryType.FIXED) {
       count = 1;
@@ -408,7 +420,7 @@ export class CreditCardsService {
 
     // 5. Recria parcelas usando o fechamento vigente na criação do lançamento
     // (não o closingDay atual do cartão, que pode ter mudado desde então)
-    const firstMonth = this.getInvoiceMonth(newPurchaseDate, entry.closingDayUsed);
+    const firstMonth = getInvoiceMonth(newPurchaseDate, entry.closingDayUsed);
     const base = Math.floor(newTotalAmount / count);
     const remainder = newTotalAmount - base * count;
 
@@ -416,7 +428,7 @@ export class CreditCardsService {
     const invoiceIdsToRecalc = new Set<string>();
 
     for (let i = 0; i < count; i++) {
-      const { month, year } = this.addMonths(firstMonth.month, firstMonth.year, i);
+      const { month, year } = addMonths(firstMonth.month, firstMonth.year, i);
       const amount = base + (i === 0 ? remainder : 0);
       const invoice = await this.findOrCreateInvoice(tenantId, cardId, month, year, card.dueDay);
 
@@ -502,14 +514,14 @@ export class CreditCardsService {
     referenceYear: number,
   ): Promise<void> {
     const now = nowISO();
-    const refKey = this.monthKey(referenceMonth, referenceYear);
+    const refKey = monthKey(referenceMonth, referenceYear);
 
     const installments = await this.installmentsRepo.findByEntryId(tenantId, entry.id);
     const affectedInvoiceIds = new Set<string>();
 
     const toCancel = installments.filter((i) => {
       if (i.status === InstallmentStatus.CANCELED) return false;
-      const key = this.monthKey(i.month, i.year);
+      const key = monthKey(i.month, i.year);
       return scope === 'CURRENT' ? key === refKey : key >= refKey;
     });
 
@@ -625,39 +637,8 @@ export class CreditCardsService {
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────────
-
-  // Extrai ano/mês/dia direto da string ISO (sem passar por Date/timezone local),
-  // para não sofrer o deslocamento de um dia em fusos com offset negativo (ex.: UTC-3).
-  private getInvoiceMonth(
-    purchaseDateISO: string,
-    closingDay: number,
-  ): { month: number; year: number } {
-    const [yearStr, monthStr, dayStr] = purchaseDateISO.slice(0, 10).split('-');
-    const year = Number(yearStr);
-    const month = Number(monthStr);
-    const day = Number(dayStr);
-
-    if (day <= closingDay) {
-      return { month, year };
-    }
-    if (month === 12) {
-      return { month: 1, year: year + 1 };
-    }
-    return { month: month + 1, year };
-  }
-
-  private addMonths(
-    month: number,
-    year: number,
-    count: number,
-  ): { month: number; year: number } {
-    const d = new Date(year, month - 1 + count, 1);
-    return { month: d.getMonth() + 1, year: d.getFullYear() };
-  }
-
-  private monthKey(month: number, year: number): number {
-    return year * 12 + month;
-  }
+  // getInvoiceMonth/addMonths/monthKey vivem em credit-cards.date-utils.ts —
+  // são funções puras reaproveitadas pelo serviço de importação de fatura.
 
   // Lançamentos do tipo FIXED (ex.: assinaturas) são recorrentes por tempo
   // indeterminado: em vez de criar todas as parcelas de uma vez, cada nova
@@ -679,23 +660,23 @@ export class CreditCardsService {
     let lastYear = 0;
     let lastNumber = 0;
     for (const i of existing) {
-      if (this.monthKey(i.month, i.year) > this.monthKey(lastMonth, lastYear)) {
+      if (monthKey(i.month, i.year) > monthKey(lastMonth, lastYear)) {
         lastMonth = i.month;
         lastYear = i.year;
       }
       if (i.installmentNumber > lastNumber) lastNumber = i.installmentNumber;
     }
 
-    if (this.monthKey(lastMonth, lastYear) >= this.monthKey(targetMonth, targetYear)) return;
+    if (monthKey(lastMonth, lastYear) >= monthKey(targetMonth, targetYear)) return;
 
     const now = nowISO();
-    let cursor = this.addMonths(lastMonth, lastYear, 1);
+    let cursor = addMonths(lastMonth, lastYear, 1);
     let number = lastNumber;
 
     const installmentsToCreate: CreditCardInstallment[] = [];
     const invoiceIdsToRecalc = new Set<string>();
 
-    while (this.monthKey(cursor.month, cursor.year) <= this.monthKey(targetMonth, targetYear)) {
+    while (monthKey(cursor.month, cursor.year) <= monthKey(targetMonth, targetYear)) {
       number += 1;
       const invoice = await this.findOrCreateInvoice(tenantId, card.id, cursor.month, cursor.year, card.dueDay);
 
@@ -714,7 +695,7 @@ export class CreditCardsService {
         updatedAt: now,
       });
       invoiceIdsToRecalc.add(invoice.id);
-      cursor = this.addMonths(cursor.month, cursor.year, 1);
+      cursor = addMonths(cursor.month, cursor.year, 1);
     }
 
     await this.installmentsRepo.createMany(installmentsToCreate);

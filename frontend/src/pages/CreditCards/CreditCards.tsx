@@ -8,8 +8,10 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Eraser,
   ChevronRight,
   CreditCard as CreditCardIcon,
+  Upload,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import {
@@ -28,10 +30,12 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DateInput } from '../../components/ui/DateInput';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
+import { ImportInvoiceModal } from './ImportInvoiceModal';
 import { IconActionButton } from '../../components/ui/IconActionButton';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { formatDate, formatMonthYear, firstDayOfMonthISO, toInputDate } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../contexts/ToastContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 const INPUT =
@@ -53,7 +57,7 @@ interface EntryFormState {
   expenseCategoryId: string;
   totalAmount: string;
   purchaseDate: string;
-  entryType: 'CASH' | 'FIXED' | 'INSTALLMENT';
+  entryType: 'CASH' | 'FIXED' | 'INSTALLMENT' | 'REFUND';
   installmentsCount: string;
   notes: string;
 }
@@ -84,6 +88,7 @@ function EntryModal({
     CASH: t('entryModal.entryTypes.cash'),
     FIXED: t('entryModal.entryTypes.fixed'),
     INSTALLMENT: t('entryModal.entryTypes.installment'),
+    REFUND: t('entryModal.entryTypes.refund'),
   };
   const expenseCats = categories.filter((c) => c.type === 'EXPENSE' && c.active);
   const isEdit = !!item;
@@ -91,7 +96,7 @@ function EntryModal({
   const init = (): EntryFormState => ({
     description: item?.description ?? '',
     expenseCategoryId: item?.expenseCategoryId ?? (expenseCats[0]?.id ?? ''),
-    totalAmount: item ? String(centsToFloat(item.totalAmount)) : '',
+    totalAmount: item ? String(Math.abs(centsToFloat(item.totalAmount))) : '',
     purchaseDate: item ? toInputDate(item.purchaseDate) : firstDayOfMonthISO(month, year),
     entryType: (item?.entryType as EntryFormState['entryType']) ?? 'CASH',
     installmentsCount: item ? String(item.installmentsCount) : '2',
@@ -112,11 +117,14 @@ function EntryModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const cents = floatToCents(parseFloat(form.totalAmount) || 0);
+    const absCents = Math.abs(floatToCents(parseFloat(form.totalAmount) || 0));
+    // Estorno reduz o total da fatura: o usuário digita um valor positivo
+    // (ex.: 500,00), mas internamente é armazenado como negativo.
+    const cents = form.entryType === 'REFUND' ? -absCents : absCents;
     const missing = getMissingFields([
       { label: t('entryModal.validation.description'), valid: !!form.description },
       { label: t('entryModal.validation.category'), valid: !!form.expenseCategoryId },
-      { label: t('entryModal.validation.totalAmount'), valid: !!cents },
+      { label: t('entryModal.validation.totalAmount'), valid: !!absCents },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
 
@@ -251,9 +259,12 @@ function CardDetail({
   const { t } = useTranslation('creditCards');
   const qc = useQueryClient();
   const [showEntryModal, setShowEntryModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<CreditCardEntry | undefined>(undefined);
   const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
   const [fixedDeleteTarget, setFixedDeleteTarget] = useState<CreditCardEntry | null>(null);
+  const [showClearInvoiceScope, setShowClearInvoiceScope] = useState(false);
+  const [clearingInvoice, setClearingInvoice] = useState(false);
 
   const flowKey = ['creditCards', 'flow', card.id, month, year] as const;
 
@@ -280,6 +291,7 @@ function CardDetail({
   };
 
   const { confirm } = useDialog();
+  const { showError } = useToast();
 
   const addEntryMut = useMutation({
     mutationFn: (payload: CreateCardEntryPayload) =>
@@ -334,6 +346,46 @@ function CardDetail({
   const entryMap = new Map(entries.map((e) => [e.id, e]));
   const catMap = new Map(categories.map((c) => [c.id, c.name]));
   const activeInstallments = installments.filter((i) => i.status !== 'CANCELED');
+  const activeEntries = entries.filter((e) => e.active);
+  const hasFixedEntry = activeEntries.some((e) => e.entryType === 'FIXED');
+
+  // Limpar fatura reaproveita a mesma regra de exclusão individual: itens
+  // fixos/recorrentes pedem um escopo (só esta referência ou também as
+  // futuras) via ScopedDeleteModal; os demais tipos são sempre cancelados
+  // por inteiro (deleteEntry já ignora o scope quando o tipo não é FIXED).
+  async function runClearInvoice(scope?: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+    setClearingInvoice(true);
+    try {
+      for (const entry of activeEntries) {
+        await CreditCardsService.deleteEntry(
+          card.id,
+          entry.id,
+          scope ? { scope, month, year } : undefined,
+        );
+      }
+      invalidate();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('installments.clearInvoiceError'));
+    } finally {
+      setClearingInvoice(false);
+      setShowClearInvoiceScope(false);
+    }
+  }
+
+  async function handleClearInvoice() {
+    if (activeEntries.length === 0) return;
+    try {
+      if (!(await confirm(t('installments.confirmClearInvoice', { count: activeEntries.length })))) return;
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('installments.clearInvoiceError'));
+      return;
+    }
+    if (hasFixedEntry) {
+      setShowClearInvoiceScope(true);
+    } else {
+      await runClearInvoice();
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -408,14 +460,36 @@ function CardDetail({
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
             {t('installments.title', { count: activeInstallments.length })}
           </h3>
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={<Plus size={14} />}
-            onClick={() => setShowEntryModal(true)}
-          >
-            {t('installments.addButton')}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Upload size={14} />}
+              onClick={() => setShowImportModal(true)}
+            >
+              {t('installments.importButton')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Plus size={14} />}
+              onClick={() => setShowEntryModal(true)}
+            >
+              {t('installments.addButton')}
+            </Button>
+            {activeEntries.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<Eraser size={14} />}
+                onClick={handleClearInvoice}
+                loading={clearingInvoice}
+                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+              >
+                {t('installments.clearButton')}
+              </Button>
+            )}
+          </div>
         </div>
 
         {activeInstallments.length === 0 ? (
@@ -459,9 +533,17 @@ function CardDetail({
                           ? t('installments.entryType.cash')
                           : entry?.entryType === 'FIXED'
                           ? t('installments.entryType.fixed')
+                          : entry?.entryType === 'REFUND'
+                          ? t('installments.entryType.refund')
                           : `${inst.installmentNumber}/${inst.totalInstallments}`}
                       </td>
-                      <td className="px-3 py-3 text-right font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                      <td
+                        className={`px-3 py-3 text-right font-semibold whitespace-nowrap ${
+                          inst.amount < 0
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-gray-800 dark:text-gray-100'
+                        }`}
+                      >
                         {formatCurrency(inst.amount)}
                       </td>
                       <td className="px-1 sm:px-3 py-3" onClick={(e) => e.stopPropagation()}>
@@ -519,6 +601,14 @@ function CardDetail({
         isSaving={updateEntryMut.isPending}
       />
 
+      <ImportInvoiceModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        cardId={card.id}
+        categories={categories}
+        onImported={invalidate}
+      />
+
       <ScopedDeleteModal
         open={!!fixedDeleteTarget}
         onClose={() => setFixedDeleteTarget(null)}
@@ -538,6 +628,16 @@ function CardDetail({
           fixedDeleteTarget &&
           deleteEntryMut.mutate({ entryId: fixedDeleteTarget.id, scope: 'CURRENT_AND_FUTURE' })
         }
+      />
+
+      <ScopedDeleteModal
+        open={showClearInvoiceScope}
+        onClose={() => setShowClearInvoiceScope(false)}
+        title={t('installments.clearInvoiceScopeModal.title')}
+        loading={clearingInvoice}
+        description={t('installments.clearInvoiceScopeModal.description', { monthYear: formatMonthYear(month, year) })}
+        onDeleteCurrent={() => runClearInvoice('CURRENT')}
+        onDeleteFuture={() => runClearInvoice('CURRENT_AND_FUTURE')}
       />
 
       <PayInvoiceAccountModal
