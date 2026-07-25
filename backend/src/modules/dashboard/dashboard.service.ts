@@ -235,12 +235,14 @@ export class DashboardService {
 
       const mYM = `${y}-${String(m).padStart(2, '0')}`;
 
+      // Receita bruta (antes da reserva) — comparável ao total de saídas,
+      // já que o valor reservado não é gasto, apenas realocado para outra conta.
       const mIncome = allReceivables
         .filter((r) => {
           if (r.status !== ReceivableStatus.RECEIVED) return false;
           return r.expectedPaymentDate.slice(0, 7) === mYM;
         })
-        .reduce((s, r) => s + r.netAmount, 0);
+        .reduce((s, r) => s + r.grossAmount, 0);
 
       const mExpenses = allTransactions
         .filter((t) => {

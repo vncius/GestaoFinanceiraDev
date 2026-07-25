@@ -220,53 +220,47 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
         </div>
       </div>
 
-      <div className="flex items-end gap-3 h-36">
-        {evolution.map((item) => (
-          <div
-            key={`${item.month}-${item.year}`}
-            className="flex-1 flex flex-col items-center gap-1.5 min-w-0"
-          >
-            <div className="flex items-end gap-0.5 h-28 w-full">
-              <div
-                className="bg-green-400 flex-1 rounded-t-sm transition-all"
-                style={{
-                  height: `${Math.max((item.income / maxVal) * 100, item.income > 0 ? 2 : 0)}%`,
-                  minHeight: item.income > 0 ? 2 : 0,
-                }}
-                title={t('evolutionChart.incomeTooltip', { amount: formatCurrency(item.income) })}
-              />
-              <div
-                className="bg-red-400 flex-1 rounded-t-sm transition-all"
-                style={{
-                  height: `${Math.max((item.expenses / maxVal) * 100, item.expenses > 0 ? 2 : 0)}%`,
-                  minHeight: item.expenses > 0 ? 2 : 0,
-                }}
-                title={t('evolutionChart.expensesTooltip', { amount: formatCurrency(item.expenses) })}
-              />
+      <div className="overflow-x-auto">
+        <div className="flex items-end gap-3 min-w-max px-0.5">
+          {evolution.map((item) => (
+            <div
+              key={`${item.month}-${item.year}`}
+              className="flex-1 flex flex-col items-center gap-1.5 w-16 shrink-0"
+            >
+              <div className="flex items-end gap-0.5 h-28 w-full">
+                <div
+                  className="bg-green-400 flex-1 rounded-t-sm transition-all"
+                  style={{
+                    height: `${Math.max((item.income / maxVal) * 100, item.income > 0 ? 2 : 0)}%`,
+                    minHeight: item.income > 0 ? 2 : 0,
+                  }}
+                  title={t('evolutionChart.incomeTooltip', { amount: formatCurrency(item.income) })}
+                />
+                <div
+                  className="bg-red-400 flex-1 rounded-t-sm transition-all"
+                  style={{
+                    height: `${Math.max((item.expenses / maxVal) * 100, item.expenses > 0 ? 2 : 0)}%`,
+                    minHeight: item.expenses > 0 ? 2 : 0,
+                  }}
+                  title={t('evolutionChart.expensesTooltip', { amount: formatCurrency(item.expenses) })}
+                />
+              </div>
+              <span className="text-xs text-gray-400 dark:text-gray-500 text-center leading-tight">
+                {String(item.month).padStart(2, '0')}/
+                {String(item.year).slice(2)}
+              </span>
+              <p
+                className={`text-center text-[11px] font-semibold leading-tight break-words ${
+                  item.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+                }`}
+                title={t('evolutionChart.resultTooltip', { amount: formatCurrency(item.net) })}
+              >
+                {item.net >= 0 ? '+' : ''}
+                {formatCurrency(item.net)}
+              </p>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 text-center leading-tight">
-              {String(item.month).padStart(2, '0')}/
-              {String(item.year).slice(2)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 grid gap-3"
-        style={{ gridTemplateColumns: `repeat(${evolution.length}, minmax(0, 1fr))` }}
-      >
-        {evolution.map((item) => (
-          <p
-            key={`net-${item.month}-${item.year}`}
-            className={`text-center text-xs font-semibold truncate ${
-              item.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-            }`}
-            title={t('evolutionChart.resultTooltip', { amount: formatCurrency(item.net) })}
-          >
-            {item.net >= 0 ? '+' : ''}
-            {formatCurrency(item.net)}
-          </p>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
