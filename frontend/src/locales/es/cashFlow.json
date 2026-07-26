@@ -12,7 +12,8 @@
       "clear": "Limpiar",
       "incomeGroup": "Entradas",
       "expenseGroup": "Salidas"
-    }
+    },
+    "clearAllButton": "Limpiar Referencia"
   },
   "summaryBar": {
     "initial": "Inicial",
@@ -165,6 +166,12 @@
     "scopedDelete": {
       "title": "Eliminar registro fijo",
       "description": "es un registro fijo. ¿Desea eliminar solo esta referencia, o esta y todas las futuras? El historial de referencias ya registradas/pagadas/recibidas nunca se modifica."
+    },
+    "confirmClearAll": "¿Limpiar todos los {{count}} registro(s) de esta referencia (entradas, pagos y gastos extraordinarios)? Esta acción no se puede deshacer.",
+    "clearAllError": "No se pudieron limpiar todos los registros de esta referencia.",
+    "scopedClearAll": {
+      "title": "Limpiar registros fijos",
+      "description": "Esta referencia incluye registros fijos/recurrentes. ¿Desea eliminar solo la referencia actual de esos ítems, o también las futuras? Los demás registros (no fijos) siempre se eliminan por completo."
     }
   }
 }

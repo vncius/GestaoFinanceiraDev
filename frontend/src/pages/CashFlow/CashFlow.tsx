@@ -16,6 +16,7 @@ import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { monthYearFromDate } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../contexts/ToastContext';
 import { PageFooter } from '../../contexts/PageFooterContext';
 import { ModalKind, CashFlowTypeFilter } from './types';
 import { useCashFlowMutations } from './useCashFlowMutations';
@@ -33,6 +34,7 @@ export default function CashFlow() {
   const navigate = useNavigate();
 
   const { confirm } = useDialog();
+  const { showError } = useToast();
 
   const { data, isLoading } = useQuery({
     queryKey: ['cashFlow', month, year],
@@ -90,6 +92,8 @@ export default function CashFlow() {
     | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction }
     | null
   >(null);
+  const [clearingAll, setClearingAll] = useState(false);
+  const [showClearAllScope, setShowClearAllScope] = useState(false);
 
   const {
     createReceivable,
@@ -213,6 +217,59 @@ export default function CashFlow() {
 
   const { summary } = data;
 
+  // ── Limpar referência (entradas, pagamentos e gastos extraordinários) ───────
+  // Cartões de crédito têm seu próprio botão de limpeza (fatura), por isso
+  // ficam de fora aqui.
+  const allEntries = data.entries;
+  const allPayments = data.payments;
+  const allExtraExpenses = data.extraExpenses;
+  const clearAllCount = allEntries.length + allPayments.length + allExtraExpenses.length;
+  const hasFixedToClear =
+    allEntries.some((i) => i.recurrence === 'FIXED') ||
+    allPayments.some((i) => i.recurrence === 'FIXED') ||
+    allExtraExpenses.some((i) => i.recurrence === 'FIXED');
+
+  async function runClearAll(scope?: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+    setClearingAll(true);
+    try {
+      for (const item of allEntries) {
+        if (item.status === 'RECEIVED') await revertReceivable.mutateAsync(item.id);
+        await deleteReceivable.mutateAsync(
+          item.recurrence === 'FIXED' ? { id: item.id, scope, month, year } : { id: item.id },
+        );
+      }
+      for (const item of allPayments) {
+        if (item.status === 'PAID') await revertPayment.mutateAsync(item.id);
+        await deletePayment.mutateAsync(
+          item.recurrence === 'FIXED' ? { id: item.id, scope, month, year } : { id: item.id },
+        );
+      }
+      for (const item of allExtraExpenses) {
+        if (item.status === 'PAID') await revertExtra.mutateAsync(item.id);
+        await deleteExtra.mutateAsync(
+          item.recurrence === 'FIXED' ? { id: item.id, scope, month, year } : { id: item.id },
+        );
+      }
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('page.clearAllError'));
+    } finally {
+      setClearingAll(false);
+      setShowClearAllScope(false);
+    }
+  }
+
+  async function handleClearAll() {
+    if (clearAllCount === 0) return;
+    try {
+      if (!(await confirm(t('page.confirmClearAll', { count: clearAllCount })))) return;
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('page.clearAllError'));
+      return;
+    }
+    if (hasFixedToClear) setShowClearAllScope(true);
+    else await runClearAll();
+  }
+
   const txSaving =
     createPayment.isPending || updatePayment.isPending ||
     createExtra.isPending || updateExtra.isPending;
@@ -262,6 +319,9 @@ export default function CashFlow() {
           onToggleCategory={toggleCategoryFilter}
           onSelectAllCategories={() => setExcludedCategoryIds(new Set())}
           onClearCategories={() => setExcludedCategoryIds(new Set(categories.map((c) => c.id)))}
+          onClearAll={handleClearAll}
+          clearingAll={clearingAll}
+          clearAllDisabled={clearAllCount === 0}
         />
 
         {/* Entradas */}
@@ -373,6 +433,17 @@ export default function CashFlow() {
         }
         onDeleteCurrent={() => runScopedDelete('CURRENT')}
         onDeleteFuture={() => runScopedDelete('CURRENT_AND_FUTURE')}
+      />
+
+      {/* Scoped delete for "clear all" when the reference includes fixed (recurring) entries */}
+      <ScopedDeleteModal
+        open={showClearAllScope}
+        onClose={() => setShowClearAllScope(false)}
+        title={t('page.scopedClearAll.title')}
+        loading={clearingAll}
+        description={t('page.scopedClearAll.description')}
+        onDeleteCurrent={() => runClearAll('CURRENT')}
+        onDeleteFuture={() => runClearAll('CURRENT_AND_FUTURE')}
       />
 
       {/* Invoice payment account picker */}

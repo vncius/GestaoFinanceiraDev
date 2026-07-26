@@ -12,7 +12,8 @@
       "clear": "Clear",
       "incomeGroup": "Income",
       "expenseGroup": "Expenses"
-    }
+    },
+    "clearAllButton": "Clear Reference"
   },
   "summaryBar": {
     "initial": "Initial",
@@ -165,6 +166,12 @@
     "scopedDelete": {
       "title": "Delete fixed entry",
       "description": "is a fixed entry. Do you want to delete only this reference, or this one and all future ones? The history of already posted/paid/received references is never changed."
+    },
+    "confirmClearAll": "Clear all {{count}} entr(y/ies) of this reference (income, payments and extra expenses)? This action cannot be undone.",
+    "clearAllError": "Could not clear all entries of this reference.",
+    "scopedClearAll": {
+      "title": "Clear fixed entries",
+      "description": "This reference includes fixed/recurring entries. Do you want to delete only the current reference of those items, or also the future ones? All other (non-fixed) entries are always deleted entirely."
     }
   }
 }

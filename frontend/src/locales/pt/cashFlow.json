@@ -12,7 +12,8 @@
       "clear": "Limpar",
       "incomeGroup": "Entradas",
       "expenseGroup": "Saídas"
-    }
+    },
+    "clearAllButton": "Limpar Referência"
   },
   "summaryBar": {
     "initial": "Inicial",
@@ -165,6 +166,12 @@
     "scopedDelete": {
       "title": "Excluir lançamento fixo",
       "description": "é um lançamento fixo. Deseja excluir apenas esta referência, ou esta e todas as futuras? O histórico de referências já lançadas/pagas/recebidas nunca é alterado."
+    },
+    "confirmClearAll": "Limpar todos os {{count}} lançamento(s) desta referência (entradas, pagamentos e gastos extraordinários)? Esta ação não pode ser desfeita.",
+    "clearAllError": "Não foi possível limpar todos os lançamentos desta referência.",
+    "scopedClearAll": {
+      "title": "Limpar lançamentos fixos",
+      "description": "Esta referência inclui lançamentos fixos/recorrentes. Deseja excluir apenas a referência atual desses itens, ou também as futuras? Os demais lançamentos (não fixos) são sempre excluídos por completo."
     }
   }
 }

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Filter } from 'lucide-react';
+import { Filter, Eraser } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
+import { Button } from '../../../components/ui/Button';
 
 function TypeFilterToggle({
   value,
@@ -141,6 +142,9 @@ export function CashFlowFilterBar({
   onToggleCategory,
   onSelectAllCategories,
   onClearCategories,
+  onClearAll,
+  clearingAll = false,
+  clearAllDisabled = false,
 }: {
   typeFilter: CashFlowTypeFilter;
   onTypeChange: (v: CashFlowTypeFilter) => void;
@@ -149,6 +153,9 @@ export function CashFlowFilterBar({
   onToggleCategory: (id: string) => void;
   onSelectAllCategories: () => void;
   onClearCategories: () => void;
+  onClearAll: () => void;
+  clearingAll?: boolean;
+  clearAllDisabled?: boolean;
 }) {
   const { t } = useTranslation('cashFlow');
   return (
@@ -163,6 +170,17 @@ export function CashFlowFilterBar({
         onSelectAll={onSelectAllCategories}
         onClearAll={onClearCategories}
       />
+      <Button
+        size="sm"
+        variant="ghost"
+        icon={<Eraser size={14} />}
+        onClick={onClearAll}
+        loading={clearingAll}
+        disabled={clearAllDisabled}
+        className="ml-auto text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+      >
+        {t('filterBar.clearAllButton')}
+      </Button>
     </div>
   );
 }
