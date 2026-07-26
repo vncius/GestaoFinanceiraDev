@@ -95,7 +95,11 @@ export function TransactionGrid({
                           unpaidTitle={t('transactionGrid.toggle.markPaid')}
                         />
                       )}
-                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className={`hidden md:flex items-center gap-0.5 transition-opacity ${
+                          pendingDeleteId === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                      >
                         {item.status !== 'CANCELED' && item.status !== 'REVERSED' && (
                           <ActionBtn
                             title={t('grid.actions.edit')}

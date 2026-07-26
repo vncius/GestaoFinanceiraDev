@@ -103,7 +103,11 @@ export function EntriesGrid({
                           unpaidTitle={t('entriesGrid.toggle.markReceived')}
                         />
                       )}
-                      <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className={`hidden md:flex items-center gap-0.5 transition-opacity ${
+                          pendingDeleteId === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                      >
                         <ActionBtn
                           title={t('grid.actions.edit')}
                           onClick={() => onEdit(item)}

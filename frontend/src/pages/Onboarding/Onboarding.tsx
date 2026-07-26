@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Clock, Settings2, Sparkles } from 'lucide-react';
+import { Clock, Loader2, Settings2, Sparkles } from 'lucide-react';
 import { OnboardingService, OPEN_ONBOARDING_STATUSES } from '../../services/onboarding.service';
 import { deferOnboarding } from '../../components/onboarding/OnboardingGate';
 import { Button } from '../../components/ui/Button';
@@ -181,7 +181,7 @@ function ChoiceCard({
       className="w-full text-left rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-sm transition-all disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <div className="flex items-start gap-3">
-        <div className="mt-0.5">{icon}</div>
+        <div className="mt-0.5">{loading ? <Loader2 size={20} className="animate-spin" /> : icon}</div>
         <div>
           <p className="font-medium text-gray-900 dark:text-gray-50">{title}</p>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>

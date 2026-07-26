@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, Moon, Sun, LogOut, Globe } from 'lucide-react';
+import { Menu, Moon, Sun, LogOut, Globe, Loader2 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { MonthNavigator } from '../ui/MonthNavigator';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -34,10 +34,16 @@ export default function Layout() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
-    await logout();
-    navigate('/login', { replace: true });
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -90,11 +96,12 @@ export default function Layout() {
               </button>
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                disabled={loggingOut}
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 title={t('header.logout')}
                 aria-label={t('header.logout')}
               >
-                <LogOut size={16} />
+                {loggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
               </button>
             </div>
           </header>
