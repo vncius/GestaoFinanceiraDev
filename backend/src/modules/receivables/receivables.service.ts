@@ -215,6 +215,14 @@ export class ReceivablesService {
       );
     }
 
+    // Um item já cancelado não tem mais nada "EXPECTED" para aplicar escopo
+    // (deleteFixedReceivable seria um no-op) — remove a linha de fato para
+    // não deixar registro fantasma preso na lista sem nenhuma ação possível.
+    if (existing.status === ReceivableStatus.CANCELED) {
+      await this.receivablesRepo.delete(id, tenantId);
+      return;
+    }
+
     if (existing.recurrence === RecurrenceType.FIXED) {
       if (!scope || !referenceMonth || !referenceYear) {
         throw new AppError(

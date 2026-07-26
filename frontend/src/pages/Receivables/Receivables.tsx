@@ -355,7 +355,7 @@ export default function Receivables() {
   }
 
   async function handleDelete(item: Receivable) {
-    if (item.recurrence === 'FIXED') { setFixedDeleteTarget(item); return; }
+    if (item.recurrence === 'FIXED' && item.status !== 'CANCELED') { setFixedDeleteTarget(item); return; }
     const isReceived = item.status === 'RECEIVED';
     if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : t('modal.confirmDelete')))) return;
     if (isReceived) await revertMut.mutateAsync(item.id);
