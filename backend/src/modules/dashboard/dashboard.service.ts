@@ -84,6 +84,7 @@ export class DashboardService {
       id: a.id,
       name: a.name,
       balance: calcAccountBalance(a, allTransactions),
+      isReserve: a.autoReserveEnabled,
     }));
     const totalBalance = accountBalances.reduce((s, a) => s + a.balance, 0);
 

@@ -15,6 +15,9 @@ import {
   BarChart3,
   Target,
   PieChart,
+  PiggyBank,
+  History,
+  Scale,
   Printer,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
@@ -35,10 +38,19 @@ import { formatDate, formatMonthYear } from '../../utils/date';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Resultado do mês: o único indicador cujo valor muda de cor pelo sinal
+// (verde sobrou / vermelho faltou).
 function balanceColor(amount: number) {
   if (amount > 0) return 'text-green-700 dark:text-green-400';
   if (amount < 0) return 'text-red-600 dark:text-red-400';
   return 'text-gray-900 dark:text-gray-50';
+}
+
+// Demais indicadores: cada um tem um matiz de identidade fixo (azul = conta
+// operacional, teal = reserva, roxo = total, ardósia = saldo inicial);
+// vermelho só quando negativo, para o alerta vencer a identidade.
+function identityColor(amount: number, identity: string) {
+  return amount < 0 ? 'text-red-600 dark:text-red-400' : identity;
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -326,7 +338,7 @@ function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
   const segments = [
     { label: t('overview.income'), value: summary.receivedIncome, color: '#22c55e' },
     { label: t('overview.expenses'), value: totalExpenses, color: '#ef4444' },
-    { label: t('overview.reserve'), value: summary.reserveInflow, color: '#3b82f6' },
+    { label: t('overview.reserve'), value: summary.reserveInflow, color: '#14b8a6' },
   ];
   const total = segments.reduce((s, x) => s + x.value, 0);
 
@@ -446,17 +458,26 @@ export default function Dashboard() {
               key={a.id}
               label={a.name}
               value={formatCurrency(a.balance)}
-              icon={<Wallet size={18} className="text-blue-600" />}
-              iconBg="bg-blue-50 dark:bg-blue-900/30"
-              valueColor={balanceColor(a.balance)}
+              icon={
+                a.isReserve ? (
+                  <PiggyBank size={18} className="text-teal-600 dark:text-teal-400" />
+                ) : (
+                  <Wallet size={18} className="text-blue-600 dark:text-blue-400" />
+                )
+              }
+              iconBg={a.isReserve ? 'bg-teal-50 dark:bg-teal-900/30' : 'bg-blue-50 dark:bg-blue-900/30'}
+              valueColor={identityColor(
+                a.balance,
+                a.isReserve ? 'text-teal-700 dark:text-teal-400' : 'text-blue-700 dark:text-blue-400',
+              )}
             />
           ))}
           <StatCard
             label={t('balances.total')}
             value={formatCurrency(accounts.totalBalance)}
-            icon={<DollarSign size={18} className="text-purple-600" />}
+            icon={<DollarSign size={18} className="text-purple-600 dark:text-purple-400" />}
             iconBg="bg-purple-50 dark:bg-purple-900/30"
-            valueColor={balanceColor(accounts.totalBalance)}
+            valueColor={identityColor(accounts.totalBalance, 'text-purple-700 dark:text-purple-400')}
           />
         </div>
       </section>
@@ -471,12 +492,21 @@ export default function Dashboard() {
           <StatCard
             label={t('summary.initialBalance')}
             value={formatCurrency(s.initialBalance)}
-            valueColor={balanceColor(s.initialBalance)}
+            icon={<History size={16} className="text-slate-500 dark:text-slate-400" />}
+            iconBg="bg-slate-100 dark:bg-slate-700/60"
+            valueColor={identityColor(s.initialBalance, 'text-slate-600 dark:text-slate-300')}
             sub={t('summary.initialBalanceSub')}
           />
           <StatCard
             label={t('summary.monthBalance')}
             value={formatCurrency(s.realizedBalance)}
+            icon={
+              <Scale
+                size={16}
+                className={s.realizedBalance < 0 ? 'text-red-500' : 'text-green-600 dark:text-green-400'}
+              />
+            }
+            iconBg={s.realizedBalance < 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-green-50 dark:bg-green-900/30'}
             valueColor={balanceColor(s.realizedBalance)}
             sub={t('summary.monthBalanceSub')}
           />
@@ -485,12 +515,14 @@ export default function Dashboard() {
             value={formatCurrency(s.receivedIncome)}
             icon={<TrendingUp size={16} className="text-green-600" />}
             iconBg="bg-green-50 dark:bg-green-900/30"
+            valueColor="text-green-700 dark:text-green-400"
           />
           <StatCard
             label={t('summary.expenses')}
             value={formatCurrency(totalPaid)}
             icon={<TrendingDown size={16} className="text-red-500" />}
             iconBg="bg-red-50 dark:bg-red-900/30"
+            valueColor="text-red-600 dark:text-red-400"
           />
         </div>
 

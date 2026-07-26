@@ -25,6 +25,7 @@ export interface AccountBalance {
   id: string;
   name: string;
   balance: number;
+  isReserve: boolean;
 }
 
 export interface DashboardAlert {
