@@ -284,6 +284,21 @@ export class OnboardingApplyService {
         { count: mains.length },
       );
     }
+    // Defesa em profundidade: o draft service já bloqueia isMain +
+    // autoReserveEnabled juntos a cada mutação, mas essa é a última barreira
+    // antes de criar a conta de verdade — accountsService.create() não faz
+    // essa checagem (só accountsService.update()), então deixar passar aqui
+    // criaria a conta com reserva ativa e só quebraria depois, no
+    // settingsService.update(mainAccountId), travando o onboarding sem saída.
+    const mainAccountPayload = mains[0].payload as unknown as DraftAccountPayload;
+    if (mainAccountPayload.autoReserveEnabled) {
+      throw new AppError(
+        'A conta principal não pode ser marcada como conta de reserva',
+        422,
+        'onboarding.draft.mainReserveConflict',
+        { accountId: mains[0].draftItemId },
+      );
+    }
     // Refs resolvíveis dentro do draft (o draft service já garante em cada
     // mutação; revalidação defensiva antes de escrever dados reais).
     const ids = new Set<string>([

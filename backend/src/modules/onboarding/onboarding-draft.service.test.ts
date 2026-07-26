@@ -131,6 +131,12 @@ describe('OnboardingDraftService', () => {
       });
     });
 
+    it('rejeita conta marcada como principal e como reserva ao mesmo tempo', async () => {
+      await expect(
+        addAccount({ isMain: true, autoReserveEnabled: true, autoReservePercentage: 10 }),
+      ).rejects.toMatchObject({ code: 'onboarding.draft.mainReserveConflict' });
+    });
+
     it('rejeita ref inexistente', async () => {
       await expect(
         addAccount({ accountTypeRef: 'atype_99' }),
@@ -197,6 +203,13 @@ describe('OnboardingDraftService', () => {
       await expect(
         service.updateItem(TENANT_ID, 'acc_2', { isMain: true }, 'user'),
       ).rejects.toMatchObject({ code: 'onboarding.draft.mainAccountDuplicate' });
+    });
+
+    it('rejeita patch que marca reserva na conta já principal', async () => {
+      await addAccount({ name: 'Principal', isMain: true });
+      await expect(
+        service.updateItem(TENANT_ID, 'acc_1', { autoReserveEnabled: true }, 'user'),
+      ).rejects.toMatchObject({ code: 'onboarding.draft.mainReserveConflict' });
     });
 
     it('retorna 404 para item inexistente', async () => {

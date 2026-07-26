@@ -319,6 +319,22 @@ describe('OnboardingApplyService', () => {
     });
   });
 
+  it('rejeita conta principal marcada também como reserva antes de escrever qualquer dado', async () => {
+    const ctx = setup();
+    await ctx.draftService.addItem(TENANT_ID, 'accounts', { name: 'Conta', isMain: true }, 'ai');
+    // Corrompe o draft direto no repo para simular um estado que escapou da
+    // validação do draft service (defesa em profundidade antes da aplicação).
+    const state = (await ctx.stateRepo.get(TENANT_ID)) as OnboardingState;
+    (state.draft.accounts[0].payload as Record<string, unknown>).autoReserveEnabled = true;
+    await ctx.stateRepo.upsert(state);
+    await moveToAwaiting(ctx.onboardingService);
+
+    await expect(ctx.applyService.confirm(TENANT_ID, KEY_1)).rejects.toMatchObject({
+      code: 'onboarding.draft.mainReserveConflict',
+    });
+    expect(ctx.accountsCreator.calls).toHaveLength(0);
+  });
+
   it('rejeita refs inválidas antes de escrever qualquer dado', async () => {
     const ctx = setup();
     await ctx.draftService.addItem(TENANT_ID, 'accounts', { name: 'Conta', isMain: true }, 'ai');

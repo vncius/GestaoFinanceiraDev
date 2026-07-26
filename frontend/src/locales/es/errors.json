@@ -42,6 +42,7 @@
       "invalidRef": "Referencia inválida entre elementos de la propuesta.",
       "duplicateName": "Ya existe un elemento con ese nombre en la propuesta.",
       "mainAccountDuplicate": "Solo una cuenta puede marcarse como principal.",
+      "mainReserveConflict": "La cuenta principal no puede marcarse como cuenta de reserva. La reserva debe ser una cuenta separada.",
       "refInUse": "Este elemento es usado por otro elemento de la propuesta y no puede eliminarse."
     },
     "confirm": {

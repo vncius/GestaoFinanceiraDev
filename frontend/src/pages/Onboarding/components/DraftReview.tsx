@@ -489,7 +489,19 @@ function EditItemModal({
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 checked={values[field.key] === true}
-                onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.checked }))}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setValues((v) => {
+                    const next = { ...v, [field.key]: checked };
+                    // Conta principal e conta de reserva nunca podem ser a
+                    // mesma (validado também no backend) — marcar uma
+                    // desmarca a outra em vez de deixar o usuário confirmar
+                    // um estado que travaria a aplicação do draft.
+                    if (checked && field.key === 'isMain') next.autoReserveEnabled = false;
+                    if (checked && field.key === 'autoReserveEnabled') next.isMain = false;
+                    return next;
+                  });
+                }}
               />
             )}
           </label>

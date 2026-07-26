@@ -136,6 +136,33 @@ describe('DraftReview', () => {
     );
   });
 
+  it('marcar reserva automática desmarca conta principal (não podem ser a mesma conta)', async () => {
+    const draft = fullDraft();
+    getDraft.mockResolvedValue(draft);
+    updateDraftItem.mockResolvedValue({ item: draft.accounts[0], draft });
+    renderReview();
+
+    fireEvent.click(await screen.findByTestId('edit-acc_1'));
+
+    const mainCheckbox = await screen.findByLabelText('Conta principal');
+    const reserveCheckbox = screen.getByLabelText('Reserva automática');
+    expect(mainCheckbox).toBeChecked();
+    expect(reserveCheckbox).not.toBeChecked();
+
+    fireEvent.click(reserveCheckbox);
+    expect(reserveCheckbox).toBeChecked();
+    expect(mainCheckbox).not.toBeChecked();
+
+    fireEvent.click(screen.getByTestId('save-item'));
+
+    await waitFor(() =>
+      expect(updateDraftItem).toHaveBeenCalledWith(
+        'acc_1',
+        expect.objectContaining({ isMain: false, autoReserveEnabled: true }),
+      ),
+    );
+  });
+
   it('remoção: chama removeDraftItem com o id do item', async () => {
     const draft = fullDraft();
     getDraft.mockResolvedValue(draft);

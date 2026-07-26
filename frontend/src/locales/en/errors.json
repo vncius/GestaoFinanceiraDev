@@ -42,6 +42,7 @@
       "invalidRef": "Invalid reference between proposal items.",
       "duplicateName": "An item with this name already exists in the proposal.",
       "mainAccountDuplicate": "Only one account can be marked as main.",
+      "mainReserveConflict": "The main account cannot be marked as the reserve account. The reserve needs to be a separate account.",
       "refInUse": "This item is used by another proposal item and cannot be removed."
     },
     "confirm": {

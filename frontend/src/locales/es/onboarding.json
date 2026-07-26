@@ -26,7 +26,7 @@
     "welcomeMainAccount": "🏦 Cuenta principal — la cuenta bancaria que más usas en el día a día, por donde entra la mayor parte de tu ingreso y salen la mayoría de los pagos.",
     "welcomeReserveAccount": "💰 Cuenta reserva — una cuenta separada (idealmente en otro banco) que guarda automáticamente un porcentaje de tu ingreso para impuestos, emergencias, etc. Nunca puede ser la misma cuenta principal.",
     "welcomeCreditCard": "💳 Tarjeta de crédito — indica el banco, el día de cierre y el de vencimiento para que el sistema calcule bien cada factura.",
-    "emptyHint": "Cuéntame un poco sobre tus finanzas para empezar: qué cuentas usas, de dónde viene tu ingreso, tus gastos fijos…",
+    "emptyHint": "Para empezar: ¿tu control será personal, empresarial o ambos? Aprovecha y cuéntame también qué cuentas bancarias usas en el día a día.",
     "inputLabel": "Tu mensaje",
     "inputPlaceholder": "Escribe tu mensaje…",
     "send": "Enviar",

@@ -262,6 +262,7 @@ export class OnboardingDraftService {
   private validateDraft(draft: OnboardingDraft): void {
     this.validateUniqueNames(draft);
     this.validateSingleMainAccount(draft);
+    this.validateMainReserveConflict(draft);
     this.validateRefs(draft);
   }
 
@@ -295,6 +296,28 @@ export class OnboardingDraftService {
         409,
         'onboarding.draft.mainAccountDuplicate',
         { accounts: mains.map((a) => a.draftItemId).join(', ') },
+      );
+    }
+  }
+
+  /**
+   * Conta principal e conta de reserva nunca podem ser a mesma (a reserva
+   * precisa ser uma conta separada — ver onboarding-prompts.ts). Sem essa
+   * checagem, um draft assim passa pela revisão e só quebra na confirmação,
+   * na chamada a settingsService.update (que já valida o mesmo caso para
+   * contas reais), deixando o onboarding travado sem saída pela UI.
+   */
+  private validateMainReserveConflict(draft: OnboardingDraft): void {
+    const conflicting = draft.accounts.find((a) => {
+      const p = a.payload as unknown as DraftAccountPayload;
+      return p.isMain && p.autoReserveEnabled;
+    });
+    if (conflicting) {
+      throw new AppError(
+        'A conta principal não pode ser marcada como conta de reserva',
+        409,
+        'onboarding.draft.mainReserveConflict',
+        { accountId: conflicting.draftItemId },
       );
     }
   }
