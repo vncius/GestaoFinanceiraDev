@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { OnboardingMessage } from '../../../services/onboarding.service';
@@ -15,6 +15,10 @@ interface ChatThreadProps {
 /**
  * Thread da conversa. Conteúdo do assistente é SEMPRE renderizado como texto
  * puro (whitespace-pre-wrap) — nunca HTML vindo do modelo.
+ *
+ * A resposta do backend chega inteira (sem streaming real — ver
+ * docs/architecture/onboarding-ai.md), então a digitação progressiva abaixo é
+ * só efeito visual: revela o texto já recebido em poucos passos rápidos.
  */
 export default function ChatThread({
   messages,
@@ -26,6 +30,30 @@ export default function ChatThread({
 }: ChatThreadProps) {
   const { t } = useTranslation('onboarding');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Só anima a mensagem do assistente que acabou de chegar nesta sessão —
+  // histórico carregado/retomado aparece direto, sem "digitar" de novo.
+  // Ajuste de estado durante a renderização (padrão React de "estado derivado
+  // de props"): precisa decidir o streamingId ANTES do primeiro paint da nova
+  // mensagem, senão ela pisca inteira antes de começar a "digitar".
+  const seenIds = useRef<Set<string>>(new Set());
+  const initialized = useRef(false);
+  const [prevMessages, setPrevMessages] = useState(messages);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
+
+  if (messages !== prevMessages) {
+    if (!initialized.current) {
+      messages.forEach((m) => seenIds.current.add(m.id));
+      initialized.current = true;
+    } else {
+      const newAssistant = messages.find(
+        (m) => m.role === 'ASSISTANT' && !seenIds.current.has(m.id),
+      );
+      messages.forEach((m) => seenIds.current.add(m.id));
+      if (newAssistant) setStreamingId(newAssistant.id);
+    }
+    setPrevMessages(messages);
+  }
 
   useEffect(() => {
     // scrollIntoView não existe no jsdom (testes).
@@ -54,17 +82,24 @@ export default function ChatThread({
       )}
 
       {messages.map((message) => (
-        <MessageBubble key={message.id} role={message.role} content={message.content} />
+        <MessageBubble
+          key={message.id}
+          role={message.role}
+          content={message.content}
+          animate={message.id === streamingId}
+        />
       ))}
 
       {pendingMessage && (
         <>
           <MessageBubble role="USER" content={pendingMessage} />
           <div className="flex justify-start" data-testid="typing-indicator">
-            <div className="rounded-2xl rounded-bl-sm bg-gray-100 dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-500 dark:text-gray-300">
-              <span className="inline-flex gap-1 items-center">
-                {t('chat.typing')}
-                <span className="animate-pulse">…</span>
+            <div className="rounded-2xl rounded-bl-sm bg-gray-100 dark:bg-gray-700 px-4 py-3 text-sm text-gray-500 dark:text-gray-300">
+              <span className="sr-only">{t('chat.typing')}</span>
+              <span className="inline-flex items-center gap-1" aria-hidden="true">
+                <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
               </span>
             </div>
           </div>
@@ -95,16 +130,24 @@ export default function ChatThread({
   );
 }
 
+// Passos fixos (não por caractere) para a duração total do efeito não crescer
+// com mensagens longas — é só uma simulação visual, o texto já chegou inteiro.
+const TYPEWRITER_STEPS = 16;
+const TYPEWRITER_STEP_MS = 25;
+
 function MessageBubble({
   role,
   content,
   failed = false,
+  animate = false,
 }: {
   role: 'USER' | 'ASSISTANT';
   content: string;
   failed?: boolean;
+  animate?: boolean;
 }) {
   const isUser = role === 'USER';
+  const displayed = useTypewriter(content, animate && !isUser);
   return (
     <div className={isUser ? 'flex justify-end' : 'flex justify-start'}>
       <div
@@ -114,8 +157,41 @@ function MessageBubble({
             : 'rounded-bl-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
         }`}
       >
-        {content}
+        {displayed}
       </div>
     </div>
   );
+}
+
+/** Revela `text` em poucos passos rápidos, simulando streaming. */
+function useTypewriter(text: string, active: boolean): string {
+  const [length, setLength] = useState(active ? 0 : text.length);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (!active || startedRef.current) return;
+    let reducedMotion = false;
+    try {
+      reducedMotion =
+        typeof window !== 'undefined' &&
+        Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    } catch {
+      reducedMotion = false;
+    }
+    if (reducedMotion) {
+      setLength(text.length);
+      return;
+    }
+    startedRef.current = true;
+    let step = 0;
+    const interval = setInterval(() => {
+      step += 1;
+      setLength(Math.ceil((text.length * step) / TYPEWRITER_STEPS));
+      if (step >= TYPEWRITER_STEPS) clearInterval(interval);
+    }, TYPEWRITER_STEP_MS);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
+  return active ? text.slice(0, length) : text;
 }

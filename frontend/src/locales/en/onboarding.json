@@ -102,5 +102,6 @@
     "cta": "Finish setup"
   },
   "loadError": "Could not load the setup status.",
-  "retry": "Try again"
+  "retry": "Try again",
+  "logout": "Log out"
 }

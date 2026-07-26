@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../i18n';
 import Onboarding from './Onboarding';
 import { OnboardingService } from '../../services/onboarding.service';
+import { AuthService } from '../../services/auth.service';
+import { AuthProvider } from '../../contexts/AuthContext';
 import { LanguageProvider } from '../../contexts/LanguageContext';
 
 vi.mock('../../services/onboarding.service', async (importOriginal) => {
@@ -19,22 +21,39 @@ vi.mock('../../services/onboarding.service', async (importOriginal) => {
   };
 });
 
+vi.mock('../../services/auth.service', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../services/auth.service')>();
+  return {
+    ...original,
+    AuthService: {
+      me: vi.fn(),
+      loginWithGoogle: vi.fn(),
+      logout: vi.fn(),
+    },
+  };
+});
+
 const getStatus = vi.mocked(OnboardingService.getStatus);
 const skip = vi.mocked(OnboardingService.skip);
+const authMe = vi.mocked(AuthService.me);
+const authLogout = vi.mocked(AuthService.logout);
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <MemoryRouter initialEntries={['/onboarding']}>
-          <Routes>
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/settings" element={<div>pagina-settings</div>} />
-            <Route path="/dashboard" element={<div>pagina-dashboard</div>} />
-          </Routes>
-        </MemoryRouter>
-      </LanguageProvider>
+      <AuthProvider>
+        <LanguageProvider>
+          <MemoryRouter initialEntries={['/onboarding']}>
+            <Routes>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/settings" element={<div>pagina-settings</div>} />
+              <Route path="/dashboard" element={<div>pagina-dashboard</div>} />
+              <Route path="/login" element={<div>pagina-login</div>} />
+            </Routes>
+          </MemoryRouter>
+        </LanguageProvider>
+      </AuthProvider>
     </QueryClientProvider>,
   );
 }
@@ -53,6 +72,7 @@ describe('Onboarding (entrada)', () => {
     vi.clearAllMocks();
     sessionStorage.clear();
     localStorage.clear();
+    authMe.mockResolvedValue(null);
   });
 
   it('exibe as três opções e o aviso sobre IA', async () => {
@@ -115,5 +135,16 @@ describe('Onboarding (entrada)', () => {
 
     await waitFor(() => expect(localStorage.getItem('language')).toBe('en'));
     expect(screen.getByTestId('onboarding-language-en')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('permite sair da conta sem completar o onboarding', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    authLogout.mockResolvedValue(undefined);
+    renderPage();
+
+    fireEvent.click(await screen.findByTestId('onboarding-logout'));
+
+    await waitFor(() => expect(authLogout).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('pagina-login')).toBeInTheDocument();
   });
 });

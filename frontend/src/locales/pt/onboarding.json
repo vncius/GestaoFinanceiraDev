@@ -102,5 +102,6 @@
     "cta": "Concluir configuração"
   },
   "loadError": "Não foi possível carregar o status da configuração.",
-  "retry": "Tentar novamente"
+  "retry": "Tentar novamente",
+  "logout": "Sair da conta"
 }
