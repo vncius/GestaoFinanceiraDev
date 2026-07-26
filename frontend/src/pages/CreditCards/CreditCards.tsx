@@ -473,7 +473,7 @@ function CardDetail({
               icon={<Upload size={14} />}
               onClick={() => setShowImportModal(true)}
             >
-              {t('installments.importButton')}
+              <span className="hidden sm:inline">{t('installments.importButton')}</span>
             </Button>
             <Button
               size="sm"
@@ -481,7 +481,7 @@ function CardDetail({
               icon={<Plus size={14} />}
               onClick={() => setShowEntryModal(true)}
             >
-              {t('installments.addButton')}
+              <span className="hidden sm:inline">{t('installments.addButton')}</span>
             </Button>
             {activeEntries.length > 0 && (
               <Button
@@ -492,7 +492,7 @@ function CardDetail({
                 loading={clearingInvoice}
                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
               >
-                {t('installments.clearButton')}
+                <span className="hidden sm:inline">{t('installments.clearButton')}</span>
               </Button>
             )}
           </div>
@@ -511,7 +511,7 @@ function CardDetail({
                   <th className="text-left px-3 sm:px-5 py-2.5 font-medium">{t('installments.table.description')}</th>
                   <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">{t('installments.table.category')}</th>
                   <th className="hidden lg:table-cell text-left px-3 py-2.5 font-medium">{t('installments.table.purchaseDate')}</th>
-                  <th className="hidden md:table-cell text-left px-3 py-2.5 font-medium">{t('installments.table.installment')}</th>
+                  <th className="text-left px-3 py-2.5 font-medium">{t('installments.table.installment')}</th>
                   <th className="text-right px-3 py-2.5 font-medium">{t('installments.table.amount')}</th>
                   <th className="px-1 sm:px-3 py-2.5" />
                 </tr>
@@ -529,7 +529,7 @@ function CardDetail({
                       className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${isEditable ? 'cursor-pointer' : ''}`}
                       onClick={() => { if (isEditable) setEntryToEdit(entry); }}
                     >
-                      <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[110px] lg:max-w-none truncate">
+                      <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 max-w-[160px] sm:max-w-[220px] lg:max-w-none truncate">
                         {entry?.description ?? '—'}
                       </td>
                       <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
@@ -538,7 +538,7 @@ function CardDetail({
                       <td className="hidden lg:table-cell px-3 py-3 text-gray-500 dark:text-gray-400">
                         {entry ? formatDate(entry.purchaseDate) : '—'}
                       </td>
-                      <td className="hidden md:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                      <td className="px-3 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
                         {entry?.entryType === 'CASH'
                           ? t('installments.entryType.cash')
                           : entry?.entryType === 'FIXED'

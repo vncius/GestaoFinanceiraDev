@@ -184,7 +184,7 @@ export function ImportInvoiceModal({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".ofx"
+            accept=".ofx,text/plain,application/x-ofx,application/octet-stream"
             className="hidden"
             onChange={handleFile}
             disabled={parsing}
