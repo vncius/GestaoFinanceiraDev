@@ -52,11 +52,13 @@ export function CreditCardsGrid({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-            {items.map((inv) => (
+            {items.map((inv) => {
+              const rowLocked = pendingRevertId === inv.id;
+              return (
               <tr
                 key={inv.id}
-                className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
-                onClick={() => onOpenInvoice(inv)}
+                className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${rowLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                onClick={() => { if (!rowLocked) onOpenInvoice(inv); }}
               >
                 <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                   {cardNames.get(inv.creditCardId) ?? t('creditCardsGrid.cardFallbackName')}
@@ -80,10 +82,15 @@ export function CreditCardsGrid({
                         unpaidTitle={inv.status === 'OVERDUE' ? t('creditCardsGrid.toggle.payOverdue') : t('creditCardsGrid.toggle.pay')}
                       />
                     )}
-                    <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div
+                      className={`hidden md:flex items-center gap-0.5 transition-opacity ${
+                        rowLocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      }`}
+                    >
                       <ActionBtn
                         title={t('creditCardsGrid.actions.openInvoice')}
                         onClick={() => onOpenInvoice(inv)}
+                        disabled={rowLocked}
                         className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <Pencil size={14} />
@@ -92,7 +99,7 @@ export function CreditCardsGrid({
                   </div>
                 </td>
               </tr>
-            ))}
+              );})}
           </tbody>
         </table>
       </div>

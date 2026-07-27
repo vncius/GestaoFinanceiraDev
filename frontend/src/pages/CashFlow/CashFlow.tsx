@@ -335,6 +335,7 @@ export default function CashFlow() {
           onDelete={handleDeleteReceivable}
           pendingToggleId={entriesPendingToggleId}
           pendingDeleteId={entriesPendingDeleteId}
+          locked={clearingAll}
         />
 
         {/* Pagamentos */}
@@ -350,6 +351,7 @@ export default function CashFlow() {
           onDelete={(item) => handleDeleteTransaction('payment', item)}
           pendingToggleId={paymentsPendingToggleId}
           pendingDeleteId={paymentsPendingDeleteId}
+          locked={clearingAll}
         />
 
         {/* Gastos Extraordinários */}
@@ -365,6 +367,7 @@ export default function CashFlow() {
           onDelete={(item) => handleDeleteTransaction('extra-expense', item)}
           pendingToggleId={extrasPendingToggleId}
           pendingDeleteId={extrasPendingDeleteId}
+          locked={clearingAll}
         />
 
         {/* Cartões de Crédito */}

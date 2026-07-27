@@ -4,6 +4,7 @@ export function PaidToggle({
   paid,
   urgent = false,
   loading = false,
+  disabled = false,
   onToggle,
   paidTitle,
   unpaidTitle,
@@ -11,19 +12,21 @@ export function PaidToggle({
   paid: boolean;
   urgent?: boolean;
   loading?: boolean;
+  disabled?: boolean;
   onToggle: () => void;
   paidTitle: string;
   unpaidTitle: string;
 }) {
+  const isDisabled = disabled || loading;
   return (
     <button
       type="button"
       title={paid ? paidTitle : unpaidTitle}
       aria-label={paid ? paidTitle : unpaidTitle}
       aria-busy={loading}
-      disabled={loading}
+      disabled={isDisabled}
       onClick={onToggle}
-      className={`p-1 sm:p-1.5 rounded-md transition-colors disabled:cursor-not-allowed ${
+      className={`p-1 sm:p-1.5 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         paid
           ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30'
           : urgent

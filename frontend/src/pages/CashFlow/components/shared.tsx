@@ -21,11 +21,13 @@ export function GridHeader({
   icon,
   count,
   onAdd,
+  disabled = false,
 }: {
   title: string;
   icon: React.ReactNode;
   count: number;
   onAdd: () => void;
+  disabled?: boolean;
 }) {
   const { t } = useTranslation('cashFlow');
   return (
@@ -35,7 +37,7 @@ export function GridHeader({
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h3>
         <span className="text-xs text-gray-400 dark:text-gray-500">({count})</span>
       </div>
-      <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={onAdd}>
+      <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={onAdd} disabled={disabled}>
         {t('grid.new')}
       </Button>
     </div>

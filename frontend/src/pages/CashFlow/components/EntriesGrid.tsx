@@ -25,6 +25,7 @@ export function EntriesGrid({
   onDelete,
   pendingToggleId,
   pendingDeleteId,
+  locked = false,
 }: {
   items: Receivable[];
   accounts: Account[];
@@ -35,6 +36,7 @@ export function EntriesGrid({
   onDelete: (item: Receivable) => void;
   pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
+  locked?: boolean;
 }) {
   const { t } = useTranslation('cashFlow');
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
@@ -46,6 +48,7 @@ export function EntriesGrid({
         icon={<TrendingUp size={16} className="text-green-500" />}
         count={items.length}
         onAdd={onAdd}
+        disabled={locked}
       />
 
       {items.length === 0 ? (
@@ -68,11 +71,13 @@ export function EntriesGrid({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-              {items.map((item) => (
+              {items.map((item) => {
+                const rowLocked = locked || pendingDeleteId === item.id || pendingToggleId === item.id;
+                return (
                 <tr
                   key={item.id}
-                  className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group cursor-pointer"
-                  onClick={() => onEdit(item)}
+                  className={`hover:bg-gray-50/50 dark:hover:bg-gray-700/50 group ${rowLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                  onClick={() => { if (!rowLocked) onEdit(item); }}
                 >
                   <td className="px-3 sm:px-5 py-3 font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 truncate">
                     {item.description}
@@ -98,6 +103,7 @@ export function EntriesGrid({
                         <PaidToggle
                           paid={item.status === 'RECEIVED'}
                           loading={pendingToggleId === item.id}
+                          disabled={locked || pendingDeleteId === item.id}
                           onToggle={() => (item.status === 'RECEIVED' ? onRevert(item.id) : onReceive(item.id))}
                           paidTitle={t('entriesGrid.toggle.revertReceived')}
                           unpaidTitle={t('entriesGrid.toggle.markReceived')}
@@ -105,13 +111,13 @@ export function EntriesGrid({
                       )}
                       <div
                         className={`hidden md:flex items-center gap-0.5 transition-opacity ${
-                          pendingDeleteId === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          rowLocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         }`}
                       >
                         <ActionBtn
                           title={t('grid.actions.edit')}
                           onClick={() => onEdit(item)}
-                          disabled={pendingDeleteId === item.id}
+                          disabled={rowLocked}
                           className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Pencil size={14} />
@@ -121,6 +127,7 @@ export function EntriesGrid({
                             title={t('grid.actions.delete')}
                             onClick={() => onDelete(item)}
                             loading={pendingDeleteId === item.id}
+                            disabled={locked || pendingToggleId === item.id}
                             className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                           >
                             <Trash2 size={14} />
@@ -130,7 +137,7 @@ export function EntriesGrid({
                     </div>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>
