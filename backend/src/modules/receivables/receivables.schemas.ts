@@ -39,8 +39,11 @@ export const deleteReceivableQuerySchema = z.object({
   year: z.coerce.number().int().min(2000).optional(),
 });
 
+export const updateReceivableQuerySchema = deleteReceivableQuerySchema;
+
 export type CreateReceivableInput = z.infer<typeof createReceivableSchema>;
 export type UpdateReceivableInput = z.infer<typeof updateReceivableSchema>;
 export type ReceivableQuery = z.infer<typeof receivableQuerySchema>;
 export type ReceiveActionInput = z.infer<typeof receiveActionSchema>;
 export type DeleteReceivableQuery = z.infer<typeof deleteReceivableQuerySchema>;
+export type UpdateReceivableQuery = z.infer<typeof updateReceivableQuerySchema>;

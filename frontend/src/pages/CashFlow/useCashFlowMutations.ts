@@ -10,6 +10,14 @@ type ScopedDeleteVars = {
   year?: number;
 };
 
+type ScopedUpdateVars<TData> = {
+  id: string;
+  data: TData;
+  scope?: 'CURRENT' | 'CURRENT_AND_FUTURE';
+  month?: number;
+  year?: number;
+};
+
 // Centraliza as ~14 mutations da página de Fluxo de Caixa (recebíveis,
 // pagamentos, gastos extraordinários e faturas de cartão), todas
 // invalidando a mesma query key ao final.
@@ -40,8 +48,8 @@ export function useCashFlowMutations({
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const updateReceivable = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof ReceivablesService.update>[1] }) =>
-      ReceivablesService.update(id, data),
+    mutationFn: ({ id, data, scope, month: m, year: y }: ScopedUpdateVars<Parameters<typeof ReceivablesService.update>[1]>) =>
+      ReceivablesService.update(id, data, scope ? { scope, month: m!, year: y! } : undefined),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const receiveItem = useMutation({
@@ -64,8 +72,8 @@ export function useCashFlowMutations({
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const updatePayment = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateTransactionPayload> }) =>
-      CashFlowService.updatePayment(id, data),
+    mutationFn: ({ id, data, scope, month: m, year: y }: ScopedUpdateVars<Partial<CreateTransactionPayload>>) =>
+      CashFlowService.updatePayment(id, data, scope ? { scope, month: m!, year: y! } : undefined),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const payPayment = useMutation({
@@ -88,8 +96,8 @@ export function useCashFlowMutations({
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const updateExtra = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateTransactionPayload> }) =>
-      CashFlowService.updateExtraExpense(id, data),
+    mutationFn: ({ id, data, scope, month: m, year: y }: ScopedUpdateVars<Partial<CreateTransactionPayload>>) =>
+      CashFlowService.updateExtraExpense(id, data, scope ? { scope, month: m!, year: y! } : undefined),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const payExtra = useMutation({

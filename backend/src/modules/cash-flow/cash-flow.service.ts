@@ -257,8 +257,11 @@ export class CashFlowService {
     id: string,
     input: UpdateTransactionInput,
     tenantId: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
   ): Promise<FinancialTransaction> {
-    return this.updateTransactionChecked(id, TransactionType.PAYMENT, input, tenantId);
+    return this.updateTransactionChecked(id, TransactionType.PAYMENT, input, tenantId, scope, referenceMonth, referenceYear);
   }
 
   async deletePayment(
@@ -292,8 +295,11 @@ export class CashFlowService {
     id: string,
     input: UpdateTransactionInput,
     tenantId: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
   ): Promise<FinancialTransaction> {
-    return this.updateTransactionChecked(id, TransactionType.EXTRA_EXPENSE, input, tenantId);
+    return this.updateTransactionChecked(id, TransactionType.EXTRA_EXPENSE, input, tenantId, scope, referenceMonth, referenceYear);
   }
 
   async deleteExtraExpense(
@@ -360,6 +366,9 @@ export class CashFlowService {
     type: TransactionType,
     input: UpdateTransactionInput,
     tenantId: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
   ): Promise<FinancialTransaction> {
     const tx = await this.getTransactionChecked(id, type, tenantId);
 
@@ -382,9 +391,53 @@ export class CashFlowService {
       recurrencePatch = { recurringGroupId: id, recurringActive: true };
     }
 
+    if (tx.recurrence === RecurrenceType.FIXED) {
+      if (!scope || !referenceMonth || !referenceYear) {
+        throw new AppError(
+          'Informe se deseja alterar apenas a referência atual ou também as futuras.',
+          400,
+          'transaction.updateScopeRequired',
+        );
+      }
+      return this.updateFixedTransaction(tx, input, tenantId, scope, referenceMonth, referenceYear);
+    }
+
     // Para transações já pagas, a própria transação é o impacto financeiro.
     // Atualizar seus campos (amount, sourceAccountId, etc.) recalcula saldos automaticamente.
     return this.transactionsRepo.update(id, { ...input, ...recurrencePatch, updatedAt: nowISO() }, tenantId);
+  }
+
+  private async updateFixedTransaction(
+    existing: FinancialTransaction,
+    input: UpdateTransactionInput,
+    tenantId: string,
+    scope: DeleteScope,
+    referenceMonth: number,
+    referenceYear: number,
+  ): Promise<FinancialTransaction> {
+    const now = nowISO();
+    const refKey = monthKey(referenceMonth, referenceYear);
+    const groupId = existing.recurringGroupId ?? existing.id;
+
+    const updated = await this.transactionsRepo.update(existing.id, { ...input, updatedAt: now }, tenantId);
+
+    if (scope === 'CURRENT_AND_FUTURE') {
+      // A data de cada ocorrência é individual — apenas os demais campos
+      // (valor, descrição, categoria, conta, notas) se propagam para as futuras.
+      const { expectedDate: _expectedDate, ...seriesPatch } = input;
+      const all = await this.transactionsRepo.findAll(tenantId);
+      const futureOccurrences = all.filter((t) => {
+        if (t.id === existing.id || t.recurringGroupId !== groupId) return false;
+        if (t.status !== TransactionStatus.PENDING) return false;
+        const my = monthYearOf(t.expectedDate);
+        return monthKey(my.month, my.year) > refKey;
+      });
+      for (const t of futureOccurrences) {
+        await this.transactionsRepo.update(t.id, { ...seriesPatch, updatedAt: now }, tenantId);
+      }
+    }
+
+    return updated;
   }
 
   private async deleteTransactionChecked(

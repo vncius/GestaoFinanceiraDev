@@ -31,8 +31,11 @@ export const deleteTransactionQuerySchema = z.object({
   year: z.coerce.number().int().min(2000).optional(),
 });
 
+export const updateTransactionQuerySchema = deleteTransactionQuerySchema;
+
 export type CashFlowQuery = z.infer<typeof cashFlowQuerySchema>;
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 export type PayActionInput = z.infer<typeof payActionSchema>;
 export type DeleteTransactionQuery = z.infer<typeof deleteTransactionQuerySchema>;
+export type UpdateTransactionQuery = z.infer<typeof updateTransactionQuerySchema>;

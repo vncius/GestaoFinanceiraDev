@@ -39,8 +39,8 @@ export const ReceivablesService = {
   create: (payload: CreateReceivablePayload): Promise<Receivable> =>
     api.post<Receivable>('/receivables', payload).then((r) => r.data),
 
-  update: (id: string, payload: Partial<CreateReceivablePayload>): Promise<Receivable> =>
-    api.put<Receivable>(`/receivables/${id}`, payload).then((r) => r.data),
+  update: (id: string, payload: Partial<CreateReceivablePayload>, scopeParams?: DeleteScopeParams): Promise<Receivable> =>
+    api.put<Receivable>(`/receivables/${id}`, payload, { params: scopeParams }).then((r) => r.data),
 
   remove: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
     api.delete(`/receivables/${id}`, { params: scopeParams }).then(() => undefined),

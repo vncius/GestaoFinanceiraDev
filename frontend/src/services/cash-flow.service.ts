@@ -30,8 +30,8 @@ export const CashFlowService = {
   createPayment: (payload: CreateTransactionPayload): Promise<FinancialTransaction> =>
     api.post<FinancialTransaction>('/cash-flow/payments', payload).then((r) => r.data),
 
-  updatePayment: (id: string, payload: Partial<CreateTransactionPayload>): Promise<FinancialTransaction> =>
-    api.put<FinancialTransaction>(`/cash-flow/payments/${id}`, payload).then((r) => r.data),
+  updatePayment: (id: string, payload: Partial<CreateTransactionPayload>, scopeParams?: DeleteScopeParams): Promise<FinancialTransaction> =>
+    api.put<FinancialTransaction>(`/cash-flow/payments/${id}`, payload, { params: scopeParams }).then((r) => r.data),
 
   deletePayment: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
     api.delete(`/cash-flow/payments/${id}`, { params: scopeParams }).then(() => undefined),
@@ -46,8 +46,8 @@ export const CashFlowService = {
   createExtraExpense: (payload: CreateTransactionPayload): Promise<FinancialTransaction> =>
     api.post<FinancialTransaction>('/cash-flow/extra-expenses', payload).then((r) => r.data),
 
-  updateExtraExpense: (id: string, payload: Partial<CreateTransactionPayload>): Promise<FinancialTransaction> =>
-    api.put<FinancialTransaction>(`/cash-flow/extra-expenses/${id}`, payload).then((r) => r.data),
+  updateExtraExpense: (id: string, payload: Partial<CreateTransactionPayload>, scopeParams?: DeleteScopeParams): Promise<FinancialTransaction> =>
+    api.put<FinancialTransaction>(`/cash-flow/extra-expenses/${id}`, payload, { params: scopeParams }).then((r) => r.data),
 
   deleteExtraExpense: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
     api.delete(`/cash-flow/extra-expenses/${id}`, { params: scopeParams }).then(() => undefined),

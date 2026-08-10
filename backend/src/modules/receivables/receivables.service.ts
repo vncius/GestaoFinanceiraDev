@@ -87,7 +87,14 @@ export class ReceivablesService {
     });
   }
 
-  async update(id: string, input: UpdateReceivableInput, tenantId: string): Promise<Receivable> {
+  async update(
+    id: string,
+    input: UpdateReceivableInput,
+    tenantId: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
+  ): Promise<Receivable> {
     const existing = await this.findById(id, tenantId);
 
     if (existing.status === ReceivableStatus.CANCELED) {
@@ -104,6 +111,14 @@ export class ReceivablesService {
         );
       }
       recurrencePatch = { recurringGroupId: id, recurringActive: true };
+    }
+
+    if (existing.recurrence === RecurrenceType.FIXED && (!scope || !referenceMonth || !referenceYear)) {
+      throw new AppError(
+        'Informe se deseja alterar apenas a referência atual ou também as futuras.',
+        400,
+        'receivable.updateScopeRequired',
+      );
     }
 
     const grossAmount = input.grossAmount ?? existing.grossAmount;
@@ -196,7 +211,51 @@ export class ReceivablesService {
       }
     }
 
+    if (existing.recurrence === RecurrenceType.FIXED && scope === 'CURRENT_AND_FUTURE') {
+      await this.propagateFixedReceivableUpdate(existing, input, tenantId, referenceMonth!, referenceYear!);
+    }
+
     return updated;
+  }
+
+  private async propagateFixedReceivableUpdate(
+    existing: Receivable,
+    input: UpdateReceivableInput,
+    tenantId: string,
+    referenceMonth: number,
+    referenceYear: number,
+  ): Promise<void> {
+    const now = nowISO();
+    const refKey = monthKey(referenceMonth, referenceYear);
+    const groupId = existing.recurringGroupId ?? existing.id;
+    // A data de cada ocorrência é individual — apenas os demais campos
+    // (valor, descrição, categoria, contas, notas) se propagam para as futuras.
+    const { expectedPaymentDate: _expectedPaymentDate, ...seriesPatch } = input;
+
+    const all = await this.receivablesRepo.findAll(tenantId);
+    const futureOccurrences = all.filter((r) => {
+      if (r.id === existing.id || r.recurringGroupId !== groupId) return false;
+      if (r.status !== ReceivableStatus.EXPECTED) return false;
+      const my = monthYearOf(r.expectedPaymentDate);
+      return monthKey(my.month, my.year) > refKey;
+    });
+
+    for (const r of futureOccurrences) {
+      const grossAmount = seriesPatch.grossAmount ?? r.grossAmount;
+      const reserveAccountIds = seriesPatch.reserveAccountIds ?? (r.reserveAllocations ?? []).map((a) => a.accountId);
+      const { reserveAllocations, reserveAmount, netAmount } = await this.calcReserveAllocations(
+        tenantId,
+        grossAmount,
+        reserveAccountIds,
+      );
+      await this.receivablesRepo.update(r.id, {
+        ...seriesPatch,
+        reserveAllocations,
+        reserveAmount,
+        netAmount,
+        updatedAt: now,
+      }, tenantId);
+    }
   }
 
   async delete(

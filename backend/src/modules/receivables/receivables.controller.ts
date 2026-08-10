@@ -3,6 +3,7 @@ import { ReceivablesService } from './receivables.service';
 import {
   createReceivableSchema,
   updateReceivableSchema,
+  updateReceivableQuerySchema,
   receivableQuerySchema,
   receiveActionSchema,
   deleteReceivableQuerySchema,
@@ -30,7 +31,8 @@ export class ReceivablesController {
 
   async update(req: Request, res: Response): Promise<void> {
     const input = updateReceivableSchema.parse(req.body);
-    const receivable = await this.service.update(req.params.id, input, req.tenantId);
+    const { scope, month, year } = updateReceivableQuerySchema.parse(req.query);
+    const receivable = await this.service.update(req.params.id, input, req.tenantId, scope, month, year);
     res.json(receivable);
   }
 

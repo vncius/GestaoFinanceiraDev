@@ -4,6 +4,7 @@ import {
   cashFlowQuerySchema,
   createTransactionSchema,
   updateTransactionSchema,
+  updateTransactionQuerySchema,
   payActionSchema,
   deleteTransactionQuerySchema,
 } from './cash-flow.schemas';
@@ -27,7 +28,8 @@ export class CashFlowController {
 
   async updatePayment(req: Request, res: Response): Promise<void> {
     const input = updateTransactionSchema.parse(req.body);
-    const tx = await this.service.updatePayment(req.params.id, input, req.tenantId);
+    const { scope, month, year } = updateTransactionQuerySchema.parse(req.query);
+    const tx = await this.service.updatePayment(req.params.id, input, req.tenantId, scope, month, year);
     res.json(tx);
   }
 
@@ -58,7 +60,8 @@ export class CashFlowController {
 
   async updateExtraExpense(req: Request, res: Response): Promise<void> {
     const input = updateTransactionSchema.parse(req.body);
-    const tx = await this.service.updateExtraExpense(req.params.id, input, req.tenantId);
+    const { scope, month, year } = updateTransactionQuerySchema.parse(req.query);
+    const tx = await this.service.updateExtraExpense(req.params.id, input, req.tenantId, scope, month, year);
     res.json(tx);
   }
 

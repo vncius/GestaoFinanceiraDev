@@ -92,6 +92,11 @@ export default function CashFlow() {
     | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction }
     | null
   >(null);
+  const [fixedEditTarget, setFixedEditTarget] = useState<
+    | { kind: 'receivable'; item: Receivable; payload: CreateReceivablePayload }
+    | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction; payload: CreateTransactionPayload }
+    | null
+  >(null);
   const [clearingAll, setClearingAll] = useState(false);
   const [showClearAllScope, setShowClearAllScope] = useState(false);
 
@@ -130,6 +135,11 @@ export default function CashFlow() {
     if (modal?.type !== 'receivable') return;
     if (modal.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
     if (modal.item) {
+      if (modal.item.recurrence === 'FIXED') {
+        closeModal();
+        setFixedEditTarget({ kind: 'receivable', item: modal.item, payload });
+        return;
+      }
       updateReceivable.mutate({ id: modal.item.id, data: payload });
     } else {
       createReceivable.mutate(payload);
@@ -141,12 +151,34 @@ export default function CashFlow() {
     const isPayment = modal.type === 'payment';
     if (modal.item?.status === 'PAID' && !(await confirm(EFFECTED_CONFIRM))) return;
     if (modal.item) {
+      if (modal.item.recurrence === 'FIXED') {
+        closeModal();
+        setFixedEditTarget({ kind: modal.type, item: modal.item, payload });
+        return;
+      }
       if (isPayment) updatePayment.mutate({ id: modal.item.id, data: payload });
       else updateExtra.mutate({ id: modal.item.id, data: payload });
     } else {
       if (isPayment) createPayment.mutate(payload);
       else createExtra.mutate(payload);
     }
+  }
+
+  function runScopedEdit(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
+    if (!fixedEditTarget) return;
+    const { month: m, year: y } = monthYearFromDate(
+      fixedEditTarget.kind === 'receivable'
+        ? fixedEditTarget.item.expectedPaymentDate
+        : fixedEditTarget.item.expectedDate,
+    );
+    if (fixedEditTarget.kind === 'receivable') {
+      updateReceivable.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
+    } else if (fixedEditTarget.kind === 'payment') {
+      updatePayment.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
+    } else {
+      updateExtra.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
+    }
+    setFixedEditTarget(null);
   }
 
   function handleTxPay(id: string) {
@@ -436,6 +468,21 @@ export default function CashFlow() {
         }
         onDeleteCurrent={() => runScopedDelete('CURRENT')}
         onDeleteFuture={() => runScopedDelete('CURRENT_AND_FUTURE')}
+      />
+
+      {/* Scoped edit for fixed (recurring) entries */}
+      <ScopedDeleteModal
+        open={!!fixedEditTarget}
+        onClose={() => setFixedEditTarget(null)}
+        title={t('page.scopedEdit.title')}
+        loading={updateReceivable.isPending || updatePayment.isPending || updateExtra.isPending}
+        description={
+          <>
+            <strong>{fixedEditTarget?.item.description}</strong> {t('page.scopedEdit.description')}
+          </>
+        }
+        onDeleteCurrent={() => runScopedEdit('CURRENT')}
+        onDeleteFuture={() => runScopedEdit('CURRENT_AND_FUTURE')}
       />
 
       {/* Scoped delete for "clear all" when the reference includes fixed (recurring) entries */}

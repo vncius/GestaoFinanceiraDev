@@ -167,6 +167,10 @@
       "title": "Eliminar registro fijo",
       "description": "es un registro fijo. ¿Desea eliminar solo esta referencia, o esta y todas las futuras? El historial de referencias ya registradas/pagadas/recibidas nunca se modifica."
     },
+    "scopedEdit": {
+      "title": "Editar registro fijo",
+      "description": "es un registro fijo. ¿Desea aplicar este cambio solo a esta referencia, o a esta y a todas las futuras? El historial de referencias ya registradas/pagadas/recibidas nunca se modifica."
+    },
     "confirmClearAll": "¿Limpiar todos los {{count}} registro(s) de esta referencia (entradas, pagos y gastos extraordinarios)? Esta acción no se puede deshacer.",
     "clearAllError": "No se pudieron limpiar todos los registros de esta referencia.",
     "scopedClearAll": {
