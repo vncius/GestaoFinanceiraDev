@@ -7,6 +7,9 @@ import {
   updateTransactionQuerySchema,
   payActionSchema,
   deleteTransactionQuerySchema,
+  createIncomeSchema,
+  updateIncomeSchema,
+  receiveActionSchema,
 } from './cash-flow.schemas';
 
 export class CashFlowController {
@@ -16,6 +19,38 @@ export class CashFlowController {
     const query = cashFlowQuerySchema.parse(req.query);
     const data = await this.service.getCashFlow(req.tenantId, query);
     res.json(data);
+  }
+
+  // ─── Income ────────────────────────────────────────────────────────────────
+
+  async createIncome(req: Request, res: Response): Promise<void> {
+    const input = createIncomeSchema.parse(req.body);
+    const tx = await this.service.createIncome(req.tenantId, input);
+    res.status(201).json(tx);
+  }
+
+  async updateIncome(req: Request, res: Response): Promise<void> {
+    const input = updateIncomeSchema.parse(req.body);
+    const { scope, month, year } = updateTransactionQuerySchema.parse(req.query);
+    const tx = await this.service.updateIncome(req.params.id, input, req.tenantId, scope, month, year);
+    res.json(tx);
+  }
+
+  async deleteIncome(req: Request, res: Response): Promise<void> {
+    const { scope, month, year } = deleteTransactionQuerySchema.parse(req.query);
+    await this.service.deleteIncome(req.params.id, req.tenantId, scope, month, year);
+    res.status(204).send();
+  }
+
+  async receiveIncome(req: Request, res: Response): Promise<void> {
+    const input = receiveActionSchema.parse(req.body);
+    const tx = await this.service.receiveIncome(req.params.id, req.tenantId, input);
+    res.json(tx);
+  }
+
+  async revertIncome(req: Request, res: Response): Promise<void> {
+    const tx = await this.service.revertIncome(req.params.id, req.tenantId);
+    res.json(tx);
   }
 
   // ─── Payments ──────────────────────────────────────────────────────────────

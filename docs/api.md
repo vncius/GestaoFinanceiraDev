@@ -68,13 +68,22 @@ Contas a receber (entradas). Suporta recorrência fixa — ver [`docs/domain-log
 | POST   | `/receivables/:id/receive` | `{ actualPaymentDate? }` (opcional) — marca como `RECEIVED` |
 | POST   | `/receivables/:id/revert`  | — volta para `EXPECTED` |
 
+> **Em fase de descontinuação** (refactor de contas PF/PJ, ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)): `npm run migrate:receivables-to-income` (dry-run por padrão; `-- --apply` grava) converte cada `Receivable` em `FinancialTransaction` tipo `INCOME` no Cash Flow, iterando todos os tenants. Idempotente — pode ser rodado quantas vezes forem necessárias antes de confirmar. Este módulo será removido depois que a migração for aplicada e conferida (entrega E3).
+
 ## Cash Flow
 
-Visão consolidada do fluxo de caixa mensal (entradas, pagamentos, gastos extraordinários e faturas de cartão do mês) + CRUD de pagamentos e gastos extraordinários.
+Visão consolidada do fluxo de caixa mensal (entradas, pagamentos, gastos extraordinários e faturas de cartão do mês) + CRUD de entradas, pagamentos e gastos extraordinários.
+
+`/cash-flow/income` é o CRUD nativo de entrada (`FinancialTransaction` tipo `INCOME`), que hoje coexiste com `/receivables` — o `GET /cash-flow` ainda lista `entries` a partir de Recebimentos; a migração para `income` como fonte única do fluxo acontece em entregas futuras do refactor de contas.
 
 | Método | Rota                               | Body / Query |
 |--------|-------------------------------------|--------------|
 | GET    | `/cash-flow`                          | `?month=&year=` (obrigatórios) — dispara a geração sob demanda de ocorrências fixas antes de responder |
+| POST   | `/cash-flow/income`                   | `{ description, categoryId, amount, expectedDate, targetAccountId?, recurrence?, notes? }` |
+| PUT    | `/cash-flow/income/:id`               | campos opcionais |
+| DELETE | `/cash-flow/income/:id`               | `?scope=&month=&year=` (mesma regra de recorrência fixa acima) |
+| POST   | `/cash-flow/income/:id/receive`       | `{ actualDate?, amountReceived? }` (opcional) — marca como `RECEIVED` |
+| POST   | `/cash-flow/income/:id/revert`        | — volta para `PENDING` |
 | POST   | `/cash-flow/payments`                 | `{ description, categoryId, amount, expectedDate, sourceAccountId?, recurrence?, notes? }` |
 | PUT    | `/cash-flow/payments/:id`             | campos opcionais |
 | DELETE | `/cash-flow/payments/:id`             | `?scope=&month=&year=` (mesma regra de recorrência fixa acima) |

@@ -21,8 +21,24 @@ import {
   CreateTransactionInput,
   UpdateTransactionInput,
   PayActionInput,
+  CreateIncomeInput,
+  UpdateIncomeInput,
+  ReceiveActionInput,
 } from './cash-flow.schemas';
 import { DeleteScope } from '../../shared/types/recurrence.types';
+
+// Shape comum aceito pelas mutações internas (update/recorrência), coberto tanto
+// por CreateTransactionInput (sourceAccountId) quanto por CreateIncomeInput (targetAccountId).
+type TransactionMutationInput = {
+  description?: string;
+  categoryId?: string;
+  amount?: number;
+  expectedDate?: string;
+  sourceAccountId?: string | null;
+  targetAccountId?: string | null;
+  notes?: string | null;
+  recurrence?: RecurrenceType;
+};
 
 export class CashFlowService {
   constructor(
@@ -247,6 +263,67 @@ export class CashFlowService {
     };
   }
 
+  // ─── Income ──────────────────────────────────────────────────────────────────
+
+  async createIncome(tenantId: string, input: CreateIncomeInput): Promise<FinancialTransaction> {
+    const settings = await this.settingsRepo.get(tenantId);
+    const targetAccountId = input.targetAccountId ?? settings?.mainAccountId ?? null;
+
+    const now = nowISO();
+    const id = generateId();
+    const recurrence = input.recurrence ?? RecurrenceType.UNIQUE;
+    return this.transactionsRepo.create({
+      id,
+      tenantId,
+      type: TransactionType.INCOME,
+      description: input.description,
+      categoryId: input.categoryId,
+      amount: input.amount,
+      expectedDate: input.expectedDate,
+      actualDate: null,
+      status: TransactionStatus.PENDING,
+      sourceAccountId: null,
+      targetAccountId,
+      originType: null,
+      originId: null,
+      notes: input.notes ?? null,
+      recurrence,
+      recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,
+      recurringActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  async updateIncome(
+    id: string,
+    input: UpdateIncomeInput,
+    tenantId: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
+  ): Promise<FinancialTransaction> {
+    return this.updateTransactionChecked(id, TransactionType.INCOME, input, tenantId, scope, referenceMonth, referenceYear);
+  }
+
+  async deleteIncome(
+    id: string,
+    tenantId: string,
+    scope?: DeleteScope,
+    referenceMonth?: number,
+    referenceYear?: number,
+  ): Promise<void> {
+    return this.deleteTransactionChecked(id, TransactionType.INCOME, tenantId, scope, referenceMonth, referenceYear);
+  }
+
+  async receiveIncome(id: string, tenantId: string, input: ReceiveActionInput): Promise<FinancialTransaction> {
+    return this.settleTransactionChecked(id, TransactionType.INCOME, tenantId, input?.actualDate, input?.amountReceived);
+  }
+
+  async revertIncome(id: string, tenantId: string): Promise<FinancialTransaction> {
+    return this.revertTransactionChecked(id, TransactionType.INCOME, tenantId);
+  }
+
   // ─── Payments ────────────────────────────────────────────────────────────────
 
   async createPayment(tenantId: string, input: CreateTransactionInput): Promise<FinancialTransaction> {
@@ -275,7 +352,7 @@ export class CashFlowService {
   }
 
   async payPayment(id: string, tenantId: string, input: PayActionInput): Promise<FinancialTransaction> {
-    return this.payTransactionChecked(id, TransactionType.PAYMENT, tenantId, input);
+    return this.settleTransactionChecked(id, TransactionType.PAYMENT, tenantId, input?.actualDate, input?.amountPaid);
   }
 
   async revertPayment(id: string, tenantId: string): Promise<FinancialTransaction> {
@@ -317,7 +394,7 @@ export class CashFlowService {
     tenantId: string,
     input: PayActionInput,
   ): Promise<FinancialTransaction> {
-    return this.payTransactionChecked(id, TransactionType.EXTRA_EXPENSE, tenantId, input);
+    return this.settleTransactionChecked(id, TransactionType.EXTRA_EXPENSE, tenantId, input?.actualDate, input?.amountPaid);
   }
 
   async revertExtraExpense(id: string, tenantId: string): Promise<FinancialTransaction> {
@@ -364,7 +441,7 @@ export class CashFlowService {
   private async updateTransactionChecked(
     id: string,
     type: TransactionType,
-    input: UpdateTransactionInput,
+    input: TransactionMutationInput,
     tenantId: string,
     scope?: DeleteScope,
     referenceMonth?: number,
@@ -409,7 +486,7 @@ export class CashFlowService {
 
   private async updateFixedTransaction(
     existing: FinancialTransaction,
-    input: UpdateTransactionInput,
+    input: TransactionMutationInput,
     tenantId: string,
     scope: DeleteScope,
     referenceMonth: number,
@@ -450,11 +527,13 @@ export class CashFlowService {
   ): Promise<void> {
     const tx = await this.getTransactionChecked(id, type, tenantId);
 
-    if (tx.status === TransactionStatus.PAID) {
+    if (tx.status === this.settledStatus(type)) {
       throw new AppError(
-        'Lançamentos já pagos não podem ser excluídos. Reverta primeiro.',
+        type === TransactionType.INCOME
+          ? 'Lançamentos já recebidos não podem ser excluídos. Reverta primeiro.'
+          : 'Lançamentos já pagos não podem ser excluídos. Reverta primeiro.',
         400,
-        'transaction.paidCannotDelete',
+        'transaction.settledCannotDelete',
       );
     }
 
@@ -517,6 +596,8 @@ export class CashFlowService {
     ]);
   }
 
+  // Agnóstico ao TransactionType — materializa recorrência fixa de PAYMENT,
+  // EXTRA_EXPENSE e INCOME igualmente, já que todos compartilham recurringGroupId/recurringActive.
   private async ensureFixedTransactions(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
     const all = await this.transactionsRepo.findAll(tenantId);
     const fixed = all.filter((t) => t.recurrence === RecurrenceType.FIXED);
@@ -629,30 +710,46 @@ export class CashFlowService {
     }
   }
 
-  private async payTransactionChecked(
+  // Status "concluído" varia por tipo: INCOME vira RECEIVED (espelha Receivable),
+  // os demais tipos viram PAID.
+  private settledStatus(type: TransactionType): TransactionStatus {
+    return type === TransactionType.INCOME ? TransactionStatus.RECEIVED : TransactionStatus.PAID;
+  }
+
+  private async settleTransactionChecked(
     id: string,
     type: TransactionType,
     tenantId: string,
-    input: PayActionInput,
+    actualDate?: string,
+    settledAmount?: number,
   ): Promise<FinancialTransaction> {
     const tx = await this.getTransactionChecked(id, type, tenantId);
+    const isIncome = type === TransactionType.INCOME;
 
-    if (tx.status === TransactionStatus.PAID) {
-      throw new AppError('Lançamento já foi pago.', 400, 'transaction.alreadyPaid');
+    if (tx.status === this.settledStatus(type)) {
+      throw new AppError(
+        isIncome ? 'Lançamento já foi recebido.' : 'Lançamento já foi pago.',
+        400,
+        'transaction.alreadySettled',
+      );
     }
     if (tx.status === TransactionStatus.CANCELED) {
-      throw new AppError('Lançamentos cancelados não podem ser pagos.', 400, 'transaction.canceledCannotPay');
+      throw new AppError(
+        isIncome ? 'Lançamentos cancelados não podem ser recebidos.' : 'Lançamentos cancelados não podem ser pagos.',
+        400,
+        'transaction.canceledCannotSettle',
+      );
     }
 
     const now = nowISO();
-    const effectiveDate = input?.actualDate ?? tx.expectedDate;
-    const amountPaid = input?.amountPaid ?? tx.amount;
+    const effectiveDate = actualDate ?? tx.expectedDate;
+    const amount = settledAmount ?? tx.amount;
 
     return this.transactionsRepo.update(id, {
-      status: TransactionStatus.PAID,
+      status: this.settledStatus(type),
       expectedDate: effectiveDate,
       actualDate: now,
-      amount: amountPaid,
+      amount,
       updatedAt: now,
     }, tenantId);
   }
@@ -664,11 +761,13 @@ export class CashFlowService {
   ): Promise<FinancialTransaction> {
     const tx = await this.getTransactionChecked(id, type, tenantId);
 
-    if (tx.status !== TransactionStatus.PAID) {
+    if (tx.status !== this.settledStatus(type)) {
       throw new AppError(
-        'Apenas lançamentos com status PAID podem ser revertidos.',
+        type === TransactionType.INCOME
+          ? 'Apenas lançamentos com status RECEIVED podem ser revertidos.'
+          : 'Apenas lançamentos com status PAID podem ser revertidos.',
         400,
-        'transaction.notPaidCannotRevert',
+        'transaction.notSettledCannotRevert',
       );
     }
 

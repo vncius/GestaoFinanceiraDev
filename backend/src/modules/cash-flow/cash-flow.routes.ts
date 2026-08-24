@@ -8,6 +8,13 @@ const controller = controllers.cashFlow;
 // resumo mensal
 router.get('/', asyncHandler((req, res) => controller.getCashFlow(req, res)));
 
+// entradas
+router.post('/income', asyncHandler((req, res) => controller.createIncome(req, res)));
+router.put('/income/:id', asyncHandler((req, res) => controller.updateIncome(req, res)));
+router.delete('/income/:id', asyncHandler((req, res) => controller.deleteIncome(req, res)));
+router.post('/income/:id/receive', asyncHandler((req, res) => controller.receiveIncome(req, res)));
+router.post('/income/:id/revert', asyncHandler((req, res) => controller.revertIncome(req, res)));
+
 // pagamentos
 router.post('/payments', asyncHandler((req, res) => controller.createPayment(req, res)));
 router.put('/payments/:id', asyncHandler((req, res) => controller.updatePayment(req, res)));
