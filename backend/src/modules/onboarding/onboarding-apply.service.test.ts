@@ -72,6 +72,9 @@ class FakeCreator<TInput extends { name?: string; description?: string }> {
 
 class FakeSettingsService {
   calls: Array<{ tenantId: string; input: Record<string, unknown> }> = [];
+  async get(): Promise<{ id: string }> {
+    return { id: 'settings-1' };
+  }
   async update(tenantId: string, input: Record<string, unknown>): Promise<{ id: string }> {
     this.calls.push({ tenantId, input });
     return { id: 'settings-1' };
@@ -104,8 +107,10 @@ function setup() {
     settingsService,
     creditCardsService: creditCardsCreator,
     cashFlowService: {
-      createPayment: paymentsCreator.create.bind(paymentsCreator),
-      createIncome: incomeCreator.create.bind(incomeCreator),
+      createPayment: (tenantId: string, _accountId: string, input: unknown) =>
+        paymentsCreator.create(tenantId, input as never),
+      createIncome: (tenantId: string, _accountId: string, input: unknown) =>
+        incomeCreator.create(tenantId, input as never),
     },
     accountTypesRepo: accountTypesCreator.repo(),
     accountsRepo: accountsCreator.repo(),
@@ -219,9 +224,6 @@ describe('OnboardingApplyService', () => {
     expect(incomeInput.categoryId).toBe(result.appliedEntityIds.cat_1);
     expect(incomeInput.amount).toBe(1200000);
     expect(incomeInput.targetAccountId).toBe(result.appliedEntityIds.acc_1);
-
-    // Conta principal registrada nos settings
-    expect(ctx.settingsService.calls[0].input.mainAccountId).toBe(result.appliedEntityIds.acc_1);
 
     const state = await ctx.onboardingService.getState(TENANT_ID);
     expect(state.appliedAt).not.toBeNull();

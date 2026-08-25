@@ -147,7 +147,7 @@ async function seedCategories() {
   }
 }
 
-async function seedSettings(mainAccountId: string) {
+async function seedSettings() {
   const existing = await settingsRepo.get(DEFAULT_TENANT_ID);
   if (existing) {
     console.log('  [settings] Configuração já existe — pulando seed.');
@@ -159,7 +159,7 @@ async function seedSettings(mainAccountId: string) {
   await settingsRepo.upsert({
     id: generateId(),
     tenantId: DEFAULT_TENANT_ID,
-    mainAccountId,
+    dashboardScope: 'CONSOLIDATED',
     createdAt: now,
     updatedAt: now,
   });
@@ -173,14 +173,9 @@ async function main() {
   await connectMongo();
 
   const [mainType, reserveType] = await seedAccountTypes();
-  const accounts = await seedAccounts(mainType.id, reserveType.id);
+  await seedAccounts(mainType.id, reserveType.id);
   await seedCategories();
-
-  const main = accounts.find((a) => a.accountTypeId === mainType.id);
-
-  if (main) {
-    await seedSettings(main.id);
-  }
+  await seedSettings();
 
   console.log('\n✅ Seed concluído!\n');
 }

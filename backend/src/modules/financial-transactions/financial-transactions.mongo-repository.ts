@@ -10,7 +10,12 @@ import {
 export class FinancialTransactionsMongoRepository
   implements FinancialTransactionsRepository
 {
-  private store = new MongoStore<FinancialTransaction>('financial_transactions');
+  // Índices por conta: getCashFlow (E5) e calcAccountBalance filtram por
+  // sourceAccountId/targetAccountId em cada requisição.
+  private store = new MongoStore<FinancialTransaction>('financial_transactions', [
+    { tenantId: 1, sourceAccountId: 1 },
+    { tenantId: 1, targetAccountId: 1 },
+  ]);
 
   findAll(tenantId: string) {
     return this.store.findAll(tenantId);

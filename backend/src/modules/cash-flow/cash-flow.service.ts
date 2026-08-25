@@ -10,9 +10,8 @@ import {
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
-import { SettingsRepository } from '../settings/settings.repository';
-import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
-import { InvoiceStatus } from '../credit-cards/credit-cards.types';
+import { CreditCardsRepository, CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
+import { CreditCardInvoice, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CashFlowResponse } from './cash-flow.types';
 import {
   CashFlowQuery,
@@ -42,25 +41,30 @@ export class CashFlowService {
   constructor(
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly accountsRepo: AccountsRepository,
-    private readonly settingsRepo: SettingsRepository,
     private readonly creditCardInvoicesRepo?: CreditCardInvoicesRepository,
+    private readonly creditCardsRepo?: CreditCardsRepository,
   ) {}
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
 
   async getCashFlow(tenantId: string, query: CashFlowQuery): Promise<CashFlowResponse> {
-    const { month, year } = query;
+    const { month, year, accountId } = query;
 
     await this.ensureFixedTransactions(tenantId, month, year);
 
     // Uma única leitura de cada arquivo — os filtros por mês e por intervalo
     // (usados pelas previsões) são feitos em memória sobre esses arrays,
     // em vez de buscar novamente no repositório por período.
-    const [allTransactions, settings, allInvoices] = await Promise.all([
+    const [allTransactions, account, allInvoices, allCards] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
-      this.settingsRepo.get(tenantId),
+      this.accountsRepo.findById(accountId, tenantId),
       this.creditCardInvoicesRepo?.findAll(tenantId) ?? Promise.resolve([]),
+      this.creditCardsRepo?.findAll(tenantId) ?? Promise.resolve([]),
     ]);
+
+    if (!account) {
+      throw new AppError('Conta não encontrada.', 404, 'account.notFound');
+    }
 
     // "Previsto" acumula do mês atual (real) até o mês de referência quando
     // este está no futuro — ex.: hoje é 07 e a referência é 12, soma 07..12.
@@ -82,10 +86,17 @@ export class CashFlowService {
     const inSelectedMonth = (key: number) => key === selectedKey;
     const inProjectionRange = (key: number) => key >= rangeStartKey && key <= selectedKey;
 
-    const monthInvoices = allInvoices.filter(
+    // Cartões continuam globais ao tenant, mas a saída de uma fatura só entra
+    // no fluxo da conta que efetivamente a paga (ou pagaria, se ainda aberta).
+    const cardMap = new Map(allCards.map((c) => [c.id, c]));
+    const invoicePayerAccountId = (inv: CreditCardInvoice): string | null =>
+      inv.paymentAccountId ?? cardMap.get(inv.creditCardId)?.defaultPaymentAccountId ?? null;
+    const invoicesForAccount = allInvoices.filter((inv) => invoicePayerAccountId(inv) === accountId);
+
+    const monthInvoices = invoicesForAccount.filter(
       (inv) => inv.status !== InvoiceStatus.CANCELED && inSelectedMonth(monthKey(inv.month, inv.year)),
     );
-    const rangeInvoices = allInvoices.filter(
+    const rangeInvoices = invoicesForAccount.filter(
       (inv) =>
         inv.status !== InvoiceStatus.CANCELED &&
         inv.status !== InvoiceStatus.PAID &&
@@ -93,103 +104,74 @@ export class CashFlowService {
     );
 
     const entries = allTransactions.filter(
-      (t) => t.type === TransactionType.INCOME && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
+      (t) =>
+        t.type === TransactionType.INCOME &&
+        !this.isExcludedFromFlow(t) &&
+        t.targetAccountId === accountId &&
+        inSelectedMonth(dateKey(t.expectedDate)),
     );
     const rangeEntries = allTransactions.filter(
       (t) =>
         t.type === TransactionType.INCOME &&
         !this.isExcludedFromFlow(t) &&
+        t.targetAccountId === accountId &&
         t.status !== TransactionStatus.RECEIVED &&
         inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const payments = allTransactions.filter(
-      (t) => t.type === TransactionType.PAYMENT && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
+      (t) =>
+        t.type === TransactionType.PAYMENT &&
+        !this.isExcludedFromFlow(t) &&
+        t.sourceAccountId === accountId &&
+        inSelectedMonth(dateKey(t.expectedDate)),
     );
     const rangePayments = allTransactions.filter(
       (t) =>
         t.type === TransactionType.PAYMENT &&
         !this.isExcludedFromFlow(t) &&
+        t.sourceAccountId === accountId &&
         t.status !== TransactionStatus.PAID &&
         inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const extraExpenses = allTransactions.filter(
-      (t) => t.type === TransactionType.EXTRA_EXPENSE && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
+      (t) =>
+        t.type === TransactionType.EXTRA_EXPENSE &&
+        !this.isExcludedFromFlow(t) &&
+        t.sourceAccountId === accountId &&
+        inSelectedMonth(dateKey(t.expectedDate)),
     );
     const rangeExtraExpenses = allTransactions.filter(
       (t) =>
         t.type === TransactionType.EXTRA_EXPENSE &&
         !this.isExcludedFromFlow(t) &&
+        t.sourceAccountId === accountId &&
         t.status !== TransactionStatus.PAID &&
         inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const monthStart = new Date(year, month - 1, 1);
-    const monthEnd = new Date(year, month, 1); // primeiro dia do mês seguinte
-    const mainId = settings?.mainAccountId ?? null;
-
-    // Contas de reserva agora são configuradas individualmente (Account.autoReserveEnabled),
-    // em vez de um único settings.emergencyReserveAccountId.
-    const allAccounts = await this.accountsRepo.findActive(tenantId);
-    const reserveAccounts = allAccounts.filter((a) => a.autoReserveEnabled);
-    const reserveAccountIds = new Set(reserveAccounts.map((a) => a.id));
-
     // O saldo inicial da projeção só precisa ser recalculado com um corte
     // diferente (início do mês atual) quando a referência é futura; nos
     // demais casos reaproveita o mesmo saldo do mês selecionado (initialBalance).
-    // Para a reserva, o corte em rangeStart já coincide com o início do mês
-    // selecionado quando a referência não é futura, então é sempre calculado
-    // diretamente (mesma lógica de acúmulo futuro dos demais campos previstos).
     const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
-    const mainAccount = mainId ? await this.accountsRepo.findById(mainId, tenantId) : null;
 
-    const mainInitial = mainAccount ? calcAccountBalance(mainAccount, allTransactions, monthStart) : 0;
-    const reserveEndBalance = reserveAccounts.reduce(
-      (s, a) => s + calcAccountBalance(a, allTransactions, monthEnd),
-      0,
-    );
-    const futureRangeInitial =
-      isFutureSelection && mainAccount ? calcAccountBalance(mainAccount, allTransactions, rangeStart) : null;
-    const reserveProjectedInitialBalance = reserveAccounts.reduce(
-      (s, a) => s + calcAccountBalance(a, allTransactions, rangeStart),
-      0,
-    );
-
-    const initialBalance = mainInitial;
-    const projectedInitialBalance = futureRangeInitial ?? initialBalance;
-
-    // Transações de contas de reserva não afetam os totais da conta principal
-    const mainEntries = entries.filter(
-      (t) => !t.targetAccountId || !reserveAccountIds.has(t.targetAccountId),
-    );
-    const mainPayments = payments.filter(
-      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
-    );
-    const mainExtraExpenses = extraExpenses.filter(
-      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
-    );
-
-    const rangeMainEntries = rangeEntries.filter(
-      (t) => !t.targetAccountId || !reserveAccountIds.has(t.targetAccountId),
-    );
-    const rangeMainPayments = rangePayments.filter(
-      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
-    );
-    const rangeMainExtraExpenses = rangeExtraExpenses.filter(
-      (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
-    );
+    const initialBalance = calcAccountBalance(account, allTransactions, monthStart);
+    const projectedInitialBalance = isFutureSelection
+      ? calcAccountBalance(account, allTransactions, rangeStart)
+      : initialBalance;
 
     // realizado — sempre restrito ao mês selecionado
-    const receivedIncome = mainEntries
+    const receivedIncome = entries
       .filter((t) => t.status === TransactionStatus.RECEIVED)
       .reduce((s, t) => s + t.amount, 0);
 
-    const paidPayments = mainPayments
+    const paidPayments = payments
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
-    const paidExtraExpenses = mainExtraExpenses
+    const paidExtraExpenses = extraExpenses
       .filter((t) => t.status === TransactionStatus.PAID)
       .reduce((s, t) => s + t.amount, 0);
 
@@ -199,31 +181,10 @@ export class CashFlowService {
 
     // previsto — mês atual até o mês selecionado (colapsa para o próprio
     // mês quando a referência não é futura)
-    const expectedIncome = rangeMainEntries.reduce((s, t) => s + t.amount, 0);
-    const expectedPayments = rangeMainPayments.reduce((s, t) => s + t.amount, 0);
-    const expectedExtraExpenses = rangeMainExtraExpenses.reduce((s, t) => s + t.amount, 0);
+    const expectedIncome = rangeEntries.reduce((s, t) => s + t.amount, 0);
+    const expectedPayments = rangePayments.reduce((s, t) => s + t.amount, 0);
+    const expectedExtraExpenses = rangeExtraExpenses.reduce((s, t) => s + t.amount, 0);
     const creditCardInvoicesTotal = rangeInvoices.reduce((s, inv) => s + inv.totalAmount, 0);
-
-    // Split de reserva não existe mais na criação de uma entrada (D4b) — o que
-    // conta como "entrou na reserva este mês" é: (a) entradas cujo destino já é
-    // uma conta de reserva, direto; (b) transações RESERVE históricas
-    // (congeladas, geradas pelo antigo Recebimentos.receive()), que continuam
-    // tendo como targetAccountId a própria conta de reserva.
-    const reserveTxInMonth = allTransactions.filter(
-      (t) => t.type === TransactionType.RESERVE && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
-    );
-    const reserveInflow = [...entries, ...reserveTxInMonth]
-      .filter((t) => t.status === TransactionStatus.RECEIVED && !!t.targetAccountId && reserveAccountIds.has(t.targetAccountId))
-      .reduce((s, t) => s + t.amount, 0);
-
-    const reserveOutflow = [...payments, ...extraExpenses]
-      .filter(
-        (t) =>
-          t.status === TransactionStatus.PAID &&
-          !!t.sourceAccountId &&
-          reserveAccountIds.has(t.sourceAccountId),
-      )
-      .reduce((s, t) => s + t.amount, 0);
 
     return {
       month,
@@ -255,19 +216,14 @@ export class CashFlowService {
           paidPayments -
           paidExtraExpenses -
           paidCreditCards,
-        reserveProjectedInitialBalance,
-        reserveInflow,
-        reserveOutflow,
-        reserveEndBalance,
       },
     };
   }
 
   // ─── Income ──────────────────────────────────────────────────────────────────
 
-  async createIncome(tenantId: string, input: CreateIncomeInput): Promise<FinancialTransaction> {
-    const settings = await this.settingsRepo.get(tenantId);
-    const targetAccountId = input.targetAccountId ?? settings?.mainAccountId ?? null;
+  async createIncome(tenantId: string, accountId: string, input: CreateIncomeInput): Promise<FinancialTransaction> {
+    const targetAccountId = input.targetAccountId ?? accountId;
 
     const now = nowISO();
     const id = generateId();
@@ -326,8 +282,8 @@ export class CashFlowService {
 
   // ─── Payments ────────────────────────────────────────────────────────────────
 
-  async createPayment(tenantId: string, input: CreateTransactionInput): Promise<FinancialTransaction> {
-    return this.createTransaction(TransactionType.PAYMENT, tenantId, input);
+  async createPayment(tenantId: string, accountId: string, input: CreateTransactionInput): Promise<FinancialTransaction> {
+    return this.createTransaction(TransactionType.PAYMENT, tenantId, accountId, input);
   }
 
   async updatePayment(
@@ -363,9 +319,10 @@ export class CashFlowService {
 
   async createExtraExpense(
     tenantId: string,
+    accountId: string,
     input: CreateTransactionInput,
   ): Promise<FinancialTransaction> {
-    return this.createTransaction(TransactionType.EXTRA_EXPENSE, tenantId, input);
+    return this.createTransaction(TransactionType.EXTRA_EXPENSE, tenantId, accountId, input);
   }
 
   async updateExtraExpense(
@@ -406,11 +363,10 @@ export class CashFlowService {
   private async createTransaction(
     type: TransactionType,
     tenantId: string,
+    accountId: string,
     input: CreateTransactionInput,
   ): Promise<FinancialTransaction> {
-    const settings = await this.settingsRepo.get(tenantId);
-    const sourceAccountId =
-      input.sourceAccountId ?? settings?.mainAccountId ?? null;
+    const sourceAccountId = input.sourceAccountId ?? accountId;
 
     const now = nowISO();
     const id = generateId();

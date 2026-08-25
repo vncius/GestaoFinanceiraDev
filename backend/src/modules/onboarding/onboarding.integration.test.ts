@@ -253,24 +253,23 @@ function buildEnvironment() {
   const creditCardInstallmentsRepo = new FakeCreditCardInstallmentsRepo();
   const creditCardInvoicesRepo = new FakeCreditCardInvoicesRepo();
 
-  const accountsService = new AccountsService(accountsRepo, settingsRepo);
+  const accountsService = new AccountsService(accountsRepo);
   const accountTypesService = new AccountTypesService(accountTypesRepo);
   const categoriesService = new CategoriesService(categoriesRepo);
-  const settingsService = new SettingsService(settingsRepo, accountsRepo);
+  const settingsService = new SettingsService(settingsRepo);
   const creditCardsService = new CreditCardsService(
     creditCardsRepo,
     creditCardEntriesRepo,
     creditCardInstallmentsRepo,
     creditCardInvoicesRepo,
     transactionsRepo,
-    settingsRepo,
     categoriesRepo,
   );
   const cashFlowService = new CashFlowService(
     transactionsRepo,
     accountsRepo,
-    settingsRepo,
     creditCardInvoicesRepo,
+    creditCardsRepo,
   );
 
   const onboardingStateRepo = new InMemoryOnboardingStateRepo();
@@ -414,9 +413,6 @@ describe('Onboarding — fluxo completo (integração)', () => {
     expect(accounts).toHaveLength(2);
     const main = accounts.find((a) => a.name === 'Nubank PJ');
     expect(main).toBeDefined();
-
-    const settings = await env.settingsRepo.get(TENANT_A);
-    expect(settings?.mainAccountId).toBe(main?.id);
 
     const transactions = await env.transactionsRepo.findAll(TENANT_A);
     const income = transactions.find((t) => t.type === TransactionType.INCOME);

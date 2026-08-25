@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const updateSettingsSchema = z.object({
-  mainAccountId: z.string().uuid().nullable(),
+  dashboardScope: z.enum(['CONSOLIDATED', 'ACCOUNT']),
 }).partial();
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

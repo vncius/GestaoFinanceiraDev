@@ -156,7 +156,6 @@ function buildContext() {
     installmentsRepo,
     invoicesRepo,
     transactionsRepo,
-    settingsRepo,
     categoriesRepo,
   );
 

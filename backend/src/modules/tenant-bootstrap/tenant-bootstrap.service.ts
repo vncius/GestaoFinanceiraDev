@@ -2,7 +2,6 @@ import { AccountTypesService } from '../account-types/account-types.service';
 import { AccountsService } from '../accounts/accounts.service';
 import { CategoriesService } from '../categories/categories.service';
 import { CategoryType } from '../categories/categories.types';
-import { SettingsService } from '../settings/settings.service';
 
 const MAIN_ACCOUNT_TYPE_NAME = 'Conta Principal';
 const RESERVE_ACCOUNT_TYPE_NAME = 'Reserva de Emergência';
@@ -39,14 +38,12 @@ export class TenantBootstrapService {
     private readonly accountTypesService: AccountTypesService,
     private readonly accountsService: AccountsService,
     private readonly categoriesService: CategoriesService,
-    private readonly settingsService: SettingsService,
   ) {}
 
   async seedDefaults(tenantId: string): Promise<void> {
     const { mainTypeId } = await this.ensureAccountTypes(tenantId);
-    const mainAccountId = await this.ensureMainAccount(tenantId, mainTypeId);
+    await this.ensureMainAccount(tenantId, mainTypeId);
     await this.ensureCategories(tenantId);
-    await this.ensureMainAccountSetting(tenantId, mainAccountId);
   }
 
   private async ensureAccountTypes(tenantId: string): Promise<{ mainTypeId: string }> {
@@ -61,18 +58,17 @@ export class TenantBootstrapService {
     return { mainTypeId: mainType.id };
   }
 
-  private async ensureMainAccount(tenantId: string, mainTypeId: string): Promise<string | null> {
+  private async ensureMainAccount(tenantId: string, mainTypeId: string): Promise<void> {
     const existing = await this.accountsService.findAll(tenantId);
-    if (existing.length > 0) return null;
+    if (existing.length > 0) return;
 
-    const account = await this.accountsService.create(tenantId, {
+    await this.accountsService.create(tenantId, {
       name: MAIN_ACCOUNT_TYPE_NAME,
       accountTypeId: mainTypeId,
       initialBalance: 0,
       autoReserveEnabled: false,
       autoReservePercentage: 0,
     });
-    return account.id;
   }
 
   private async ensureCategories(tenantId: string): Promise<void> {
@@ -85,12 +81,5 @@ export class TenantBootstrapService {
     for (const name of DEFAULT_EXPENSE_CATEGORIES) {
       await this.categoriesService.create(tenantId, { name, type: CategoryType.EXPENSE });
     }
-  }
-
-  private async ensureMainAccountSetting(tenantId: string, mainAccountId: string | null): Promise<void> {
-    if (!mainAccountId) return;
-    const settings = await this.settingsService.get(tenantId);
-    if (settings.mainAccountId) return;
-    await this.settingsService.update(tenantId, { mainAccountId });
   }
 }

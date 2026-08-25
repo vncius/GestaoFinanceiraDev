@@ -160,7 +160,6 @@ function buildService() {
     installmentsRepo,
     invoicesRepo,
     transactionsRepo,
-    settingsRepo,
     categoriesRepo,
   );
 

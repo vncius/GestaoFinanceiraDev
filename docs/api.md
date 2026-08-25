@@ -51,32 +51,34 @@ Configurações globais (singleton — sempre um único registro).
 | Método | Rota        | Body / Query |
 |--------|-------------|--------------|
 | GET    | `/settings`   | —              |
-| PUT    | `/settings`   | `{ mainAccountId? }` — Limites de faturamento, período de controle e Nota Fiscal foram removidos (refactor de contas PF/PJ, entrega E4; ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)) |
+| PUT    | `/settings`   | `{ dashboardScope?: 'CONSOLIDATED'\|'ACCOUNT' }` — `mainAccountId` foi removido (refactor de contas PF/PJ, entrega E5: cada conta agora é seu próprio contexto financeiro; ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)). Limites de faturamento, período de controle e Nota Fiscal já haviam saído na E4. |
 
 ## Cash Flow
 
-Visão consolidada do fluxo de caixa mensal (entradas, pagamentos, gastos extraordinários e faturas de cartão do mês) + CRUD de entradas, pagamentos e gastos extraordinários.
+Fluxo de caixa **por conta** (entradas, pagamentos, gastos extraordinários e faturas de cartão do mês daquela conta) + CRUD de entradas, pagamentos e gastos extraordinários. Desde a E5, não existe mais fluxo "consolidado" — toda consulta é de uma conta específica; o `initialBalance`/`projectedBalance` do resumo são o saldo daquela conta.
 
 `/cash-flow/income` é o CRUD de entrada (`FinancialTransaction` tipo `INCOME`) e a única fonte de `entries` no `GET /cash-flow`. O módulo `/receivables` foi removido (refactor de contas PF/PJ, entrega E3 — ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)); dados antigos foram migrados para `income` pelo script `migrate-receivables-to-income` (removido do código após a migração — disponível no commit `9acc18c`).
 
 | Método | Rota                               | Body / Query |
 |--------|-------------------------------------|--------------|
-| GET    | `/cash-flow`                          | `?month=&year=` (obrigatórios) — dispara a geração sob demanda de ocorrências fixas antes de responder |
-| POST   | `/cash-flow/income`                   | `{ description, categoryId, amount, expectedDate, targetAccountId?, recurrence?, notes? }` |
+| GET    | `/cash-flow`                          | `?month=&year=&accountId=` (todos obrigatórios) — dispara a geração sob demanda de ocorrências fixas antes de responder; `404 account.notFound` se a conta não existir |
+| POST   | `/cash-flow/income`                   | `?accountId=` (obrigatório — default de `targetAccountId` quando o corpo não informa) — corpo: `{ description, categoryId, amount, expectedDate, targetAccountId?, recurrence?, notes? }` |
 | PUT    | `/cash-flow/income/:id`               | campos opcionais |
 | DELETE | `/cash-flow/income/:id`               | `?scope=&month=&year=` (mesma regra de recorrência fixa acima) |
 | POST   | `/cash-flow/income/:id/receive`       | `{ actualDate?, amountReceived? }` (opcional) — marca como `RECEIVED` |
 | POST   | `/cash-flow/income/:id/revert`        | — volta para `PENDING` |
-| POST   | `/cash-flow/payments`                 | `{ description, categoryId, amount, expectedDate, sourceAccountId?, recurrence?, notes? }` |
+| POST   | `/cash-flow/payments`                 | `?accountId=` (obrigatório — default de `sourceAccountId`) — corpo: `{ description, categoryId, amount, expectedDate, sourceAccountId?, recurrence?, notes? }` |
 | PUT    | `/cash-flow/payments/:id`             | campos opcionais |
 | DELETE | `/cash-flow/payments/:id`             | `?scope=&month=&year=` (mesma regra de recorrência fixa acima) |
 | POST   | `/cash-flow/payments/:id/pay`         | `{ actualDate?, amountPaid? }` (opcional) |
 | POST   | `/cash-flow/payments/:id/revert`      | — |
-| POST   | `/cash-flow/extra-expenses`           | mesmo shape de `payments` |
+| POST   | `/cash-flow/extra-expenses`           | `?accountId=` (obrigatório) — mesmo shape de `payments` |
 | PUT    | `/cash-flow/extra-expenses/:id`       | idem |
 | DELETE | `/cash-flow/extra-expenses/:id`       | idem |
 | POST   | `/cash-flow/extra-expenses/:id/pay`   | idem |
 | POST   | `/cash-flow/extra-expenses/:id/revert`| idem |
+
+Fatura de cartão: cartões continuam globais ao tenant (`GET /credit-cards` lista todos, de qualquer conta), mas a saída de uma fatura só aparece no fluxo da conta que a paga — `invoice.paymentAccountId ?? card.defaultPaymentAccountId`.
 
 ## Credit Cards
 
@@ -101,7 +103,7 @@ Agregações para a tela inicial (saldos, resumo do mês, alertas, vencimentos p
 
 | Método | Rota         | Query |
 |--------|--------------|-------|
-| GET    | `/dashboard`   | `?month=&year=&upcomingDays=` (default 15) `&evolutionMonths=` (default 6) — todos opcionais |
+| GET    | `/dashboard`   | `?month=&year=&upcomingDays=` (default 15) `&evolutionMonths=` (default 6) `&accountId=` — todos opcionais, exceto `accountId` quando `settings.dashboardScope === 'ACCOUNT'` (`400 dashboard.accountRequired` se faltar). Em `CONSOLIDATED` (default), `monthSummary`/`upcomingDues`/`alerts`/`monthlyEvolution`/`categoryBreakdown` somam todas as contas ativas; em `ACCOUNT`, são só da conta informada. `accounts.list`/`totalBalance` sempre listam todas as contas, nos dois modos. |
 
 ## Backup
 
@@ -109,8 +111,8 @@ Backup completo, exportação de lançamentos em CSV e importação de extrato b
 
 | Método | Rota                       | Body / Query |
 |--------|----------------------------|--------------|
-| GET    | `/backup/export`             | — retorna `{ version, exportedAt, data: { accounts, categories, settings, receivables, financialTransactions, creditCards, creditCardEntries, creditCardInstallments, creditCardInvoices } }` como download |
-| POST   | `/backup/import`              | `{ confirm: true, bundle }` — **destrutivo**: substitui todos os dados do tenant pelos do bundle. `tenantId` de cada registro é sempre re-carimbado com o tenant de quem importa, nunca confia no valor do arquivo |
-| GET    | `/backup/export-csv`          | `?from=YYYY-MM-DD&to=YYYY-MM-DD` ou `?all=true` — CSV (delimitador `;`) unificando `FinancialTransaction` + `Receivable` do período |
+| GET    | `/backup/export`             | — retorna `{ version, exportedAt, data: { accounts, categories, settings, financialTransactions, creditCards, creditCardEntries, creditCardInstallments, creditCardInvoices } }` como download |
+| POST   | `/backup/import`              | `{ confirm: true, bundle }` — **destrutivo**: substitui todos os dados do tenant pelos do bundle. `tenantId` de cada registro é sempre re-carimbado com o tenant de quem importa, nunca confia no valor do arquivo. Bundles antigos com a chave `receivables` continuam aceitos (ignorada) |
+| GET    | `/backup/export-csv`          | `?from=YYYY-MM-DD&to=YYYY-MM-DD` ou `?all=true` — CSV (delimitador `;`) com todos os `FinancialTransaction` do período |
 | POST   | `/backup/statement/parse`     | `{ filename, content }` — detecta CSV vs OFX pela extensão/conteúdo, retorna `{ entries: [{ date, description, amount, type, possibleDuplicate }] }` **sem persistir** |
 | POST   | `/backup/statement/import`    | `{ accountId, entries }` — cria um `FinancialTransaction` por entrada revisada na pré-visualização |

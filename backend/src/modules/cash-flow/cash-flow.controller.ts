@@ -10,6 +10,7 @@ import {
   createIncomeSchema,
   updateIncomeSchema,
   receiveActionSchema,
+  accountContextQuerySchema,
 } from './cash-flow.schemas';
 
 export class CashFlowController {
@@ -25,7 +26,8 @@ export class CashFlowController {
 
   async createIncome(req: Request, res: Response): Promise<void> {
     const input = createIncomeSchema.parse(req.body);
-    const tx = await this.service.createIncome(req.tenantId, input);
+    const { accountId } = accountContextQuerySchema.parse(req.query);
+    const tx = await this.service.createIncome(req.tenantId, accountId, input);
     res.status(201).json(tx);
   }
 
@@ -57,7 +59,8 @@ export class CashFlowController {
 
   async createPayment(req: Request, res: Response): Promise<void> {
     const input = createTransactionSchema.parse(req.body);
-    const tx = await this.service.createPayment(req.tenantId, input);
+    const { accountId } = accountContextQuerySchema.parse(req.query);
+    const tx = await this.service.createPayment(req.tenantId, accountId, input);
     res.status(201).json(tx);
   }
 
@@ -89,7 +92,8 @@ export class CashFlowController {
 
   async createExtraExpense(req: Request, res: Response): Promise<void> {
     const input = createTransactionSchema.parse(req.body);
-    const tx = await this.service.createExtraExpense(req.tenantId, input);
+    const { accountId } = accountContextQuerySchema.parse(req.query);
+    const tx = await this.service.createExtraExpense(req.tenantId, accountId, input);
     res.status(201).json(tx);
   }
 

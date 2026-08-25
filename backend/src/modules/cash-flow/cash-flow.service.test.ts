@@ -11,8 +11,6 @@ import {
 } from '../financial-transactions/financial-transactions.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { Account } from '../accounts/accounts.types';
-import { SettingsRepository } from '../settings/settings.repository';
-import { FinancialSettings } from '../settings/settings.types';
 
 const TENANT_ID = 'test-tenant-1';
 
@@ -78,28 +76,13 @@ class FakeAccountsRepo extends InMemoryRepo<Account> implements AccountsReposito
   }
 }
 
-class FakeSettingsRepo implements SettingsRepository {
-  settings: FinancialSettings | null = null;
-  async get() {
-    return this.settings;
-  }
-  async upsert(data: FinancialSettings) {
-    this.settings = data;
-    return data;
-  }
-  async deleteAll() {
-    this.settings = null;
-  }
-}
-
 function buildService() {
   const transactionsRepo = new FakeTransactionsRepo();
   const accountsRepo = new FakeAccountsRepo();
-  const settingsRepo = new FakeSettingsRepo();
 
-  const service = new CashFlowService(transactionsRepo, accountsRepo, settingsRepo);
+  const service = new CashFlowService(transactionsRepo, accountsRepo);
 
-  return { service, transactionsRepo, accountsRepo, settingsRepo };
+  return { service, transactionsRepo, accountsRepo };
 }
 
 async function seedAccount(accountsRepo: FakeAccountsRepo, overrides: Partial<Account> = {}): Promise<Account> {
@@ -121,17 +104,6 @@ async function seedAccount(accountsRepo: FakeAccountsRepo, overrides: Partial<Ac
   return accountsRepo.create(account);
 }
 
-async function setMainAccount(settingsRepo: FakeSettingsRepo, mainAccountId: string): Promise<void> {
-  const now = new Date().toISOString();
-  await settingsRepo.upsert({
-    id: randomUUID(),
-    tenantId: TENANT_ID,
-    mainAccountId,
-    createdAt: now,
-    updatedAt: now,
-  });
-}
-
 describe('CashFlowService — Income', () => {
   let ctx: ReturnType<typeof buildService>;
 
@@ -143,7 +115,7 @@ describe('CashFlowService — Income', () => {
     const { service, accountsRepo } = ctx;
     const account = await seedAccount(accountsRepo);
 
-    const tx = await service.createIncome(TENANT_ID, {
+    const tx = await service.createIncome(TENANT_ID, account.id, {
       description: 'Salário',
       categoryId: randomUUID(),
       amount: 500000,
@@ -159,12 +131,11 @@ describe('CashFlowService — Income', () => {
     expect(tx.amount).toBe(500000);
   });
 
-  it('createIncome usa settings.mainAccountId quando targetAccountId não é informado', async () => {
-    const { service, accountsRepo, settingsRepo } = ctx;
+  it('createIncome usa a conta do contexto quando targetAccountId não é informado', async () => {
+    const { service, accountsRepo } = ctx;
     const account = await seedAccount(accountsRepo);
-    await setMainAccount(settingsRepo, account.id);
 
-    const tx = await service.createIncome(TENANT_ID, {
+    const tx = await service.createIncome(TENANT_ID, account.id, {
       description: 'Freela',
       categoryId: randomUUID(),
       amount: 100000,
@@ -179,7 +150,7 @@ describe('CashFlowService — Income', () => {
     const { service, accountsRepo } = ctx;
     const account = await seedAccount(accountsRepo);
 
-    const created = await service.createIncome(TENANT_ID, {
+    const created = await service.createIncome(TENANT_ID, account.id, {
       description: 'Salário',
       categoryId: randomUUID(),
       amount: 500000,
@@ -204,7 +175,7 @@ describe('CashFlowService — Income', () => {
     const { service, accountsRepo, transactionsRepo } = ctx;
     const account = await seedAccount(accountsRepo);
 
-    const created = await service.createIncome(TENANT_ID, {
+    const created = await service.createIncome(TENANT_ID, account.id, {
       description: 'Salário',
       categoryId: randomUUID(),
       amount: 500000,
@@ -222,7 +193,7 @@ describe('CashFlowService — Income', () => {
     const { service, accountsRepo } = ctx;
     const account = await seedAccount(accountsRepo);
 
-    const created = await service.createIncome(TENANT_ID, {
+    const created = await service.createIncome(TENANT_ID, account.id, {
       description: 'Salário',
       categoryId: randomUUID(),
       amount: 500000,
@@ -241,7 +212,7 @@ describe('CashFlowService — Income', () => {
     const { service, accountsRepo } = ctx;
     const account = await seedAccount(accountsRepo);
 
-    await service.createIncome(TENANT_ID, {
+    await service.createIncome(TENANT_ID, account.id, {
       description: 'Salário fixo',
       categoryId: randomUUID(),
       amount: 500000,
@@ -250,7 +221,7 @@ describe('CashFlowService — Income', () => {
       recurrence: RecurrenceType.FIXED,
     });
 
-    await service.getCashFlow(TENANT_ID, { month: 8, year: 2026 });
+    await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: account.id });
 
     const { transactionsRepo } = ctx;
     const allIncome = (await transactionsRepo.findAll(TENANT_ID)).filter((t) => t.type === TransactionType.INCOME);
@@ -258,5 +229,81 @@ describe('CashFlowService — Income', () => {
     expect(august).toBeDefined();
     expect(august?.status).toBe(TransactionStatus.PENDING);
     expect(august?.amount).toBe(500000);
+  });
+});
+
+describe('CashFlowService — Conta como contexto financeiro (E5)', () => {
+  let ctx: ReturnType<typeof buildService>;
+
+  beforeEach(() => {
+    ctx = buildService();
+  });
+
+  it('getCashFlow retorna conjuntos disjuntos de lançamentos e saldos independentes para contas diferentes', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const accountA = await seedAccount(accountsRepo, { name: 'Conta A', initialBalance: 100000 });
+    const accountB = await seedAccount(accountsRepo, { name: 'Conta B', initialBalance: 500000 });
+
+    await service.createIncome(TENANT_ID, accountA.id, {
+      description: 'Entrada A',
+      categoryId: randomUUID(),
+      amount: 50000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: accountA.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.createIncome(TENANT_ID, accountB.id, {
+      description: 'Entrada B',
+      categoryId: randomUUID(),
+      amount: 70000,
+      expectedDate: '2026-08-06T00:00:00.000Z',
+      targetAccountId: accountB.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.createPayment(TENANT_ID, accountA.id, {
+      description: 'Pagamento A',
+      categoryId: randomUUID(),
+      amount: 20000,
+      expectedDate: '2026-08-07T00:00:00.000Z',
+      sourceAccountId: accountA.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+
+    const flowA = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: accountA.id });
+    const flowB = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: accountB.id });
+
+    expect(flowA.entries.map((e) => e.description)).toEqual(['Entrada A']);
+    expect(flowA.payments.map((p) => p.description)).toEqual(['Pagamento A']);
+    expect(flowB.entries.map((e) => e.description)).toEqual(['Entrada B']);
+    expect(flowB.payments).toHaveLength(0);
+
+    expect(flowA.summary.initialBalance).toBe(100000);
+    expect(flowB.summary.initialBalance).toBe(500000);
+
+    // Saldos independentes: nenhum lançamento de uma conta vaza pro resumo da outra.
+    const all = await transactionsRepo.findAll(TENANT_ID);
+    expect(all).toHaveLength(3);
+  });
+
+  it('createTransaction (pagamento) usa a conta do contexto como sourceAccountId quando não informado', async () => {
+    const { service, accountsRepo } = ctx;
+    const account = await seedAccount(accountsRepo);
+
+    const tx = await service.createPayment(TENANT_ID, account.id, {
+      description: 'Aluguel',
+      categoryId: randomUUID(),
+      amount: 150000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      recurrence: RecurrenceType.UNIQUE,
+    });
+
+    expect(tx.sourceAccountId).toBe(account.id);
+  });
+
+  it('getCashFlow lança erro quando a conta não existe', async () => {
+    const { service } = ctx;
+    await expect(
+      service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: randomUUID() }),
+    ).rejects.toMatchObject({ code: 'account.notFound' });
   });
 });

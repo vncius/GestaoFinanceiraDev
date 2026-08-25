@@ -181,15 +181,12 @@ export class OnboardingApplyService {
       await record(item.draftItemId, id);
     }
 
-    // 4. Configurações (singleton; update é naturalmente idempotente).
-    // controlScope é só orientação de conversa — nada além de mainAccountId
-    // é persistido em FinancialSettings.
+    // 4. Configurações (singleton). controlScope é só orientação de conversa
+    // — settings não guarda mais conta principal (E5: cada conta é seu
+    // próprio contexto financeiro) nem nenhum outro campo vindo do draft.
     if (draft.settings && !applied[draft.settings.draftItemId]) {
-      const settings = await this.services.settingsService.update(tenantId, { mainAccountId });
+      const settings = await this.services.settingsService.get(tenantId);
       await record(draft.settings.draftItemId, settings.id);
-    } else if (!draft.settings && mainAccountId) {
-      // Sem proposta de settings, mas a conta principal precisa ser registrada.
-      await this.services.settingsService.update(tenantId, { mainAccountId });
     }
 
     // 5. Cartões de crédito
@@ -216,7 +213,10 @@ export class OnboardingApplyService {
     for (const item of draft.incomes) {
       if (applied[item.draftItemId]) continue;
       const payload = item.payload as unknown as DraftIncomePayload;
-      const income = await this.services.cashFlowService.createIncome(tenantId, {
+      // Conta principal do draft é o contexto default quando a receita não
+      // aponta uma conta de destino própria (validateForApply já garante
+      // que existe exatamente uma conta principal neste ponto).
+      const income = await this.services.cashFlowService.createIncome(tenantId, mainAccountId as string, {
         description: payload.description,
         categoryId: resolve(payload.incomeCategoryRef) as string,
         amount: payload.grossAmount,
@@ -231,7 +231,7 @@ export class OnboardingApplyService {
     for (const item of draft.expenses) {
       if (applied[item.draftItemId]) continue;
       const payload = item.payload as unknown as DraftExpensePayload;
-      const transaction = await this.services.cashFlowService.createPayment(tenantId, {
+      const transaction = await this.services.cashFlowService.createPayment(tenantId, mainAccountId as string, {
         description: payload.description,
         categoryId: resolve(payload.categoryRef) as string,
         amount: payload.amount,

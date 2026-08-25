@@ -2,7 +2,6 @@ import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
 import { getInvoiceMonth, addMonths, monthKey } from './credit-cards.date-utils';
-import { SettingsRepository } from '../settings/settings.repository';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { CategoryType } from '../categories/categories.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
@@ -65,7 +64,6 @@ export class CreditCardsService {
     private readonly installmentsRepo: CreditCardInstallmentsRepository,
     private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
-    private readonly settingsRepo: SettingsRepository,
     private readonly categoriesRepo: CategoriesRepository,
   ) {}
 
@@ -666,12 +664,7 @@ export class CreditCardsService {
     if (invoice.status === InvoiceStatus.CANCELED)
       throw new AppError('Fatura cancelada não pode ser paga.', 400, 'creditCardInvoice.canceled');
 
-    const settings = await this.settingsRepo.get(tenantId);
-    const paymentAccountId =
-      input?.paymentAccountId ??
-      card.defaultPaymentAccountId ??
-      settings?.mainAccountId ??
-      null;
+    const paymentAccountId = input?.paymentAccountId ?? card.defaultPaymentAccountId ?? null;
 
     const now = nowISO();
     const paymentDate = input?.paymentDate ?? invoice.dueDate;

@@ -9,8 +9,10 @@ import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardEntriesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInstallmentsRepository } from '../credit-cards/credit-cards.repository';
-import { CardEntryType, InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
+import { CardEntryType, CreditCardInvoice, InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CategoriesRepository } from '../categories/categories.repository';
+import { SettingsRepository } from '../settings/settings.repository';
+import { AppError } from '../../shared/errors/app-error';
 import {
   AlertSeverity,
   AlertType,
@@ -23,7 +25,40 @@ import {
 } from './dashboard.types';
 import { DashboardQuery } from './dashboard.schemas';
 import { CashFlowService } from '../cash-flow/cash-flow.service';
+import { CashFlowSummary } from '../cash-flow/cash-flow.types';
 import { calcAccountBalance } from '../../shared/utils/balance.utils';
+
+const ZERO_SUMMARY: CashFlowSummary = {
+  initialBalance: 0,
+  projectedInitialBalance: 0,
+  expectedIncome: 0,
+  receivedIncome: 0,
+  expectedPayments: 0,
+  paidPayments: 0,
+  expectedExtraExpenses: 0,
+  paidExtraExpenses: 0,
+  creditCardInvoices: 0,
+  paidCreditCardInvoices: 0,
+  projectedBalance: 0,
+  realizedBalance: 0,
+};
+
+function sumSummaries(a: CashFlowSummary, b: CashFlowSummary): CashFlowSummary {
+  return {
+    initialBalance: a.initialBalance + b.initialBalance,
+    projectedInitialBalance: a.projectedInitialBalance + b.projectedInitialBalance,
+    expectedIncome: a.expectedIncome + b.expectedIncome,
+    receivedIncome: a.receivedIncome + b.receivedIncome,
+    expectedPayments: a.expectedPayments + b.expectedPayments,
+    paidPayments: a.paidPayments + b.paidPayments,
+    expectedExtraExpenses: a.expectedExtraExpenses + b.expectedExtraExpenses,
+    paidExtraExpenses: a.paidExtraExpenses + b.paidExtraExpenses,
+    creditCardInvoices: a.creditCardInvoices + b.creditCardInvoices,
+    paidCreditCardInvoices: a.paidCreditCardInvoices + b.paidCreditCardInvoices,
+    projectedBalance: a.projectedBalance + b.projectedBalance,
+    realizedBalance: a.realizedBalance + b.realizedBalance,
+  };
+}
 
 export class DashboardService {
   constructor(
@@ -35,6 +70,7 @@ export class DashboardService {
     private readonly categoriesRepo: CategoriesRepository,
     private readonly cardEntriesRepo: CreditCardEntriesRepository,
     private readonly installmentsRepo: CreditCardInstallmentsRepository,
+    private readonly settingsRepo: SettingsRepository,
   ) {}
 
   async getDashboard(tenantId: string, query: DashboardQuery): Promise<DashboardResponse> {
@@ -43,9 +79,16 @@ export class DashboardService {
     const year = query.year ?? now.getFullYear();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Resumo mensal centralizado no CashFlowService (fonte única de verdade)
-    const cashFlow = await this.cashFlowService.getCashFlow(tenantId, { month, year });
-    const monthSummary = cashFlow.summary;
+    const settings = await this.settingsRepo.get(tenantId);
+    const scopedToAccount = settings?.dashboardScope === 'ACCOUNT';
+    if (scopedToAccount && !query.accountId) {
+      throw new AppError(
+        'Selecione uma conta para o dashboard por conta.',
+        400,
+        'dashboard.accountRequired',
+      );
+    }
+    const accountId = query.accountId ?? null;
 
     const [
       allTransactions,
@@ -68,9 +111,34 @@ export class DashboardService {
     const cardMap = new Map(allCards.map((c) => [c.id, c]));
     const categoryMap = new Map(allCategories.map((c) => [c.id, c]));
     const cardEntryMap = new Map(allCardEntries.map((e) => [e.id, e]));
+    const activeAccounts = allAccounts.filter((a) => a.active);
+
+    const invoicePayerAccountId = (inv: CreditCardInvoice): string | null =>
+      inv.paymentAccountId ?? cardMap.get(inv.creditCardId)?.defaultPaymentAccountId ?? null;
+    // Sem filtro nenhum em modo consolidado; em modo por conta, só passa o
+    // que pertence (ou seria debitado/creditado) na conta selecionada.
+    const matchesScope = (ownerAccountId: string | null) =>
+      !scopedToAccount || ownerAccountId === accountId;
+
+    // Resumo mensal centralizado no CashFlowService (fonte única de verdade):
+    // em modo por conta, é o resumo da própria conta; em modo consolidado,
+    // soma o resumo de cada conta ativa (mesma lógica de cálculo, sem duplicar
+    // regra de negócio aqui). Sequencial (não Promise.all) para não disparar
+    // ensureFixedTransactions em paralelo e materializar recorrência em duplicidade.
+    let monthSummary: CashFlowSummary;
+    if (scopedToAccount) {
+      monthSummary = (await this.cashFlowService.getCashFlow(tenantId, { month, year, accountId: accountId! })).summary;
+    } else {
+      monthSummary = ZERO_SUMMARY;
+      for (const a of activeAccounts) {
+        const cf = await this.cashFlowService.getCashFlow(tenantId, { month, year, accountId: a.id });
+        monthSummary = sumSummaries(monthSummary, cf.summary);
+      }
+    }
 
     // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────
-    const activeAccounts = allAccounts.filter((a) => a.active);
+    // accounts.list/totalBalance continuam mostrando todas as contas nos dois
+    // modos — só o restante do dashboard é filtrado pelo escopo.
     const accountBalances = activeAccounts.map((a) => ({
       id: a.id,
       name: a.name,
@@ -92,6 +160,7 @@ export class DashboardService {
           t.type !== TransactionType.EXTRA_EXPENSE
         )
           return false;
+        if (!matchesScope(t.sourceAccountId)) return false;
         const d = new Date(t.expectedDate);
         return d >= today && d <= cutoff;
       })
@@ -114,6 +183,7 @@ export class DashboardService {
           inv.status !== InvoiceStatus.OVERDUE
         )
           return false;
+        if (!matchesScope(invoicePayerAccountId(inv))) return false;
         const d = new Date(inv.dueDate);
         return d >= today && d <= cutoff;
       })
@@ -141,6 +211,7 @@ export class DashboardService {
         t.status === TransactionStatus.PENDING &&
         (t.type === TransactionType.PAYMENT ||
           t.type === TransactionType.EXTRA_EXPENSE) &&
+        matchesScope(t.sourceAccountId) &&
         new Date(t.expectedDate) < today,
     );
     if (overduePayments.length > 0) {
@@ -155,6 +226,7 @@ export class DashboardService {
       (t) =>
         t.type === TransactionType.INCOME &&
         t.status === TransactionStatus.PENDING &&
+        matchesScope(t.targetAccountId) &&
         new Date(t.expectedDate) < today,
     );
     if (overdueReceivables.length > 0) {
@@ -168,6 +240,7 @@ export class DashboardService {
     const sevenDaysCutoff = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
     const invoicesDueSoon = allInvoices.filter((inv) => {
       if (inv.status !== InvoiceStatus.OPEN) return false;
+      if (!matchesScope(invoicePayerAccountId(inv))) return false;
       const d = new Date(inv.dueDate);
       return d <= sevenDaysCutoff;
     });
@@ -191,6 +264,7 @@ export class DashboardService {
       const mIncome = allTransactions
         .filter((t) => {
           if (t.type !== TransactionType.INCOME || t.status !== TransactionStatus.RECEIVED) return false;
+          if (!matchesScope(t.targetAccountId)) return false;
           return t.expectedDate.slice(0, 7) === mYM;
         })
         .reduce((s, t) => s + t.amount, 0);
@@ -203,6 +277,7 @@ export class DashboardService {
             t.type !== TransactionType.EXTRA_EXPENSE
           )
             return false;
+          if (!matchesScope(t.sourceAccountId)) return false;
           return t.expectedDate.slice(0, 7) === mYM;
         })
         .reduce((s, t) => s + t.amount, 0);
@@ -211,6 +286,7 @@ export class DashboardService {
         .filter(
           (inv) =>
             inv.status === InvoiceStatus.PAID &&
+            matchesScope(invoicePayerAccountId(inv)) &&
             inv.month === m &&
             inv.year === y,
         )
@@ -226,6 +302,7 @@ export class DashboardService {
     const incomeByCategory = new Map<string, number>();
     for (const t of allTransactions) {
       if (t.type !== TransactionType.INCOME || t.status !== TransactionStatus.RECEIVED) continue;
+      if (!matchesScope(t.targetAccountId)) continue;
       if (t.expectedDate.slice(0, 7) !== currentYM) continue;
       const key = t.categoryId ?? '';
       incomeByCategory.set(key, (incomeByCategory.get(key) ?? 0) + t.amount);
@@ -239,6 +316,7 @@ export class DashboardService {
         t.type !== TransactionType.EXTRA_EXPENSE
       )
         continue;
+      if (!matchesScope(t.sourceAccountId)) continue;
       if (t.expectedDate.slice(0, 7) !== currentYM) continue;
       const key = t.categoryId ?? '';
       expensesByCategory.set(key, (expensesByCategory.get(key) ?? 0) + t.amount);
@@ -251,6 +329,7 @@ export class DashboardService {
         .filter(
           (inv) =>
             inv.status === InvoiceStatus.PAID &&
+            matchesScope(invoicePayerAccountId(inv)) &&
             inv.month === month &&
             inv.year === year,
         )

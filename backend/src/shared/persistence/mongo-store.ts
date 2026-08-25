@@ -5,9 +5,11 @@ const indexedCollections = new Set<string>();
 
 export class MongoStore<T extends { id: string; tenantId: string }> {
   private readonly collectionName: string;
+  private readonly extraIndexes: Record<string, 1 | -1>[];
 
-  constructor(collectionName: string) {
+  constructor(collectionName: string, extraIndexes: Record<string, 1 | -1>[] = []) {
     this.collectionName = collectionName;
+    this.extraIndexes = extraIndexes;
   }
 
   private collection(): Collection<T> {
@@ -18,6 +20,11 @@ export class MongoStore<T extends { id: string; tenantId: string }> {
       collection.createIndex({ tenantId: 1, id: 1 }, { unique: true }).catch((err) => {
         console.error(`[mongo] Falha ao criar índice em ${this.collectionName}:`, err);
       });
+      for (const index of this.extraIndexes) {
+        collection.createIndex(index as never).catch((err) => {
+          console.error(`[mongo] Falha ao criar índice extra em ${this.collectionName}:`, err);
+        });
+      }
     }
     return collection;
   }

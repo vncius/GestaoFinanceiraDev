@@ -18,7 +18,9 @@ export const draftAccountPayloadSchema = z.object({
   name: z.string().min(1, 'validation.name.required').max(80),
   accountTypeRef: refSchema.nullable().optional(),
   initialBalance: z.number().int().min(0, 'validation.initialBalance.min').default(0),
-  /** Vira settings.mainAccountId na aplicação. No máximo uma conta com isMain. */
+  /** No máximo uma conta com isMain — vira o contexto default para receitas/
+   * despesas do draft sem conta explícita (settings não guarda mais conta
+   * principal desde a E5; ver docs/refactor-contas-pf-pj.md). */
   isMain: z.boolean().default(false),
   autoReserveEnabled: z.boolean().default(false),
   autoReservePercentage: z.number().min(0).max(100).default(0),

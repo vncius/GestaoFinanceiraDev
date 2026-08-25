@@ -78,15 +78,14 @@ export const aiProvider = createAiProvider(aiConfig);
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 
 const auditLogService = new AuditLogService(auditLogRepo);
-const accountsService = new AccountsService(accountsRepo, settingsRepo);
+const accountsService = new AccountsService(accountsRepo);
 const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
-const settingsService = new SettingsService(settingsRepo, accountsRepo);
+const settingsService = new SettingsService(settingsRepo);
 const tenantBootstrapService = new TenantBootstrapService(
   accountTypesService,
   accountsService,
   categoriesService,
-  settingsService,
 );
 export const authService = new AuthService(usersRepo);
 const creditCardsService = new CreditCardsService(
@@ -95,7 +94,6 @@ const creditCardsService = new CreditCardsService(
   creditCardInstallmentsRepo,
   creditCardInvoicesRepo,
   transactionsRepo,
-  settingsRepo,
   categoriesRepo,
 );
 const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
@@ -110,8 +108,8 @@ const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
 const cashFlowService = new CashFlowService(
   transactionsRepo,
   accountsRepo,
-  settingsRepo,
   creditCardInvoicesRepo,
+  creditCardsRepo,
 );
 const dashboardService = new DashboardService(
   transactionsRepo,
@@ -122,6 +120,7 @@ const dashboardService = new DashboardService(
   categoriesRepo,
   creditCardEntriesRepo,
   creditCardInstallmentsRepo,
+  settingsRepo,
 );
 const backupService = new BackupService(
   accountsRepo,

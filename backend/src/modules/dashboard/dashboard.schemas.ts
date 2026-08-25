@@ -5,6 +5,9 @@ export const dashboardQuerySchema = z.object({
   year: z.coerce.number().int().min(2000).optional(),
   upcomingDays: z.coerce.number().int().min(1).max(90).default(15),
   evolutionMonths: z.coerce.number().int().min(1).max(12).default(6),
+  // Só é exigido de fato quando settings.dashboardScope === 'ACCOUNT'; em
+  // modo CONSOLIDATED o dashboard soma todas as contas ativas do tenant.
+  accountId: z.string().uuid().optional(),
 });
 
 export type DashboardQuery = z.infer<typeof dashboardQuerySchema>;

@@ -98,23 +98,22 @@ function buildService() {
   const settingsRepo = new FakeSettingsRepo();
 
   const accountTypesService = new AccountTypesService(accountTypesRepo);
-  const accountsService = new AccountsService(accountsRepo, settingsRepo);
+  const accountsService = new AccountsService(accountsRepo);
   const categoriesService = new CategoriesService(categoriesRepo);
-  const settingsService = new SettingsService(settingsRepo, accountsRepo);
+  const settingsService = new SettingsService(settingsRepo);
 
   const bootstrap = new TenantBootstrapService(
     accountTypesService,
     accountsService,
     categoriesService,
-    settingsService,
   );
 
   return { bootstrap, accountTypesService, accountsService, categoriesService, settingsService };
 }
 
 describe('TenantBootstrapService', () => {
-  it('cria tipos de conta, conta principal, categorias e configura mainAccountId para um tenant vazio', async () => {
-    const { bootstrap, accountTypesService, accountsService, categoriesService, settingsService } = buildService();
+  it('cria tipos de conta, conta principal e categorias para um tenant vazio', async () => {
+    const { bootstrap, accountTypesService, accountsService, categoriesService } = buildService();
 
     await bootstrap.seedDefaults(TENANT_ID);
 
@@ -131,9 +130,6 @@ describe('TenantBootstrapService', () => {
     expect(categories.some((c) => c.name === 'Assinaturas' && c.type === CategoryType.EXPENSE)).toBe(true);
     expect(categories.some((c) => c.name === 'Nota fiscal')).toBe(false);
     expect(categories.some((c) => c.name === 'Sophia')).toBe(false);
-
-    const settings = await settingsService.get(TENANT_ID);
-    expect(settings.mainAccountId).toBe(accounts[0].id);
   });
 
   it('não duplica dados quando o tenant já possui tipos, conta ou categorias', async () => {

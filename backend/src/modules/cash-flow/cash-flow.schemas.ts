@@ -4,6 +4,16 @@ import { RecurrenceType } from '../financial-transactions/financial-transactions
 export const cashFlowQuerySchema = z.object({
   month: z.coerce.number().int().min(1).max(12),
   year: z.coerce.number().int().min(2000),
+  // Conta como contexto financeiro (E5) — o fluxo de caixa é sempre de uma
+  // única conta por vez, nunca mais consolidado globalmente.
+  accountId: z.string().uuid(),
+});
+
+// Contexto de conta usado pelas rotas de criação (POST), que ainda não têm
+// um :id de lançamento existente para inferir a conta — default de
+// sourceAccountId/targetAccountId quando o corpo não informa explicitamente.
+export const accountContextQuerySchema = z.object({
+  accountId: z.string().uuid(),
 });
 
 export const createTransactionSchema = z.object({
@@ -55,6 +65,7 @@ export const receiveActionSchema = z
   .optional();
 
 export type CashFlowQuery = z.infer<typeof cashFlowQuerySchema>;
+export type AccountContextQuery = z.infer<typeof accountContextQuerySchema>;
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 export type PayActionInput = z.infer<typeof payActionSchema>;
