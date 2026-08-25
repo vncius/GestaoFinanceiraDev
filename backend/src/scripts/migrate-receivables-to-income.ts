@@ -28,7 +28,13 @@ async function main() {
   console.log(`\n📦 Migração Recebimentos → Entradas ${dryRun ? '(DRY-RUN — nada será gravado)' : '(APLICANDO MUDANÇAS)'}\n`);
 
   await connectMongo();
-  const tenantIds = await getDb().collection('receivables').distinct('tenantId');
+  // `distinct` não faz parte da Stable API v1 (o cliente conecta com apiStrict:
+  // true) — busca só o campo tenantId e deduplica em memória.
+  const rows = await getDb()
+    .collection('receivables')
+    .find({}, { projection: { _id: 0, tenantId: 1 } })
+    .toArray();
+  const tenantIds = [...new Set(rows.map((r) => r.tenantId as string))];
 
   if (tenantIds.length === 0) {
     console.log('Nenhum recebimento encontrado em nenhum tenant.');
@@ -42,7 +48,7 @@ async function main() {
   };
 
   const reports: MigrationReport[] = [];
-  for (const tenantId of tenantIds as string[]) {
+  for (const tenantId of tenantIds) {
     const report = await migrateReceivablesToIncome(tenantId, { dryRun }, repos);
     reports.push(report);
     printReport(report);

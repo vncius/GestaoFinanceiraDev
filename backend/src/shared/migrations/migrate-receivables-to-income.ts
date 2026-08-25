@@ -89,27 +89,33 @@ export async function migrateReceivablesToIncome(
     }
 
     if (r.status === ReceivableStatus.RECEIVED) {
+      // Um Receivable editado após recebido acumula mais de uma transação
+      // INCOME com o mesmo originId (a antiga fica REVERSED, uma nova é
+      // criada) — normaliza todas, não só a "primeira" (sem ordem garantida
+      // no retorno do Mongo). findByOrigin só retorna quem ainda tem
+      // originType RECEIVABLE, então uma lista vazia já significa "nada
+      // pendente" (idempotente por construção, sem precisar de outro sinal).
       const linked = await transactionsRepo.findByOrigin(tenantId, OriginType.RECEIVABLE, r.id);
-      const incomeTx = linked.find((t) => t.type === TransactionType.INCOME);
-      if (!incomeTx) continue; // não deveria acontecer — receive() sempre materializa
-
-      if (incomeTx.originType === null) {
+      const incomeTxs = linked.filter((t) => t.type === TransactionType.INCOME);
+      if (incomeTxs.length === 0) {
         report.alreadyNormalizedReceived += 1;
         continue;
       }
 
       report.normalizedFromReceived += 1;
       if (!options.dryRun) {
-        await transactionsRepo.update(
-          incomeTx.id,
-          {
-            targetAccountId: incomeTx.targetAccountId ?? r.targetAccountId ?? settings?.mainAccountId ?? null,
-            originType: null,
-            originId: null,
-            updatedAt: now,
-          },
-          tenantId,
-        );
+        for (const incomeTx of incomeTxs) {
+          await transactionsRepo.update(
+            incomeTx.id,
+            {
+              targetAccountId: incomeTx.targetAccountId ?? r.targetAccountId ?? settings?.mainAccountId ?? null,
+              originType: null,
+              originId: null,
+              updatedAt: now,
+            },
+            tenantId,
+          );
+        }
       }
       continue;
     }

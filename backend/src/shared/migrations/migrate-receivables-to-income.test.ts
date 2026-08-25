@@ -254,6 +254,71 @@ describe('migrateReceivablesToIncome', () => {
     expect(untouchedReserve?.amount).toBe(20000);
   });
 
+  it('RECEIVED editado após recebido (mais de uma transação INCOME com o mesmo originId) normaliza todas, de forma idempotente', async () => {
+    const account = randomUUID();
+    const receivable = await repos.receivablesRepo.create(
+      baseReceivable({ status: ReceivableStatus.RECEIVED, targetAccountId: account }),
+    );
+    // update() em receivables.service.ts reverte a transação antiga e cria uma
+    // nova — ambas ficam ligadas ao mesmo originId.
+    const reversedIncome = await repos.transactionsRepo.create({
+      id: randomUUID(),
+      tenantId: TENANT_ID,
+      type: TransactionType.INCOME,
+      description: `Recebimento: ${receivable.description}`,
+      categoryId: receivable.incomeCategoryId,
+      amount: 400000,
+      expectedDate: receivable.expectedPaymentDate,
+      actualDate: new Date().toISOString(),
+      status: TransactionStatus.REVERSED,
+      sourceAccountId: null,
+      targetAccountId: account,
+      originType: OriginType.RECEIVABLE,
+      originId: receivable.id,
+      notes: null,
+      recurrence: RecurrenceType.UNIQUE,
+      recurringGroupId: null,
+      recurringActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    const currentIncome = await repos.transactionsRepo.create({
+      id: randomUUID(),
+      tenantId: TENANT_ID,
+      type: TransactionType.INCOME,
+      description: `Recebimento: ${receivable.description}`,
+      categoryId: receivable.incomeCategoryId,
+      amount: 480000,
+      expectedDate: receivable.expectedPaymentDate,
+      actualDate: new Date().toISOString(),
+      status: TransactionStatus.RECEIVED,
+      sourceAccountId: null,
+      targetAccountId: account,
+      originType: OriginType.RECEIVABLE,
+      originId: receivable.id,
+      notes: null,
+      recurrence: RecurrenceType.UNIQUE,
+      recurringGroupId: null,
+      recurringActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    const first = await migrateReceivablesToIncome(TENANT_ID, { dryRun: false }, repos);
+    expect(first.normalizedFromReceived).toBe(1);
+
+    const updatedReversed = await repos.transactionsRepo.findById(reversedIncome.id, TENANT_ID);
+    const updatedCurrent = await repos.transactionsRepo.findById(currentIncome.id, TENANT_ID);
+    expect(updatedReversed?.originType).toBeNull();
+    expect(updatedCurrent?.originType).toBeNull();
+    expect(updatedCurrent?.status).toBe(TransactionStatus.RECEIVED);
+    expect(updatedCurrent?.amount).toBe(480000);
+
+    const second = await migrateReceivablesToIncome(TENANT_ID, { dryRun: false }, repos);
+    expect(second.normalizedFromReceived).toBe(0);
+    expect(second.alreadyNormalizedReceived).toBe(1);
+  });
+
   it('CANCELED é ignorado', async () => {
     await repos.receivablesRepo.create(baseReceivable({ status: ReceivableStatus.CANCELED }));
 
