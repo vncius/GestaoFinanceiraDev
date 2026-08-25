@@ -101,6 +101,7 @@ class FakeTransactionsRepo extends InMemoryRepo<FinancialTransaction> implements
   async findByType(tenantId: string, type: TransactionType) { return this.items.filter((t) => t.tenantId === tenantId && t.type === type); }
   async findByStatus(tenantId: string, status: TransactionStatus) { return this.items.filter((t) => t.tenantId === tenantId && t.status === status); }
   async findByOrigin(tenantId: string, originType: never, originId: string) { return this.items.filter((t) => t.tenantId === tenantId && t.originId === originId); }
+  async findByTransferGroup(tenantId: string, transferGroupId: string) { return this.items.filter((t) => t.tenantId === tenantId && t.transferGroupId === transferGroupId); }
 }
 
 class FakeCreditCardsRepo extends InMemoryRepo<CreditCard> implements CreditCardsRepository {
@@ -236,6 +237,7 @@ function makeTransaction(tenantId: string, overrides: Partial<FinancialTransacti
     targetAccountId: null,
     originType: null,
     originId: null,
+    transferGroupId: null,
     notes: null,
     recurrence: RecurrenceType.UNIQUE,
     recurringGroupId: null,

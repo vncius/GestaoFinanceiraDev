@@ -153,6 +153,9 @@ class FakeTransactionsRepo
   async findByOrigin(tenantId: string, _originType: never, originId: string) {
     return this.items.filter((t) => t.tenantId === tenantId && t.originId === originId);
   }
+  async findByTransferGroup(tenantId: string, transferGroupId: string) {
+    return this.items.filter((t) => t.tenantId === tenantId && t.transferGroupId === transferGroupId);
+  }
 }
 class FakeCreditCardsRepo extends InMemoryRepo<CreditCard> implements CreditCardsRepository {
   async findActive(tenantId: string) {

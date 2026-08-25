@@ -203,12 +203,30 @@ export interface CashFlowSummary {
   realizedBalance: number;
 }
 
+// Perna de transferência (E7) sob a ótica da conta selecionada — já traz a
+// contraparte resolvida (a outra perna pertence a outra conta e não aparece
+// em nenhuma outra lista desta resposta).
+export interface TransferFlowItem {
+  id: string;
+  transferGroupId: string;
+  direction: 'IN' | 'OUT';
+  description: string;
+  amount: number;
+  expectedDate: string;
+  actualDate: string | null;
+  status: TransactionStatus;
+  notes: string | null;
+  counterpartAccountId: string;
+  counterpartAccountName: string;
+}
+
 export interface CashFlowResponse {
   month: number;
   year: number;
   entries: FinancialTransaction[];
   payments: FinancialTransaction[];
   extraExpenses: FinancialTransaction[];
+  transfers: TransferFlowItem[];
   creditCards: CreditCardInvoice[];
   summary: CashFlowSummary;
 }

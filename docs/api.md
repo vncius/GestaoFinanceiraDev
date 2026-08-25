@@ -14,6 +14,7 @@ Valores monetários são sempre inteiros em centavos, tanto no corpo das requisi
 - [Categories](#categories)
 - [Settings](#settings)
 - [Cash Flow](#cash-flow)
+- [Transfers](#transfers)
 - [Credit Cards](#credit-cards)
 - [Dashboard](#dashboard)
 - [Backup](#backup)
@@ -55,7 +56,9 @@ Configurações globais (singleton — sempre um único registro).
 
 ## Cash Flow
 
-Fluxo de caixa **por conta** (entradas, pagamentos, gastos extraordinários e faturas de cartão do mês daquela conta) + CRUD de entradas, pagamentos e gastos extraordinários. Desde a E5, não existe mais fluxo "consolidado" — toda consulta é de uma conta específica; o `initialBalance`/`projectedBalance` do resumo são o saldo daquela conta.
+Fluxo de caixa **por conta** (entradas, pagamentos, gastos extraordinários, transferências e faturas de cartão do mês daquela conta) + CRUD de entradas, pagamentos e gastos extraordinários. Desde a E5, não existe mais fluxo "consolidado" — toda consulta é de uma conta específica; o `initialBalance`/`projectedBalance` do resumo são o saldo daquela conta.
+
+Desde a E7, `GET /cash-flow` também retorna `transfers` — a(s) perna(s) de transferência (ver [Transfers](#transfers)) que tocam a conta selecionada naquele mês, já com a contraparte resolvida (`counterpartAccountId`/`counterpartAccountName`, já que a outra perna pertence a outra conta e não aparece em nenhuma outra lista da resposta). Os totais de `summary` (`receivedIncome`/`paidPayments`/`expectedIncome`/`expectedPayments`/`realizedBalance`/`projectedBalance`) já incluem as transferências efetivadas/pendentes da conta — não há campos novos dedicados a transferência no resumo.
 
 `/cash-flow/income` é o CRUD de entrada (`FinancialTransaction` tipo `INCOME`) e a única fonte de `entries` no `GET /cash-flow`. O módulo `/receivables` foi removido (refactor de contas PF/PJ, entrega E3 — ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)); dados antigos foram migrados para `income` pelo script `migrate-receivables-to-income` (removido do código após a migração — disponível no commit `9acc18c`).
 
@@ -79,6 +82,17 @@ Fluxo de caixa **por conta** (entradas, pagamentos, gastos extraordinários e fa
 | POST   | `/cash-flow/extra-expenses/:id/revert`| idem |
 
 Fatura de cartão: cartões continuam globais ao tenant (`GET /credit-cards` lista todos, de qualquer conta), mas a saída de uma fatura só aparece no fluxo da conta que a paga — `invoice.paymentAccountId ?? card.defaultPaymentAccountId`.
+
+## Transfers
+
+Transferência entre contas do mesmo tenant (refactor de contas PF/PJ, entrega E7 — ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)). Sempre gera **duas** `FinancialTransaction` tipo `TRANSFER` ligadas por `transferGroupId` — uma saída (`sourceAccountId`, status `PAID`) na conta de origem e uma entrada (`targetAccountId`, status `RECEIVED`) na conta de destino, ambas já efetivadas na data informada (uma transferência entre contas próprias representa um movimento que já aconteceu, não uma obrigação futura). O identificador usado nas rotas de edição/exclusão/reversão é o `transferGroupId` do par, não o `id` de uma perna individual.
+
+| Método | Rota                          | Body / Query |
+|--------|-------------------------------|--------------|
+| POST   | `/transfers`                    | `{ sourceAccountId, targetAccountId, amount, date, description, notes? }` — `400 transfer.sameAccount` se as contas forem iguais; `404 transfer.sourceAccountNotFound`/`transfer.targetAccountNotFound` se alguma conta não existir ou estiver inativa |
+| PUT    | `/transfers/:transferGroupId`   | campos opcionais (mesmo shape do POST) — aplicados às duas pernas |
+| DELETE | `/transfers/:transferGroupId`   | `400 transfer.settledCannotDelete` se as pernas ainda estiverem efetivadas — reverta primeiro |
+| POST   | `/transfers/:transferGroupId/revert` | volta as duas pernas para `PENDING` (`actualDate: null`) — `400 transfer.notSettledCannotRevert` se já não estiverem efetivadas |
 
 ## Credit Cards
 

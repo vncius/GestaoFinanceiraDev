@@ -9,7 +9,8 @@ import { CashFlowService, CreateIncomePayload, CreateTransactionPayload } from '
 import { CreditCardsService } from '../../services/credit-cards.service';
 import { CategoriesService } from '../../services/categories.service';
 import { AccountsService } from '../../services/accounts.service';
-import { Account, CreditCardInvoice, FinancialTransaction } from '../../types';
+import { CreateTransferPayload } from '../../services/transfers.service';
+import { Account, CreditCardInvoice, FinancialTransaction, TransferFlowItem } from '../../types';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
@@ -22,9 +23,11 @@ import { useCashFlowMutations } from './useCashFlowMutations';
 import { SummaryBar } from './components/SummaryBar';
 import { EntriesGrid } from './components/EntriesGrid';
 import { TransactionGrid } from './components/TransactionGrid';
+import { TransferGrid } from './components/TransferGrid';
 import { CreditCardsGrid } from './components/CreditCardsGrid';
 import { IncomeModal } from './components/IncomeModal';
 import { TransactionModal } from './components/TransactionModal';
+import { TransferModal } from './components/TransferModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
 
 export default function CashFlow() {
@@ -112,6 +115,10 @@ export default function CashFlow() {
     deleteExtra,
     payInvoice,
     revertInvoice,
+    createTransfer,
+    updateTransfer,
+    revertTransfer,
+    deleteTransfer,
   } = useCashFlowMutations({
     accountId: accountId as string,
     month,
@@ -179,6 +186,22 @@ export default function CashFlow() {
 
   function handleOpenInvoice(inv: CreditCardInvoice) {
     navigate('/credit-cards', { state: { cardId: inv.creditCardId } });
+  }
+
+  async function saveTransfer(payload: CreateTransferPayload) {
+    if (modal?.type !== 'transfer') return;
+    const isSettled = modal.item?.status === 'PAID' || modal.item?.status === 'RECEIVED';
+    if (isSettled && !(await confirm(EFFECTED_CONFIRM))) return;
+    if (modal.item) {
+      updateTransfer.mutate({ transferGroupId: modal.item.transferGroupId, data: payload });
+    } else {
+      createTransfer.mutate(payload);
+    }
+  }
+
+  async function handleDeleteTransfer(item: TransferFlowItem) {
+    if (!(await confirm(t('page.confirmDelete')))) return;
+    deleteTransfer.mutate(item.transferGroupId);
   }
 
   async function handleDeleteIncome(item: FinancialTransaction) {
@@ -326,6 +349,10 @@ export default function CashFlow() {
   const invoicesPendingRevertId =
     (revertInvoice.isPending && (revertInvoice.variables?.invoiceId as string)) || null;
 
+  const transferSaving = createTransfer.isPending || updateTransfer.isPending;
+  const transfersPendingRevertId = (revertTransfer.isPending && (revertTransfer.variables as string)) || null;
+  const transfersPendingDeleteId = (deleteTransfer.isPending && (deleteTransfer.variables as string)) || null;
+
   return (
     <div>
       <div className="space-y-4">
@@ -339,6 +366,7 @@ export default function CashFlow() {
           onSelectAllCategories={() => setExcludedCategoryIds(new Set())}
           onClearCategories={() => setExcludedCategoryIds(new Set(categories.map((c) => c.id)))}
           onClearAll={handleClearAll}
+          onNewTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
           clearingAll={clearingAll}
           clearAllDisabled={clearAllCount === 0}
         />
@@ -386,6 +414,18 @@ export default function CashFlow() {
           onDelete={(item) => handleDeleteTransaction('extra-expense', item)}
           pendingToggleId={extrasPendingToggleId}
           pendingDeleteId={extrasPendingDeleteId}
+          locked={clearingAll}
+        />
+
+        {/* Transferências entre contas */}
+        <TransferGrid
+          items={data.transfers}
+          onAdd={() => setModal({ type: 'transfer', mode: 'create' })}
+          onEdit={(item) => setModal({ type: 'transfer', mode: 'edit', item })}
+          onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
+          onDelete={handleDeleteTransfer}
+          pendingRevertId={transfersPendingRevertId}
+          pendingDeleteId={transfersPendingDeleteId}
           locked={clearingAll}
         />
 
@@ -443,6 +483,19 @@ export default function CashFlow() {
           onDelete={(item) => handleDeleteTransaction(modal.type, item)}
         />
       )}
+
+      {/* Transfer Modal */}
+      <TransferModal
+        open={modal?.type === 'transfer'}
+        onClose={closeModal}
+        item={modal?.type === 'transfer' ? modal.item : undefined}
+        accountId={accountId}
+        accounts={accounts as Account[]}
+        onSave={saveTransfer}
+        isSaving={transferSaving}
+        onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
+        onDelete={handleDeleteTransfer}
+      />
 
       {/* Scoped delete for fixed (recurring) entries */}
       <ScopedDeleteModal

@@ -119,6 +119,9 @@ class FakeTransactionsRepo extends InMemoryRepo<FinancialTransaction> implements
   async findByOrigin(tenantId: string, originType: OriginType, originId: string) {
     return this.items.filter((t) => t.tenantId === tenantId && t.originType === originType && t.originId === originId);
   }
+  async findByTransferGroup(tenantId: string, transferGroupId: string) {
+    return this.items.filter((t) => t.tenantId === tenantId && t.transferGroupId === transferGroupId);
+  }
 }
 
 class FakeSettingsRepo implements SettingsRepository {

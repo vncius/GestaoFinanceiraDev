@@ -7,13 +7,14 @@ import { CurrencyInput } from '../ui/CurrencyInput';
 import { DateInput } from '../ui/DateInput';
 import { CategoriesService } from '../../services/categories.service';
 import { CashFlowService } from '../../services/cash-flow.service';
+import { TransfersService } from '../../services/transfers.service';
 import { floatToCents } from '../../utils/money';
 import { todayISO } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
-type QuickAddType = 'payment' | 'extra-expense' | 'income';
+type QuickAddType = 'payment' | 'extra-expense' | 'income' | 'transfer';
 
 const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
@@ -21,12 +22,13 @@ interface FormState {
   type: QuickAddType;
   description: string;
   categoryId: string;
+  targetAccountId: string;
   amount: string;
   date: string;
 }
 
 function initialForm(): FormState {
-  return { type: 'payment', description: '', categoryId: '', amount: '', date: todayISO() };
+  return { type: 'payment', description: '', categoryId: '', targetAccountId: '', amount: '', date: todayISO() };
 }
 
 export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -35,6 +37,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
     payment: t('quickAdd.types.payment'),
     'extra-expense': t('quickAdd.types.extraExpense'),
     income: t('quickAdd.types.income'),
+    transfer: t('quickAdd.types.transfer'),
   };
   const [form, setForm] = useState<FormState>(initialForm);
   const [lastOpen, setLastOpen] = useState(false);
@@ -43,12 +46,15 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const { alert } = useDialog();
   const qc = useQueryClient();
-  const { accountId } = useAccount();
+  const { accountId, accounts } = useAccount();
+  const isTransfer = form.type === 'transfer';
+  const otherAccounts = accounts.filter((a) => a.id !== accountId);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: CategoriesService.findAll,
     staleTime: Infinity,
+    enabled: !isTransfer,
   });
 
   const categoryType = form.type === 'income' ? 'INCOME' : 'EXPENSE';
@@ -65,6 +71,15 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
       const amount = floatToCents(parseFloat(form.amount) || 0);
       const expectedDate = new Date(form.date).toISOString();
 
+      if (form.type === 'transfer') {
+        return TransfersService.create({
+          sourceAccountId: accountId,
+          targetAccountId: form.targetAccountId,
+          amount,
+          date: expectedDate,
+          description: form.description,
+        });
+      }
       if (form.type === 'income') {
         return CashFlowService.createIncome(accountId, {
           description: form.description,
@@ -91,7 +106,9 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
     const amount = floatToCents(parseFloat(form.amount) || 0);
     const missing = getMissingFields([
       { label: t('quickAdd.fields.description'), valid: !!form.description },
-      { label: t('quickAdd.fields.category'), valid: !!form.categoryId },
+      ...(isTransfer
+        ? [{ label: t('quickAdd.fields.targetAccount'), valid: !!form.targetAccountId }]
+        : [{ label: t('quickAdd.fields.category'), valid: !!form.categoryId }]),
       { label: t('quickAdd.fields.amount'), valid: !!amount },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
@@ -111,7 +128,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
             <button
               key={type}
               type="button"
-              onClick={() => setForm((f) => ({ ...f, type, categoryId: '' }))}
+              onClick={() => setForm((f) => ({ ...f, type, categoryId: '', targetAccountId: '' }))}
               className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
                 i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''
               } ${
@@ -137,15 +154,31 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{t('quickAdd.fields.category')} *</label>
-            <select
-              className={INPUT}
-              value={form.categoryId}
-              onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-            >
-              <option value="">{t('quickAdd.categoryPlaceholder')}</option>
-              {filteredCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            {isTransfer ? (
+              <>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{t('quickAdd.fields.targetAccount')} *</label>
+                <select
+                  className={INPUT}
+                  value={form.targetAccountId}
+                  onChange={(e) => setForm((f) => ({ ...f, targetAccountId: e.target.value }))}
+                >
+                  <option value="">{t('quickAdd.categoryPlaceholder')}</option>
+                  {otherAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </>
+            ) : (
+              <>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{t('quickAdd.fields.category')} *</label>
+                <select
+                  className={INPUT}
+                  value={form.categoryId}
+                  onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+                >
+                  <option value="">{t('quickAdd.categoryPlaceholder')}</option>
+                  {filteredCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </>
+            )}
           </div>
           <div className="space-y-1">
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{t('quickAdd.fields.date')} *</label>

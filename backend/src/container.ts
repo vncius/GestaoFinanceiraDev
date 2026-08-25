@@ -32,6 +32,7 @@ import { SettingsService } from './modules/settings/settings.service';
 import { CreditCardsService } from './modules/credit-cards/credit-cards.service';
 import { CreditCardInvoiceImportService } from './modules/credit-cards/credit-card-invoice-import.service';
 import { CashFlowService } from './modules/cash-flow/cash-flow.service';
+import { TransfersService } from './modules/transfers/transfers.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
 import { OnboardingService } from './modules/onboarding/onboarding.service';
@@ -50,6 +51,7 @@ import { SettingsController } from './modules/settings/settings.controller';
 import { CreditCardsController } from './modules/credit-cards/credit-cards.controller';
 import { CreditCardInvoiceImportController } from './modules/credit-cards/credit-card-invoice-import.controller';
 import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
+import { TransfersController } from './modules/transfers/transfers.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { BackupController } from './modules/backup/backup.controller';
 import { OnboardingController } from './modules/onboarding/onboarding.controller';
@@ -111,6 +113,7 @@ const cashFlowService = new CashFlowService(
   creditCardInvoicesRepo,
   creditCardsRepo,
 );
+const transfersService = new TransfersService(transactionsRepo, accountsRepo);
 const dashboardService = new DashboardService(
   transactionsRepo,
   accountsRepo,
@@ -182,6 +185,7 @@ export const controllers = {
   creditCards: new CreditCardsController(creditCardsService),
   creditCardInvoiceImport: new CreditCardInvoiceImportController(creditCardInvoiceImportService),
   cashFlow: new CashFlowController(cashFlowService),
+  transfers: new TransfersController(transfersService),
   dashboard: new DashboardController(dashboardService),
   backup: new BackupController(backupService),
   onboarding: new OnboardingController(

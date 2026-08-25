@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CashFlowService, CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { CreditCardsService } from '../../services/credit-cards.service';
+import { CreateTransferPayload, TransfersService } from '../../services/transfers.service';
 
 type ScopedDeleteVars = {
   id: string;
@@ -40,6 +41,14 @@ export function useCashFlowMutations({
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: cfKey });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+  };
+
+  // Uma transferência toca duas contas — invalida o fluxo de caixa de todas
+  // (prefixo amplo, não só a conta ativa) em vez de descobrir e listar as
+  // duas envolvidas.
+  const invalidateTransfer = () => {
+    qc.invalidateQueries({ queryKey: ['cashFlow'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
 
@@ -127,6 +136,25 @@ export function useCashFlowMutations({
     onSuccess: invalidate,
   });
 
+  // ── Transfer mutations ───────────────────────────────────────────────────────
+  const createTransfer = useMutation({
+    mutationFn: (payload: CreateTransferPayload) => TransfersService.create(payload),
+    onSuccess: () => { invalidateTransfer(); closeModal(); },
+  });
+  const updateTransfer = useMutation({
+    mutationFn: ({ transferGroupId, data }: { transferGroupId: string; data: Partial<CreateTransferPayload> }) =>
+      TransfersService.update(transferGroupId, data),
+    onSuccess: () => { invalidateTransfer(); closeModal(); },
+  });
+  const revertTransfer = useMutation({
+    mutationFn: (transferGroupId: string) => TransfersService.revert(transferGroupId),
+    onSuccess: invalidateTransfer,
+  });
+  const deleteTransfer = useMutation({
+    mutationFn: (transferGroupId: string) => TransfersService.remove(transferGroupId),
+    onSuccess: invalidateTransfer,
+  });
+
   return {
     createIncome,
     updateIncome,
@@ -145,5 +173,9 @@ export function useCashFlowMutations({
     deleteExtra,
     payInvoice,
     revertInvoice,
+    createTransfer,
+    updateTransfer,
+    revertTransfer,
+    deleteTransfer,
   };
 }

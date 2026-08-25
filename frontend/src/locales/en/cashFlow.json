@@ -13,7 +13,8 @@
       "incomeGroup": "Income",
       "expenseGroup": "Expenses"
     },
-    "clearAllButton": "Clear Reference"
+    "clearAllButton": "Clear Reference",
+    "newTransferButton": "New Transfer"
   },
   "summaryBar": {
     "initial": "Initial",
@@ -69,6 +70,20 @@
     },
     "toggle": {
       "markPaid": "Mark as paid"
+    }
+  },
+  "transferGrid": {
+    "title": "Transfers",
+    "columns": {
+      "counterpart": "Account",
+      "amount": "Amount",
+      "date": "Date"
+    },
+    "fromLabel": "From {{account}}",
+    "toLabel": "To {{account}}",
+    "revert": "Revert transfer",
+    "emptyState": {
+      "title": "No transfers this month"
     }
   },
   "creditCardsGrid": {
@@ -143,6 +158,31 @@
       "description": "Description",
       "category": "Category",
       "amount": "Amount"
+    }
+  },
+  "transferModal": {
+    "title": {
+      "new": "New Transfer",
+      "edit": "Edit Transfer"
+    },
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "revert": "Revert",
+    "save": "Save",
+    "fields": {
+      "description": "Description *",
+      "sourceAccount": "Source account",
+      "targetAccount": "Target account",
+      "amount": "Amount *",
+      "date": "Date *",
+      "notes": "Notes"
+    },
+    "validation": {
+      "description": "Description",
+      "amount": "Amount",
+      "sourceAccount": "Source account",
+      "targetAccount": "Target account",
+      "sameAccount": "The source and target accounts must be different."
     }
   },
   "page": {

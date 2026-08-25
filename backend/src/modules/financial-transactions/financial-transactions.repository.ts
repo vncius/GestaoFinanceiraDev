@@ -17,4 +17,5 @@ export interface FinancialTransactionsRepository
     originType: OriginType,
     originId: string,
   ): Promise<FinancialTransaction[]>;
+  findByTransferGroup(tenantId: string, transferGroupId: string): Promise<FinancialTransaction[]>;
 }

@@ -13,7 +13,8 @@
       "incomeGroup": "Entradas",
       "expenseGroup": "Saídas"
     },
-    "clearAllButton": "Limpar Referência"
+    "clearAllButton": "Limpar Referência",
+    "newTransferButton": "Nova Transferência"
   },
   "summaryBar": {
     "initial": "Inicial",
@@ -69,6 +70,20 @@
     },
     "toggle": {
       "markPaid": "Marcar como pago"
+    }
+  },
+  "transferGrid": {
+    "title": "Transferências",
+    "columns": {
+      "counterpart": "Conta",
+      "amount": "Valor",
+      "date": "Data"
+    },
+    "fromLabel": "De {{account}}",
+    "toLabel": "Para {{account}}",
+    "revert": "Reverter transferência",
+    "emptyState": {
+      "title": "Nenhuma transferência neste mês"
     }
   },
   "creditCardsGrid": {
@@ -143,6 +158,31 @@
       "description": "Descrição",
       "category": "Categoria",
       "amount": "Valor"
+    }
+  },
+  "transferModal": {
+    "title": {
+      "new": "Nova Transferência",
+      "edit": "Editar Transferência"
+    },
+    "delete": "Excluir",
+    "cancel": "Cancelar",
+    "revert": "Reverter",
+    "save": "Salvar",
+    "fields": {
+      "description": "Descrição *",
+      "sourceAccount": "Conta de origem",
+      "targetAccount": "Conta de destino",
+      "amount": "Valor *",
+      "date": "Data *",
+      "notes": "Observações"
+    },
+    "validation": {
+      "description": "Descrição",
+      "amount": "Valor",
+      "sourceAccount": "Conta de origem",
+      "targetAccount": "Conta de destino",
+      "sameAccount": "A conta de origem e destino devem ser diferentes."
     }
   },
   "page": {

@@ -42,11 +42,13 @@
     "types": {
       "payment": "Pagamento",
       "extraExpense": "Gasto Extra",
-      "income": "Entrada"
+      "income": "Entrada",
+      "transfer": "Transferência"
     },
     "fields": {
       "description": "Descrição",
       "category": "Categoria",
+      "targetAccount": "Conta de destino",
       "date": "Data",
       "amount": "Valor"
     },

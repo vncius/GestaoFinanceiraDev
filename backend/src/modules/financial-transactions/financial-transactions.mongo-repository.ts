@@ -73,4 +73,9 @@ export class FinancialTransactionsMongoRepository
       (t) => t.originType === originType && t.originId === originId,
     );
   }
+
+  async findByTransferGroup(tenantId: string, transferGroupId: string): Promise<FinancialTransaction[]> {
+    const all = await this.store.findAll(tenantId);
+    return all.filter((t) => t.transferGroupId === transferGroupId);
+  }
 }

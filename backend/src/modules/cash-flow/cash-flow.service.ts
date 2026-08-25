@@ -12,7 +12,7 @@ import {
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CreditCardsRepository, CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoice, InvoiceStatus } from '../credit-cards/credit-cards.types';
-import { CashFlowResponse } from './cash-flow.types';
+import { CashFlowResponse, TransferFlowItem } from './cash-flow.types';
 import {
   CashFlowQuery,
   CreateTransactionInput,
@@ -55,11 +55,12 @@ export class CashFlowService {
     // Uma única leitura de cada arquivo — os filtros por mês e por intervalo
     // (usados pelas previsões) são feitos em memória sobre esses arrays,
     // em vez de buscar novamente no repositório por período.
-    const [allTransactions, account, allInvoices, allCards] = await Promise.all([
+    const [allTransactions, account, allInvoices, allCards, allAccounts] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
       this.accountsRepo.findById(accountId, tenantId),
       this.creditCardInvoicesRepo?.findAll(tenantId) ?? Promise.resolve([]),
       this.creditCardsRepo?.findAll(tenantId) ?? Promise.resolve([]),
+      this.accountsRepo.findAll(tenantId),
     ]);
 
     if (!account) {
@@ -151,6 +152,84 @@ export class CashFlowService {
         inProjectionRange(dateKey(t.expectedDate)),
     );
 
+    // Transferências (D5): cada perna aparece só no fluxo da sua própria
+    // conta; a contraparte (conta e nome) vem da perna irmã via
+    // transferGroupId, já que ela pertence a outra conta e não está nas
+    // demais listas desta resposta.
+    const accountNameById = new Map(allAccounts.map((a) => [a.id, a.name]));
+    const transferLegs = allTransactions.filter(
+      (t) =>
+        t.type === TransactionType.TRANSFER &&
+        !this.isExcludedFromFlow(t) &&
+        (t.sourceAccountId === accountId || t.targetAccountId === accountId) &&
+        inSelectedMonth(dateKey(t.expectedDate)),
+    );
+    const transfers: TransferFlowItem[] = transferLegs.map((leg) => {
+      const sibling = allTransactions.find(
+        (t) => t.transferGroupId === leg.transferGroupId && t.id !== leg.id,
+      );
+      const counterpartAccountId = sibling ? sibling.sourceAccountId ?? sibling.targetAccountId ?? '' : '';
+      return {
+        id: leg.id,
+        transferGroupId: leg.transferGroupId as string,
+        direction: leg.targetAccountId === accountId ? 'IN' : 'OUT',
+        description: leg.description,
+        amount: leg.amount,
+        expectedDate: leg.expectedDate,
+        actualDate: leg.actualDate,
+        status: leg.status,
+        notes: leg.notes,
+        counterpartAccountId,
+        counterpartAccountName: accountNameById.get(counterpartAccountId) ?? '—',
+      };
+    });
+
+    // Somas de transferência para os totais do resumo (realizado/previsto) —
+    // mantêm o invariante initialBalance_mêsSeguinte == realizedBalance_mêsAtual,
+    // já que calcAccountBalance já soma transferências junto com os demais
+    // tipos. Não viram campos novos em CashFlowSummary (D5 já não tem seção
+    // de reserva paralela) — só entram nas somas de entrada/saída existentes.
+    const transferInflowRealized = allTransactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.TRANSFER &&
+          !this.isExcludedFromFlow(t) &&
+          t.targetAccountId === accountId &&
+          t.status === TransactionStatus.RECEIVED &&
+          inSelectedMonth(dateKey(t.expectedDate)),
+      )
+      .reduce((s, t) => s + t.amount, 0);
+    const transferOutflowRealized = allTransactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.TRANSFER &&
+          !this.isExcludedFromFlow(t) &&
+          t.sourceAccountId === accountId &&
+          t.status === TransactionStatus.PAID &&
+          inSelectedMonth(dateKey(t.expectedDate)),
+      )
+      .reduce((s, t) => s + t.amount, 0);
+    const transferInflowExpected = allTransactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.TRANSFER &&
+          !this.isExcludedFromFlow(t) &&
+          t.targetAccountId === accountId &&
+          t.status !== TransactionStatus.RECEIVED &&
+          inProjectionRange(dateKey(t.expectedDate)),
+      )
+      .reduce((s, t) => s + t.amount, 0);
+    const transferOutflowExpected = allTransactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.TRANSFER &&
+          !this.isExcludedFromFlow(t) &&
+          t.sourceAccountId === accountId &&
+          t.status !== TransactionStatus.PAID &&
+          inProjectionRange(dateKey(t.expectedDate)),
+      )
+      .reduce((s, t) => s + t.amount, 0);
+
     const monthStart = new Date(year, month - 1, 1);
     // O saldo inicial da projeção só precisa ser recalculado com um corte
     // diferente (início do mês atual) quando a referência é futura; nos
@@ -192,6 +271,7 @@ export class CashFlowService {
       entries,
       payments,
       extraExpenses,
+      transfers,
       creditCards: monthInvoices,
       summary: {
         initialBalance,
@@ -206,16 +286,20 @@ export class CashFlowService {
         paidCreditCardInvoices: paidCreditCards,
         projectedBalance:
           projectedInitialBalance +
-          expectedIncome -
+          expectedIncome +
+          transferInflowExpected -
           expectedPayments -
           expectedExtraExpenses -
-          creditCardInvoicesTotal,
+          creditCardInvoicesTotal -
+          transferOutflowExpected,
         realizedBalance:
           initialBalance +
-          receivedIncome -
+          receivedIncome +
+          transferInflowRealized -
           paidPayments -
           paidExtraExpenses -
-          paidCreditCards,
+          paidCreditCards -
+          transferOutflowRealized,
       },
     };
   }
@@ -242,6 +326,7 @@ export class CashFlowService {
       targetAccountId,
       originType: null,
       originId: null,
+      transferGroupId: null,
       notes: input.notes ?? null,
       recurrence,
       recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,
@@ -385,6 +470,7 @@ export class CashFlowService {
       targetAccountId: null,
       originType: null,
       originId: null,
+      transferGroupId: null,
       notes: input.notes ?? null,
       recurrence,
       recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,

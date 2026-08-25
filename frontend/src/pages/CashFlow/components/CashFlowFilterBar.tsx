@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Filter, Eraser } from 'lucide-react';
+import { Filter, Eraser, ArrowLeftRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
@@ -143,6 +143,7 @@ export function CashFlowFilterBar({
   onSelectAllCategories,
   onClearCategories,
   onClearAll,
+  onNewTransfer,
   clearingAll = false,
   clearAllDisabled = false,
 }: {
@@ -154,6 +155,7 @@ export function CashFlowFilterBar({
   onSelectAllCategories: () => void;
   onClearCategories: () => void;
   onClearAll: () => void;
+  onNewTransfer: () => void;
   clearingAll?: boolean;
   clearAllDisabled?: boolean;
 }) {
@@ -173,11 +175,20 @@ export function CashFlowFilterBar({
       <Button
         size="sm"
         variant="ghost"
+        icon={<ArrowLeftRight size={14} />}
+        onClick={onNewTransfer}
+        className="ml-auto text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+      >
+        {t('filterBar.newTransferButton')}
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
         icon={<Eraser size={14} />}
         onClick={onClearAll}
         loading={clearingAll}
         disabled={clearAllDisabled}
-        className="ml-auto text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
       >
         {t('filterBar.clearAllButton')}
       </Button>

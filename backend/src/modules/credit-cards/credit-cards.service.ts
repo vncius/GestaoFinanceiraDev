@@ -683,6 +683,7 @@ export class CreditCardsService {
       targetAccountId: null,
       originType: OriginType.CREDIT_CARD_INVOICE,
       originId: invoice.id,
+      transferGroupId: null,
       notes: null,
       recurrence: RecurrenceType.UNIQUE,
       recurringGroupId: null,

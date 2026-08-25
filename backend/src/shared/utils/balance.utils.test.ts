@@ -20,6 +20,7 @@ function tx(overrides: Partial<FinancialTransaction>): FinancialTransaction {
     targetAccountId: null,
     originType: null,
     originId: null,
+    transferGroupId: null,
     notes: null,
     recurrence: RecurrenceType.UNIQUE,
     recurringGroupId: null,

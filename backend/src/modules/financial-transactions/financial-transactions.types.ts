@@ -25,6 +25,7 @@ export enum OriginType {
   PAYMENT = 'PAYMENT',
   EXTRA_EXPENSE = 'EXTRA_EXPENSE',
   CREDIT_CARD_INVOICE = 'CREDIT_CARD_INVOICE',
+  TRANSFER = 'TRANSFER',
 }
 
 export interface FinancialTransaction {
@@ -41,6 +42,10 @@ export interface FinancialTransaction {
   targetAccountId: string | null;
   originType: OriginType | null;
   originId: string | null;
+  // Liga as duas pernas (saída/entrada) de uma transferência (D5); null para
+  // os demais tipos. Estável independente do originType (TRANSFER manual,
+  // AUTO_RESERVE automática — E8), diferente de originId.
+  transferGroupId: string | null;
   notes: string | null;
   recurrence: RecurrenceType;
   // id do registro raiz da série (== o próprio id quando é o primeiro); null quando UNIQUE

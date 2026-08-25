@@ -231,6 +231,7 @@ export class BackupService {
       targetAccountId: entry.type === 'INCOME' ? input.accountId : null,
       originType: null,
       originId: null,
+      transferGroupId: null,
       notes: 'Importado de extrato bancário',
       recurrence: RecurrenceType.UNIQUE,
       recurringGroupId: null,
