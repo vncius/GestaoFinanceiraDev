@@ -9,11 +9,10 @@ import { CategoriesRepository } from '../categories/categories.repository';
 import { Category, CategoryType } from '../categories/categories.types';
 import { SettingsRepository } from '../settings/settings.repository';
 import { FinancialSettings } from '../settings/settings.types';
-import { ReceivablesRepository } from '../receivables/receivables.repository';
-import { Receivable, ReceivableStatus, RecurrenceType } from '../receivables/receivables.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
+  RecurrenceType,
   TransactionStatus,
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
@@ -95,13 +94,6 @@ class FakeSettingsRepo implements SettingsRepository {
   }
 }
 
-class FakeReceivablesRepo extends InMemoryRepo<Receivable> implements ReceivablesRepository {
-  async findByMonth(tenantId: string, month: number, year: number) {
-    return this.items.filter((r) => r.tenantId === tenantId && r.expectedPaymentDate.slice(5, 7) === String(month).padStart(2, '0') && r.expectedPaymentDate.slice(0, 4) === String(year));
-  }
-  async findByStatus(tenantId: string, status: ReceivableStatus) { return this.items.filter((r) => r.tenantId === tenantId && r.status === status); }
-}
-
 class FakeTransactionsRepo extends InMemoryRepo<FinancialTransaction> implements FinancialTransactionsRepository {
   async findByMonth(tenantId: string, month: number, year: number) {
     return this.items.filter((t) => t.tenantId === tenantId && t.expectedDate.slice(5, 7) === String(month).padStart(2, '0') && t.expectedDate.slice(0, 4) === String(year));
@@ -162,7 +154,6 @@ function buildService() {
   const accountTypesRepo = new FakeAccountTypesRepo();
   const categoriesRepo = new FakeCategoriesRepo();
   const settingsRepo = new FakeSettingsRepo();
-  const receivablesRepo = new FakeReceivablesRepo();
   const transactionsRepo = new FakeTransactionsRepo();
   const creditCardsRepo = new FakeCreditCardsRepo();
   const creditCardEntriesRepo = new FakeCreditCardEntriesRepo();
@@ -176,7 +167,6 @@ function buildService() {
     accountTypesRepo,
     categoriesRepo,
     settingsRepo,
-    receivablesRepo,
     transactionsRepo,
     creditCardsRepo,
     creditCardEntriesRepo,
@@ -192,7 +182,6 @@ function buildService() {
     accountTypesRepo,
     categoriesRepo,
     settingsRepo,
-    receivablesRepo,
     transactionsRepo,
     onboardingStateRepo,
     onboardingMessagesRepo,
@@ -252,39 +241,6 @@ function makeTransaction(tenantId: string, overrides: Partial<FinancialTransacti
     recurrence: RecurrenceType.UNIQUE,
     recurringGroupId: null,
     recurringActive: true,
-    createdAt: now,
-    updatedAt: now,
-    ...overrides,
-  };
-}
-
-function makeReceivable(tenantId: string, overrides: Partial<Receivable> = {}): Receivable {
-  const now = new Date().toISOString();
-  return {
-    id: randomUUID(),
-    tenantId,
-    description: 'Recebível teste',
-    expectedPaymentDate: '2026-03-05',
-    actualPaymentDate: null,
-    grossAmount: 2000,
-    reserveAllocations: [],
-    reserveAmount: 0,
-    netAmount: 2000,
-    status: ReceivableStatus.RECEIVED,
-    incomeCategoryId: randomUUID(),
-    notes: null,
-    recurrence: RecurrenceType.UNIQUE,
-    recurringGroupId: null,
-    recurringActive: true,
-    customerName: null,
-    invoiceNumber: null,
-    invoiceCode: null,
-    invoiceLink: null,
-    invoiceIssueDate: null,
-    competence: null,
-    workedHours: null,
-    hourlyRate: null,
-    targetAccountId: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -428,16 +384,17 @@ describe('BackupService — CSV export', () => {
     ctx = buildService();
   });
 
-  it('includes a header row and one row per transaction/receivable in range', async () => {
+  it('includes a header row and one row per transaction in range', async () => {
     await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
       description: 'Aluguel',
       amount: 150000,
       expectedDate: '2026-03-10',
     }));
-    await ctx.receivablesRepo.create(makeReceivable(TENANT_ID, {
+    await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
+      type: TransactionType.INCOME,
       description: 'Projeto X',
-      netAmount: 500000,
-      expectedPaymentDate: '2026-03-12',
+      amount: 500000,
+      expectedDate: '2026-03-12',
     }));
 
     const csv = await ctx.service.exportTransactionsCsv(TENANT_ID, { all: true } as never);

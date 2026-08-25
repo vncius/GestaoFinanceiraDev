@@ -41,7 +41,7 @@
     "savedMessage": "¡Guardado!",
     "dangerZoneTitle": "Zona de peligro",
     "resetButton": "Restablecer cuenta",
-    "resetDescription": "Elimina todos los datos y configuraciones de su cuenta: cuentas, categorías, movimientos, tarjetas, cobros y configuraciones. Esta acción no se puede deshacer — recomendamos descargar una copia de seguridad antes, en Copia de Seguridad y Exportación.",
+    "resetDescription": "Elimina todos los datos y configuraciones de su cuenta: cuentas, categorías, movimientos, tarjetas y configuraciones. Esta acción no se puede deshacer — recomendamos descargar una copia de seguridad antes, en Copia de Seguridad y Exportación.",
     "resetConfirmTitle": "Restablecer cuenta",
     "resetConfirmMessage": "Esta acción eliminará TODOS los datos y configuraciones de su cuenta y no se puede deshacer.",
     "resetConfirmWord": "RESTABLECER",

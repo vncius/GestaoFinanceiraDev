@@ -8,7 +8,6 @@ import { AccountsMongoRepository } from './modules/accounts/accounts.mongo-repos
 import { AccountTypesMongoRepository } from './modules/account-types/account-types.mongo-repository';
 import { CategoriesMongoRepository } from './modules/categories/categories.mongo-repository';
 import { SettingsMongoRepository } from './modules/settings/settings.mongo-repository';
-import { ReceivablesMongoRepository } from './modules/receivables/receivables.mongo-repository';
 import { FinancialTransactionsMongoRepository } from './modules/financial-transactions/financial-transactions.mongo-repository';
 import {
   CreditCardsMongoRepository,
@@ -30,7 +29,6 @@ import { AccountsService } from './modules/accounts/accounts.service';
 import { AccountTypesService } from './modules/account-types/account-types.service';
 import { CategoriesService } from './modules/categories/categories.service';
 import { SettingsService } from './modules/settings/settings.service';
-import { ReceivablesService } from './modules/receivables/receivables.service';
 import { CreditCardsService } from './modules/credit-cards/credit-cards.service';
 import { CreditCardInvoiceImportService } from './modules/credit-cards/credit-card-invoice-import.service';
 import { CashFlowService } from './modules/cash-flow/cash-flow.service';
@@ -49,7 +47,6 @@ import { AccountsController } from './modules/accounts/accounts.controller';
 import { AccountTypesController } from './modules/account-types/account-types.controller';
 import { CategoriesController } from './modules/categories/categories.controller';
 import { SettingsController } from './modules/settings/settings.controller';
-import { ReceivablesController } from './modules/receivables/receivables.controller';
 import { CreditCardsController } from './modules/credit-cards/credit-cards.controller';
 import { CreditCardInvoiceImportController } from './modules/credit-cards/credit-card-invoice-import.controller';
 import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
@@ -65,7 +62,6 @@ const accountsRepo = new AccountsMongoRepository();
 const accountTypesRepo = new AccountTypesMongoRepository();
 const categoriesRepo = new CategoriesMongoRepository();
 const settingsRepo = new SettingsMongoRepository();
-const receivablesRepo = new ReceivablesMongoRepository();
 const transactionsRepo = new FinancialTransactionsMongoRepository();
 const creditCardsRepo = new CreditCardsMongoRepository();
 const creditCardEntriesRepo = new CreditCardEntriesMongoRepository();
@@ -93,12 +89,6 @@ const tenantBootstrapService = new TenantBootstrapService(
   settingsService,
 );
 export const authService = new AuthService(usersRepo);
-const receivablesService = new ReceivablesService(
-  receivablesRepo,
-  transactionsRepo,
-  settingsRepo,
-  accountsRepo,
-);
 const creditCardsService = new CreditCardsService(
   creditCardsRepo,
   creditCardEntriesRepo,
@@ -118,14 +108,12 @@ const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
   aiConfig,
 );
 const cashFlowService = new CashFlowService(
-  receivablesRepo,
   transactionsRepo,
   accountsRepo,
   settingsRepo,
   creditCardInvoicesRepo,
 );
 const dashboardService = new DashboardService(
-  receivablesRepo,
   transactionsRepo,
   accountsRepo,
   settingsRepo,
@@ -141,7 +129,6 @@ const backupService = new BackupService(
   accountTypesRepo,
   categoriesRepo,
   settingsRepo,
-  receivablesRepo,
   transactionsRepo,
   creditCardsRepo,
   creditCardEntriesRepo,
@@ -170,7 +157,6 @@ const onboardingApplyService = new OnboardingApplyService(onboardingService, onb
   categoriesService,
   settingsService,
   creditCardsService,
-  receivablesService,
   cashFlowService,
   accountTypesRepo,
   accountsRepo,
@@ -195,7 +181,6 @@ export const controllers = {
   accountTypes: new AccountTypesController(accountTypesService),
   categories: new CategoriesController(categoriesService),
   settings: new SettingsController(settingsService),
-  receivables: new ReceivablesController(receivablesService),
   creditCards: new CreditCardsController(creditCardsService),
   creditCardInvoiceImport: new CreditCardInvoiceImportController(creditCardInvoiceImportService),
   cashFlow: new CashFlowController(cashFlowService),

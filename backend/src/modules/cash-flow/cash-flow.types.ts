@@ -1,4 +1,3 @@
-import { Receivable } from '../receivables/receivables.types';
 import { FinancialTransaction } from '../financial-transactions/financial-transactions.types';
 import { CreditCardInvoice } from '../credit-cards/credit-cards.types';
 
@@ -24,7 +23,7 @@ export interface CashFlowSummary {
 export interface CashFlowResponse {
   month: number;
   year: number;
-  entries: Receivable[];
+  entries: FinancialTransaction[];
   payments: FinancialTransaction[];
   extraExpenses: FinancialTransaction[];
   creditCards: CreditCardInvoice[];

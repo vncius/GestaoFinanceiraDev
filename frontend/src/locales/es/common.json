@@ -39,7 +39,7 @@
     "types": {
       "payment": "Pago",
       "extraExpense": "Gasto Extra",
-      "receivable": "Cobro"
+      "income": "Ingreso"
     },
     "fields": {
       "description": "Descripción",

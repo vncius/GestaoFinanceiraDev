@@ -7,7 +7,6 @@ import ptDashboard from '../locales/pt/dashboard.json';
 import ptReport from '../locales/pt/report.json';
 import ptBackup from '../locales/pt/backup.json';
 import ptSettings from '../locales/pt/settings.json';
-import ptReceivables from '../locales/pt/receivables.json';
 import ptCreditCards from '../locales/pt/creditCards.json';
 import ptCashFlow from '../locales/pt/cashFlow.json';
 import ptAuth from '../locales/pt/auth.json';
@@ -20,7 +19,6 @@ import enDashboard from '../locales/en/dashboard.json';
 import enReport from '../locales/en/report.json';
 import enBackup from '../locales/en/backup.json';
 import enSettings from '../locales/en/settings.json';
-import enReceivables from '../locales/en/receivables.json';
 import enCreditCards from '../locales/en/creditCards.json';
 import enCashFlow from '../locales/en/cashFlow.json';
 import enAuth from '../locales/en/auth.json';
@@ -33,7 +31,6 @@ import esDashboard from '../locales/es/dashboard.json';
 import esReport from '../locales/es/report.json';
 import esBackup from '../locales/es/backup.json';
 import esSettings from '../locales/es/settings.json';
-import esReceivables from '../locales/es/receivables.json';
 import esCreditCards from '../locales/es/creditCards.json';
 import esCashFlow from '../locales/es/cashFlow.json';
 import esAuth from '../locales/es/auth.json';
@@ -59,7 +56,6 @@ i18n.use(initReactI18next).init({
       report: ptReport,
       backup: ptBackup,
       settings: ptSettings,
-      receivables: ptReceivables,
       creditCards: ptCreditCards,
       cashFlow: ptCashFlow,
       auth: ptAuth,
@@ -73,7 +69,6 @@ i18n.use(initReactI18next).init({
       report: enReport,
       backup: enBackup,
       settings: enSettings,
-      receivables: enReceivables,
       creditCards: enCreditCards,
       cashFlow: enCashFlow,
       auth: enAuth,
@@ -87,7 +82,6 @@ i18n.use(initReactI18next).init({
       report: esReport,
       backup: esBackup,
       settings: esSettings,
-      receivables: esReceivables,
       creditCards: esCreditCards,
       cashFlow: esCashFlow,
       auth: esAuth,
@@ -104,7 +98,6 @@ i18n.use(initReactI18next).init({
     'report',
     'backup',
     'settings',
-    'receivables',
     'creditCards',
     'cashFlow',
     'auth',

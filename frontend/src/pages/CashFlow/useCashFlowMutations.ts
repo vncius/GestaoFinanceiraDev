@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CashFlowService, CreateTransactionPayload } from '../../services/cash-flow.service';
-import { ReceivablesService } from '../../services/receivables.service';
+import { CashFlowService, CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { CreditCardsService } from '../../services/credit-cards.service';
 
 type ScopedDeleteVars = {
@@ -18,7 +17,7 @@ type ScopedUpdateVars<TData> = {
   year?: number;
 };
 
-// Centraliza as ~14 mutations da página de Fluxo de Caixa (recebíveis,
+// Centraliza as ~14 mutations da página de Fluxo de Caixa (entradas,
 // pagamentos, gastos extraordinários e faturas de cartão), todas
 // invalidando a mesma query key ao final.
 export function useCashFlowMutations({
@@ -42,27 +41,27 @@ export function useCashFlowMutations({
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
 
-  // ── Receivable mutations ─────────────────────────────────────────────────────
-  const createReceivable = useMutation({
-    mutationFn: ReceivablesService.create,
+  // ── Income mutations ─────────────────────────────────────────────────────────
+  const createIncome = useMutation({
+    mutationFn: CashFlowService.createIncome,
     onSuccess: () => { invalidate(); closeModal(); },
   });
-  const updateReceivable = useMutation({
-    mutationFn: ({ id, data, scope, month: m, year: y }: ScopedUpdateVars<Parameters<typeof ReceivablesService.update>[1]>) =>
-      ReceivablesService.update(id, data, scope ? { scope, month: m!, year: y! } : undefined),
+  const updateIncome = useMutation({
+    mutationFn: ({ id, data, scope, month: m, year: y }: ScopedUpdateVars<Partial<CreateIncomePayload>>) =>
+      CashFlowService.updateIncome(id, data, scope ? { scope, month: m!, year: y! } : undefined),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const receiveItem = useMutation({
-    mutationFn: (id: string) => ReceivablesService.receive(id),
+    mutationFn: (id: string) => CashFlowService.receiveIncome(id),
     onSuccess: invalidate,
   });
-  const revertReceivable = useMutation({
-    mutationFn: ReceivablesService.revert,
+  const revertIncome = useMutation({
+    mutationFn: CashFlowService.revertIncome,
     onSuccess: invalidate,
   });
-  const deleteReceivable = useMutation({
+  const deleteIncome = useMutation({
     mutationFn: ({ id, scope, month: m, year: y }: ScopedDeleteVars) =>
-      ReceivablesService.remove(id, scope ? { scope, month: m!, year: y! } : undefined),
+      CashFlowService.deleteIncome(id, scope ? { scope, month: m!, year: y! } : undefined),
     onSuccess: () => { invalidate(); clearFixedDeleteTarget(); },
   });
 
@@ -127,11 +126,11 @@ export function useCashFlowMutations({
   });
 
   return {
-    createReceivable,
-    updateReceivable,
+    createIncome,
+    updateIncome,
     receiveItem,
-    revertReceivable,
-    deleteReceivable,
+    revertIncome,
+    deleteIncome,
     createPayment,
     updatePayment,
     payPayment,

@@ -13,7 +13,7 @@
   },
   "csvExport": {
     "title": "Exportar movimientos",
-    "description": "Genera una hoja de cálculo CSV con pagos, gastos extra y cuentas por cobrar del período seleccionado.",
+    "description": "Genera una hoja de cálculo CSV con ingresos, pagos y gastos extra del período seleccionado.",
     "periodLabel": "Período",
     "periodMonth": "Mes actual",
     "periodCustom": "Personalizado",

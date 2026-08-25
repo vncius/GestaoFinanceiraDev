@@ -11,9 +11,24 @@ export interface CreateTransactionPayload {
   recurrence?: RecurrenceType;
 }
 
+export interface CreateIncomePayload {
+  description: string;
+  categoryId: string;
+  amount: number;
+  expectedDate: string;
+  targetAccountId?: string | null;
+  notes?: string | null;
+  recurrence?: RecurrenceType;
+}
+
 export interface PayTransactionPayload {
   actualDate?: string;
   amountPaid?: number;
+}
+
+export interface ReceiveIncomePayload {
+  actualDate?: string;
+  amountReceived?: number;
 }
 
 export interface DeleteScopeParams {
@@ -25,6 +40,22 @@ export interface DeleteScopeParams {
 export const CashFlowService = {
   get: (month: number, year: number): Promise<CashFlowResponse> =>
     api.get<CashFlowResponse>('/cash-flow', { params: { month, year } }).then((r) => r.data),
+
+  // Income
+  createIncome: (payload: CreateIncomePayload): Promise<FinancialTransaction> =>
+    api.post<FinancialTransaction>('/cash-flow/income', payload).then((r) => r.data),
+
+  updateIncome: (id: string, payload: Partial<CreateIncomePayload>, scopeParams?: DeleteScopeParams): Promise<FinancialTransaction> =>
+    api.put<FinancialTransaction>(`/cash-flow/income/${id}`, payload, { params: scopeParams }).then((r) => r.data),
+
+  deleteIncome: (id: string, scopeParams?: DeleteScopeParams): Promise<void> =>
+    api.delete(`/cash-flow/income/${id}`, { params: scopeParams }).then(() => undefined),
+
+  receiveIncome: (id: string, payload?: ReceiveIncomePayload): Promise<FinancialTransaction> =>
+    api.post<FinancialTransaction>(`/cash-flow/income/${id}/receive`, payload ?? {}).then((r) => r.data),
+
+  revertIncome: (id: string): Promise<FinancialTransaction> =>
+    api.post<FinancialTransaction>(`/cash-flow/income/${id}/revert`).then((r) => r.data),
 
   // Payments
   createPayment: (payload: CreateTransactionPayload): Promise<FinancialTransaction> =>

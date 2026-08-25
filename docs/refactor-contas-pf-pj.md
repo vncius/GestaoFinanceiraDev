@@ -1,7 +1,7 @@
 # Refactor: Conta como contexto financeiro (separação PF/PJ)
 
 > Plano de execução incremental. Cada entrega é fechada, compila e mantém a aplicação funcional.
-> Status: **decisões fechadas** — nenhuma entrega iniciada.
+> Status: **E1, E2 e E3 implementadas** (código). A migração de dados da E2 ainda não rodou contra o banco real — precisa ser aplicada (`migrate-receivables-to-income`, disponível no commit `9acc18c`) antes do deploy da E3. E4 em diante seguem pendentes.
 
 ## Objetivo
 

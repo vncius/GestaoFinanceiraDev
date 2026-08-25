@@ -20,9 +20,6 @@ import { CategoriesService } from '../categories/categories.service';
 import { SettingsRepository } from '../settings/settings.repository';
 import { FinancialSettings } from '../settings/settings.types';
 import { SettingsService } from '../settings/settings.service';
-import { ReceivablesRepository } from '../receivables/receivables.repository';
-import { Receivable, ReceivableStatus } from '../receivables/receivables.types';
-import { ReceivablesService } from '../receivables/receivables.service';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -133,19 +130,6 @@ class FakeSettingsRepo implements SettingsRepository {
   }
   async deleteAll(tenantId: string) {
     this.items = this.items.filter((s) => s.tenantId !== tenantId);
-  }
-}
-class FakeReceivablesRepo extends InMemoryRepo<Receivable> implements ReceivablesRepository {
-  async findByMonth(tenantId: string, month: number, year: number) {
-    return this.items.filter(
-      (r) =>
-        r.tenantId === tenantId &&
-        r.expectedPaymentDate.slice(5, 7) === String(month).padStart(2, '0') &&
-        r.expectedPaymentDate.slice(0, 4) === String(year),
-    );
-  }
-  async findByStatus(tenantId: string, status: ReceivableStatus) {
-    return this.items.filter((r) => r.tenantId === tenantId && r.status === status);
   }
 }
 class FakeTransactionsRepo
@@ -263,7 +247,6 @@ function buildEnvironment() {
   const accountTypesRepo = new FakeAccountTypesRepo();
   const categoriesRepo = new FakeCategoriesRepo();
   const settingsRepo = new FakeSettingsRepo();
-  const receivablesRepo = new FakeReceivablesRepo();
   const transactionsRepo = new FakeTransactionsRepo();
   const creditCardsRepo = new FakeCreditCardsRepo();
   const creditCardEntriesRepo = new FakeCreditCardEntriesRepo();
@@ -274,12 +257,6 @@ function buildEnvironment() {
   const accountTypesService = new AccountTypesService(accountTypesRepo);
   const categoriesService = new CategoriesService(categoriesRepo);
   const settingsService = new SettingsService(settingsRepo, categoriesRepo, accountsRepo);
-  const receivablesService = new ReceivablesService(
-    receivablesRepo,
-    transactionsRepo,
-    settingsRepo,
-    accountsRepo,
-  );
   const creditCardsService = new CreditCardsService(
     creditCardsRepo,
     creditCardEntriesRepo,
@@ -290,7 +267,6 @@ function buildEnvironment() {
     categoriesRepo,
   );
   const cashFlowService = new CashFlowService(
-    receivablesRepo,
     transactionsRepo,
     accountsRepo,
     settingsRepo,
@@ -318,7 +294,6 @@ function buildEnvironment() {
     categoriesService,
     settingsService,
     creditCardsService,
-    receivablesService,
     cashFlowService,
     accountTypesRepo,
     accountsRepo,
@@ -341,7 +316,6 @@ function buildEnvironment() {
     accountTypesRepo,
     categoriesRepo,
     settingsRepo,
-    receivablesRepo,
     transactionsRepo,
     creditCardsRepo,
     onboardingService,
@@ -444,14 +418,12 @@ describe('Onboarding — fluxo completo (integração)', () => {
     const settings = await env.settingsRepo.get(TENANT_A);
     expect(settings?.mainAccountId).toBe(main?.id);
 
-    const receivables = await env.receivablesRepo.findAll(TENANT_A);
-    expect(receivables).toHaveLength(1);
-    expect(receivables[0].description).toBe('Contrato mensal');
-    expect(receivables[0].reserveAllocations.map((a) => a.accountId)).toEqual([
-      accounts.find((a) => a.name === 'Reserva de impostos')?.id,
-    ]);
-
     const transactions = await env.transactionsRepo.findAll(TENANT_A);
+    const income = transactions.find((t) => t.type === TransactionType.INCOME);
+    expect(income).toBeDefined();
+    expect(income?.description).toBe('Contrato mensal');
+    expect(income?.amount).toBe(1200000);
+    expect(income?.targetAccountId).toBe(main?.id);
     expect(transactions.some((t) => t.description === 'Aluguel do escritório')).toBe(true);
 
     const cards = await env.creditCardsRepo.findAll(TENANT_A);

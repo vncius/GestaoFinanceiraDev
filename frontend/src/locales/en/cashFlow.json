@@ -52,14 +52,12 @@
   "entriesGrid": {
     "title": "Income",
     "columns": {
-      "grossAmount": "Gross Amount",
-      "reserve": "Reserve",
-      "netAmount": "Net Amount",
+      "amount": "Amount",
       "expectedDate": "Expected date"
     },
     "emptyState": {
       "title": "No income this month",
-      "description": "Click New to add a receipt"
+      "description": "Click New to add an income"
     },
     "toggle": {
       "markReceived": "Mark as received",
@@ -126,10 +124,10 @@
       "amount": "Amount"
     }
   },
-  "receivableModal": {
+  "incomeModal": {
     "title": {
-      "new": "New Receivable",
-      "edit": "Edit Receivable"
+      "new": "New Income",
+      "edit": "Edit Income"
     },
     "delete": "Delete",
     "cancel": "Cancel",
@@ -140,21 +138,16 @@
       "category": "Category *",
       "selectPlaceholder": "Select...",
       "expectedDate": "Expected date *",
-      "grossAmount": "Gross amount *",
+      "amount": "Amount *",
       "recurrenceType": "Entry type",
       "targetAccount": "Target account",
       "notes": "Notes"
     },
     "fixedRecurrenceHint": "To end the recurrence, delete \"this and future ones\".",
-    "reserveCheckbox": "Set aside {{percentage}}% for {{account}}",
-    "summary": {
-      "reserve": "Reserve",
-      "netAmount": "Net amount"
-    },
     "validation": {
       "description": "Description",
       "category": "Category",
-      "grossAmount": "Gross amount"
+      "amount": "Amount"
     }
   },
   "page": {

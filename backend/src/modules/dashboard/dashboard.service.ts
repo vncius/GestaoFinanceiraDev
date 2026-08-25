@@ -1,5 +1,3 @@
-import { ReceivablesRepository } from '../receivables/receivables.repository';
-import { ReceivableStatus } from '../receivables/receivables.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -30,7 +28,6 @@ import { calcAccountBalance } from '../../shared/utils/balance.utils';
 
 export class DashboardService {
   constructor(
-    private readonly receivablesRepo: ReceivablesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly accountsRepo: AccountsRepository,
     private readonly settingsRepo: SettingsRepository,
@@ -53,7 +50,6 @@ export class DashboardService {
     const monthSummary = cashFlow.summary;
 
     const [
-      allReceivables,
       allTransactions,
       allAccounts,
       settings,
@@ -63,7 +59,6 @@ export class DashboardService {
       allCardEntries,
       allInstallments,
     ] = await Promise.all([
-      this.receivablesRepo.findAll(tenantId),
       this.transactionsRepo.findAll(tenantId),
       this.accountsRepo.findAll(tenantId),
       this.settingsRepo.get(tenantId),
@@ -169,10 +164,11 @@ export class DashboardService {
       });
     }
 
-    const overdueReceivables = allReceivables.filter(
-      (r) =>
-        r.status === ReceivableStatus.EXPECTED &&
-        new Date(r.expectedPaymentDate) < today,
+    const overdueReceivables = allTransactions.filter(
+      (t) =>
+        t.type === TransactionType.INCOME &&
+        t.status === TransactionStatus.PENDING &&
+        new Date(t.expectedDate) < today,
     );
     if (overdueReceivables.length > 0) {
       alerts.push({
@@ -201,13 +197,13 @@ export class DashboardService {
     const notaFiscalCategory = allCategories.find((c) => c.protected);
     const annualLimit = pjLimitControlEnabled ? settings?.annualRevenueLimit ?? 0 : 0;
     const grossIncome = pjLimitControlEnabled
-      ? allReceivables
-          .filter((r) => {
-            if (r.status !== ReceivableStatus.RECEIVED) return false;
-            if (!notaFiscalCategory || r.incomeCategoryId !== notaFiscalCategory.id) return false;
-            return r.expectedPaymentDate.slice(0, 4) === String(year);
+      ? allTransactions
+          .filter((t) => {
+            if (t.type !== TransactionType.INCOME || t.status !== TransactionStatus.RECEIVED) return false;
+            if (!notaFiscalCategory || t.categoryId !== notaFiscalCategory.id) return false;
+            return t.expectedDate.slice(0, 4) === String(year);
           })
-          .reduce((s, r) => s + r.grossAmount, 0)
+          .reduce((s, t) => s + t.amount, 0)
       : 0;
 
     if (pjLimitControlEnabled && annualLimit > 0 && grossIncome >= annualLimit * 0.8) {
@@ -236,14 +232,12 @@ export class DashboardService {
 
       const mYM = `${y}-${String(m).padStart(2, '0')}`;
 
-      // Receita bruta (antes da reserva) — comparável ao total de saídas,
-      // já que o valor reservado não é gasto, apenas realocado para outra conta.
-      const mIncome = allReceivables
-        .filter((r) => {
-          if (r.status !== ReceivableStatus.RECEIVED) return false;
-          return r.expectedPaymentDate.slice(0, 7) === mYM;
+      const mIncome = allTransactions
+        .filter((t) => {
+          if (t.type !== TransactionType.INCOME || t.status !== TransactionStatus.RECEIVED) return false;
+          return t.expectedDate.slice(0, 7) === mYM;
         })
-        .reduce((s, r) => s + r.grossAmount, 0);
+        .reduce((s, t) => s + t.amount, 0);
 
       const mExpenses = allTransactions
         .filter((t) => {
@@ -274,11 +268,11 @@ export class DashboardService {
     const currentYM = `${year}-${String(month).padStart(2, '0')}`;
 
     const incomeByCategory = new Map<string, number>();
-    for (const r of allReceivables) {
-      if (r.status !== ReceivableStatus.RECEIVED) continue;
-      if (r.expectedPaymentDate.slice(0, 7) !== currentYM) continue;
-      const key = r.incomeCategoryId ?? '';
-      incomeByCategory.set(key, (incomeByCategory.get(key) ?? 0) + r.netAmount);
+    for (const t of allTransactions) {
+      if (t.type !== TransactionType.INCOME || t.status !== TransactionStatus.RECEIVED) continue;
+      if (t.expectedDate.slice(0, 7) !== currentYM) continue;
+      const key = t.categoryId ?? '';
+      incomeByCategory.set(key, (incomeByCategory.get(key) ?? 0) + t.amount);
     }
 
     const expensesByCategory = new Map<string, number>();

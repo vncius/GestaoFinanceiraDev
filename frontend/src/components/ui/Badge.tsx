@@ -31,16 +31,6 @@ export function Badge({ label, variant = 'default' }: BadgeProps) {
 }
 
 // Status helpers
-export function receivableStatusBadge(status: string) {
-  const map: Record<string, { label: string; variant: BadgeVariant }> = {
-    EXPECTED: { label: 'Previsto', variant: 'info' },
-    RECEIVED: { label: 'Recebido', variant: 'success' },
-    CANCELED: { label: 'Cancelado', variant: 'error' },
-  };
-  const cfg = map[status] ?? { label: status, variant: 'default' };
-  return <Badge label={cfg.label} variant={cfg.variant} />;
-}
-
 export function transactionStatusBadge(status: string) {
   const map: Record<string, { label: string; variant: BadgeVariant }> = {
     PENDING: { label: 'Pendente', variant: 'warning' },

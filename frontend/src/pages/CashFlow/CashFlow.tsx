@@ -4,13 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMonth } from '../../contexts/MonthContext';
-import { CashFlowService, CreateTransactionPayload } from '../../services/cash-flow.service';
-import { CreateReceivablePayload } from '../../services/receivables.service';
+import { CashFlowService, CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { CreditCardsService } from '../../services/credit-cards.service';
 import { CategoriesService } from '../../services/categories.service';
 import { SettingsService } from '../../services/settings.service';
 import { AccountsService } from '../../services/accounts.service';
-import { Account, CreditCardInvoice, FinancialTransaction, Receivable } from '../../types';
+import { Account, CreditCardInvoice, FinancialTransaction } from '../../types';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
@@ -24,7 +23,7 @@ import { SummaryBar } from './components/SummaryBar';
 import { EntriesGrid } from './components/EntriesGrid';
 import { TransactionGrid } from './components/TransactionGrid';
 import { CreditCardsGrid } from './components/CreditCardsGrid';
-import { ReceivableModal } from './components/ReceivableModal';
+import { IncomeModal } from './components/IncomeModal';
 import { TransactionModal } from './components/TransactionModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
 
@@ -88,12 +87,11 @@ export default function CashFlow() {
   const closeModal = () => setModal(null);
   const [invoicePayTarget, setInvoicePayTarget] = useState<CreditCardInvoice | null>(null);
   const [fixedDeleteTarget, setFixedDeleteTarget] = useState<
-    | { kind: 'receivable'; item: Receivable }
-    | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction }
+    | { kind: 'income' | 'payment' | 'extra-expense'; item: FinancialTransaction }
     | null
   >(null);
   const [fixedEditTarget, setFixedEditTarget] = useState<
-    | { kind: 'receivable'; item: Receivable; payload: CreateReceivablePayload }
+    | { kind: 'income'; item: FinancialTransaction; payload: CreateIncomePayload }
     | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction; payload: CreateTransactionPayload }
     | null
   >(null);
@@ -101,11 +99,11 @@ export default function CashFlow() {
   const [showClearAllScope, setShowClearAllScope] = useState(false);
 
   const {
-    createReceivable,
-    updateReceivable,
+    createIncome,
+    updateIncome,
     receiveItem,
-    revertReceivable,
-    deleteReceivable,
+    revertIncome,
+    deleteIncome,
     createPayment,
     updatePayment,
     payPayment,
@@ -131,18 +129,18 @@ export default function CashFlow() {
   const EFFECTED_CONFIRM = t('page.confirmEdit');
   const EFFECTED_DELETE_CONFIRM = t('page.confirmDeleteEffected');
 
-  async function saveReceivable(payload: CreateReceivablePayload) {
-    if (modal?.type !== 'receivable') return;
+  async function saveIncome(payload: CreateIncomePayload) {
+    if (modal?.type !== 'income') return;
     if (modal.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
     if (modal.item) {
       if (modal.item.recurrence === 'FIXED') {
         closeModal();
-        setFixedEditTarget({ kind: 'receivable', item: modal.item, payload });
+        setFixedEditTarget({ kind: 'income', item: modal.item, payload });
         return;
       }
-      updateReceivable.mutate({ id: modal.item.id, data: payload });
+      updateIncome.mutate({ id: modal.item.id, data: payload });
     } else {
-      createReceivable.mutate(payload);
+      createIncome.mutate(payload);
     }
   }
 
@@ -166,13 +164,9 @@ export default function CashFlow() {
 
   function runScopedEdit(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
     if (!fixedEditTarget) return;
-    const { month: m, year: y } = monthYearFromDate(
-      fixedEditTarget.kind === 'receivable'
-        ? fixedEditTarget.item.expectedPaymentDate
-        : fixedEditTarget.item.expectedDate,
-    );
-    if (fixedEditTarget.kind === 'receivable') {
-      updateReceivable.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
+    const { month: m, year: y } = monthYearFromDate(fixedEditTarget.item.expectedDate);
+    if (fixedEditTarget.kind === 'income') {
+      updateIncome.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
     } else if (fixedEditTarget.kind === 'payment') {
       updatePayment.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
     } else {
@@ -190,12 +184,12 @@ export default function CashFlow() {
     navigate('/credit-cards', { state: { cardId: inv.creditCardId } });
   }
 
-  async function handleDeleteReceivable(item: Receivable) {
-    if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind: 'receivable', item }); return; }
+  async function handleDeleteIncome(item: FinancialTransaction) {
+    if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind: 'income', item }); return; }
     const isReceived = item.status === 'RECEIVED';
     if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : t('page.confirmDelete')))) return;
-    if (isReceived) await revertReceivable.mutateAsync(item.id);
-    deleteReceivable.mutate({ id: item.id });
+    if (isReceived) await revertIncome.mutateAsync(item.id);
+    deleteIncome.mutate({ id: item.id });
   }
 
   async function handleDeleteTransaction(kind: 'payment' | 'extra-expense', item: FinancialTransaction) {
@@ -208,14 +202,10 @@ export default function CashFlow() {
 
   async function runScopedDelete(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
     if (!fixedDeleteTarget) return;
-    const { month: m, year: y } = monthYearFromDate(
-      fixedDeleteTarget.kind === 'receivable'
-        ? fixedDeleteTarget.item.expectedPaymentDate
-        : fixedDeleteTarget.item.expectedDate,
-    );
-    if (fixedDeleteTarget.kind === 'receivable') {
-      if (fixedDeleteTarget.item.status === 'RECEIVED') await revertReceivable.mutateAsync(fixedDeleteTarget.item.id);
-      deleteReceivable.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
+    const { month: m, year: y } = monthYearFromDate(fixedDeleteTarget.item.expectedDate);
+    if (fixedDeleteTarget.kind === 'income') {
+      if (fixedDeleteTarget.item.status === 'RECEIVED') await revertIncome.mutateAsync(fixedDeleteTarget.item.id);
+      deleteIncome.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
     } else if (fixedDeleteTarget.kind === 'payment') {
       if (fixedDeleteTarget.item.status === 'PAID') await revertPayment.mutateAsync(fixedDeleteTarget.item.id);
       deletePayment.mutate({ id: fixedDeleteTarget.item.id, scope, month: m, year: y });
@@ -229,7 +219,7 @@ export default function CashFlow() {
   const showExpense = typeFilter === 'ALL' || typeFilter === 'EXPENSE';
 
   const filteredEntries = useMemo(
-    () => (showIncome && data ? data.entries.filter((item) => !excludedCategoryIds.has(item.incomeCategoryId)) : []),
+    () => (showIncome && data ? data.entries.filter((item) => !item.categoryId || !excludedCategoryIds.has(item.categoryId)) : []),
     [showIncome, data, excludedCategoryIds],
   );
   const filteredPayments = useMemo(
@@ -265,8 +255,8 @@ export default function CashFlow() {
     setClearingAll(true);
     try {
       for (const item of allEntries) {
-        if (item.status === 'RECEIVED') await revertReceivable.mutateAsync(item.id);
-        await deleteReceivable.mutateAsync(
+        if (item.status === 'RECEIVED') await revertIncome.mutateAsync(item.id);
+        await deleteIncome.mutateAsync(
           item.recurrence === 'FIXED' ? { id: item.id, scope, month, year } : { id: item.id },
         );
       }
@@ -306,16 +296,16 @@ export default function CashFlow() {
     createPayment.isPending || updatePayment.isPending ||
     createExtra.isPending || updateExtra.isPending;
 
-  const rxSaving = createReceivable.isPending || updateReceivable.isPending;
+  const rxSaving = createIncome.isPending || updateIncome.isPending;
 
   // ── Per-row pending ids (evita clique duplo em ações de linha) ──────────────
   const entriesPendingToggleId =
     (receiveItem.isPending && (receiveItem.variables as string)) ||
-    (revertReceivable.isPending && (revertReceivable.variables as string)) ||
+    (revertIncome.isPending && (revertIncome.variables as string)) ||
     null;
   const entriesPendingDeleteId =
-    (deleteReceivable.isPending && (deleteReceivable.variables?.id as string)) ||
-    (revertReceivable.isPending && (revertReceivable.variables as string)) ||
+    (deleteIncome.isPending && (deleteIncome.variables?.id as string)) ||
+    (revertIncome.isPending && (revertIncome.variables as string)) ||
     null;
 
   const paymentsPendingToggleId =
@@ -360,11 +350,11 @@ export default function CashFlow() {
         <EntriesGrid
           items={filteredEntries}
           accounts={accounts as Account[]}
-          onAdd={() => setModal({ type: 'receivable', mode: 'create' })}
-          onEdit={(item) => setModal({ type: 'receivable', mode: 'edit', item })}
+          onAdd={() => setModal({ type: 'income', mode: 'create' })}
+          onEdit={(item) => setModal({ type: 'income', mode: 'edit', item })}
           onReceive={(id) => receiveItem.mutate(id)}
-          onRevert={(id) => revertReceivable.mutate(id)}
-          onDelete={handleDeleteReceivable}
+          onRevert={(id) => revertIncome.mutate(id)}
+          onDelete={handleDeleteIncome}
           pendingToggleId={entriesPendingToggleId}
           pendingDeleteId={entriesPendingDeleteId}
           locked={clearingAll}
@@ -422,18 +412,20 @@ export default function CashFlow() {
         />
       </PageFooter>
 
-      {/* Receivable Modal */}
-      <ReceivableModal
-        open={modal?.type === 'receivable'}
+      {/* Income Modal */}
+      <IncomeModal
+        open={modal?.type === 'income'}
         onClose={closeModal}
-        item={modal?.type === 'receivable' ? modal.item : undefined}
+        item={modal?.type === 'income' ? modal.item : undefined}
         categories={categories}
         accounts={accounts as Account[]}
         mainAccountId={settings?.mainAccountId ?? null}
-        onSave={saveReceivable}
+        month={month}
+        year={year}
+        onSave={saveIncome}
         isSaving={rxSaving}
         onReceive={(id) => { receiveItem.mutate(id); }}
-        onDelete={handleDeleteReceivable}
+        onDelete={handleDeleteIncome}
       />
 
       {/* Transaction Modal */}
@@ -460,7 +452,7 @@ export default function CashFlow() {
         open={!!fixedDeleteTarget}
         onClose={() => setFixedDeleteTarget(null)}
         title={t('page.scopedDelete.title')}
-        loading={deleteReceivable.isPending || deletePayment.isPending || deleteExtra.isPending}
+        loading={deleteIncome.isPending || deletePayment.isPending || deleteExtra.isPending}
         description={
           <>
             <strong>{fixedDeleteTarget?.item.description}</strong> {t('page.scopedDelete.description')}
@@ -475,7 +467,7 @@ export default function CashFlow() {
         open={!!fixedEditTarget}
         onClose={() => setFixedEditTarget(null)}
         title={t('page.scopedEdit.title')}
-        loading={updateReceivable.isPending || updatePayment.isPending || updateExtra.isPending}
+        loading={updateIncome.isPending || updatePayment.isPending || updateExtra.isPending}
         description={
           <>
             <strong>{fixedEditTarget?.item.description}</strong> {t('page.scopedEdit.description')}

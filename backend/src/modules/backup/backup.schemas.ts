@@ -13,7 +13,10 @@ export const backupBundleSchema = z.object({
     accounts: entityArray,
     categories: entityArray,
     settings: entityArray,
-    receivables: entityArray,
+    // Módulo Recebimentos removido (E3 do refactor de contas) — a chave some
+    // dos bundles novos, mas segue aceita e ignorada aqui para não rejeitar
+    // backups antigos já baixados pelo usuário.
+    receivables: entityArray.optional(),
     financialTransactions: entityArray,
     creditCards: entityArray,
     creditCardEntries: entityArray,

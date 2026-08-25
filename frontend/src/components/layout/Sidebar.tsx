@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   TrendingUp,
   CreditCard,
-  DollarSign,
   Settings,
   DatabaseBackup,
 } from 'lucide-react';
@@ -14,7 +13,6 @@ const navItems = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
   { to: '/cash-flow', labelKey: 'nav.cashFlow', icon: TrendingUp },
   { to: '/credit-cards', labelKey: 'nav.creditCards', icon: CreditCard },
-  { to: '/receivables', labelKey: 'nav.receivables', icon: DollarSign },
   { to: '/backup', labelKey: 'nav.backup', icon: DatabaseBackup },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings },
 ] as const;

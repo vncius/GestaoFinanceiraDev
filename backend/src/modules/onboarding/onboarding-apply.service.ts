@@ -9,7 +9,6 @@ import { CategoriesRepository } from '../categories/categories.repository';
 import { CategoriesService } from '../categories/categories.service';
 import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardsService } from '../credit-cards/credit-cards.service';
-import { ReceivablesService } from '../receivables/receivables.service';
 import { SettingsService } from '../settings/settings.service';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingStateRepository } from './onboarding.repository';
@@ -44,7 +43,6 @@ export interface OnboardingApplyServices {
   categoriesService: CategoriesService;
   settingsService: SettingsService;
   creditCardsService: CreditCardsService;
-  receivablesService: ReceivablesService;
   cashFlowService: CashFlowService;
   // Repositórios só para leitura (reuso por nome); escrita passa pelos services.
   accountTypesRepo: AccountTypesRepository;
@@ -223,16 +221,15 @@ export class OnboardingApplyService {
     for (const item of draft.incomes) {
       if (applied[item.draftItemId]) continue;
       const payload = item.payload as unknown as DraftIncomePayload;
-      const receivable = await this.services.receivablesService.create(tenantId, {
+      const income = await this.services.cashFlowService.createIncome(tenantId, {
         description: payload.description,
-        expectedPaymentDate: anchorDate(payload.dayOfMonth),
-        grossAmount: payload.grossAmount,
-        reserveAccountIds: payload.reserveAccountRefs.map((ref) => resolve(ref) as string),
-        incomeCategoryId: resolve(payload.incomeCategoryRef) as string,
-        recurrence: payload.recurrence,
+        categoryId: resolve(payload.incomeCategoryRef) as string,
+        amount: payload.grossAmount,
+        expectedDate: anchorDate(payload.dayOfMonth),
         targetAccountId: resolve(payload.targetAccountRef),
+        recurrence: payload.recurrence,
       });
-      await record(item.draftItemId, receivable.id);
+      await record(item.draftItemId, income.id);
     }
 
     // 7. Despesas

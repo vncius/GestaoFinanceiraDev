@@ -1,8 +1,6 @@
 import { AccountsMongoRepository } from '../../modules/accounts/accounts.mongo-repository';
 import { AccountTypesMongoRepository } from '../../modules/account-types/account-types.mongo-repository';
 import { SettingsMongoRepository } from '../../modules/settings/settings.mongo-repository';
-import { ReceivablesMongoRepository } from '../../modules/receivables/receivables.mongo-repository';
-import { ReserveAllocation } from '../../modules/receivables/receivables.types';
 import { generateId } from '../utils/id.utils';
 import { nowISO } from '../utils/date.utils';
 import { DEFAULT_TENANT_ID } from '../tenant/tenant.constants';
@@ -102,47 +100,4 @@ export async function migrateLegacyAccountConfig(): Promise<void> {
   }
 
   console.log('[migration] Concluída.');
-}
-
-// Antes desta versão, `Receivable` guardava a reserva como um único
-// `separateReservePercentage`/`reservePercentageApplied`/`reserveAmount`,
-// sempre direcionado para a `emergencyReserveAccountId` global. Esta migração
-// reconstrói `reserveAllocations` a partir desses campos legados (preservando
-// o percentual/valor histórico já aplicado, sem recalcular). Idempotente:
-// registros gravados antes desta versão não têm a chave `reserveAllocations`
-// no JSON em disco; uma vez migrados, sempre têm (mesmo que `[]`).
-export async function migrateLegacyReceivableReserves(): Promise<void> {
-  const receivablesRepo = new ReceivablesMongoRepository();
-  const settingsRepo = new SettingsMongoRepository();
-
-  const receivables = await receivablesRepo.findAll(DEFAULT_TENANT_ID);
-  const pending = receivables.filter(
-    (r) => (r as unknown as Record<string, unknown>).reserveAllocations === undefined,
-  );
-  if (pending.length === 0) return;
-
-  console.log(`[migration] Migrando ${pending.length} recebimento(s) para reserveAllocations...`);
-
-  const settings = await settingsRepo.get(DEFAULT_TENANT_ID);
-  const legacyReserveAccountId = (settings as unknown as Record<string, unknown> | null)?.emergencyReserveAccountId as
-    | string
-    | undefined;
-
-  const now = nowISO();
-
-  for (const r of pending) {
-    const raw = r as unknown as Record<string, unknown>;
-    const legacySeparate = raw.separateReservePercentage as boolean | undefined;
-    const legacyPercentage = raw.reservePercentageApplied as number | undefined;
-    const legacyAmount = raw.reserveAmount as number | undefined;
-
-    const reserveAllocations: ReserveAllocation[] =
-      legacySeparate && legacyReserveAccountId && (legacyAmount ?? 0) > 0
-        ? [{ accountId: legacyReserveAccountId, percentage: legacyPercentage ?? 0, amount: legacyAmount ?? 0 }]
-        : [];
-
-    await receivablesRepo.update(r.id, { reserveAllocations, updatedAt: now }, DEFAULT_TENANT_ID);
-  }
-
-  console.log('[migration] Recebimentos migrados.');
 }

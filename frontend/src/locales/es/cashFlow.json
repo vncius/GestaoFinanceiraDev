@@ -52,14 +52,12 @@
   "entriesGrid": {
     "title": "Entradas",
     "columns": {
-      "grossAmount": "Valor Bruto",
-      "reserve": "Reserva",
-      "netAmount": "Valor neto",
+      "amount": "Valor",
       "expectedDate": "Fecha prev."
     },
     "emptyState": {
       "title": "Ninguna entrada este mes",
-      "description": "Haga clic en Nuevo para agregar un cobro"
+      "description": "Haga clic en Nuevo para agregar una entrada"
     },
     "toggle": {
       "markReceived": "Marcar como recibido",
@@ -126,10 +124,10 @@
       "amount": "Valor"
     }
   },
-  "receivableModal": {
+  "incomeModal": {
     "title": {
-      "new": "Nuevo Cobro",
-      "edit": "Editar Cobro"
+      "new": "Nueva Entrada",
+      "edit": "Editar Entrada"
     },
     "delete": "Eliminar",
     "cancel": "Cancelar",
@@ -140,21 +138,16 @@
       "category": "Categoría *",
       "selectPlaceholder": "Seleccione...",
       "expectedDate": "Fecha prevista *",
-      "grossAmount": "Valor bruto *",
+      "amount": "Valor *",
       "recurrenceType": "Tipo de registro",
       "targetAccount": "Cuenta de destino",
       "notes": "Observaciones"
     },
     "fixedRecurrenceHint": "Para finalizar la recurrencia, elimine \"esta y las futuras\".",
-    "reserveCheckbox": "Reservar {{percentage}}% para {{account}}",
-    "summary": {
-      "reserve": "Reserva",
-      "netAmount": "Valor neto"
-    },
     "validation": {
       "description": "Descripción",
       "category": "Categoría",
-      "grossAmount": "Valor bruto"
+      "amount": "Valor"
     }
   },
   "page": {

@@ -81,24 +81,13 @@
     "canceledCannotEdit": "Los registros cancelados no pueden editarse.",
     "reversedCannotEdit": "Los registros revertidos no pueden editarse.",
     "fixedCannotRevertToUnique": "No es posible revertir un registro fijo a único.",
-    "paidCannotDelete": "Los registros ya pagados no pueden eliminarse. Revierte primero.",
+    "settledCannotDelete": "Los registros ya efectivados (pagados o recibidos) no pueden eliminarse. Revierte primero.",
     "deleteScopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
-    "alreadyPaid": "El registro ya fue pagado.",
-    "canceledCannotPay": "Los registros cancelados no pueden pagarse.",
-    "notPaidCannotRevert": "Solo los registros pagados pueden revertirse.",
+    "alreadySettled": "El registro ya fue efectivado (pagado o recibido).",
+    "canceledCannotSettle": "Los registros cancelados no pueden pagarse ni recibirse.",
+    "notSettledCannotRevert": "Solo los registros ya efectivados (pagados o recibidos) pueden revertirse.",
     "notFound": "Registro no encontrado.",
     "wrongType": "El registro no es del tipo {{type}}."
-  },
-  "receivable": {
-    "notFound": "Cobro no encontrado",
-    "canceledCannotEdit": "Los cobros cancelados no pueden editarse.",
-    "fixedCannotRevertToUnique": "No es posible revertir un registro fijo a único.",
-    "mainAccountNotConfigured": "La cuenta principal no está configurada en los ajustes.",
-    "alreadyReceivedCannotDelete": "Los cobros ya recibidos no pueden eliminarse. Revierte primero.",
-    "deleteScopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
-    "alreadyReceived": "El cobro ya fue recibido.",
-    "canceledCannotReceive": "Un cobro cancelado no puede recibirse.",
-    "notReceivedCannotRevert": "Solo los cobros recibidos pueden revertirse."
   },
   "auth": {
     "invalidGoogleToken": "Token de Google inválido",

@@ -14,7 +14,6 @@ const FILE_TO_COLLECTION: Record<string, string> = {
   'account-types.json': 'account_types',
   'categories.json': 'categories',
   'settings.json': 'settings',
-  'receivables.json': 'receivables',
   'financial-transactions.json': 'financial_transactions',
   'credit-cards.json': 'credit_cards',
   'credit-card-entries.json': 'credit_card_entries',

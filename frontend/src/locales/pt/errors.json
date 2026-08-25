@@ -81,24 +81,13 @@
     "canceledCannotEdit": "Lançamentos cancelados não podem ser editados.",
     "reversedCannotEdit": "Lançamentos revertidos não podem ser editados.",
     "fixedCannotRevertToUnique": "Não é possível reverter um lançamento fixo para único.",
-    "paidCannotDelete": "Lançamentos já pagos não podem ser excluídos. Reverta primeiro.",
+    "settledCannotDelete": "Lançamentos já efetivados (pagos ou recebidos) não podem ser excluídos. Reverta primeiro.",
     "deleteScopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
-    "alreadyPaid": "Lançamento já foi pago.",
-    "canceledCannotPay": "Lançamentos cancelados não podem ser pagos.",
-    "notPaidCannotRevert": "Apenas lançamentos com status pago podem ser revertidos.",
+    "alreadySettled": "Lançamento já foi efetivado (pago ou recebido).",
+    "canceledCannotSettle": "Lançamentos cancelados não podem ser pagos ou recebidos.",
+    "notSettledCannotRevert": "Apenas lançamentos já efetivados (pagos ou recebidos) podem ser revertidos.",
     "notFound": "Lançamento não encontrado.",
     "wrongType": "Lançamento não é do tipo {{type}}."
-  },
-  "receivable": {
-    "notFound": "Recebimento não encontrado",
-    "canceledCannotEdit": "Recebimentos cancelados não podem ser editados.",
-    "fixedCannotRevertToUnique": "Não é possível reverter um lançamento fixo para único.",
-    "mainAccountNotConfigured": "Conta principal não configurada nas parametrizações.",
-    "alreadyReceivedCannotDelete": "Recebimentos já recebidos não podem ser excluídos. Reverta primeiro.",
-    "deleteScopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
-    "alreadyReceived": "Recebimento já foi recebido.",
-    "canceledCannotReceive": "Recebimento cancelado não pode ser recebido.",
-    "notReceivedCannotRevert": "Apenas recebimentos recebidos podem ser revertidos."
   },
   "auth": {
     "invalidGoogleToken": "Token do Google inválido",

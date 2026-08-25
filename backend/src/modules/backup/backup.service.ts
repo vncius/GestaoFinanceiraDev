@@ -6,7 +6,6 @@ import { AccountTypesRepository } from '../account-types/account-types.repositor
 import { CategoriesRepository } from '../categories/categories.repository';
 import { SettingsRepository } from '../settings/settings.repository';
 import { OnboardingStateRepository, OnboardingMessagesRepository } from '../onboarding/onboarding.repository';
-import { ReceivablesRepository } from '../receivables/receivables.repository';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -39,7 +38,6 @@ export class BackupService {
     private readonly accountTypesRepo: AccountTypesRepository,
     private readonly categoriesRepo: CategoriesRepository,
     private readonly settingsRepo: SettingsRepository,
-    private readonly receivablesRepo: ReceivablesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly creditCardsRepo: CreditCardsRepository,
     private readonly creditCardEntriesRepo: CreditCardEntriesRepository,
@@ -56,7 +54,6 @@ export class BackupService {
       accounts,
       categories,
       settings,
-      receivables,
       financialTransactions,
       creditCards,
       creditCardEntries,
@@ -66,7 +63,6 @@ export class BackupService {
       this.accountsRepo.findAll(tenantId),
       this.categoriesRepo.findAll(tenantId),
       this.settingsRepo.get(tenantId),
-      this.receivablesRepo.findAll(tenantId),
       this.transactionsRepo.findAll(tenantId),
       this.creditCardsRepo.findAll(tenantId),
       this.creditCardEntriesRepo.findAll(tenantId),
@@ -81,7 +77,6 @@ export class BackupService {
         accounts,
         categories,
         settings: settings ? [settings] : [],
-        receivables,
         financialTransactions,
         creditCards,
         creditCardEntries,
@@ -104,7 +99,6 @@ export class BackupService {
     await Promise.all([
       this.accountsRepo.replaceAll(tenantId, stamp(data.accounts)),
       this.categoriesRepo.replaceAll(tenantId, stamp(data.categories)),
-      this.receivablesRepo.replaceAll(tenantId, stamp(data.receivables)),
       this.transactionsRepo.replaceAll(tenantId, stamp(data.financialTransactions)),
       this.creditCardsRepo.replaceAll(tenantId, stamp(data.creditCards)),
       this.creditCardEntriesRepo.replaceAll(tenantId, stamp(data.creditCardEntries)),
@@ -121,7 +115,6 @@ export class BackupService {
         accounts: data.accounts.length,
         categories: data.categories.length,
         settings: data.settings.length,
-        receivables: data.receivables.length,
         financialTransactions: data.financialTransactions.length,
         creditCards: data.creditCards.length,
         creditCardEntries: data.creditCardEntries.length,
@@ -143,7 +136,6 @@ export class BackupService {
       this.accountsRepo.replaceAll(tenantId, []),
       this.accountTypesRepo.replaceAll(tenantId, []),
       this.categoriesRepo.replaceAll(tenantId, []),
-      this.receivablesRepo.replaceAll(tenantId, []),
       this.transactionsRepo.replaceAll(tenantId, []),
       this.creditCardsRepo.replaceAll(tenantId, []),
       this.creditCardEntriesRepo.replaceAll(tenantId, []),
@@ -158,8 +150,7 @@ export class BackupService {
   // ─── Exportação CSV de lançamentos ─────────────────────────────────────────────
 
   async exportTransactionsCsv(tenantId: string, query: ExportCsvQuery): Promise<string> {
-    const [receivables, transactions, categories] = await Promise.all([
-      this.receivablesRepo.findAll(tenantId),
+    const [transactions, categories] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
       this.categoriesRepo.findAll(tenantId),
     ]);
@@ -174,18 +165,7 @@ export class BackupService {
 
     type Row = { date: string; type: string; description: string; category: string; amount: number; status: string };
 
-    const receivableRows: Row[] = receivables
-      .filter((r) => inRange(r.expectedPaymentDate))
-      .map((r) => ({
-        date: r.expectedPaymentDate.slice(0, 10),
-        type: 'Recebível',
-        description: r.description,
-        category: categoryName.get(r.incomeCategoryId) ?? '',
-        amount: r.netAmount,
-        status: r.status,
-      }));
-
-    const transactionRows: Row[] = transactions
+    const rows: Row[] = transactions
       .filter((t) => inRange(t.expectedDate))
       .map((t) => ({
         date: t.expectedDate.slice(0, 10),
@@ -194,9 +174,8 @@ export class BackupService {
         category: t.categoryId ? categoryName.get(t.categoryId) ?? '' : '',
         amount: t.amount,
         status: t.status,
-      }));
-
-    const rows = [...receivableRows, ...transactionRows].sort((a, b) => a.date.localeCompare(b.date));
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     const header = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Valor', 'Status'];
     const lines = [header, ...rows.map((r) => [

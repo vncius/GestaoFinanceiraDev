@@ -16,7 +16,6 @@ const ROUTE_META: Record<string, { titleKey: string; showMonthNav?: boolean }> =
   '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true },
   '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true },
   '/credit-cards': { titleKey: 'nav.creditCards', showMonthNav: true },
-  '/receivables': { titleKey: 'nav.receivables' },
   '/backup': { titleKey: 'nav.backup' },
   '/settings': { titleKey: 'nav.settings' },
 };

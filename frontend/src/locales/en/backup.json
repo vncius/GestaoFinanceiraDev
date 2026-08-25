@@ -13,7 +13,7 @@
   },
   "csvExport": {
     "title": "Export entries",
-    "description": "Generates a CSV spreadsheet with payments, extra expenses, and receivables for the selected period.",
+    "description": "Generates a CSV spreadsheet with income, payments, and extra expenses for the selected period.",
     "periodLabel": "Period",
     "periodMonth": "Current month",
     "periodCustom": "Custom",

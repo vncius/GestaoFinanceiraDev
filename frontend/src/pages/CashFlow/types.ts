@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { FinancialTransaction, Receivable, RecurrenceType } from '../../types';
+import { FinancialTransaction, RecurrenceType } from '../../types';
 
 export function useRecurrenceLabels(): Record<RecurrenceType, string> {
   const { t } = useTranslation('cashFlow');
@@ -10,7 +10,7 @@ export function useRecurrenceLabels(): Record<RecurrenceType, string> {
 }
 
 export type ModalKind =
-  | { type: 'receivable'; mode: 'create' | 'edit'; item?: Receivable }
+  | { type: 'income'; mode: 'create' | 'edit'; item?: FinancialTransaction }
   | { type: 'payment' | 'extra-expense'; mode: 'create' | 'edit'; item?: FinancialTransaction };
 
 export type CashFlowTypeFilter = 'ALL' | 'INCOME' | 'EXPENSE';

@@ -10,7 +10,6 @@
     "start": "node dist/server.js",
     "seed": "tsx src/scripts/seed.ts",
     "migrate:mongo": "tsx src/scripts/migrate-json-to-mongo.ts",
-    "migrate:receivables-to-income": "tsx src/scripts/migrate-receivables-to-income.ts",
     "test": "vitest run"
   },
   "dependencies": {

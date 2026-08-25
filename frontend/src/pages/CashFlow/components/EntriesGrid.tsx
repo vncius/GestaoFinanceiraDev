@@ -1,6 +1,6 @@
 import { TrendingUp, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Account, Receivable } from '../../../types';
+import { Account, FinancialTransaction } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { formatCurrency } from '../../../utils/money';
 import { formatDate } from '../../../utils/date';
@@ -27,13 +27,13 @@ export function EntriesGrid({
   pendingDeleteId,
   locked = false,
 }: {
-  items: Receivable[];
+  items: FinancialTransaction[];
   accounts: Account[];
   onAdd: () => void;
-  onEdit: (item: Receivable) => void;
+  onEdit: (item: FinancialTransaction) => void;
   onReceive: (id: string) => void;
   onRevert: (id: string) => void;
-  onDelete: (item: Receivable) => void;
+  onDelete: (item: FinancialTransaction) => void;
   pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
   locked?: boolean;
@@ -63,9 +63,9 @@ export function EntriesGrid({
               <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 <th className="text-left px-3 sm:px-5 py-2.5 font-medium">{t('grid.columns.description')}</th>
                 <th className={`${COL_CONTA} text-left px-3 py-2.5 font-medium`}>{t('grid.columns.account')}</th>
-                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.grossAmount')}</th>
-                <th className={`${COL_VALOR_SECUNDARIO} text-right px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.reserve')}</th>
-                <th className={`${COL_VALOR} text-right px-2 sm:px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.netAmount')}</th>
+                <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
+                <th className={`${COL_VALOR_SECUNDARIO} px-3 py-2.5`} />
+                <th className={`${COL_VALOR} text-right px-2 sm:px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.amount')}</th>
                 <th className={`${COL_DATA} text-left px-3 py-2.5 font-medium`}>{t('entriesGrid.columns.expectedDate')}</th>
                 <th className={`${COL_ACOES} px-1 sm:px-3 py-2.5`} />
               </tr>
@@ -85,21 +85,17 @@ export function EntriesGrid({
                   <td className={`${COL_CONTA} px-3 py-3 text-gray-500 dark:text-gray-400 text-xs truncate`}>
                     {item.targetAccountId ? accountMap.get(item.targetAccountId) ?? '—' : '—'}
                   </td>
-                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3 text-right text-gray-600 dark:text-gray-300`}>
-                    {formatCurrency(item.grossAmount)}
-                  </td>
-                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3 text-right text-amber-600 dark:text-amber-400 text-xs`}>
-                    {item.reserveAmount > 0 ? formatCurrency(item.reserveAmount) : '—'}
-                  </td>
+                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
+                  <td className={`${COL_VALOR_SECUNDARIO} px-3 py-3`} />
                   <td className={`${COL_VALOR} px-2 sm:px-3 py-3 text-right font-semibold text-green-700 dark:text-green-400 whitespace-nowrap`}>
-                    {formatCurrency(item.netAmount)}
+                    {formatCurrency(item.amount)}
                   </td>
                   <td className={`${COL_DATA} px-3 py-3 text-gray-500 dark:text-gray-400`}>
-                    {formatDate(item.expectedPaymentDate)}
+                    {formatDate(item.expectedDate)}
                   </td>
                   <td className={`${COL_ACOES} px-1 sm:px-3 py-3`} onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-0 sm:gap-0.5">
-                      {item.status !== 'CANCELED' && (
+                      {(item.status === 'PENDING' || item.status === 'RECEIVED') && (
                         <PaidToggle
                           paid={item.status === 'RECEIVED'}
                           loading={pendingToggleId === item.id}
@@ -114,15 +110,17 @@ export function EntriesGrid({
                           rowLocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         }`}
                       >
-                        <ActionBtn
-                          title={t('grid.actions.edit')}
-                          onClick={() => onEdit(item)}
-                          disabled={rowLocked}
-                          className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <Pencil size={14} />
-                        </ActionBtn>
-                        {item.status !== 'CANCELED' && (
+                        {item.status !== 'CANCELED' && item.status !== 'REVERSED' && (
+                          <ActionBtn
+                            title={t('grid.actions.edit')}
+                            onClick={() => onEdit(item)}
+                            disabled={rowLocked}
+                            className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Pencil size={14} />
+                          </ActionBtn>
+                        )}
+                        {(item.status === 'PENDING' || item.status === 'RECEIVED') && (
                           <ActionBtn
                             title={t('grid.actions.delete')}
                             onClick={() => onDelete(item)}

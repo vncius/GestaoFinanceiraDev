@@ -81,24 +81,13 @@
     "canceledCannotEdit": "Canceled entries cannot be edited.",
     "reversedCannotEdit": "Reverted entries cannot be edited.",
     "fixedCannotRevertToUnique": "A recurring entry cannot be reverted to a one-time entry.",
-    "paidCannotDelete": "Paid entries cannot be deleted. Revert it first.",
+    "settledCannotDelete": "Settled entries (paid or received) cannot be deleted. Revert it first.",
     "deleteScopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
-    "alreadyPaid": "Entry has already been paid.",
-    "canceledCannotPay": "Canceled entries cannot be paid.",
-    "notPaidCannotRevert": "Only paid entries can be reverted.",
+    "alreadySettled": "Entry has already been settled (paid or received).",
+    "canceledCannotSettle": "Canceled entries cannot be paid or received.",
+    "notSettledCannotRevert": "Only settled entries (paid or received) can be reverted.",
     "notFound": "Entry not found.",
     "wrongType": "Entry is not of type {{type}}."
-  },
-  "receivable": {
-    "notFound": "Receivable not found",
-    "canceledCannotEdit": "Canceled receivables cannot be edited.",
-    "fixedCannotRevertToUnique": "A recurring entry cannot be reverted to a one-time entry.",
-    "mainAccountNotConfigured": "Main account is not configured in settings.",
-    "alreadyReceivedCannotDelete": "Received receivables cannot be deleted. Revert it first.",
-    "deleteScopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
-    "alreadyReceived": "Receivable has already been received.",
-    "canceledCannotReceive": "A canceled receivable cannot be received.",
-    "notReceivedCannotRevert": "Only received receivables can be reverted."
   },
   "auth": {
     "invalidGoogleToken": "Invalid Google token",

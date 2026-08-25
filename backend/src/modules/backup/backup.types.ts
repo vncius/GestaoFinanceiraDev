@@ -1,7 +1,6 @@
 import { Account } from '../accounts/accounts.types';
 import { Category } from '../categories/categories.types';
 import { FinancialSettings } from '../settings/settings.types';
-import { Receivable } from '../receivables/receivables.types';
 import { FinancialTransaction } from '../financial-transactions/financial-transactions.types';
 import {
   CreditCard,
@@ -10,7 +9,7 @@ import {
   CreditCardInvoice,
 } from '../credit-cards/credit-cards.types';
 
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export interface BackupBundle {
   version: number;
@@ -19,7 +18,6 @@ export interface BackupBundle {
     accounts: Account[];
     categories: Category[];
     settings: FinancialSettings[];
-    receivables: Receivable[];
     financialTransactions: FinancialTransaction[];
     creditCards: CreditCard[];
     creditCardEntries: CreditCardEntry[];

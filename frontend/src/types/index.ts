@@ -45,45 +45,9 @@ export interface FinancialSettings {
   updatedAt: string;
 }
 
-// ── Receivables ───────────────────────────────────────────────────────────────
-export type ReceivableStatus = 'EXPECTED' | 'RECEIVED' | 'CANCELED';
+// ── Financial Transactions ────────────────────────────────────────────────────
 export type RecurrenceType = 'UNIQUE' | 'FIXED';
 
-export interface ReserveAllocation {
-  accountId: string;
-  percentage: number;
-  amount: number;
-}
-
-export interface Receivable {
-  id: string;
-  description: string;
-  expectedPaymentDate: string;
-  actualPaymentDate: string | null;
-  grossAmount: number;
-  reserveAllocations: ReserveAllocation[];
-  reserveAmount: number;
-  netAmount: number;
-  status: ReceivableStatus;
-  incomeCategoryId: string;
-  notes: string | null;
-  customerName: string | null;
-  invoiceNumber: string | null;
-  invoiceCode: string | null;
-  invoiceLink: string | null;
-  invoiceIssueDate: string | null;
-  competence: string | null;
-  workedHours: number | null;
-  hourlyRate: number | null;
-  targetAccountId: string | null;
-  recurrence: RecurrenceType;
-  recurringGroupId: string | null;
-  recurringActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ── Financial Transactions ────────────────────────────────────────────────────
 export type TransactionType =
   | 'INCOME'
   | 'PAYMENT'
@@ -250,7 +214,7 @@ export interface CashFlowSummary {
 export interface CashFlowResponse {
   month: number;
   year: number;
-  entries: Receivable[];
+  entries: FinancialTransaction[];
   payments: FinancialTransaction[];
   extraExpenses: FinancialTransaction[];
   creditCards: CreditCardInvoice[];

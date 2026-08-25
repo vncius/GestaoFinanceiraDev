@@ -13,7 +13,7 @@
   },
   "csvExport": {
     "title": "Exportar lançamentos",
-    "description": "Gera uma planilha CSV com pagamentos, gastos extras e recebíveis do período escolhido.",
+    "description": "Gera uma planilha CSV com entradas, pagamentos e gastos extras do período escolhido.",
     "periodLabel": "Período",
     "periodMonth": "Mês atual",
     "periodCustom": "Personalizado",

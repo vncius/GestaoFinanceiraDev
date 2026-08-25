@@ -13,7 +13,6 @@ Valores monetários são sempre inteiros em centavos, tanto no corpo das requisi
 - [Accounts](#accounts)
 - [Categories](#categories)
 - [Settings](#settings)
-- [Receivables](#receivables)
 - [Cash Flow](#cash-flow)
 - [Credit Cards](#credit-cards)
 - [Dashboard](#dashboard)
@@ -54,27 +53,11 @@ Configurações globais (singleton — sempre um único registro).
 | GET    | `/settings`   | —              |
 | PUT    | `/settings`   | qualquer subconjunto de: `defaultReservePercentage, applyReserveByDefault, allowDisableReserve, mainAccountId, emergencyReserveAccountId, minimumMainBalance, annualRevenueLimit, controlStartMonth, controlStartYear, pjLimitControlEnabled` |
 
-## Receivables
-
-Contas a receber (entradas). Suporta recorrência fixa — ver [`docs/domain-logic.md`](domain-logic.md).
-
-| Método | Rota                    | Body / Query |
-|--------|-------------------------|--------------|
-| GET    | `/receivables`            | `?month=&year=&status=EXPECTED\|RECEIVED\|CANCELED` (todos opcionais) |
-| GET    | `/receivables/:id`        | — |
-| POST   | `/receivables`            | `{ description, expectedPaymentDate, grossAmount, incomeCategoryId, separateReservePercentage?, recurrence?: 'UNIQUE'\|'FIXED', targetAccountId?, notes?, ... campos de NF opcionais }` |
-| PUT    | `/receivables/:id`        | mesmos campos, todos opcionais |
-| DELETE | `/receivables/:id`        | `?scope=CURRENT\|CURRENT_AND_FUTURE&month=&year=` — `scope`/`month`/`year` obrigatórios apenas se o item for `recurrence: FIXED` |
-| POST   | `/receivables/:id/receive` | `{ actualPaymentDate? }` (opcional) — marca como `RECEIVED` |
-| POST   | `/receivables/:id/revert`  | — volta para `EXPECTED` |
-
-> **Em fase de descontinuação** (refactor de contas PF/PJ, ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)): `npm run migrate:receivables-to-income` (dry-run por padrão; `-- --apply` grava) converte cada `Receivable` em `FinancialTransaction` tipo `INCOME` no Cash Flow, iterando todos os tenants. Idempotente — pode ser rodado quantas vezes forem necessárias antes de confirmar. Este módulo será removido depois que a migração for aplicada e conferida (entrega E3).
-
 ## Cash Flow
 
 Visão consolidada do fluxo de caixa mensal (entradas, pagamentos, gastos extraordinários e faturas de cartão do mês) + CRUD de entradas, pagamentos e gastos extraordinários.
 
-`/cash-flow/income` é o CRUD nativo de entrada (`FinancialTransaction` tipo `INCOME`), que hoje coexiste com `/receivables` — o `GET /cash-flow` ainda lista `entries` a partir de Recebimentos; a migração para `income` como fonte única do fluxo acontece em entregas futuras do refactor de contas.
+`/cash-flow/income` é o CRUD de entrada (`FinancialTransaction` tipo `INCOME`) e a única fonte de `entries` no `GET /cash-flow`. O módulo `/receivables` foi removido (refactor de contas PF/PJ, entrega E3 — ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)); dados antigos foram migrados para `income` pelo script `migrate-receivables-to-income` (removido do código após a migração — disponível no commit `9acc18c`).
 
 | Método | Rota                               | Body / Query |
 |--------|-------------------------------------|--------------|

@@ -39,7 +39,7 @@
     "types": {
       "payment": "Payment",
       "extraExpense": "Extra Expense",
-      "receivable": "Receivable"
+      "income": "Income"
     },
     "fields": {
       "description": "Description",

@@ -1,8 +1,6 @@
 import { randomUUID } from 'crypto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CashFlowService } from './cash-flow.service';
-import { ReceivablesRepository } from '../receivables/receivables.repository';
-import { Receivable, ReceivableStatus } from '../receivables/receivables.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -51,19 +49,6 @@ class InMemoryRepo<T extends { id: string; tenantId: string }> {
   }
 }
 
-class FakeReceivablesRepo extends InMemoryRepo<Receivable> implements ReceivablesRepository {
-  async findByMonth(tenantId: string, month: number, year: number) {
-    return this.items.filter((r) => {
-      if (r.tenantId !== tenantId) return false;
-      const [y, m] = r.expectedPaymentDate.slice(0, 10).split('-').map(Number);
-      return m === month && y === year;
-    });
-  }
-  async findByStatus(tenantId: string, status: ReceivableStatus) {
-    return this.items.filter((r) => r.tenantId === tenantId && r.status === status);
-  }
-}
-
 class FakeTransactionsRepo extends InMemoryRepo<FinancialTransaction> implements FinancialTransactionsRepository {
   async createMany(items: FinancialTransaction[]) {
     this.items.push(...items);
@@ -108,14 +93,13 @@ class FakeSettingsRepo implements SettingsRepository {
 }
 
 function buildService() {
-  const receivablesRepo = new FakeReceivablesRepo();
   const transactionsRepo = new FakeTransactionsRepo();
   const accountsRepo = new FakeAccountsRepo();
   const settingsRepo = new FakeSettingsRepo();
 
-  const service = new CashFlowService(receivablesRepo, transactionsRepo, accountsRepo, settingsRepo);
+  const service = new CashFlowService(transactionsRepo, accountsRepo, settingsRepo);
 
-  return { service, receivablesRepo, transactionsRepo, accountsRepo, settingsRepo };
+  return { service, transactionsRepo, accountsRepo, settingsRepo };
 }
 
 async function seedAccount(accountsRepo: FakeAccountsRepo, overrides: Partial<Account> = {}): Promise<Account> {

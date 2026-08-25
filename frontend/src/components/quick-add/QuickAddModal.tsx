@@ -6,15 +6,13 @@ import { Button } from '../ui/Button';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { DateInput } from '../ui/DateInput';
 import { CategoriesService } from '../../services/categories.service';
-import { AccountsService } from '../../services/accounts.service';
 import { CashFlowService } from '../../services/cash-flow.service';
-import { ReceivablesService } from '../../services/receivables.service';
 import { floatToCents } from '../../utils/money';
 import { todayISO } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
-type QuickAddType = 'payment' | 'extra-expense' | 'receivable';
+type QuickAddType = 'payment' | 'extra-expense' | 'income';
 
 const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
@@ -35,7 +33,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
   const TYPE_LABELS: Record<QuickAddType, string> = {
     payment: t('quickAdd.types.payment'),
     'extra-expense': t('quickAdd.types.extraExpense'),
-    receivable: t('quickAdd.types.receivable'),
+    income: t('quickAdd.types.income'),
   };
   const [form, setForm] = useState<FormState>(initialForm);
   const [lastOpen, setLastOpen] = useState(false);
@@ -50,19 +48,13 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
     queryFn: CategoriesService.findAll,
     staleTime: Infinity,
   });
-  const { data: accounts = [] } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: AccountsService.findAll,
-    staleTime: 30_000,
-  });
 
-  const categoryType = form.type === 'receivable' ? 'INCOME' : 'EXPENSE';
+  const categoryType = form.type === 'income' ? 'INCOME' : 'EXPENSE';
   const filteredCategories = categories.filter((c) => c.type === categoryType);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ['cashFlow'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
-    qc.invalidateQueries({ queryKey: ['receivables'] });
   }
 
   const mutation = useMutation({
@@ -70,16 +62,12 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
       const amount = floatToCents(parseFloat(form.amount) || 0);
       const expectedDate = new Date(form.date).toISOString();
 
-      if (form.type === 'receivable') {
-        const reserveAccountIds = accounts
-          .filter((a) => a.active && a.autoReserveEnabled)
-          .map((a) => a.id);
-        return ReceivablesService.create({
+      if (form.type === 'income') {
+        return CashFlowService.createIncome({
           description: form.description,
-          expectedPaymentDate: expectedDate,
-          grossAmount: amount,
-          reserveAccountIds,
-          incomeCategoryId: form.categoryId,
+          categoryId: form.categoryId,
+          amount,
+          expectedDate,
         });
       }
       const payload = {

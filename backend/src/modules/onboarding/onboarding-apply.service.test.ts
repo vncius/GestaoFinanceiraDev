@@ -84,7 +84,7 @@ function setup() {
   const accountTypesCreator = new FakeCreator();
   const categoriesCreator = new FakeCreator();
   const creditCardsCreator = new FakeCreator();
-  const receivablesCreator = new FakeCreator();
+  const incomeCreator = new FakeCreator();
   const paymentsCreator = new FakeCreator();
   const settingsService = new FakeSettingsService();
 
@@ -103,8 +103,10 @@ function setup() {
     categoriesService: categoriesCreator,
     settingsService,
     creditCardsService: creditCardsCreator,
-    receivablesService: receivablesCreator,
-    cashFlowService: { createPayment: paymentsCreator.create.bind(paymentsCreator) },
+    cashFlowService: {
+      createPayment: paymentsCreator.create.bind(paymentsCreator),
+      createIncome: incomeCreator.create.bind(incomeCreator),
+    },
     accountTypesRepo: accountTypesCreator.repo(),
     accountsRepo: accountsCreator.repo(),
     categoriesRepo: categoriesCreator.repo(),
@@ -122,7 +124,7 @@ function setup() {
     accountTypesCreator,
     categoriesCreator,
     creditCardsCreator,
-    receivablesCreator,
+    incomeCreator,
     paymentsCreator,
     settingsService,
   };
@@ -213,9 +215,9 @@ describe('OnboardingApplyService', () => {
       name: 'Principal',
       accountTypeId,
     });
-    const incomeInput = ctx.receivablesCreator.calls[0].input as Record<string, unknown>;
-    expect(incomeInput.incomeCategoryId).toBe(result.appliedEntityIds.cat_1);
-    expect(incomeInput.reserveAccountIds).toEqual([result.appliedEntityIds.acc_2]);
+    const incomeInput = ctx.incomeCreator.calls[0].input as Record<string, unknown>;
+    expect(incomeInput.categoryId).toBe(result.appliedEntityIds.cat_1);
+    expect(incomeInput.amount).toBe(1200000);
     expect(incomeInput.targetAccountId).toBe(result.appliedEntityIds.acc_1);
 
     // Conta principal registrada nos settings

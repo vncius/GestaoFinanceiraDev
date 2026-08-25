@@ -2,8 +2,6 @@ import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO, addMonths, monthKey, monthYearOf } from '../../shared/utils/date.utils';
 import { calcAccountBalance } from '../../shared/utils/balance.utils';
-import { ReceivablesRepository } from '../receivables/receivables.repository';
-import { ReceivableStatus } from '../receivables/receivables.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -42,7 +40,6 @@ type TransactionMutationInput = {
 
 export class CashFlowService {
   constructor(
-    private readonly receivablesRepo: ReceivablesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly accountsRepo: AccountsRepository,
     private readonly settingsRepo: SettingsRepository,
@@ -54,13 +51,12 @@ export class CashFlowService {
   async getCashFlow(tenantId: string, query: CashFlowQuery): Promise<CashFlowResponse> {
     const { month, year } = query;
 
-    await this.ensureFixedOccurrences(tenantId, month, year);
+    await this.ensureFixedTransactions(tenantId, month, year);
 
     // Uma única leitura de cada arquivo — os filtros por mês e por intervalo
     // (usados pelas previsões) são feitos em memória sobre esses arrays,
     // em vez de buscar novamente no repositório por período.
-    const [allReceivables, allTransactions, settings, allInvoices] = await Promise.all([
-      this.receivablesRepo.findAll(tenantId),
+    const [allTransactions, settings, allInvoices] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
       this.settingsRepo.get(tenantId),
       this.creditCardInvoicesRepo?.findAll(tenantId) ?? Promise.resolve([]),
@@ -96,14 +92,15 @@ export class CashFlowService {
         inProjectionRange(monthKey(inv.month, inv.year)),
     );
 
-    const entries = allReceivables.filter(
-      (r) => r.status !== ReceivableStatus.CANCELED && inSelectedMonth(dateKey(r.expectedPaymentDate)),
+    const entries = allTransactions.filter(
+      (t) => t.type === TransactionType.INCOME && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
     );
-    const rangeEntries = allReceivables.filter(
-      (r) =>
-        r.status !== ReceivableStatus.CANCELED &&
-        r.status !== ReceivableStatus.RECEIVED &&
-        inProjectionRange(dateKey(r.expectedPaymentDate)),
+    const rangeEntries = allTransactions.filter(
+      (t) =>
+        t.type === TransactionType.INCOME &&
+        !this.isExcludedFromFlow(t) &&
+        t.status !== TransactionStatus.RECEIVED &&
+        inProjectionRange(dateKey(t.expectedDate)),
     );
 
     const payments = allTransactions.filter(
@@ -164,7 +161,7 @@ export class CashFlowService {
 
     // Transações de contas de reserva não afetam os totais da conta principal
     const mainEntries = entries.filter(
-      (r) => !r.targetAccountId || !reserveAccountIds.has(r.targetAccountId),
+      (t) => !t.targetAccountId || !reserveAccountIds.has(t.targetAccountId),
     );
     const mainPayments = payments.filter(
       (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
@@ -174,7 +171,7 @@ export class CashFlowService {
     );
 
     const rangeMainEntries = rangeEntries.filter(
-      (r) => !r.targetAccountId || !reserveAccountIds.has(r.targetAccountId),
+      (t) => !t.targetAccountId || !reserveAccountIds.has(t.targetAccountId),
     );
     const rangeMainPayments = rangePayments.filter(
       (t) => !t.sourceAccountId || !reserveAccountIds.has(t.sourceAccountId),
@@ -185,8 +182,8 @@ export class CashFlowService {
 
     // realizado — sempre restrito ao mês selecionado
     const receivedIncome = mainEntries
-      .filter((r) => r.status === ReceivableStatus.RECEIVED)
-      .reduce((s, r) => s + r.netAmount, 0);
+      .filter((t) => t.status === TransactionStatus.RECEIVED)
+      .reduce((s, t) => s + t.amount, 0);
 
     const paidPayments = mainPayments
       .filter((t) => t.status === TransactionStatus.PAID)
@@ -202,19 +199,22 @@ export class CashFlowService {
 
     // previsto — mês atual até o mês selecionado (colapsa para o próprio
     // mês quando a referência não é futura)
-    const expectedIncome = rangeMainEntries.reduce((s, r) => s + r.netAmount, 0);
+    const expectedIncome = rangeMainEntries.reduce((s, t) => s + t.amount, 0);
     const expectedPayments = rangeMainPayments.reduce((s, t) => s + t.amount, 0);
     const expectedExtraExpenses = rangeMainExtraExpenses.reduce((s, t) => s + t.amount, 0);
     const creditCardInvoicesTotal = rangeInvoices.reduce((s, inv) => s + inv.totalAmount, 0);
 
-    const reserveInflow = entries
-      .filter((r) => r.status === ReceivableStatus.RECEIVED)
-      .reduce((s, r) => {
-        // Entrada com destino direto a uma conta de reserva: valor líquido inteiro vai para reserva
-        if (r.targetAccountId && reserveAccountIds.has(r.targetAccountId)) return s + r.netAmount;
-        // Entrada com split: apenas a soma das alocações de reserva vai para a reserva
-        return s + r.reserveAmount;
-      }, 0);
+    // Split de reserva não existe mais na criação de uma entrada (D4b) — o que
+    // conta como "entrou na reserva este mês" é: (a) entradas cujo destino já é
+    // uma conta de reserva, direto; (b) transações RESERVE históricas
+    // (congeladas, geradas pelo antigo Recebimentos.receive()), que continuam
+    // tendo como targetAccountId a própria conta de reserva.
+    const reserveTxInMonth = allTransactions.filter(
+      (t) => t.type === TransactionType.RESERVE && !this.isExcludedFromFlow(t) && inSelectedMonth(dateKey(t.expectedDate)),
+    );
+    const reserveInflow = [...entries, ...reserveTxInMonth]
+      .filter((t) => t.status === TransactionStatus.RECEIVED && !!t.targetAccountId && reserveAccountIds.has(t.targetAccountId))
+      .reduce((s, t) => s + t.amount, 0);
 
     const reserveOutflow = [...payments, ...extraExpenses]
       .filter(
@@ -589,13 +589,6 @@ export class CashFlowService {
 
   // ─── Recorrência (lançamentos fixos) ──────────────────────────────────────────
 
-  private async ensureFixedOccurrences(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
-    await Promise.all([
-      this.ensureFixedTransactions(tenantId, targetMonth, targetYear),
-      this.ensureFixedReceivablesForFlow(tenantId, targetMonth, targetYear),
-    ]);
-  }
-
   // Agnóstico ao TransactionType — materializa recorrência fixa de PAYMENT,
   // EXTRA_EXPENSE e INCOME igualmente, já que todos compartilham recurringGroupId/recurringActive.
   private async ensureFixedTransactions(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
@@ -645,62 +638,6 @@ export class CashFlowService {
           expectedDate: newDate,
           actualDate: null,
           status: TransactionStatus.PENDING,
-          recurringGroupId: groupId,
-          recurringActive: true,
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
-    }
-  }
-
-  private async ensureFixedReceivablesForFlow(tenantId: string, targetMonth: number, targetYear: number): Promise<void> {
-    const all = await this.receivablesRepo.findAll(tenantId);
-    const fixed = all.filter((r) => r.recurrence === RecurrenceType.FIXED);
-    if (fixed.length === 0) return;
-
-    const groups = new Map<string, typeof fixed>();
-    for (const r of fixed) {
-      const gid = r.recurringGroupId ?? r.id;
-      const arr = groups.get(gid) ?? [];
-      arr.push(r);
-      groups.set(gid, arr);
-    }
-
-    const targetKey = monthKey(targetMonth, targetYear);
-    const now = nowISO();
-
-    for (const group of groups.values()) {
-      let latest = group[0];
-      let anchor = group[0];
-      for (const r of group) {
-        if (r.expectedPaymentDate > latest.expectedPaymentDate) latest = r;
-        if (r.expectedPaymentDate < anchor.expectedPaymentDate) anchor = r;
-      }
-
-      if (!latest.recurringActive) continue;
-
-      const latestMY = monthYearOf(latest.expectedPaymentDate);
-      if (monthKey(latestMY.month, latestMY.year) >= targetKey) continue;
-
-      const anchorDay = monthYearOf(anchor.expectedPaymentDate).day;
-      let cursorMonth = latestMY.month;
-      let cursorYear = latestMY.year;
-
-      while (monthKey(cursorMonth, cursorYear) < targetKey) {
-        const next = addMonths(cursorMonth, cursorYear, 1, anchorDay);
-        cursorMonth = next.month;
-        cursorYear = next.year;
-
-        const newDate = new Date(next.year, next.month - 1, next.day).toISOString();
-        const groupId = latest.recurringGroupId ?? latest.id;
-
-        await this.receivablesRepo.create({
-          ...latest,
-          id: generateId(),
-          expectedPaymentDate: newDate,
-          actualPaymentDate: null,
-          status: ReceivableStatus.EXPECTED,
           recurringGroupId: groupId,
           recurringActive: true,
           createdAt: now,
