@@ -505,6 +505,7 @@ describe('Onboarding — fluxo completo (integração)', () => {
       active: true,
       autoReserveEnabled: false,
       autoReservePercentage: 0,
+      autoReserveTargetAccountId: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

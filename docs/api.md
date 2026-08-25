@@ -25,11 +25,13 @@ Valores monetários são sempre inteiros em centavos, tanto no corpo das requisi
 
 Contas (ex.: Conta Principal, Reserva de Emergência). `GET /` retorna só contas ativas.
 
+Reserva automática (refactor de contas PF/PJ, entrega E8 — ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)): `autoReserveEnabled`/`autoReservePercentage`/`autoReserveTargetAccountId` ficam na conta de **origem** (não mais na conta marcada como reserva). Ao receber uma entrada nessa conta, uma transferência automática de `autoReservePercentage`% do valor é gerada para `autoReserveTargetAccountId` — ver [Transfers](#transfers). `POST /accounts` aceita a regra sem validar (fica inerte até ter destino); `PUT /accounts/:id`, ao ativar ou já ter a regra ativa, exige `autoReserveTargetAccountId` diferente do próprio id e apontando para uma conta existente e ativa (`400 account.autoReserveTargetRequired`/`account.autoReserveSameAccount`, `404 account.autoReserveTargetNotFound`).
+
 | Método | Rota          | Body / Query                                                                 |
 |--------|---------------|-------------------------------------------------------------------------------|
 | GET    | `/accounts`     | —                                                                              |
 | GET    | `/accounts/:id` | —                                                                              |
-| POST   | `/accounts`     | `{ name, type: 'MAIN'|'EMERGENCY_RESERVE'|..., initialBalance?, initialBalanceDate? }` |
+| POST   | `/accounts`     | `{ name, accountTypeId?, initialBalance?, initialBalanceDate?, autoReserveEnabled?, autoReservePercentage?, autoReserveTargetAccountId? }` |
 | PUT    | `/accounts/:id` | mesmos campos, todos opcionais                                                |
 | DELETE | `/accounts/:id` | — (soft delete: `active = false`)                                            |
 
@@ -86,6 +88,8 @@ Fatura de cartão: cartões continuam globais ao tenant (`GET /credit-cards` lis
 ## Transfers
 
 Transferência entre contas do mesmo tenant (refactor de contas PF/PJ, entrega E7 — ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)). Sempre gera **duas** `FinancialTransaction` tipo `TRANSFER` ligadas por `transferGroupId` — uma saída (`sourceAccountId`, status `PAID`) na conta de origem e uma entrada (`targetAccountId`, status `RECEIVED`) na conta de destino, ambas já efetivadas na data informada (uma transferência entre contas próprias representa um movimento que já aconteceu, não uma obrigação futura). O identificador usado nas rotas de edição/exclusão/reversão é o `transferGroupId` do par, não o `id` de uma perna individual.
+
+**Reserva automática (entrega E8)**: transferências também podem ser geradas automaticamente pelo `CashFlowService` — `originType: AUTO_RESERVE` em vez de `TRANSFER` — quando `POST /cash-flow/income/:id/receive` confirma uma entrada numa conta com regra ativa (ver [Accounts](#accounts)). O par nasce com `originId` apontando para a entrada que o originou; reverter essa entrada (`POST /cash-flow/income/:id/revert`) reverte o par em cascata, e recebê-la de novo reconfirma o mesmo par (sem duplicar) com o valor recalculado. Endpoints deste módulo funcionam sobre esses pares como qualquer outro, mas normalmente não precisam ser chamados diretamente para eles — o ciclo de vida é o da entrada de origem. `GET /cash-flow` marca essas pernas com `isAutoReserve: true`.
 
 | Método | Rota                          | Body / Query |
 |--------|-------------------------------|--------------|

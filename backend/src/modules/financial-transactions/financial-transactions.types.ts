@@ -26,6 +26,7 @@ export enum OriginType {
   EXTRA_EXPENSE = 'EXTRA_EXPENSE',
   CREDIT_CARD_INVOICE = 'CREDIT_CARD_INVOICE',
   TRANSFER = 'TRANSFER',
+  AUTO_RESERVE = 'AUTO_RESERVE',
 }
 
 export interface FinancialTransaction {

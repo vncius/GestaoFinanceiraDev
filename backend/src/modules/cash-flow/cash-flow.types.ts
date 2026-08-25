@@ -17,6 +17,9 @@ export interface TransferFlowItem {
   notes: string | null;
   counterpartAccountId: string;
   counterpartAccountName: string;
+  // Perna gerada automaticamente por uma regra de reserva (E8), não por uma
+  // transferência manual — badge própria no frontend.
+  isAutoReserve: boolean;
 }
 
 export interface CashFlowSummary {

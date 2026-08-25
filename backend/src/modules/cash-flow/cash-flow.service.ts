@@ -5,6 +5,7 @@ import { calcAccountBalance } from '../../shared/utils/balance.utils';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
+  OriginType,
   RecurrenceType,
   TransactionStatus,
   TransactionType,
@@ -12,6 +13,7 @@ import {
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CreditCardsRepository, CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoice, InvoiceStatus } from '../credit-cards/credit-cards.types';
+import { TransfersService } from '../transfers/transfers.service';
 import { CashFlowResponse, TransferFlowItem } from './cash-flow.types';
 import {
   CashFlowQuery,
@@ -43,6 +45,7 @@ export class CashFlowService {
     private readonly accountsRepo: AccountsRepository,
     private readonly creditCardInvoicesRepo?: CreditCardInvoicesRepository,
     private readonly creditCardsRepo?: CreditCardsRepository,
+    private readonly transfersService?: TransfersService,
   ) {}
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
@@ -181,6 +184,7 @@ export class CashFlowService {
         notes: leg.notes,
         counterpartAccountId,
         counterpartAccountName: accountNameById.get(counterpartAccountId) ?? '—',
+        isAutoReserve: leg.originType === OriginType.AUTO_RESERVE,
       };
     });
 
@@ -358,11 +362,44 @@ export class CashFlowService {
   }
 
   async receiveIncome(id: string, tenantId: string, input: ReceiveActionInput): Promise<FinancialTransaction> {
-    return this.settleTransactionChecked(id, TransactionType.INCOME, tenantId, input?.actualDate, input?.amountReceived);
+    const tx = await this.settleTransactionChecked(id, TransactionType.INCOME, tenantId, input?.actualDate, input?.amountReceived);
+    await this.applyAutoReserve(tenantId, tx);
+    return tx;
   }
 
   async revertIncome(id: string, tenantId: string): Promise<FinancialTransaction> {
-    return this.revertTransactionChecked(id, TransactionType.INCOME, tenantId);
+    const tx = await this.revertTransactionChecked(id, TransactionType.INCOME, tenantId);
+    await this.transfersService?.cascadeRevertForOrigin(tenantId, id);
+    return tx;
+  }
+
+  // ─── Reserva automática (E8) ─────────────────────────────────────────────────
+
+  // Ao receber uma entrada numa conta com regra de reserva ativa, gera (ou
+  // reconfirma, se já existia — ver TransfersService.resettleByOrigin) uma
+  // transferência automática de percentual x valor para a conta de destino
+  // configurada. Silenciosamente ignorado se não houver transfersService
+  // (não injetado em todo contexto de teste) ou se a conta não tiver uma
+  // regra completa configurada (D4b: regra incompleta fica inerte).
+  //
+  // Limitação conhecida: editar o valor de uma entrada já RECEIVED (sem
+  // passar por reverter/receber de novo) não recalcula a reserva vinculada.
+  private async applyAutoReserve(tenantId: string, income: FinancialTransaction): Promise<void> {
+    if (!this.transfersService || !income.targetAccountId) return;
+    const account = await this.accountsRepo.findById(income.targetAccountId, tenantId);
+    if (!account?.autoReserveEnabled || !account.autoReserveTargetAccountId || account.autoReservePercentage <= 0) {
+      return;
+    }
+    const reserveAmount = Math.round((income.amount * account.autoReservePercentage) / 100);
+    if (reserveAmount <= 0) return;
+
+    await this.transfersService.resettleByOrigin(tenantId, income.id, {
+      sourceAccountId: account.id,
+      targetAccountId: account.autoReserveTargetAccountId,
+      amount: reserveAmount,
+      date: income.actualDate ?? income.expectedDate,
+      description: `Reserva automática — ${income.description}`,
+    });
   }
 
   // ─── Payments ────────────────────────────────────────────────────────────────

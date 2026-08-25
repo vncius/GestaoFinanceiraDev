@@ -81,6 +81,7 @@
     },
     "fromLabel": "De {{account}}",
     "toLabel": "Para {{account}}",
+    "autoReserveBadge": "Reserva automática",
     "revert": "Reverter transferência",
     "emptyState": {
       "title": "Nenhuma transferência neste mês"

@@ -72,6 +72,11 @@ export function TransferGrid({
                           <ArrowUpRight size={13} className="text-red-500 shrink-0" />
                         )}
                         {item.description}
+                        {item.isAutoReserve && (
+                          <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400">
+                            {t('transferGrid.autoReserveBadge')}
+                          </span>
+                        )}
                       </span>
                     </td>
                     <td className={`${COL_CONTA} px-3 py-3 text-gray-500 dark:text-gray-400 text-xs truncate`}>

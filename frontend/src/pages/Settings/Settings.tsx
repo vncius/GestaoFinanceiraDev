@@ -225,12 +225,14 @@ interface AccountFormState {
   initialBalance: string;
   autoReserveEnabled: boolean;
   autoReservePercentage: string;
+  autoReserveTargetAccountId: string;
 }
 
 function AccountModal({
   open,
   onClose,
   item,
+  accounts,
   accountTypes,
   onSave,
   onDelete,
@@ -239,6 +241,7 @@ function AccountModal({
   open: boolean;
   onClose: () => void;
   item?: Account;
+  accounts: Account[];
   accountTypes: AccountTypeItem[];
   onSave: (data: CreateAccountPayload) => void;
   onDelete?: () => void;
@@ -246,6 +249,8 @@ function AccountModal({
 }) {
   const { t } = useTranslation('settings');
   const activeTypes = accountTypes.filter((at) => at.active);
+  // Não pode apontar reserva automática para a própria conta (E8).
+  const targetOptions = accounts.filter((a) => a.active && a.id !== item?.id);
 
   const init = (): AccountFormState => ({
     name: item?.name ?? '',
@@ -253,6 +258,7 @@ function AccountModal({
     initialBalance: item ? String(centsToFloat(item.initialBalance)) : '0',
     autoReserveEnabled: item?.autoReserveEnabled ?? false,
     autoReservePercentage: String(item?.autoReservePercentage ?? 0),
+    autoReserveTargetAccountId: item?.autoReserveTargetAccountId ?? '',
   });
 
   const [form, setForm] = useState<AccountFormState>(init);
@@ -269,7 +275,12 @@ function AccountModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const missing = getMissingFields([{ label: t('validation.nameLabel'), valid: !!form.name }]);
+    const missing = getMissingFields([
+      { label: t('validation.nameLabel'), valid: !!form.name },
+      ...(form.autoReserveEnabled
+        ? [{ label: t('accounts.modal.autoReserveTargetLabel'), valid: !!form.autoReserveTargetAccountId }]
+        : []),
+    ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
       name: form.name,
@@ -277,6 +288,7 @@ function AccountModal({
       initialBalance: floatToCents(parseFloat(form.initialBalance) || 0),
       autoReserveEnabled: form.autoReserveEnabled,
       autoReservePercentage: form.autoReserveEnabled ? parseFloat(form.autoReservePercentage) || 0 : 0,
+      autoReserveTargetAccountId: form.autoReserveEnabled ? form.autoReserveTargetAccountId || null : null,
     });
   }
 
@@ -339,17 +351,31 @@ function AccountModal({
           <HelpTip text={t('accounts.modal.autoReserveTooltip')} />
         </label>
         {form.autoReserveEnabled && (
-          <Field label={t('accounts.modal.autoReservePercentageLabel')}>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.5"
-              className={INPUT}
-              value={form.autoReservePercentage}
-              onChange={set('autoReservePercentage')}
-            />
-          </Field>
+          <>
+            <Field label={t('accounts.modal.autoReservePercentageLabel')}>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                className={INPUT}
+                value={form.autoReservePercentage}
+                onChange={set('autoReservePercentage')}
+              />
+            </Field>
+            <Field label={t('accounts.modal.autoReserveTargetLabel')}>
+              <select
+                className={INPUT}
+                value={form.autoReserveTargetAccountId}
+                onChange={set('autoReserveTargetAccountId')}
+              >
+                <option value="">{t('accounts.modal.autoReserveTargetPlaceholder')}</option>
+                {targetOptions.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </Field>
+          </>
         )}
       </form>
     </Modal>
@@ -494,6 +520,7 @@ function AccountsTab() {
         open={modal !== null}
         onClose={() => setModal(null)}
         item={modal?.item}
+        accounts={accounts}
         accountTypes={accountTypes}
         onSave={save}
         onDelete={modal?.item?.active ? () => handleDeactivate(modal.item!) : undefined}

@@ -81,6 +81,7 @@
     },
     "fromLabel": "From {{account}}",
     "toLabel": "To {{account}}",
+    "autoReserveBadge": "Auto reserve",
     "revert": "Revert transfer",
     "emptyState": {
       "title": "No transfers this month"

@@ -62,9 +62,11 @@
       "typeLabel": "Tipo",
       "typeNone": "Sem tipo",
       "initialBalanceLabel": "Saldo inicial (R$)",
-      "autoReserveLabel": "Participa da separação automática de reserva",
-      "autoReserveTooltip": "Uma conta de reserva separa automaticamente um percentual de cada entrada para guardar dinheiro. Use uma conta diferente da conta principal, assim os saldos ficam separados e não bugam.",
-      "autoReservePercentageLabel": "Percentual separado automaticamente (%)"
+      "autoReserveLabel": "Separar reserva automaticamente ao receber entradas",
+      "autoReserveTooltip": "Ao marcar, toda entrada recebida nesta conta gera automaticamente uma transferência de um percentual do valor para a conta de destino escolhida abaixo.",
+      "autoReservePercentageLabel": "Percentual transferido automaticamente (%)",
+      "autoReserveTargetLabel": "Conta de destino da reserva",
+      "autoReserveTargetPlaceholder": "Selecione a conta de destino..."
     }
   },
   "accountTypes": {

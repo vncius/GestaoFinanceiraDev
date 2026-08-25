@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CashFlowService } from './cash-flow.service';
+import { TransfersService } from '../transfers/transfers.service';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -88,6 +89,18 @@ function buildService() {
   return { service, transactionsRepo, accountsRepo };
 }
 
+// Com TransfersService injetado, para exercitar a reserva automática (E8) —
+// os demais testes usam buildService() sem ele de propósito, para confirmar
+// que a ausência (não injetado em todo contexto) não quebra nada.
+function buildServiceWithTransfers() {
+  const transactionsRepo = new FakeTransactionsRepo();
+  const accountsRepo = new FakeAccountsRepo();
+  const transfersService = new TransfersService(transactionsRepo, accountsRepo);
+  const service = new CashFlowService(transactionsRepo, accountsRepo, undefined, undefined, transfersService);
+
+  return { service, transactionsRepo, accountsRepo, transfersService };
+}
+
 async function seedAccount(accountsRepo: FakeAccountsRepo, overrides: Partial<Account> = {}): Promise<Account> {
   const now = new Date().toISOString();
   const account: Account = {
@@ -100,6 +113,7 @@ async function seedAccount(accountsRepo: FakeAccountsRepo, overrides: Partial<Ac
     active: true,
     autoReserveEnabled: false,
     autoReservePercentage: 0,
+    autoReserveTargetAccountId: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -308,5 +322,116 @@ describe('CashFlowService — Conta como contexto financeiro (E5)', () => {
     await expect(
       service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: randomUUID() }),
     ).rejects.toMatchObject({ code: 'account.notFound' });
+  });
+});
+
+describe('CashFlowService — Reserva automática como transferência (E8)', () => {
+  let ctx: ReturnType<typeof buildServiceWithTransfers>;
+
+  beforeEach(() => {
+    ctx = buildServiceWithTransfers();
+  });
+
+  it('receiveIncome numa conta com regra ativa gera automaticamente a transferência de reserva', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const investimentos = await seedAccount(accountsRepo, { name: 'Investimentos' });
+    const pj = await seedAccount(accountsRepo, {
+      name: 'PJ',
+      autoReserveEnabled: true,
+      autoReservePercentage: 30,
+      autoReserveTargetAccountId: investimentos.id,
+    });
+
+    const income = await service.createIncome(TENANT_ID, pj.id, {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 1000000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: pj.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+
+    const legs = await transactionsRepo.findByOrigin(TENANT_ID, OriginType.AUTO_RESERVE, income.id);
+    expect(legs).toHaveLength(2);
+    const outgoing = legs.find((l) => l.sourceAccountId !== null)!;
+    const incoming = legs.find((l) => l.targetAccountId !== null)!;
+    expect(outgoing.sourceAccountId).toBe(pj.id);
+    expect(outgoing.amount).toBe(300000);
+    expect(outgoing.status).toBe(TransactionStatus.PAID);
+    expect(incoming.targetAccountId).toBe(investimentos.id);
+    expect(incoming.amount).toBe(300000);
+    expect(incoming.status).toBe(TransactionStatus.RECEIVED);
+    expect(outgoing.transferGroupId).toBe(incoming.transferGroupId);
+  });
+
+  it('revertIncome reverte a transferência automática em cascata', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const investimentos = await seedAccount(accountsRepo, { name: 'Investimentos' });
+    const pj = await seedAccount(accountsRepo, {
+      name: 'PJ',
+      autoReserveEnabled: true,
+      autoReservePercentage: 30,
+      autoReserveTargetAccountId: investimentos.id,
+    });
+    const income = await service.createIncome(TENANT_ID, pj.id, {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 1000000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: pj.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+
+    await service.revertIncome(income.id, TENANT_ID);
+
+    const legs = await transactionsRepo.findByOrigin(TENANT_ID, OriginType.AUTO_RESERVE, income.id);
+    expect(legs).toHaveLength(2);
+    expect(legs.every((l) => l.status === TransactionStatus.PENDING)).toBe(true);
+    expect(legs.every((l) => l.actualDate === null)).toBe(true);
+  });
+
+  it('receber de novo após reverter reconfirma o mesmo par em vez de duplicar', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const investimentos = await seedAccount(accountsRepo, { name: 'Investimentos' });
+    const pj = await seedAccount(accountsRepo, {
+      name: 'PJ',
+      autoReserveEnabled: true,
+      autoReservePercentage: 30,
+      autoReserveTargetAccountId: investimentos.id,
+    });
+    const income = await service.createIncome(TENANT_ID, pj.id, {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 1000000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: pj.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+    await service.revertIncome(income.id, TENANT_ID);
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+
+    const legs = await transactionsRepo.findByOrigin(TENANT_ID, OriginType.AUTO_RESERVE, income.id);
+    expect(legs).toHaveLength(2);
+    expect(legs.every((l) => l.status === TransactionStatus.PAID || l.status === TransactionStatus.RECEIVED)).toBe(true);
+  });
+
+  it('conta sem regra de reserva configurada não gera nenhuma transferência automática', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const conta = await seedAccount(accountsRepo);
+    const income = await service.createIncome(TENANT_ID, conta.id, {
+      description: 'Salário',
+      categoryId: randomUUID(),
+      amount: 500000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: conta.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+
+    const all = await transactionsRepo.findAll(TENANT_ID);
+    expect(all.filter((t) => t.type === TransactionType.TRANSFER)).toHaveLength(0);
   });
 });

@@ -58,6 +58,7 @@ async function seedAccounts(mainTypeId: string, reserveTypeId: string) {
       active: true,
       autoReserveEnabled: false,
       autoReservePercentage: 0,
+      autoReserveTargetAccountId: null,
       createdAt: now,
       updatedAt: now,
     },
@@ -69,8 +70,12 @@ async function seedAccounts(mainTypeId: string, reserveTypeId: string) {
       initialBalance: 0,
       initialBalanceDate: now,
       active: true,
-      autoReserveEnabled: true,
-      autoReservePercentage: 30,
+      // Regra de reserva automática (E8) precisa ser configurada manualmente
+      // depois do seed — precisa apontar da conta de origem para esta conta,
+      // e a conta de origem só existe a partir daqui.
+      autoReserveEnabled: false,
+      autoReservePercentage: 0,
+      autoReserveTargetAccountId: null,
       createdAt: now,
       updatedAt: now,
     },

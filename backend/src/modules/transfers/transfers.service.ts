@@ -21,7 +21,50 @@ export class TransfersService {
 
   async createTransfer(tenantId: string, input: CreateTransferInput): Promise<TransferPair> {
     await this.assertDifferentActiveAccounts(tenantId, input.sourceAccountId, input.targetAccountId);
+    return this.createTransferPair(tenantId, {
+      ...input,
+      originType: OriginType.TRANSFER,
+      originId: null,
+    });
+  }
 
+  // Reserva automática (E8): mesma mecânica de par de transações, mas
+  // originada pelo recebimento de uma entrada (originType/originId ligam de
+  // volta a ela para o cascade de reversão em applyAutoReserve/cascadeRevertForOrigin).
+  // Não valida contas aqui — quem decide se a regra é aplicável é o chamador
+  // (CashFlowService), que já leu a conta de origem para calcular o valor.
+  async createAutoReserveTransfer(
+    tenantId: string,
+    input: {
+      sourceAccountId: string;
+      targetAccountId: string;
+      amount: number;
+      date: string;
+      description: string;
+      originId: string;
+    },
+  ): Promise<TransferPair> {
+    return this.createTransferPair(tenantId, {
+      ...input,
+      notes: null,
+      originType: OriginType.AUTO_RESERVE,
+      originId: input.originId,
+    });
+  }
+
+  private async createTransferPair(
+    tenantId: string,
+    input: {
+      sourceAccountId: string;
+      targetAccountId: string;
+      amount: number;
+      date: string;
+      description: string;
+      notes?: string | null;
+      originType: OriginType;
+      originId: string | null;
+    },
+  ): Promise<TransferPair> {
     const now = nowISO();
     const transferGroupId = generateId();
     const base = {
@@ -31,8 +74,8 @@ export class TransfersService {
       categoryId: null,
       amount: input.amount,
       expectedDate: input.date,
-      originType: OriginType.TRANSFER,
-      originId: null,
+      originType: input.originType,
+      originId: input.originId,
       transferGroupId,
       notes: input.notes ?? null,
       recurrence: RecurrenceType.UNIQUE,
@@ -118,9 +161,7 @@ export class TransfersService {
 
   async revertTransfer(transferGroupId: string, tenantId: string): Promise<TransferPair> {
     const [outgoing, incoming] = await this.getLegsChecked(transferGroupId, tenantId);
-    const isSettled = (t: FinancialTransaction) =>
-      t.status === TransactionStatus.PAID || t.status === TransactionStatus.RECEIVED;
-    if (!isSettled(outgoing) || !isSettled(incoming)) {
+    if (!this.isSettled(outgoing) || !this.isSettled(incoming)) {
       throw new AppError(
         'Apenas transferências efetivadas podem ser revertidas.',
         400,
@@ -128,6 +169,69 @@ export class TransfersService {
       );
     }
 
+    const [updatedOutgoing, updatedIncoming] = await this.setLegsPending(outgoing, incoming, tenantId);
+    return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+  }
+
+  // ─── Reserva automática (E8) ─────────────────────────────────────────────────
+
+  // Estorno/reversão da entrada que originou a reserva: desfaz a
+  // transferência em cascata. Tolerante (nunca lança) — chamado
+  // automaticamente pelo CashFlowService, não por uma ação explícita do
+  // usuário sobre a própria transferência.
+  async cascadeRevertForOrigin(tenantId: string, originId: string): Promise<void> {
+    const legs = (await this.transactionsRepo.findByOrigin(tenantId, OriginType.AUTO_RESERVE, originId)).filter(
+      (t) => t.type === TransactionType.TRANSFER,
+    );
+    const outgoing = legs.find((t) => t.sourceAccountId !== null);
+    const incoming = legs.find((t) => t.targetAccountId !== null);
+    if (!outgoing || !incoming) return;
+    if (!this.isSettled(outgoing) || !this.isSettled(incoming)) return;
+    await this.setLegsPending(outgoing, incoming, tenantId);
+  }
+
+  // Reaplica a reserva ligada a uma entrada: cria o par na primeira vez;
+  // numa entrada recebida -> revertida -> recebida de novo, reconfirma o par
+  // já existente (com valor/data atualizados) em vez de duplicar.
+  async resettleByOrigin(
+    tenantId: string,
+    originId: string,
+    input: { sourceAccountId: string; targetAccountId: string; amount: number; date: string; description: string },
+  ): Promise<TransferPair> {
+    const legs = (await this.transactionsRepo.findByOrigin(tenantId, OriginType.AUTO_RESERVE, originId)).filter(
+      (t) => t.type === TransactionType.TRANSFER,
+    );
+    const outgoing = legs.find((t) => t.sourceAccountId !== null);
+    const incoming = legs.find((t) => t.targetAccountId !== null);
+    if (!outgoing || !incoming) {
+      return this.createAutoReserveTransfer(tenantId, { ...input, originId });
+    }
+
+    const now = nowISO();
+    const updatedOutgoing = await this.transactionsRepo.update(
+      outgoing.id,
+      { status: TransactionStatus.PAID, amount: input.amount, expectedDate: input.date, actualDate: input.date, updatedAt: now },
+      tenantId,
+    );
+    const updatedIncoming = await this.transactionsRepo.update(
+      incoming.id,
+      { status: TransactionStatus.RECEIVED, amount: input.amount, expectedDate: input.date, actualDate: input.date, updatedAt: now },
+      tenantId,
+    );
+    return { transferGroupId: outgoing.transferGroupId as string, outgoing: updatedOutgoing, incoming: updatedIncoming };
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  private isSettled(t: FinancialTransaction): boolean {
+    return t.status === TransactionStatus.PAID || t.status === TransactionStatus.RECEIVED;
+  }
+
+  private async setLegsPending(
+    outgoing: FinancialTransaction,
+    incoming: FinancialTransaction,
+    tenantId: string,
+  ): Promise<[FinancialTransaction, FinancialTransaction]> {
     const now = nowISO();
     const updatedOutgoing = await this.transactionsRepo.update(
       outgoing.id,
@@ -139,11 +243,8 @@ export class TransfersService {
       { status: TransactionStatus.PENDING, actualDate: null, updatedAt: now },
       tenantId,
     );
-
-    return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+    return [updatedOutgoing, updatedIncoming];
   }
-
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
 
   private async assertDifferentActiveAccounts(
     tenantId: string,

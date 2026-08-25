@@ -7,6 +7,7 @@ export interface CreateAccountPayload {
   initialBalance: number;
   autoReserveEnabled: boolean;
   autoReservePercentage: number;
+  autoReserveTargetAccountId?: string | null;
 }
 
 export const AccountsService = {

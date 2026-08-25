@@ -7,6 +7,7 @@ export const createAccountSchema = z.object({
   initialBalanceDate: z.string().optional(),
   autoReserveEnabled: z.boolean().default(false),
   autoReservePercentage: z.number().min(0).max(100).default(0),
+  autoReserveTargetAccountId: z.string().uuid().nullable().optional(),
 });
 
 export const updateAccountSchema = z.object({
@@ -16,6 +17,7 @@ export const updateAccountSchema = z.object({
   initialBalanceDate: z.string().optional(),
   autoReserveEnabled: z.boolean().optional(),
   autoReservePercentage: z.number().min(0).max(100).optional(),
+  autoReserveTargetAccountId: z.string().uuid().nullable().optional(),
 });
 
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;

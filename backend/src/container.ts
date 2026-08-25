@@ -107,13 +107,14 @@ const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
   aiProvider,
   aiConfig,
 );
+const transfersService = new TransfersService(transactionsRepo, accountsRepo);
 const cashFlowService = new CashFlowService(
   transactionsRepo,
   accountsRepo,
   creditCardInvoicesRepo,
   creditCardsRepo,
+  transfersService,
 );
-const transfersService = new TransfersService(transactionsRepo, accountsRepo);
 const dashboardService = new DashboardService(
   transactionsRepo,
   accountsRepo,

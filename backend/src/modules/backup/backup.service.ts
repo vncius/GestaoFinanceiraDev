@@ -9,6 +9,7 @@ import { OnboardingStateRepository, OnboardingMessagesRepository } from '../onbo
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
+  OriginType,
   RecurrenceType,
   TransactionStatus,
   TransactionType,
@@ -169,7 +170,12 @@ export class BackupService {
       .filter((t) => inRange(t.expectedDate))
       .map((t) => ({
         date: t.expectedDate.slice(0, 10),
-        type: TX_TYPE_LABELS[t.type] ?? t.type,
+        // Reserva automática (E8) é uma TRANSFER como qualquer outra, mas
+        // ganha rótulo próprio no CSV para não se confundir com
+        // transferências manuais do usuário.
+        type: t.type === TransactionType.TRANSFER && t.originType === OriginType.AUTO_RESERVE
+          ? 'Reserva Automática'
+          : TX_TYPE_LABELS[t.type] ?? t.type,
         description: t.description,
         category: t.categoryId ? categoryName.get(t.categoryId) ?? '' : '',
         amount: t.amount,

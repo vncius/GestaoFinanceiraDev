@@ -98,6 +98,7 @@ async function seedAccount(accountsRepo: FakeAccountsRepo, overrides: Partial<Ac
     active: true,
     autoReserveEnabled: false,
     autoReservePercentage: 0,
+    autoReserveTargetAccountId: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,

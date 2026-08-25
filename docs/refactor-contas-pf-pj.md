@@ -1,7 +1,7 @@
 # Refactor: Conta como contexto financeiro (separação PF/PJ)
 
 > Plano de execução incremental. Cada entrega é fechada, compila e mantém a aplicação funcional.
-> Status: **E1 a E7 implementadas** (código, na branch `refactor/contas-pf-pj`). A migração de dados da E2 já rodou contra produção (idempotência verificada). Com a E6, o frontend já tem o `AccountContext` e o seletor de conta ativa no header. Com a E7, transferências entre contas (`/transfers`) já funcionam de ponta a ponta — sempre 2 transações `TRANSFER` ligadas por `transferGroupId`, já efetivadas na criação (D5), com `TransferModal`/`TransferGrid` no Fluxo de Caixa e opção no Lançamento Rápido. E8 em diante seguem pendentes.
+> Status: **E1 a E8 implementadas** (código, na branch `refactor/contas-pf-pj`). A migração de dados da E2 já rodou contra produção (idempotência verificada). Com a E6, o frontend já tem o `AccountContext` e o seletor de conta ativa no header. Com a E7, transferências entre contas (`/transfers`) já funcionam de ponta a ponta — sempre 2 transações `TRANSFER` ligadas por `transferGroupId`, já efetivadas na criação (D5). Com a E8, reserva automática virou transferência: `Account.autoReserveTargetAccountId` (novo) marca o destino a partir da conta de ORIGEM (semântica invertida — a migração `migrateResetAutoReserve` zera as flags antigas no próximo boot do servidor, D4b, mas ainda não rodou contra produção nesta sessão); receber uma entrada com regra ativa gera/reconfirma automaticamente o par (`originType: AUTO_RESERVE`), e reverter a entrada reverte o par em cascata. E9 é a última entrega pendente.
 
 ## Objetivo
 

@@ -62,9 +62,11 @@
       "typeLabel": "Type",
       "typeNone": "No type",
       "initialBalanceLabel": "Initial balance ($)",
-      "autoReserveLabel": "Included in automatic reserve split",
-      "autoReserveTooltip": "A reserve account automatically sets aside a percentage of each income to save money. Use an account different from the main account so balances stay separate and don't get mixed up.",
-      "autoReservePercentageLabel": "Auto-reserved percentage (%)"
+      "autoReserveLabel": "Automatically set aside a reserve on income",
+      "autoReserveTooltip": "When enabled, every income received in this account automatically generates a transfer of a percentage of the amount to the target account chosen below.",
+      "autoReservePercentageLabel": "Percentage automatically transferred (%)",
+      "autoReserveTargetLabel": "Reserve target account",
+      "autoReserveTargetPlaceholder": "Select the target account..."
     }
   },
   "accountTypes": {

@@ -15,6 +15,7 @@ export interface Account {
   active: boolean;
   autoReserveEnabled: boolean;
   autoReservePercentage: number;
+  autoReserveTargetAccountId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -218,6 +219,7 @@ export interface TransferFlowItem {
   notes: string | null;
   counterpartAccountId: string;
   counterpartAccountName: string;
+  isAutoReserve: boolean;
 }
 
 export interface CashFlowResponse {

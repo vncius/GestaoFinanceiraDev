@@ -22,6 +22,11 @@ export class AccountsService {
 
   async create(tenantId: string, input: CreateAccountInput): Promise<Account> {
     const now = nowISO();
+    // Sem validação de origem/destino aqui de propósito: uma regra
+    // incompleta (enabled sem target) fica apenas inerte — createIncome/
+    // receiveIncome no CashFlowService ignora regras sem target. A
+    // validação de fato só entra em update(), quando o usuário configura a
+    // regra pela tela de Contas com as duas contas já existentes.
     return this.repo.create({
       id: generateId(),
       tenantId,
@@ -32,13 +37,42 @@ export class AccountsService {
       active: true,
       autoReserveEnabled: input.autoReserveEnabled ?? false,
       autoReservePercentage: input.autoReservePercentage ?? 0,
+      autoReserveTargetAccountId: input.autoReserveTargetAccountId ?? null,
       createdAt: now,
       updatedAt: now,
     });
   }
 
   async update(id: string, input: UpdateAccountInput, tenantId: string): Promise<Account> {
-    await this.findById(id, tenantId);
+    const existing = await this.findById(id, tenantId);
+    const enabled = input.autoReserveEnabled ?? existing.autoReserveEnabled;
+    if (enabled) {
+      const targetId = input.autoReserveTargetAccountId !== undefined
+        ? input.autoReserveTargetAccountId
+        : existing.autoReserveTargetAccountId;
+      if (!targetId) {
+        throw new AppError(
+          'Selecione a conta de destino da reserva automática.',
+          400,
+          'account.autoReserveTargetRequired',
+        );
+      }
+      if (targetId === id) {
+        throw new AppError(
+          'A conta de origem e destino da reserva automática devem ser diferentes.',
+          400,
+          'account.autoReserveSameAccount',
+        );
+      }
+      const target = await this.repo.findById(targetId, tenantId);
+      if (!target || !target.active) {
+        throw new AppError(
+          'Conta de destino da reserva automática não encontrada ou inativa.',
+          404,
+          'account.autoReserveTargetNotFound',
+        );
+      }
+    }
     return this.repo.update(id, { ...input, updatedAt: nowISO() }, tenantId);
   }
 
