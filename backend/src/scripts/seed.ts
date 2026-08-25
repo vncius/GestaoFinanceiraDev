@@ -127,7 +127,6 @@ async function seedCategories() {
       name,
       type: CategoryType.INCOME,
       active: true,
-      protected: name === 'Nota fiscal',
       createdAt: now,
       updatedAt: now,
     });
@@ -141,7 +140,6 @@ async function seedCategories() {
       name,
       type: CategoryType.EXPENSE,
       active: true,
-      protected: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -157,17 +155,11 @@ async function seedSettings(mainAccountId: string) {
   }
 
   const now = nowISO();
-  const today = new Date();
 
   await settingsRepo.upsert({
     id: generateId(),
     tenantId: DEFAULT_TENANT_ID,
     mainAccountId,
-    minimumMainBalance: 0,
-    annualRevenueLimit: 0,
-    controlStartMonth: today.getMonth() + 1,
-    controlStartYear: today.getFullYear(),
-    pjLimitControlEnabled: true,
     createdAt: now,
     updatedAt: now,
   });

@@ -110,7 +110,7 @@ describe('OnboardingDraftService', () => {
       const second = await service.addItem(
         TENANT_ID,
         'settings',
-        { controlScope: 'BOTH', pjLimitControlEnabled: true },
+        { controlScope: 'BOTH' },
         'ai',
       );
       expect(second.item.draftItemId).toBe('settings');

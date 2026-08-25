@@ -58,11 +58,6 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 interface GeneralFormState {
   mainAccountId: string;
-  minimumMainBalance: string;
-  annualRevenueLimit: string;
-  controlStartMonth: string;
-  controlStartYear: string;
-  pjLimitControlEnabled: boolean;
 }
 
 function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -147,11 +142,6 @@ function GeneralTab({
 
   const initForm = (s: FinancialSettings): GeneralFormState => ({
     mainAccountId: s.mainAccountId ?? '',
-    minimumMainBalance: String(centsToFloat(s.minimumMainBalance)),
-    annualRevenueLimit: String(centsToFloat(s.annualRevenueLimit)),
-    controlStartMonth: String(s.controlStartMonth),
-    controlStartYear: String(s.controlStartYear),
-    pjLimitControlEnabled: s.pjLimitControlEnabled,
   });
 
   const [form, setForm] = useState<GeneralFormState>(() => initForm(settings));
@@ -180,11 +170,6 @@ function GeneralTab({
   function handleSave() {
     updateMut.mutate({
       mainAccountId: form.mainAccountId || null,
-      minimumMainBalance: floatToCents(parseFloat(form.minimumMainBalance) || 0),
-      annualRevenueLimit: floatToCents(parseFloat(form.annualRevenueLimit) || 0),
-      controlStartMonth: parseInt(form.controlStartMonth) || 1,
-      controlStartYear: parseInt(form.controlStartYear) || new Date().getFullYear(),
-      pjLimitControlEnabled: form.pjLimitControlEnabled,
     });
   }
 
@@ -209,74 +194,6 @@ function GeneralTab({
               ))}
             </select>
           </Field>
-          <Field label={t('general.minimumMainBalanceLabel')}>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              className={INPUT}
-              value={form.minimumMainBalance}
-              onChange={set('minimumMainBalance')}
-            />
-          </Field>
-        </div>
-      </SectionCard>
-
-      <SectionCard title={t('general.limitsAndPeriodTitle')}>
-        <div className="space-y-4">
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.pjLimitControlEnabled}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, pjLimitControlEnabled: e.target.checked }))
-              }
-              className="rounded"
-            />
-            {t('general.managePjLimitsLabel')}
-            <HelpTip text={t('general.managePjLimitsTooltip')} />
-          </label>
-
-          {form.pjLimitControlEnabled ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label={t('general.annualRevenueLimitLabel')}>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  className={INPUT}
-                  value={form.annualRevenueLimit}
-                  onChange={set('annualRevenueLimit')}
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-2">
-                <Field label={t('general.controlStartMonthLabel')}>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    className={INPUT}
-                    value={form.controlStartMonth}
-                    onChange={set('controlStartMonth')}
-                  />
-                </Field>
-                <Field label={t('general.controlStartYearLabel')}>
-                  <input
-                    type="number"
-                    min="2000"
-                    max="2100"
-                    className={INPUT}
-                    value={form.controlStartYear}
-                    onChange={set('controlStartYear')}
-                  />
-                </Field>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              {t('general.pjLimitsHint')}
-            </p>
-          )}
         </div>
       </SectionCard>
 
@@ -912,11 +829,6 @@ function CategorySection({
                 >
                   <td className="px-3 sm:px-5 py-2.5 font-medium text-gray-800 dark:text-gray-100">
                     {c.name}
-                    {c.protected && (
-                      <span className="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                        {t('categories.protectedBadge')}
-                      </span>
-                    )}
                   </td>
                   <td className="px-2 sm:px-3 py-2.5">
                     <span
@@ -939,7 +851,7 @@ function CategorySection({
                       >
                         <Pencil size={14} />
                       </IconActionButton>
-                      {c.active && !c.protected && (
+                      {c.active && (
                         <IconActionButton
                           title={t('actions.deactivate')}
                           onClick={() => onDelete(c)}
@@ -1026,11 +938,7 @@ function CategoriesTab() {
         item={modal?.item}
         defaultType={modal?.defaultType}
         onSave={save}
-        onDelete={
-          modal?.item?.active && !modal.item.protected
-            ? () => handleDeactivate(modal.item!)
-            : undefined
-        }
+        onDelete={modal?.item?.active ? () => handleDeactivate(modal.item!) : undefined}
         isSaving={createMut.isPending || updateMut.isPending}
       />
     </div>

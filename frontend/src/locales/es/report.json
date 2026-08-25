@@ -21,12 +21,6 @@
     "expensesByCategory": "Gastos por Categoría",
     "empty": "Sin movimientos en el período."
   },
-  "annualSummary": {
-    "sectionTitle": "Facturación Anual (Empresarial)",
-    "grossIncome": "Facturación bruta del año",
-    "annualLimit": "Límite anual configurado",
-    "limitUsage": "Uso del límite"
-  },
   "evolution": {
     "sectionTitle": "Evolución de los Últimos Meses",
     "month": "Mes",

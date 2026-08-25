@@ -27,7 +27,6 @@ export interface Category {
   name: string;
   type: CategoryType;
   active: boolean;
-  protected: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,11 +35,6 @@ export interface Category {
 export interface FinancialSettings {
   id: string;
   mainAccountId: string | null;
-  minimumMainBalance: number;
-  annualRevenueLimit: number;
-  controlStartMonth: number;
-  controlStartYear: number;
-  pjLimitControlEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -223,11 +217,9 @@ export interface CashFlowResponse {
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export type AlertType =
-  | 'LOW_BALANCE'
   | 'OVERDUE_PAYMENT'
   | 'OVERDUE_RECEIVABLE'
-  | 'INVOICE_DUE_SOON'
-  | 'ANNUAL_LIMIT_WARNING';
+  | 'INVOICE_DUE_SOON';
 
 export type AlertSeverity = 'INFO' | 'WARNING' | 'ERROR';
 export type DueType = 'PAYMENT' | 'EXTRA_EXPENSE' | 'CREDIT_CARD_INVOICE';
@@ -279,12 +271,6 @@ export interface DashboardResponse {
   monthSummary: CashFlowSummary;
   upcomingDues: UpcomingDue[];
   alerts: DashboardAlert[];
-  annualSummary: {
-    grossIncome: number;
-    annualLimit: number;
-    limitUsedPercentage: number;
-    enabled: boolean;
-  };
   monthlyEvolution: MonthlyEvolutionItem[];
   categoryBreakdown: {
     income: CategoryBreakdownItem[];

@@ -55,8 +55,11 @@
     "emptySection": "Nenhum item proposto.",
     "mainAccount": "Principal",
     "settingsTitle": "Parametrizações financeiras",
-    "pjControlOn": "Controle de limite PJ ativado",
-    "pjControlOff": "Controle de limite PJ desativado",
+    "controlScope": {
+      "PERSONAL": "Controle pessoal",
+      "BUSINESS": "Controle empresarial (PJ)",
+      "BOTH": "Controle pessoal e empresarial (PJ)"
+    },
     "incomeCategory": "Categoria de receita",
     "expenseCategory": "Categoria de despesa",
     "recurring": "Mensal",
@@ -91,10 +94,7 @@
       "bank": "Banco",
       "closingDay": "Dia de fechamento",
       "dueDay": "Dia de vencimento",
-      "limit": "Limite",
-      "minimumMainBalance": "Saldo mínimo da conta principal",
-      "annualRevenueLimit": "Limite anual de faturamento",
-      "pjLimitControlEnabled": "Controle de limite PJ"
+      "limit": "Limite"
     }
   },
   "banner": {

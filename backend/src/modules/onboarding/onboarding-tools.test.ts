@@ -120,7 +120,6 @@ describe('onboarding tools', () => {
       name: 'Nota Fiscal',
       type: CategoryType.INCOME,
       active: true,
-      protected: true,
       createdAt: '',
       updatedAt: '',
     });
@@ -223,7 +222,7 @@ describe('onboarding tools', () => {
   it('propose_settings substitui a proposta anterior (singleton)', async () => {
     await registry.execute(call('propose_settings', { controlScope: 'PERSONAL' }), CONTEXT);
     const result = await registry.execute(
-      call('propose_settings', { controlScope: 'BOTH', pjLimitControlEnabled: true }),
+      call('propose_settings', { controlScope: 'BOTH' }),
       CONTEXT,
     );
     expect(result.ok).toBe(true);

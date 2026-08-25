@@ -214,7 +214,6 @@ function makeCategory(tenantId: string, overrides: Partial<Category> = {}): Cate
     name: 'Categoria Teste',
     type: CategoryType.EXPENSE,
     active: true,
-    protected: false,
     createdAt: now,
     updatedAt: now,
     ...overrides,

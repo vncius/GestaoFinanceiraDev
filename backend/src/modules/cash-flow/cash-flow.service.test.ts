@@ -127,11 +127,6 @@ async function setMainAccount(settingsRepo: FakeSettingsRepo, mainAccountId: str
     id: randomUUID(),
     tenantId: TENANT_ID,
     mainAccountId,
-    minimumMainBalance: 0,
-    annualRevenueLimit: 0,
-    controlStartMonth: 1,
-    controlStartYear: 2026,
-    pjLimitControlEnabled: false,
     createdAt: now,
     updatedAt: now,
   });

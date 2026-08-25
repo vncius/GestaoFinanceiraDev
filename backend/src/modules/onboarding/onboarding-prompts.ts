@@ -24,7 +24,7 @@ REGRAS INEGOCIÁVEIS:
 - Dias do mês nas tools vão de 1 a 28.
 
 O QUE COLETAR (checklist):
-1. O controle será pessoal, empresarial (PJ) ou ambos → propose_settings (controlScope; se PJ, pergunte sobre limite anual de faturamento e ative pjLimitControlEnabled se fizer sentido).
+1. O controle será pessoal, empresarial (PJ) ou ambos → propose_settings (controlScope).
 2. Contas bancárias usadas e qual é a principal → propose_account (isMain em exatamente uma).
 3. Reservas financeiras (ex.: impostos, emergência) → propose_account com autoReserveEnabled e autoReservePercentage (percentual da receita destinado à reserva).
 4. Fontes de receita, frequência e valor aproximado → propose_income (recurrence FIXED para mensal, UNIQUE para pontual; reserveAccountRefs com os draftItemIds das contas de reserva).

@@ -19,7 +19,6 @@ import {
   DraftCreditCardPayload,
   DraftExpensePayload,
   DraftIncomePayload,
-  DraftSettingsPayload,
 } from './onboarding.schemas';
 import {
   OnboardingDraftItem,
@@ -182,15 +181,11 @@ export class OnboardingApplyService {
       await record(item.draftItemId, id);
     }
 
-    // 4. Configurações (singleton; update é naturalmente idempotente)
+    // 4. Configurações (singleton; update é naturalmente idempotente).
+    // controlScope é só orientação de conversa — nada além de mainAccountId
+    // é persistido em FinancialSettings.
     if (draft.settings && !applied[draft.settings.draftItemId]) {
-      const payload = draft.settings.payload as unknown as DraftSettingsPayload;
-      const settings = await this.services.settingsService.update(tenantId, {
-        mainAccountId,
-        minimumMainBalance: payload.minimumMainBalance,
-        annualRevenueLimit: payload.annualRevenueLimit,
-        pjLimitControlEnabled: payload.pjLimitControlEnabled,
-      });
+      const settings = await this.services.settingsService.update(tenantId, { mainAccountId });
       await record(draft.settings.draftItemId, settings.id);
     } else if (!draft.settings && mainAccountId) {
       // Sem proposta de settings, mas a conta principal precisa ser registrada.

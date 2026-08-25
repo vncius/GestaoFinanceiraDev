@@ -51,7 +51,7 @@ Configurações globais (singleton — sempre um único registro).
 | Método | Rota        | Body / Query |
 |--------|-------------|--------------|
 | GET    | `/settings`   | —              |
-| PUT    | `/settings`   | qualquer subconjunto de: `defaultReservePercentage, applyReserveByDefault, allowDisableReserve, mainAccountId, emergencyReserveAccountId, minimumMainBalance, annualRevenueLimit, controlStartMonth, controlStartYear, pjLimitControlEnabled` |
+| PUT    | `/settings`   | `{ mainAccountId? }` — Limites de faturamento, período de controle e Nota Fiscal foram removidos (refactor de contas PF/PJ, entrega E4; ver [`docs/refactor-contas-pf-pj.md`](refactor-contas-pf-pj.md)) |
 
 ## Cash Flow
 

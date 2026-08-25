@@ -59,11 +59,8 @@ export const draftCreditCardPayloadSchema = z.object({
 });
 
 export const draftSettingsPayloadSchema = z.object({
-  /** Escopo do controle; orienta o assistente e a derivação de pjLimitControlEnabled. */
+  /** Escopo do controle: orienta o assistente sobre pessoal/PJ/ambos. */
   controlScope: z.enum(['PERSONAL', 'BUSINESS', 'BOTH']),
-  minimumMainBalance: z.number().int().min(0).default(0),
-  annualRevenueLimit: z.number().int().min(0).default(0),
-  pjLimitControlEnabled: z.boolean().default(false),
 });
 
 export type DraftAccountTypePayload = z.infer<typeof draftAccountTypePayloadSchema>;

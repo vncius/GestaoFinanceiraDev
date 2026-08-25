@@ -55,8 +55,11 @@
     "emptySection": "Ningún elemento propuesto.",
     "mainAccount": "Principal",
     "settingsTitle": "Parámetros financieros",
-    "pjControlOn": "Control de límite empresarial activado",
-    "pjControlOff": "Control de límite empresarial desactivado",
+    "controlScope": {
+      "PERSONAL": "Control personal",
+      "BUSINESS": "Control empresarial",
+      "BOTH": "Control personal y empresarial"
+    },
     "incomeCategory": "Categoría de ingreso",
     "expenseCategory": "Categoría de gasto",
     "recurring": "Mensual",
@@ -91,10 +94,7 @@
       "bank": "Banco",
       "closingDay": "Día de cierre",
       "dueDay": "Día de vencimiento",
-      "limit": "Límite",
-      "minimumMainBalance": "Saldo mínimo de la cuenta principal",
-      "annualRevenueLimit": "Límite anual de facturación",
-      "pjLimitControlEnabled": "Control de límite empresarial"
+      "limit": "Límite"
     }
   },
   "banner": {

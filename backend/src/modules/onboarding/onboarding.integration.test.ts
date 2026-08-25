@@ -256,7 +256,7 @@ function buildEnvironment() {
   const accountsService = new AccountsService(accountsRepo, settingsRepo);
   const accountTypesService = new AccountTypesService(accountTypesRepo);
   const categoriesService = new CategoriesService(categoriesRepo);
-  const settingsService = new SettingsService(settingsRepo, categoriesRepo, accountsRepo);
+  const settingsService = new SettingsService(settingsRepo, accountsRepo);
   const creditCardsService = new CreditCardsService(
     creditCardsRepo,
     creditCardEntriesRepo,

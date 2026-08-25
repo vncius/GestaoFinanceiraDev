@@ -31,13 +31,6 @@
     "empty": "No due dates in the next 15 days",
     "goToCashFlow": "Go to this month's cash flow"
   },
-  "annualSummary": {
-    "title": "Annual Revenue",
-    "grossIncome": "Gross income received this year",
-    "limitUsage": "Limit usage",
-    "annualLimit": "Configured annual limit",
-    "noLimitConfigured": "Set up an annual limit in Settings to track usage."
-  },
   "evolutionChart": {
     "title": "Recent Months Trend",
     "income": "Income",

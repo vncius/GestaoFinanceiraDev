@@ -185,7 +185,7 @@ async function buildFullDraft(draftService: OnboardingDraftService, tenantId = T
   await draftService.addItem(
     tenantId,
     'settings',
-    { controlScope: 'BOTH', pjLimitControlEnabled: true, annualRevenueLimit: 8100000 },
+    { controlScope: 'BOTH' },
     'ai',
   );
 }
@@ -222,7 +222,6 @@ describe('OnboardingApplyService', () => {
 
     // Conta principal registrada nos settings
     expect(ctx.settingsService.calls[0].input.mainAccountId).toBe(result.appliedEntityIds.acc_1);
-    expect(ctx.settingsService.calls[0].input.pjLimitControlEnabled).toBe(true);
 
     const state = await ctx.onboardingService.getState(TENANT_ID);
     expect(state.appliedAt).not.toBeNull();

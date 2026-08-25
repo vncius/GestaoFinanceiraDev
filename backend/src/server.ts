@@ -7,6 +7,7 @@ import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
 import { authMiddleware } from './shared/middlewares/auth.middleware';
 import { migrateLegacyAccountConfig } from './shared/migrations/migrate-legacy-account-config';
+import { migrateRemoveLimitsAndNotaFiscal } from './shared/migrations/migrate-remove-limits-and-nf';
 import authRouter from './modules/auth/auth.routes';
 import accountsRouter from './modules/accounts/accounts.routes';
 import accountTypesRouter from './modules/account-types/account-types.routes';
@@ -61,6 +62,7 @@ async function bootstrap() {
   await connectMongo();
 
   await migrateLegacyAccountConfig();
+  await migrateRemoveLimitsAndNotaFiscal();
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[server] Rodando em http://localhost:${PORT}`);

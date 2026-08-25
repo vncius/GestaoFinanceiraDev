@@ -81,7 +81,7 @@ const auditLogService = new AuditLogService(auditLogRepo);
 const accountsService = new AccountsService(accountsRepo, settingsRepo);
 const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
-const settingsService = new SettingsService(settingsRepo, categoriesRepo, accountsRepo);
+const settingsService = new SettingsService(settingsRepo, accountsRepo);
 const tenantBootstrapService = new TenantBootstrapService(
   accountTypesService,
   accountsService,
@@ -116,7 +116,6 @@ const cashFlowService = new CashFlowService(
 const dashboardService = new DashboardService(
   transactionsRepo,
   accountsRepo,
-  settingsRepo,
   creditCardsRepo,
   creditCardInvoicesRepo,
   cashFlowService,

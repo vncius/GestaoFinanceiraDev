@@ -2,11 +2,9 @@ import { CashFlowSummary } from '../cash-flow/cash-flow.types';
 export type { CashFlowSummary };
 
 export enum AlertType {
-  LOW_BALANCE = 'LOW_BALANCE',
   OVERDUE_PAYMENT = 'OVERDUE_PAYMENT',
   OVERDUE_RECEIVABLE = 'OVERDUE_RECEIVABLE',
   INVOICE_DUE_SOON = 'INVOICE_DUE_SOON',
-  ANNUAL_LIMIT_WARNING = 'ANNUAL_LIMIT_WARNING',
 }
 
 export enum AlertSeverity {
@@ -68,12 +66,6 @@ export interface DashboardResponse {
   monthSummary: CashFlowSummary;
   upcomingDues: UpcomingDue[];
   alerts: DashboardAlert[];
-  annualSummary: {
-    grossIncome: number;
-    annualLimit: number;
-    limitUsedPercentage: number;
-    enabled: boolean;
-  };
   monthlyEvolution: MonthlyEvolutionItem[];
   categoryBreakdown: {
     income: CategoryBreakdownItem[];

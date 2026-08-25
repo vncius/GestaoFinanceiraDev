@@ -31,13 +31,6 @@
     "empty": "Sin vencimientos en los próximos 15 días",
     "goToCashFlow": "Ir al flujo de caja de este mes"
   },
-  "annualSummary": {
-    "title": "Facturación Anual",
-    "grossIncome": "Facturación bruta recibida en el año",
-    "limitUsage": "Uso del límite",
-    "annualLimit": "Límite anual configurado",
-    "noLimitConfigured": "Configure un límite anual en Configuración para seguir el uso."
-  },
   "evolutionChart": {
     "title": "Evolución de los Últimos Meses",
     "income": "Ingresos",

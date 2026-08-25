@@ -200,7 +200,6 @@ async function seedCategory(categoriesRepo: FakeCategoriesRepo, overrides: Parti
     name: 'Mercado',
     type: CategoryType.EXPENSE,
     active: true,
-    protected: false,
     createdAt: now,
     updatedAt: now,
     ...overrides,

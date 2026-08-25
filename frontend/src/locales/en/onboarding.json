@@ -55,8 +55,11 @@
     "emptySection": "No items proposed.",
     "mainAccount": "Main",
     "settingsTitle": "Financial settings",
-    "pjControlOn": "Business revenue limit control enabled",
-    "pjControlOff": "Business revenue limit control disabled",
+    "controlScope": {
+      "PERSONAL": "Personal control",
+      "BUSINESS": "Business control",
+      "BOTH": "Personal and business control"
+    },
     "incomeCategory": "Income category",
     "expenseCategory": "Expense category",
     "recurring": "Monthly",
@@ -91,10 +94,7 @@
       "bank": "Bank",
       "closingDay": "Closing day",
       "dueDay": "Due day",
-      "limit": "Limit",
-      "minimumMainBalance": "Main account minimum balance",
-      "annualRevenueLimit": "Annual revenue limit",
-      "pjLimitControlEnabled": "Business limit control"
+      "limit": "Limit"
     }
   },
   "banner": {

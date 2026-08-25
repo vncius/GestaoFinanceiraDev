@@ -214,8 +214,7 @@ export function createOnboardingToolRegistry(deps: OnboardingToolsDeps): AiToolR
     name: 'propose_settings',
     description:
       'Propõe as configurações financeiras (singleton; nova proposta substitui a anterior). ' +
-      'controlScope PERSONAL/BUSINESS/BOTH; minimumMainBalance e annualRevenueLimit em centavos; ' +
-      'pjLimitControlEnabled ativa o controle de limite anual PJ.',
+      'controlScope PERSONAL/BUSINESS/BOTH orienta o restante da configuração.',
     kind: 'proposal',
     inputSchema: draftSettingsPayloadSchema,
     execute: async (input, context) => {

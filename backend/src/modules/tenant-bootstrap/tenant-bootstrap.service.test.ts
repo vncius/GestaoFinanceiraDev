@@ -100,7 +100,7 @@ function buildService() {
   const accountTypesService = new AccountTypesService(accountTypesRepo);
   const accountsService = new AccountsService(accountsRepo, settingsRepo);
   const categoriesService = new CategoriesService(categoriesRepo);
-  const settingsService = new SettingsService(settingsRepo, categoriesRepo, accountsRepo);
+  const settingsService = new SettingsService(settingsRepo, accountsRepo);
 
   const bootstrap = new TenantBootstrapService(
     accountTypesService,

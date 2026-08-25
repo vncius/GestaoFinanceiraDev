@@ -7,8 +7,6 @@ import { SettingsService } from '../settings/settings.service';
 const MAIN_ACCOUNT_TYPE_NAME = 'Conta Principal';
 const RESERVE_ACCOUNT_TYPE_NAME = 'Reserva de Emergência';
 
-// "Nota Fiscal" fica fora: é auto-gerenciada por SettingsService.syncNotaFiscalCategory
-// conforme pjLimitControlEnabled é ativado/desativado em Configurações.
 const DEFAULT_INCOME_CATEGORIES = [
   'Salário',
   'Projeto PJ',

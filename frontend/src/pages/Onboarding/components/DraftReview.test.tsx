@@ -67,9 +67,6 @@ function fullDraft(overrides: Partial<OnboardingDraft> = {}): OnboardingDraft {
     creditCards: [],
     settings: item('settings', {
       controlScope: 'BUSINESS',
-      minimumMainBalance: 0,
-      annualRevenueLimit: 8100000,
-      pjLimitControlEnabled: true,
     }),
     ...overrides,
   };
@@ -101,7 +98,7 @@ describe('DraftReview', () => {
     expect(await screen.findByText('Nubank PJ')).toBeInTheDocument();
     expect(screen.getByText('Contrato mensal')).toBeInTheDocument();
     expect(screen.getByText(/R\$\s*12\.000,00/)).toBeInTheDocument();
-    expect(screen.getByText(/Controle de limite PJ ativado/)).toBeInTheDocument();
+    expect(screen.getByText(/Controle empresarial \(PJ\)/)).toBeInTheDocument();
   });
 
   it('sem conta principal: mostra pendência e desabilita a confirmação', async () => {

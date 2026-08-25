@@ -56,11 +56,7 @@ const EDIT_FIELDS: Record<Section, FieldConfig[]> = {
     { key: 'dueDay', labelKey: 'review.fields.dueDay', type: 'day' },
     { key: 'limit', labelKey: 'review.fields.limit', type: 'money' },
   ],
-  settings: [
-    { key: 'minimumMainBalance', labelKey: 'review.fields.minimumMainBalance', type: 'money' },
-    { key: 'annualRevenueLimit', labelKey: 'review.fields.annualRevenueLimit', type: 'money' },
-    { key: 'pjLimitControlEnabled', labelKey: 'review.fields.pjLimitControlEnabled', type: 'boolean' },
-  ],
+  settings: [],
 };
 
 interface DraftReviewProps {
@@ -273,12 +269,8 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             itemId={draft.settings.draftItemId}
             title={t('review.settingsTitle')}
             details={[
-              draft.settings.payload.pjLimitControlEnabled === true
-                ? t('review.pjControlOn')
-                : t('review.pjControlOff'),
-              typeof draft.settings.payload.annualRevenueLimit === 'number' &&
-              draft.settings.payload.annualRevenueLimit > 0
-                ? `${t('review.fields.annualRevenueLimit')}: ${formatCurrency(draft.settings.payload.annualRevenueLimit)}`
+              typeof draft.settings.payload.controlScope === 'string'
+                ? t(`review.controlScope.${draft.settings.payload.controlScope}`)
                 : null,
             ]}
             onEdit={() => setEditing({ section: 'settings', item: draft.settings as OnboardingDraftItem })}

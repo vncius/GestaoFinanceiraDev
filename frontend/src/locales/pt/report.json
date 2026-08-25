@@ -21,12 +21,6 @@
     "expensesByCategory": "Gastos por Categoria",
     "empty": "Sem lançamentos no período."
   },
-  "annualSummary": {
-    "sectionTitle": "Faturamento Anual (PJ)",
-    "grossIncome": "Faturamento bruto no ano",
-    "annualLimit": "Limite anual configurado",
-    "limitUsage": "Utilização do limite"
-  },
   "evolution": {
     "sectionTitle": "Evolução dos Últimos Meses",
     "month": "Mês",

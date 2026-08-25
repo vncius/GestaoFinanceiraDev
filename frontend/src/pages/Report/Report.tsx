@@ -89,7 +89,7 @@ export default function Report() {
 
   if (isLoading || !data) return <PageLoading />;
 
-  const { accounts, monthSummary: s, annualSummary, monthlyEvolution, categoryBreakdown } = data;
+  const { accounts, monthSummary: s, monthlyEvolution, categoryBreakdown } = data;
   const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
 
   return (
@@ -137,18 +137,6 @@ export default function Report() {
             <CategoryTable items={categoryBreakdown.expenses} />
           </Section>
         </div>
-
-        {annualSummary.enabled && (
-          <Section title={t('annualSummary.sectionTitle')}>
-            <KeyValueRow label={t('annualSummary.grossIncome')} value={formatCurrency(annualSummary.grossIncome)} />
-            {annualSummary.annualLimit > 0 && (
-              <>
-                <KeyValueRow label={t('annualSummary.annualLimit')} value={formatCurrency(annualSummary.annualLimit)} />
-                <KeyValueRow label={t('annualSummary.limitUsage')} value={`${annualSummary.limitUsedPercentage}%`} />
-              </>
-            )}
-          </Section>
-        )}
 
         <Section title={t('evolution.sectionTitle')}>
           <EvolutionTable evolution={monthlyEvolution} />

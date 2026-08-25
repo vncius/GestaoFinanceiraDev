@@ -5,7 +5,6 @@ import {
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
-import { SettingsRepository } from '../settings/settings.repository';
 import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardEntriesRepository } from '../credit-cards/credit-cards.repository';
@@ -30,7 +29,6 @@ export class DashboardService {
   constructor(
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly accountsRepo: AccountsRepository,
-    private readonly settingsRepo: SettingsRepository,
     private readonly creditCardsRepo: CreditCardsRepository,
     private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly cashFlowService: CashFlowService,
@@ -52,7 +50,6 @@ export class DashboardService {
     const [
       allTransactions,
       allAccounts,
-      settings,
       allCards,
       allInvoices,
       allCategories,
@@ -61,7 +58,6 @@ export class DashboardService {
     ] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
       this.accountsRepo.findAll(tenantId),
-      this.settingsRepo.get(tenantId),
       this.creditCardsRepo.findAll(tenantId),
       this.invoicesRepo.findAll(tenantId),
       this.categoriesRepo.findAll(tenantId),
@@ -139,15 +135,6 @@ export class DashboardService {
 
     // ── Alerts ──────────────────────────────────────────────────────────────────
     const alerts: DashboardAlert[] = [];
-    const minBalance = settings?.minimumMainBalance ?? 0;
-
-    if (minBalance > 0 && monthSummary.projectedBalance < minBalance) {
-      alerts.push({
-        type: AlertType.LOW_BALANCE,
-        message: `Saldo projetado abaixo do mínimo desejado`,
-        severity: AlertSeverity.WARNING,
-      });
-    }
 
     const overduePayments = allTransactions.filter(
       (t) =>
@@ -191,37 +178,6 @@ export class DashboardService {
         severity: AlertSeverity.WARNING,
       });
     }
-
-    // ── Annual summary ──────────────────────────────────────────────────────────
-    const pjLimitControlEnabled = settings?.pjLimitControlEnabled ?? true;
-    const notaFiscalCategory = allCategories.find((c) => c.protected);
-    const annualLimit = pjLimitControlEnabled ? settings?.annualRevenueLimit ?? 0 : 0;
-    const grossIncome = pjLimitControlEnabled
-      ? allTransactions
-          .filter((t) => {
-            if (t.type !== TransactionType.INCOME || t.status !== TransactionStatus.RECEIVED) return false;
-            if (!notaFiscalCategory || t.categoryId !== notaFiscalCategory.id) return false;
-            return t.expectedDate.slice(0, 4) === String(year);
-          })
-          .reduce((s, t) => s + t.amount, 0)
-      : 0;
-
-    if (pjLimitControlEnabled && annualLimit > 0 && grossIncome >= annualLimit * 0.8) {
-      alerts.push({
-        type: AlertType.ANNUAL_LIMIT_WARNING,
-        message:
-          grossIncome >= annualLimit
-            ? `Limite anual de faturamento atingido`
-            : `Faturamento anual próximo do limite (${Math.round((grossIncome / annualLimit) * 100)}% utilizado)`,
-        severity:
-          grossIncome >= annualLimit ? AlertSeverity.ERROR : AlertSeverity.WARNING,
-      });
-    }
-
-    const limitUsedPercentage =
-      pjLimitControlEnabled && annualLimit > 0
-        ? Math.round((grossIncome / annualLimit) * 100)
-        : 0;
 
     // ── Monthly evolution ────────────────────────────────────────────────────────
     const monthlyEvolution: MonthlyEvolutionItem[] = [];
@@ -347,12 +303,6 @@ export class DashboardService {
       monthSummary,
       upcomingDues,
       alerts,
-      annualSummary: {
-        grossIncome,
-        annualLimit,
-        limitUsedPercentage,
-        enabled: pjLimitControlEnabled,
-      },
       monthlyEvolution,
       categoryBreakdown,
     };

@@ -21,12 +21,6 @@
     "expensesByCategory": "Expenses by Category",
     "empty": "No entries in this period."
   },
-  "annualSummary": {
-    "sectionTitle": "Annual Revenue (Business)",
-    "grossIncome": "Gross income for the year",
-    "annualLimit": "Configured annual limit",
-    "limitUsage": "Limit usage"
-  },
   "evolution": {
     "sectionTitle": "Recent Months Trend",
     "month": "Month",

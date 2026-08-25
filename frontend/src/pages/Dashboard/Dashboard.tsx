@@ -13,7 +13,6 @@ import {
   Calendar,
   CheckCircle2,
   BarChart3,
-  Target,
   PieChart,
   PiggyBank,
   History,
@@ -140,68 +139,6 @@ function UpcomingDuesCard({ dues }: { dues: UpcomingDue[] }) {
           ))}
         </ul>
       )}
-    </div>
-  );
-}
-
-function AnnualSummaryCard({
-  data,
-}: {
-  data: { grossIncome: number; annualLimit: number; limitUsedPercentage: number; enabled: boolean };
-}) {
-  const { t } = useTranslation('dashboard');
-  const pct = data.limitUsedPercentage;
-  const barColor =
-    pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-green-500';
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <Target size={16} className="text-gray-400 dark:text-gray-500" />
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('annualSummary.title')}</h3>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('annualSummary.grossIncome')}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
-            {formatCurrency(data.grossIncome)}
-          </p>
-        </div>
-
-        {data.annualLimit > 0 ? (
-          <>
-            <div>
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-                <span>{t('annualSummary.limitUsage')}</span>
-                <span
-                  className={
-                    pct >= 80 ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-300'
-                  }
-                >
-                  {pct}%
-                </span>
-              </div>
-              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${barColor}`}
-                  style={{ width: `${Math.min(pct, 100)}%` }}
-                />
-              </div>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400 dark:text-gray-500">{t('annualSummary.annualLimit')}</span>
-              <span className="font-medium text-gray-700 dark:text-gray-200">
-                {formatCurrency(data.annualLimit)}
-              </span>
-            </div>
-          </>
-        ) : (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            {t('annualSummary.noLimitConfigured')}
-          </p>
-        )}
-      </div>
     </div>
   );
 }
@@ -422,7 +359,6 @@ export default function Dashboard() {
     monthSummary: s,
     upcomingDues,
     alerts,
-    annualSummary,
     monthlyEvolution,
     categoryBreakdown,
   } = data;
@@ -566,15 +502,8 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Próximos vencimentos + Resumo anual */}
-      {annualSummary.enabled ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <UpcomingDuesCard dues={upcomingDues} />
-          <AnnualSummaryCard data={annualSummary} />
-        </div>
-      ) : (
-        <UpcomingDuesCard dues={upcomingDues} />
-      )}
+      {/* Próximos vencimentos */}
+      <UpcomingDuesCard dues={upcomingDues} />
 
       {/* Evolução mensal */}
       <EvolutionChart evolution={monthlyEvolution} />
