@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Menu, Moon, Sun, LogOut, Globe, Loader2 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { MonthNavigator } from '../ui/MonthNavigator';
+import { AccountSelector } from '../ui/AccountSelector';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -12,9 +13,9 @@ import { QuickAddProvider } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
 import { PageFooterProvider } from '../../contexts/PageFooterContext';
 
-const ROUTE_META: Record<string, { titleKey: string; showMonthNav?: boolean }> = {
-  '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true },
-  '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true },
+const ROUTE_META: Record<string, { titleKey: string; showMonthNav?: boolean; showAccountSelector?: boolean }> = {
+  '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true, showAccountSelector: true },
+  '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true, showAccountSelector: true },
   '/credit-cards': { titleKey: 'nav.creditCards', showMonthNav: true },
   '/backup': { titleKey: 'nav.backup' },
   '/settings': { titleKey: 'nav.settings' },
@@ -65,7 +66,8 @@ export default function Layout() {
               {title}
             </h2>
 
-            <div className="flex-1 flex justify-end md:flex-1 md:justify-center min-w-0">
+            <div className="flex-1 flex items-center justify-end gap-3 md:flex-1 md:justify-center min-w-0">
+              {meta?.showAccountSelector && <AccountSelector />}
               {meta?.showMonthNav && <MonthNavigator />}
             </div>
 

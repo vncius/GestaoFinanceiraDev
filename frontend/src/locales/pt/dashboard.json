@@ -42,7 +42,6 @@
   "overview": {
     "title": "Visão Geral do Mês",
     "income": "Receitas",
-    "expenses": "Gastos",
-    "reserve": "Reserva"
+    "expenses": "Gastos"
   }
 }

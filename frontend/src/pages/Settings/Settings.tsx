@@ -12,7 +12,7 @@ import {
   CreditCardsService,
   CreateCreditCardPayload,
 } from '../../services/credit-cards.service';
-import { Account, AccountTypeItem, Category, CreditCard, FinancialSettings } from '../../types';
+import { Account, AccountTypeItem, Category, CreditCard, DashboardScope, FinancialSettings } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { IconActionButton } from '../../components/ui/IconActionButton';
@@ -57,7 +57,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 // ── General Tab ───────────────────────────────────────────────────────────────
 
 interface GeneralFormState {
-  mainAccountId: string;
+  dashboardScope: DashboardScope;
 }
 
 function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -131,17 +131,15 @@ function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => vo
 
 function GeneralTab({
   settings,
-  accounts,
 }: {
   settings: FinancialSettings;
-  accounts: Account[];
 }) {
   const { t } = useTranslation('settings');
   const qc = useQueryClient();
   const [resetOpen, setResetOpen] = useState(false);
 
   const initForm = (s: FinancialSettings): GeneralFormState => ({
-    mainAccountId: s.mainAccountId ?? '',
+    dashboardScope: s.dashboardScope,
   });
 
   const [form, setForm] = useState<GeneralFormState>(() => initForm(settings));
@@ -162,36 +160,31 @@ function GeneralTab({
     },
   });
 
-  const set =
-    (k: keyof GeneralFormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
   function handleSave() {
     updateMut.mutate({
-      mainAccountId: form.mainAccountId || null,
+      dashboardScope: form.dashboardScope,
     });
   }
 
-  const activeAccounts = accounts.filter((a) => a.active);
-
   return (
     <div className="space-y-5 max-w-2xl">
-      <SectionCard title={t('general.linkedAccountsTitle')}>
+      <SectionCard title={t('general.dashboardScopeTitle')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
             label={
               <span className="inline-flex items-center gap-1">
-                {t('general.mainAccountLabel')}
-                <HelpTip text={t('general.mainAccountTooltip')} />
+                {t('general.dashboardScopeLabel')}
+                <HelpTip text={t('general.dashboardScopeTooltip')} />
               </span>
             }
           >
-            <select className={INPUT} value={form.mainAccountId} onChange={set('mainAccountId')}>
-              <option value="">{t('general.mainAccountNone')}</option>
-              {activeAccounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
+            <select
+              className={INPUT}
+              value={form.dashboardScope}
+              onChange={(e) => setForm({ dashboardScope: e.target.value as DashboardScope })}
+            >
+              <option value="CONSOLIDATED">{t('general.dashboardScopeConsolidated')}</option>
+              <option value="ACCOUNT">{t('general.dashboardScopeAccount')}</option>
             </select>
           </Field>
         </div>
@@ -1277,7 +1270,7 @@ export default function Settings() {
         ))}
       </div>
 
-      {tab === 'general' && <GeneralTab settings={settings} accounts={accounts} />}
+      {tab === 'general' && <GeneralTab settings={settings} />}
       {tab === 'accounts' && <AccountsTab />}
       {tab === 'accountTypes' && <AccountTypesTab />}
       {tab === 'categories' && <CategoriesTab />}

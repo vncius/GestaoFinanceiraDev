@@ -10,6 +10,7 @@ import { CashFlowService } from '../../services/cash-flow.service';
 import { floatToCents } from '../../utils/money';
 import { todayISO } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
+import { useAccount } from '../../contexts/AccountContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 
 type QuickAddType = 'payment' | 'extra-expense' | 'income';
@@ -42,6 +43,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const { alert } = useDialog();
   const qc = useQueryClient();
+  const { accountId } = useAccount();
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -59,11 +61,12 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!accountId) throw new Error('Nenhuma conta selecionada.');
       const amount = floatToCents(parseFloat(form.amount) || 0);
       const expectedDate = new Date(form.date).toISOString();
 
       if (form.type === 'income') {
-        return CashFlowService.createIncome({
+        return CashFlowService.createIncome(accountId, {
           description: form.description,
           categoryId: form.categoryId,
           amount,
@@ -77,8 +80,8 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
         expectedDate,
       };
       return form.type === 'payment'
-        ? CashFlowService.createPayment(payload)
-        : CashFlowService.createExtraExpense(payload);
+        ? CashFlowService.createPayment(accountId, payload)
+        : CashFlowService.createExtraExpense(accountId, payload);
     },
     onSuccess: () => { invalidate(); onClose(); },
   });

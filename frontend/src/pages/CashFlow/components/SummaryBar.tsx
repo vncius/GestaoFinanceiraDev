@@ -94,26 +94,15 @@ export function SummaryBar({
       </div>
 
       {expanded && (
-        <>
-          <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
-            <SummaryRow>
-              <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
-              <SummaryCell label={t('summaryBar.expectedIncome')} value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
-              <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
-              <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
-            </SummaryRow>
-            <ToggleSpacer label={t('summaryBar.collapse')} />
-          </div>
-          <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700">
-            <SummaryRow>
-              <SummaryCell label={t('summaryBar.reserveProjectedInitialBalance')} value={s.reserveProjectedInitialBalance} color={initialColor} />
-              <SummaryCell label={t('summaryBar.reserveInflow')} value={s.reserveInflow} color="text-amber-600 dark:text-amber-400" />
-              <SummaryCell label={t('summaryBar.reserveOutflow')} value={s.reserveOutflow} color="text-amber-500 dark:text-amber-400" />
-              <SummaryCell label={t('summaryBar.reserveBalance')} tooltip={t('summaryBar.reserveBalanceTooltip')} value={s.reserveEndBalance} color="text-amber-600 dark:text-amber-400" bold border={false} />
-            </SummaryRow>
-            <ToggleSpacer label={t('summaryBar.collapse')} />
-          </div>
-        </>
+        <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
+          <SummaryRow>
+            <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
+            <SummaryCell label={t('summaryBar.expectedIncome')} value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
+            <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
+            <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
+          </SummaryRow>
+          <ToggleSpacer label={t('summaryBar.collapse')} />
+        </div>
       )}
     </div>
   );

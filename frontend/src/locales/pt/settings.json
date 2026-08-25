@@ -25,10 +25,11 @@
     "limitLabel": "Limite"
   },
   "general": {
-    "linkedAccountsTitle": "Contas Vinculadas",
-    "mainAccountLabel": "Conta principal",
-    "mainAccountTooltip": "Conta usada para receber a maior parte das entradas e de onde saem a maioria dos pagamentos. Ela não pode ser a mesma conta marcada como reserva automática, para não misturar os saldos.",
-    "mainAccountNone": "Nenhuma",
+    "dashboardScopeTitle": "Painel Inicial",
+    "dashboardScopeLabel": "Escopo do painel",
+    "dashboardScopeTooltip": "Consolidado soma o resumo, alertas e gráficos de todas as contas ativas. Por conta mostra só a conta selecionada no seletor do topo.",
+    "dashboardScopeConsolidated": "Consolidado (todas as contas)",
+    "dashboardScopeAccount": "Por conta",
     "saveButton": "Salvar configurações",
     "savedMessage": "Salvo!",
     "dangerZoneTitle": "Zona de perigo",

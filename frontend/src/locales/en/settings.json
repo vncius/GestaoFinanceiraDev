@@ -25,10 +25,11 @@
     "limitLabel": "Limit"
   },
   "general": {
-    "linkedAccountsTitle": "Linked Accounts",
-    "mainAccountLabel": "Main account",
-    "mainAccountTooltip": "The account used to receive most income and pay most bills. It can't be the same account marked as auto-reserve, to avoid mixing up balances.",
-    "mainAccountNone": "None",
+    "dashboardScopeTitle": "Home Dashboard",
+    "dashboardScopeLabel": "Dashboard scope",
+    "dashboardScopeTooltip": "Consolidated adds up the summary, alerts, and charts across all active accounts. Per account shows only the account selected in the top selector.",
+    "dashboardScopeConsolidated": "Consolidated (all accounts)",
+    "dashboardScopeAccount": "Per account",
     "saveButton": "Save settings",
     "savedMessage": "Saved!",
     "dangerZoneTitle": "Danger zone",

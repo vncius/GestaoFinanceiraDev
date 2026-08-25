@@ -17,23 +17,18 @@
   },
   "summaryBar": {
     "initial": "Inicial",
-    "initialTooltip": "Saldo da conta principal no início do mês, antes de qualquer entrada ou saída.",
+    "initialTooltip": "Saldo da conta selecionada no início do mês, antes de qualquer entrada ou saída.",
     "income": "Entradas",
     "expense": "Saídas",
     "finalBalance": "Saldo Final",
-    "finalBalanceTooltip": "Saldo já efetivado (pago/recebido) da conta principal até o momento.",
+    "finalBalanceTooltip": "Saldo já efetivado (pago/recebido) da conta selecionada até o momento.",
     "collapse": "Recolher",
     "expand": "Ver previstos",
     "projectedInitialBalance": "Saldo Inicial Previsto",
     "expectedIncome": "Prev. Entradas",
     "expectedExpense": "Prev. Saídas",
     "projectedBalance": "Prev. Saldo",
-    "projectedBalanceTooltip": "Saldo previsto da conta principal considerando lançamentos ainda não efetivados.",
-    "reserveProjectedInitialBalance": "Previsão Inicial Reserva",
-    "reserveInflow": "Entradas Reserva",
-    "reserveOutflow": "Saídas Reserva",
-    "reserveBalance": "Saldo Reserva",
-    "reserveBalanceTooltip": "Saldo acumulado nas contas com reserva automática, separado do saldo da conta principal."
+    "projectedBalanceTooltip": "Saldo previsto da conta selecionada considerando lançamentos ainda não efetivados."
   },
   "grid": {
     "new": "Novo",

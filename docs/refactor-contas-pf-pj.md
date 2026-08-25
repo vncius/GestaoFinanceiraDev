@@ -1,7 +1,7 @@
 # Refactor: Conta como contexto financeiro (separação PF/PJ)
 
 > Plano de execução incremental. Cada entrega é fechada, compila e mantém a aplicação funcional.
-> Status: **E1 a E5 implementadas** (código, na branch `refactor/contas-pf-pj`). A migração de dados da E2 já rodou contra produção (idempotência verificada). E5 é só backend — o frontend (`/cash-flow` GET agora exige `accountId`) só passa a funcionar de ponta a ponta depois da E6 (seletor de conta ativa). E6 em diante seguem pendentes.
+> Status: **E1 a E6 implementadas** (código, na branch `refactor/contas-pf-pj`). A migração de dados da E2 já rodou contra produção (idempotência verificada). Com a E6, o frontend já tem o `AccountContext` e o seletor de conta ativa no header — `/cash-flow` e o dashboard por conta funcionam de ponta a ponta. E7 em diante seguem pendentes.
 
 ## Objetivo
 

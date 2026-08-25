@@ -21,12 +21,14 @@ type ScopedUpdateVars<TData> = {
 // pagamentos, gastos extraordinários e faturas de cartão), todas
 // invalidando a mesma query key ao final.
 export function useCashFlowMutations({
+  accountId,
   month,
   year,
   closeModal,
   clearFixedDeleteTarget,
   clearInvoicePayTarget,
 }: {
+  accountId: string;
   month: number;
   year: number;
   closeModal: () => void;
@@ -34,7 +36,7 @@ export function useCashFlowMutations({
   clearInvoicePayTarget: () => void;
 }) {
   const qc = useQueryClient();
-  const cfKey = ['cashFlow', month, year] as const;
+  const cfKey = ['cashFlow', accountId, month, year] as const;
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: cfKey });
@@ -43,7 +45,7 @@ export function useCashFlowMutations({
 
   // ── Income mutations ─────────────────────────────────────────────────────────
   const createIncome = useMutation({
-    mutationFn: CashFlowService.createIncome,
+    mutationFn: (payload: CreateIncomePayload) => CashFlowService.createIncome(accountId, payload),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const updateIncome = useMutation({
@@ -67,7 +69,7 @@ export function useCashFlowMutations({
 
   // ── Payment mutations ────────────────────────────────────────────────────────
   const createPayment = useMutation({
-    mutationFn: CashFlowService.createPayment,
+    mutationFn: (payload: CreateTransactionPayload) => CashFlowService.createPayment(accountId, payload),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const updatePayment = useMutation({
@@ -91,7 +93,7 @@ export function useCashFlowMutations({
 
   // ── Extra expense mutations ──────────────────────────────────────────────────
   const createExtra = useMutation({
-    mutationFn: CashFlowService.createExtraExpense,
+    mutationFn: (payload: CreateTransactionPayload) => CashFlowService.createExtraExpense(accountId, payload),
     onSuccess: () => { invalidate(); closeModal(); },
   });
   const updateExtra = useMutation({

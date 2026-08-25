@@ -6,6 +6,7 @@ export interface DashboardQuery {
   year?: number;
   upcomingDays?: number;
   evolutionMonths?: number;
+  accountId?: string;
 }
 
 export const DashboardService = {

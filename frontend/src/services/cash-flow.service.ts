@@ -38,12 +38,12 @@ export interface DeleteScopeParams {
 }
 
 export const CashFlowService = {
-  get: (month: number, year: number): Promise<CashFlowResponse> =>
-    api.get<CashFlowResponse>('/cash-flow', { params: { month, year } }).then((r) => r.data),
+  get: (month: number, year: number, accountId: string): Promise<CashFlowResponse> =>
+    api.get<CashFlowResponse>('/cash-flow', { params: { month, year, accountId } }).then((r) => r.data),
 
   // Income
-  createIncome: (payload: CreateIncomePayload): Promise<FinancialTransaction> =>
-    api.post<FinancialTransaction>('/cash-flow/income', payload).then((r) => r.data),
+  createIncome: (accountId: string, payload: CreateIncomePayload): Promise<FinancialTransaction> =>
+    api.post<FinancialTransaction>('/cash-flow/income', payload, { params: { accountId } }).then((r) => r.data),
 
   updateIncome: (id: string, payload: Partial<CreateIncomePayload>, scopeParams?: DeleteScopeParams): Promise<FinancialTransaction> =>
     api.put<FinancialTransaction>(`/cash-flow/income/${id}`, payload, { params: scopeParams }).then((r) => r.data),
@@ -58,8 +58,8 @@ export const CashFlowService = {
     api.post<FinancialTransaction>(`/cash-flow/income/${id}/revert`).then((r) => r.data),
 
   // Payments
-  createPayment: (payload: CreateTransactionPayload): Promise<FinancialTransaction> =>
-    api.post<FinancialTransaction>('/cash-flow/payments', payload).then((r) => r.data),
+  createPayment: (accountId: string, payload: CreateTransactionPayload): Promise<FinancialTransaction> =>
+    api.post<FinancialTransaction>('/cash-flow/payments', payload, { params: { accountId } }).then((r) => r.data),
 
   updatePayment: (id: string, payload: Partial<CreateTransactionPayload>, scopeParams?: DeleteScopeParams): Promise<FinancialTransaction> =>
     api.put<FinancialTransaction>(`/cash-flow/payments/${id}`, payload, { params: scopeParams }).then((r) => r.data),
@@ -74,8 +74,8 @@ export const CashFlowService = {
     api.post<FinancialTransaction>(`/cash-flow/payments/${id}/revert`).then((r) => r.data),
 
   // Extra expenses
-  createExtraExpense: (payload: CreateTransactionPayload): Promise<FinancialTransaction> =>
-    api.post<FinancialTransaction>('/cash-flow/extra-expenses', payload).then((r) => r.data),
+  createExtraExpense: (accountId: string, payload: CreateTransactionPayload): Promise<FinancialTransaction> =>
+    api.post<FinancialTransaction>('/cash-flow/extra-expenses', payload, { params: { accountId } }).then((r) => r.data),
 
   updateExtraExpense: (id: string, payload: Partial<CreateTransactionPayload>, scopeParams?: DeleteScopeParams): Promise<FinancialTransaction> =>
     api.put<FinancialTransaction>(`/cash-flow/extra-expenses/${id}`, payload, { params: scopeParams }).then((r) => r.data),

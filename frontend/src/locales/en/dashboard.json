@@ -42,7 +42,6 @@
   "overview": {
     "title": "Month Overview",
     "income": "Income",
-    "expenses": "Expenses",
-    "reserve": "Reserve"
+    "expenses": "Expenses"
   }
 }

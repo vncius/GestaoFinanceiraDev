@@ -4,10 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMonth } from '../../contexts/MonthContext';
+import { useAccount } from '../../contexts/AccountContext';
 import { CashFlowService, CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { CreditCardsService } from '../../services/credit-cards.service';
 import { CategoriesService } from '../../services/categories.service';
-import { SettingsService } from '../../services/settings.service';
 import { AccountsService } from '../../services/accounts.service';
 import { Account, CreditCardInvoice, FinancialTransaction } from '../../types';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
@@ -30,25 +30,21 @@ import { CashFlowFilterBar } from './components/CashFlowFilterBar';
 export default function CashFlow() {
   const { t } = useTranslation('cashFlow');
   const { month, year } = useMonth();
+  const { accountId } = useAccount();
   const navigate = useNavigate();
 
   const { confirm } = useDialog();
   const { showError } = useToast();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['cashFlow', month, year],
-    queryFn: () => CashFlowService.get(month, year),
+    queryKey: ['cashFlow', accountId, month, year],
+    queryFn: () => CashFlowService.get(month, year, accountId as string),
+    enabled: !!accountId,
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: CategoriesService.findAll,
-    staleTime: Infinity,
-  });
-
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: SettingsService.get,
     staleTime: Infinity,
   });
 
@@ -117,6 +113,7 @@ export default function CashFlow() {
     payInvoice,
     revertInvoice,
   } = useCashFlowMutations({
+    accountId: accountId as string,
     month,
     year,
     closeModal,
@@ -235,7 +232,7 @@ export default function CashFlow() {
     [showExpense, data],
   );
 
-  if (isLoading || !data) return <PageLoading />;
+  if (!accountId || isLoading || !data) return <PageLoading />;
 
   const { summary } = data;
 
@@ -419,7 +416,7 @@ export default function CashFlow() {
         item={modal?.type === 'income' ? modal.item : undefined}
         categories={categories}
         accounts={accounts as Account[]}
-        mainAccountId={settings?.mainAccountId ?? null}
+        mainAccountId={accountId}
         month={month}
         year={year}
         onSave={saveIncome}
@@ -437,7 +434,7 @@ export default function CashFlow() {
           item={modal.item}
           categories={categories}
           accounts={accounts as Account[]}
-          mainAccountId={settings?.mainAccountId ?? null}
+          mainAccountId={accountId}
           month={month}
           year={year}
           onSave={saveTransaction}

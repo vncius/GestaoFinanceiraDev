@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
+    if (user) localStorage.removeItem(`activeAccountId:${user.tenantId}`);
     await AuthService.logout();
     queryClient.clear();
     setUser(null);

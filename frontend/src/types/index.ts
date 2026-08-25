@@ -32,9 +32,11 @@ export interface Category {
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
+export type DashboardScope = 'CONSOLIDATED' | 'ACCOUNT';
+
 export interface FinancialSettings {
   id: string;
-  mainAccountId: string | null;
+  dashboardScope: DashboardScope;
   createdAt: string;
   updatedAt: string;
 }
@@ -199,10 +201,6 @@ export interface CashFlowSummary {
   paidCreditCardInvoices: number;
   projectedBalance: number;
   realizedBalance: number;
-  reserveProjectedInitialBalance: number;
-  reserveInflow: number;
-  reserveOutflow: number;
-  reserveEndBalance: number;
 }
 
 export interface CashFlowResponse {

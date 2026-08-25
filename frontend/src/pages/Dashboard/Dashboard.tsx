@@ -20,6 +20,8 @@ import {
   Printer,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
+import { useAccount } from '../../contexts/AccountContext';
+import { SettingsService } from '../../services/settings.service';
 import { DashboardService } from '../../services/dashboard.service';
 import {
   CashFlowSummary,
@@ -275,7 +277,6 @@ function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
   const segments = [
     { label: t('overview.income'), value: summary.receivedIncome, color: '#22c55e' },
     { label: t('overview.expenses'), value: totalExpenses, color: '#ef4444' },
-    { label: t('overview.reserve'), value: summary.reserveInflow, color: '#14b8a6' },
   ];
   const total = segments.reduce((s, x) => s + x.value, 0);
 
@@ -336,13 +337,22 @@ function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
 export default function Dashboard() {
   const { t } = useTranslation('dashboard');
   const { month, year } = useMonth();
+  const { accountId } = useAccount();
+
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: SettingsService.get,
+    staleTime: Infinity,
+  });
+  const scopedToAccount = settings?.dashboardScope === 'ACCOUNT';
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard', month, year],
-    queryFn: () => DashboardService.get({ month, year }),
+    queryKey: ['dashboard', scopedToAccount ? accountId : 'ALL', month, year],
+    queryFn: () => DashboardService.get({ month, year, accountId: scopedToAccount ? accountId as string : undefined }),
+    enabled: !settings || !scopedToAccount || !!accountId,
   });
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading || (scopedToAccount && !accountId)) return <PageLoading />;
 
   if (isError || !data) {
     return (
@@ -380,7 +390,7 @@ export default function Dashboard() {
             {t('balances.sectionTitle')}
           </h2>
           <a
-            href={`/report?month=${month}&year=${year}`}
+            href={`/report?month=${month}&year=${year}${scopedToAccount && accountId ? `&accountId=${accountId}` : ''}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
