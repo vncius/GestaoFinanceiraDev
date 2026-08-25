@@ -46,6 +46,7 @@ export interface OnboardingDraft {
   incomes: OnboardingDraftItem[];
   expenses: OnboardingDraftItem[];
   creditCards: OnboardingDraftItem[];
+  transfers: OnboardingDraftItem[];
   settings: OnboardingDraftItem | null;
 }
 

@@ -63,10 +63,11 @@ Registradas em `backend/src/modules/onboarding/onboarding-tools.ts`
 | Tool | Kind | Efeito |
 |---|---|---|
 | `get_onboarding_context` | read | Status, draft compacto (com draftItemIds), pendências e **nomes** de contas/categorias existentes (UUIDs reais nunca circulam pelo modelo) |
-| `propose_account` | proposal | Conta no draft; `accountTypeName` resolve/cria o tipo internamente; `isMain` marca a principal |
+| `propose_account` | proposal | Conta no draft; `accountTypeName` resolve/cria o tipo internamente; `isMain` marca a principal; `autoReserveEnabled`+`autoReservePercentage`+`autoReserveTargetAccountRef` propõem uma regra de reserva automática (a própria conta é a origem) |
 | `propose_income` | proposal | Receita no draft; `categoryName` resolve/cria categoria INCOME |
 | `propose_expense` | proposal | Despesa no draft; `categoryName` resolve/cria categoria EXPENSE |
 | `propose_credit_card` | proposal | Cartão no draft |
+| `propose_transfer` | proposal | Transferência pontual entre duas contas do draft (não é a reserva automática) |
 | `propose_settings` | proposal | Configurações (singleton; substitui proposta anterior) |
 | `update_draft_item` | proposal | Patch em item por draftItemId (revalidação completa) |
 | `remove_draft_item` | proposal | Remove item (falha se referenciado) |

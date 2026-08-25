@@ -24,9 +24,9 @@
     "threadLabel": "Conversación con el asistente",
     "welcomeTitle": "Antes de empezar, algunos conceptos rápidos:",
     "welcomeMainAccount": "🏦 Cuenta principal — la cuenta bancaria que más usas en el día a día, por donde entra la mayor parte de tu ingreso y salen la mayoría de los pagos.",
-    "welcomeReserveAccount": "💰 Cuenta reserva — una cuenta separada (idealmente en otro banco) que guarda automáticamente un porcentaje de tu ingreso para impuestos, emergencias, etc. Nunca puede ser la misma cuenta principal.",
+    "welcomeReserveAccount": "💰 Reserva automática — una regla en una cuenta de origen que, al recibir un ingreso, transfiere sola un porcentaje a una cuenta de destino diferente (idealmente en otro banco) — útil para impuestos, emergencias, etc.",
     "welcomeCreditCard": "💳 Tarjeta de crédito — indica el banco, el día de cierre y el de vencimiento para que el sistema calcule bien cada factura.",
-    "emptyHint": "Para empezar: ¿tu control será personal, empresarial o ambos? Aprovecha y cuéntame también qué cuentas bancarias usas en el día a día.",
+    "emptyHint": "Para empezar: ¿qué cuentas bancarias usas en el día a día (personales y/o empresariales)?",
     "inputLabel": "Tu mensaje",
     "inputPlaceholder": "Escribe tu mensaje…",
     "send": "Enviar",
@@ -55,10 +55,9 @@
     "emptySection": "Ningún elemento propuesto.",
     "mainAccount": "Principal",
     "settingsTitle": "Parámetros financieros",
-    "controlScope": {
-      "PERSONAL": "Control personal",
-      "BUSINESS": "Control empresarial",
-      "BOTH": "Control personal y empresarial"
+    "dashboardScope": {
+      "CONSOLIDATED": "Panel consolidado (todas las cuentas)",
+      "ACCOUNT": "Panel por cuenta"
     },
     "incomeCategory": "Categoría de ingreso",
     "expenseCategory": "Categoría de gasto",
@@ -66,7 +65,8 @@
     "oneTime": "Única",
     "dayOfMonth": "Día {{day}}",
     "cardDays": "Cierra el día {{closing}}, vence el día {{due}}",
-    "reserveOf": "Reserva automática del {{percent}}%",
+    "reserveOf": "Reserva automática del {{percent}}% para {{account}}",
+    "transferRoute": "De {{from}} para {{to}}",
     "retryHint": "Puedes intentarlo de nuevo — la aplicación continúa desde donde se detuvo, sin duplicar nada.",
     "pendencies": {
       "title": "Antes de confirmar, verifica:",
@@ -79,6 +79,7 @@
       "incomes": "Ingresos",
       "expenses": "Gastos fijos",
       "creditCards": "Tarjetas de crédito",
+      "transfers": "Transferencias",
       "categories": "Categorías",
       "settings": "Parámetros"
     },
@@ -91,6 +92,8 @@
       "isMain": "Cuenta principal",
       "autoReserveEnabled": "Reserva automática",
       "autoReservePercentage": "Porcentaje de la reserva (%)",
+      "autoReserveTargetAccountId": "Cuenta de destino de la reserva",
+      "accountRefNone": "Ninguna",
       "bank": "Banco",
       "closingDay": "Día de cierre",
       "dueDay": "Día de vencimiento",

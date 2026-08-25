@@ -44,6 +44,7 @@ class InMemoryMessagesRepo implements OnboardingMessagesRepository {
 class FakeCreator<TInput extends { name?: string; description?: string }> {
   calls: Array<{ tenantId: string; input: TInput }> = [];
   created: Array<{ id: string; tenantId: string; name: string }> = [];
+  updateCalls: Array<{ id: string; tenantId: string; input: Record<string, unknown> }> = [];
   failOnCall: number | null = null;
   private counter = 0;
 
@@ -60,6 +61,12 @@ class FakeCreator<TInput extends { name?: string; description?: string }> {
     };
     this.created.push(entity);
     return entity;
+  }
+
+  // Assinatura espelha AccountsService.update(id, input, tenantId).
+  async update(id: string, input: Record<string, unknown>, tenantId: string): Promise<{ id: string }> {
+    this.updateCalls.push({ id, tenantId, input });
+    return { id };
   }
 
   // Repositório de leitura correspondente (reuso por nome)
@@ -144,10 +151,14 @@ async function buildFullDraft(draftService: OnboardingDraftService, tenantId = T
     { name: 'Principal', accountTypeRef: 'atype_1', isMain: true, initialBalance: 100000 },
     'ai',
   );
-  await draftService.addItem(
+  await draftService.addItem(tenantId, 'accounts', { name: 'Reserva Impostos' }, 'ai');
+  // Regra de reserva automática (E8) fica na conta de ORIGEM (Principal),
+  // apontando para o destino (Reserva Impostos) — via update porque o
+  // destino só existe depois de criado.
+  await draftService.updateItem(
     tenantId,
-    'accounts',
-    { name: 'Reserva Impostos', autoReserveEnabled: true, autoReservePercentage: 15 },
+    'acc_1',
+    { autoReserveEnabled: true, autoReservePercentage: 15, autoReserveTargetAccountRef: 'acc_2' },
     'ai',
   );
   await draftService.addItem(
@@ -170,7 +181,6 @@ async function buildFullDraft(draftService: OnboardingDraftService, tenantId = T
       grossAmount: 1200000,
       dayOfMonth: 10,
       incomeCategoryRef: 'cat_1',
-      reserveAccountRefs: ['acc_2'],
       targetAccountRef: 'acc_1',
     },
     'ai',
@@ -190,7 +200,7 @@ async function buildFullDraft(draftService: OnboardingDraftService, tenantId = T
   await draftService.addItem(
     tenantId,
     'settings',
-    { controlScope: 'BOTH' },
+    { dashboardScope: 'ACCOUNT' },
     'ai',
   );
 }
@@ -322,20 +332,25 @@ describe('OnboardingApplyService', () => {
     });
   });
 
-  it('rejeita conta principal marcada também como reserva antes de escrever qualquer dado', async () => {
+  it('passo 2b aplica a regra de reserva automática via accountsService.update, resolvendo a ref para o id real', async () => {
     const ctx = setup();
-    await ctx.draftService.addItem(TENANT_ID, 'accounts', { name: 'Conta', isMain: true }, 'ai');
-    // Corrompe o draft direto no repo para simular um estado que escapou da
-    // validação do draft service (defesa em profundidade antes da aplicação).
-    const state = (await ctx.stateRepo.get(TENANT_ID)) as OnboardingState;
-    (state.draft.accounts[0].payload as Record<string, unknown>).autoReserveEnabled = true;
-    await ctx.stateRepo.upsert(state);
+    await buildFullDraft(ctx.draftService);
     await moveToAwaiting(ctx.onboardingService);
 
-    await expect(ctx.applyService.confirm(TENANT_ID, KEY_1)).rejects.toMatchObject({
-      code: 'onboarding.draft.mainReserveConflict',
+    const result = await ctx.applyService.confirm(TENANT_ID, KEY_1);
+
+    const mainId = result.appliedEntityIds.acc_1;
+    const reserveId = result.appliedEntityIds.acc_2;
+    expect(ctx.accountsCreator.updateCalls).toHaveLength(1);
+    expect(ctx.accountsCreator.updateCalls[0]).toMatchObject({
+      id: mainId,
+      tenantId: TENANT_ID,
+      input: {
+        autoReserveEnabled: true,
+        autoReservePercentage: 15,
+        autoReserveTargetAccountId: reserveId,
+      },
     });
-    expect(ctx.accountsCreator.calls).toHaveLength(0);
   });
 
   it('rejeita refs inválidas antes de escrever qualquer dado', async () => {

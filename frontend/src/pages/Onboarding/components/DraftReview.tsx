@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowLeft, Check, Loader2, Pencil, Star, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Star, Trash2 } from 'lucide-react';
 import {
   OnboardingDraft,
   OnboardingDraftItem,
@@ -19,9 +19,9 @@ import { formatCurrency } from '../../../utils/money';
 // Refs entre itens não são editáveis pela UI na v1: remova o item ou ajuste
 // pelo chat.
 
-type Section = 'accountTypes' | 'accounts' | 'categories' | 'incomes' | 'expenses' | 'creditCards' | 'settings';
+type Section = 'accountTypes' | 'accounts' | 'categories' | 'incomes' | 'expenses' | 'creditCards' | 'transfers' | 'settings';
 
-type FieldType = 'text' | 'money' | 'day' | 'percent' | 'boolean';
+type FieldType = 'text' | 'money' | 'day' | 'percent' | 'boolean' | 'accountRef';
 
 interface FieldConfig {
   key: string;
@@ -37,6 +37,7 @@ const EDIT_FIELDS: Record<Section, FieldConfig[]> = {
     { key: 'isMain', labelKey: 'review.fields.isMain', type: 'boolean' },
     { key: 'autoReserveEnabled', labelKey: 'review.fields.autoReserveEnabled', type: 'boolean' },
     { key: 'autoReservePercentage', labelKey: 'review.fields.autoReservePercentage', type: 'percent' },
+    { key: 'autoReserveTargetAccountRef', labelKey: 'review.fields.autoReserveTargetAccountId', type: 'accountRef' },
   ],
   categories: [{ key: 'name', labelKey: 'review.fields.name', type: 'text' }],
   incomes: [
@@ -55,6 +56,11 @@ const EDIT_FIELDS: Record<Section, FieldConfig[]> = {
     { key: 'closingDay', labelKey: 'review.fields.closingDay', type: 'day' },
     { key: 'dueDay', labelKey: 'review.fields.dueDay', type: 'day' },
     { key: 'limit', labelKey: 'review.fields.limit', type: 'money' },
+  ],
+  transfers: [
+    { key: 'description', labelKey: 'review.fields.description', type: 'text' },
+    { key: 'amount', labelKey: 'review.fields.amount', type: 'money' },
+    { key: 'dayOfMonth', labelKey: 'review.fields.dayOfMonth', type: 'day' },
   ],
   settings: [],
 };
@@ -172,7 +178,10 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
                 ? `${t('review.fields.initialBalance')}: ${formatCurrency(item.payload.initialBalance)}`
                 : null,
               item.payload.autoReserveEnabled === true
-                ? t('review.reserveOf', { percent: Number(item.payload.autoReservePercentage ?? 0) })
+                ? t('review.reserveOf', {
+                    percent: Number(item.payload.autoReservePercentage ?? 0),
+                    account: nameOf(draft.accounts, item.payload.autoReserveTargetAccountRef) ?? '?',
+                  })
                 : null,
             ]}
             onEdit={() => setEditing({ section: 'accounts', item })}
@@ -245,6 +254,27 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
         ))}
       </SectionCard>
 
+      <SectionCard title={t('review.sections.transfers')} count={draft.transfers.length}>
+        {draft.transfers.map((item) => (
+          <ItemRow
+            key={item.draftItemId}
+            itemId={item.draftItemId}
+            title={String(item.payload.description ?? '')}
+            details={[
+              typeof item.payload.amount === 'number' ? formatCurrency(item.payload.amount) : null,
+              t('review.dayOfMonth', { day: Number(item.payload.dayOfMonth ?? 0) }),
+              t('review.transferRoute', {
+                from: nameOf(draft.accounts, item.payload.sourceAccountRef) ?? '?',
+                to: nameOf(draft.accounts, item.payload.targetAccountRef) ?? '?',
+              }),
+            ]}
+            onEdit={() => setEditing({ section: 'transfers', item })}
+            onRemove={() => removeMutation.mutate(item.draftItemId)}
+            removing={pendingRemoveId === item.draftItemId}
+          />
+        ))}
+      </SectionCard>
+
       <SectionCard title={t('review.sections.categories')} count={draft.categories.length}>
         {draft.categories.map((item) => (
           <ItemRow
@@ -269,8 +299,8 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
             itemId={draft.settings.draftItemId}
             title={t('review.settingsTitle')}
             details={[
-              typeof draft.settings.payload.controlScope === 'string'
-                ? t(`review.controlScope.${draft.settings.payload.controlScope}`)
+              typeof draft.settings.payload.dashboardScope === 'string'
+                ? t(`review.dashboardScope.${draft.settings.payload.dashboardScope}`)
                 : null,
             ]}
             onEdit={() => setEditing({ section: 'settings', item: draft.settings as OnboardingDraftItem })}
@@ -306,6 +336,7 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
         <EditItemModal
           section={editing.section}
           item={editing.item}
+          accounts={draft.accounts}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -394,16 +425,19 @@ function ItemRow({
 function EditItemModal({
   section,
   item,
+  accounts,
   onClose,
   onSaved,
 }: {
   section: Section;
   item: OnboardingDraftItem;
+  accounts: OnboardingDraftItem[];
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { t } = useTranslation('onboarding');
   const fields = EDIT_FIELDS[section];
+  const accountOptions = accounts.filter((a) => a.draftItemId !== item.draftItemId);
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
     for (const field of fields) initial[field.key] = item.payload[field.key];
@@ -481,20 +515,22 @@ function EditItemModal({
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 checked={values[field.key] === true}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setValues((v) => {
-                    const next = { ...v, [field.key]: checked };
-                    // Conta principal e conta de reserva nunca podem ser a
-                    // mesma (validado também no backend) — marcar uma
-                    // desmarca a outra em vez de deixar o usuário confirmar
-                    // um estado que travaria a aplicação do draft.
-                    if (checked && field.key === 'isMain') next.autoReserveEnabled = false;
-                    if (checked && field.key === 'autoReserveEnabled') next.isMain = false;
-                    return next;
-                  });
-                }}
+                onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.checked }))}
               />
+            )}
+            {field.type === 'accountRef' && (
+              <select
+                className={inputClass}
+                value={String(values[field.key] ?? '')}
+                onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value || null }))}
+              >
+                <option value="">{t('review.fields.accountRefNone')}</option>
+                {accountOptions.map((a) => (
+                  <option key={a.draftItemId} value={a.draftItemId}>
+                    {String(a.payload.name ?? '')}
+                  </option>
+                ))}
+              </select>
             )}
           </label>
         ))}

@@ -22,8 +22,15 @@ export const draftAccountPayloadSchema = z.object({
    * despesas do draft sem conta explícita (settings não guarda mais conta
    * principal desde a E5; ver docs/refactor-contas-pf-pj.md). */
   isMain: z.boolean().default(false),
+  /** Reserva automática (E8): a flag e o percentual ficam na conta de
+   * ORIGEM; autoReserveTargetAccountRef aponta para a conta de DESTINO
+   * (outro item do draft, nunca a si mesma — validado em
+   * onboarding-draft.service.ts). isMain e autoReserveEnabled não conflitam
+   * mais entre si — uma conta pode ser principal e ainda assim ter uma
+   * regra de reserva apontando para outra conta. */
   autoReserveEnabled: z.boolean().default(false),
   autoReservePercentage: z.number().min(0).max(100).default(0),
+  autoReserveTargetAccountRef: refSchema.nullable().optional(),
 });
 
 export const draftCategoryPayloadSchema = z.object({
@@ -38,7 +45,6 @@ export const draftIncomePayloadSchema = z.object({
   dayOfMonth: z.number().int().min(1).max(28),
   incomeCategoryRef: refSchema,
   recurrence: z.nativeEnum(RecurrenceType).default(RecurrenceType.FIXED),
-  reserveAccountRefs: z.array(refSchema).default([]),
   targetAccountRef: refSchema.nullable().optional(),
 });
 
@@ -60,9 +66,22 @@ export const draftCreditCardPayloadSchema = z.object({
   defaultPaymentAccountRef: refSchema.nullable().optional(),
 });
 
+// Transferência pontual entre duas contas do draft (E7/E9) — não é a regra de
+// reserva automática (essa fica em draftAccountPayloadSchema). Sempre única
+// (sem recurrence): representa um movimento já decidido, não uma obrigação
+// recorrente.
+export const draftTransferPayloadSchema = z.object({
+  description: z.string().min(1, 'validation.description.required').max(120),
+  amount: z.number().int().positive('validation.amount.positive'),
+  dayOfMonth: z.number().int().min(1).max(28),
+  sourceAccountRef: refSchema,
+  targetAccountRef: refSchema,
+});
+
 export const draftSettingsPayloadSchema = z.object({
-  /** Escopo do controle: orienta o assistente sobre pessoal/PJ/ambos. */
-  controlScope: z.enum(['PERSONAL', 'BUSINESS', 'BOTH']),
+  /** Espelha settings.dashboardScope (E5) — único campo de settings que
+   * realmente persiste; a aplicação grava direto em FinancialSettings. */
+  dashboardScope: z.enum(['CONSOLIDATED', 'ACCOUNT']).default('CONSOLIDATED'),
 });
 
 export type DraftAccountTypePayload = z.infer<typeof draftAccountTypePayloadSchema>;
@@ -71,6 +90,7 @@ export type DraftCategoryPayload = z.infer<typeof draftCategoryPayloadSchema>;
 export type DraftIncomePayload = z.infer<typeof draftIncomePayloadSchema>;
 export type DraftExpensePayload = z.infer<typeof draftExpensePayloadSchema>;
 export type DraftCreditCardPayload = z.infer<typeof draftCreditCardPayloadSchema>;
+export type DraftTransferPayload = z.infer<typeof draftTransferPayloadSchema>;
 export type DraftSettingsPayload = z.infer<typeof draftSettingsPayloadSchema>;
 
 export const DRAFT_SECTIONS = [
@@ -80,6 +100,7 @@ export const DRAFT_SECTIONS = [
   'incomes',
   'expenses',
   'creditCards',
+  'transfers',
   'settings',
 ] as const;
 

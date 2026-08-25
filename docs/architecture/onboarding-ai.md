@@ -153,7 +153,8 @@ Implementado em `onboarding.schemas.ts` (payloads Zod) e
 `onboarding-draft.service.ts` (mutações + validações cruzadas).
 
 **Seções**: `accountTypes`, `accounts`, `categories`, `incomes`, `expenses`,
-`creditCards`, `settings` (singleton — nova proposta substitui a anterior).
+`creditCards`, `transfers`, `settings` (singleton — nova proposta substitui a
+anterior).
 
 **Identificadores e refs simbólicas**: cada item recebe `draftItemId` legível e
 sequencial por seção (`atype_1`, `acc_1`, `cat_2`, `inc_1`, `exp_1`, `card_1`,
@@ -164,17 +165,27 @@ resolvidas para UUIDs reais somente na aplicação do draft.
 
 **Payloads** espelham os schemas de criação dos módulos financeiros: valores
 monetários em centavos inteiros (`initialBalance`, `grossAmount`, `amount`,
-`limit`, `minimumMainBalance`, `annualRevenueLimit`), dias recorrentes 1–28
-(`dayOfMonth`, `closingDay`, `dueDay`), `recurrence` UNIQUE/FIXED (default
-FIXED no onboarding), percentual de reserva 0–100. `account.isMain` vira
-`settings.mainAccountId` na aplicação. `settings.controlScope`
-(PERSONAL/BUSINESS/BOTH) orienta o assistente e a derivação de
-`pjLimitControlEnabled`.
+`limit`), dias recorrentes 1–28 (`dayOfMonth`, `closingDay`, `dueDay`),
+`recurrence` UNIQUE/FIXED (default FIXED no onboarding; transferências não têm
+recurrence — são sempre pontuais), percentual de reserva 0–100.
+`account.isMain` marca a conta principal só dentro do onboarding — desde a E5
+do refactor de contas PF/PJ (ver `docs/refactor-contas-pf-pj.md`) não existe
+mais `settings.mainAccountId`, cada conta é seu próprio contexto financeiro.
+Reserva automática (E8) fica em `account.autoReserveEnabled` +
+`autoReservePercentage` + `autoReserveTargetAccountRef` — a própria conta é a
+origem, a ref aponta para a conta de destino (nunca a si mesma); `isMain` e a
+reserva automática não conflitam entre si. `settings.dashboardScope`
+(CONSOLIDATED/ACCOUNT) é o único campo de settings que realmente persiste na
+aplicação.
 
 **Validações cruzadas** (rodam em toda mutação, sobre o draft inteiro):
 - refs existem e apontam para a seção correta; refs de categoria checam o tipo
-  (receita → INCOME, despesa → EXPENSE);
+  (receita → INCOME, despesa → EXPENSE); transferências exigem
+  `sourceAccountRef`/`targetAccountRef` válidos;
 - no máximo uma conta `isMain`;
+- reserva automática: conta com `autoReserveEnabled` precisa de
+  `autoReserveTargetAccountRef` diferente de si mesma
+  (`onboarding.draft.autoReserveTargetRequired`/`autoReserveSameAccount`);
 - nomes únicos (case-insensitive) em `accountTypes`, `accounts`, `categories`
   e `creditCards`;
 - remoção bloqueada enquanto houver referências ao item
@@ -186,7 +197,8 @@ a UI de revisão edita como `user`, as tools da IA proporão como `ai`.
 
 **Códigos de erro**: `onboarding.draft.itemNotFound` (404),
 `onboarding.draft.invalidRef` (400), `onboarding.draft.duplicateName`,
-`onboarding.draft.mainAccountDuplicate`, `onboarding.draft.refInUse`,
+`onboarding.draft.mainAccountDuplicate`, `onboarding.draft.autoReserveTargetRequired`,
+`onboarding.draft.autoReserveSameAccount`, `onboarding.draft.refInUse`,
 `onboarding.draft.locked` (409); payloads inválidos caem no `validation.generic`
 do errorHandler (ZodError).
 
@@ -233,10 +245,14 @@ Implementado em `onboarding-apply.service.ts` (`POST /onboarding/confirm`):
    conta principal (`mainAccountRequired`), todas as refs resolvíveis — antes
    de qualquer escrita.
 3. **Execução ordenada** reusando exclusivamente os services existentes:
-   tipos de conta → contas → categorias → settings (recebe `mainAccountId`) →
-   cartões → receitas (refs de reserva/categoria/destino resolvidas para UUIDs
-   reais) → despesas. Datas-âncora de recorrência = dia informado no mês
-   corrente (`ensureFixedOccurrences` materializa o restante).
+   tipos de conta → contas (sem a regra de reserva) → regras de reserva
+   automática (`accountsService.update`, resolve `autoReserveTargetAccountRef`
+   para o id real — roda de novo a cada tentativa, é um no-op se já aplicada)
+   → categorias → settings (`dashboardScope`) → cartões → receitas → despesas
+   → transferências (`transfersService.createTransfer`, gera o par
+   saída/entrada da E7). Datas-âncora de recorrência = dia informado no mês
+   corrente (`ensureFixedTransactions` materializa o restante das séries
+   fixas).
 4. **Idempotência**: `appliedEntityIds` (draftItemId → id real) persistido
    **após cada criação**; itens já aplicados são pulados na retomada. Entidade
    existente com o mesmo nome é **reusada**, nunca duplicada (cobre a categoria
@@ -254,12 +270,16 @@ Implementado em `onboarding-apply.service.ts` (`POST /onboarding/confirm`):
 reais** (não fakes de criação) → repositórios em memória — validando que os
 schemas das tools e os schemas dos services batem e que refs simbólicas se
 resolvem corretamente por todas as camadas. Cenários: tenant novo com múltiplas
-informações por mensagem, edição do draft antes de confirmar, idempotência com
-falha parcial e retomada, tenant pré-existente (`COMPLETED_MANUAL`), skip
+informações por mensagem (incluindo reserva automática origem→destino via
+`update_draft_item`), transferência pontual (`propose_transfer`) aplicada
+como par real de transações, edição do draft antes de confirmar, idempotência
+com falha parcial e retomada, tenant pré-existente (`COMPLETED_MANUAL`), skip
 manual, isolamento entre dois tenants, provedor indisponível, prompt
 injection, idioma e validações financeiras. Nunca chama o provedor real.
 
 ## Limitações atuais
 - Sem streaming — resposta única por turno.
-- Transferências recorrentes e objetivos financeiros estão fora da primeira
-  versão (não existem no domínio atual).
+- Transferências propostas pelo onboarding (`propose_transfer`) são sempre
+  pontuais (sem recorrência) — uma regra recorrente é a reserva automática
+  (`account.autoReserveEnabled`), não uma transferência agendada. Objetivos
+  financeiros continuam fora do domínio atual.

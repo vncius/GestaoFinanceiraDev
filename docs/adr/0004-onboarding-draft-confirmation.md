@@ -61,9 +61,12 @@ O fluxo de confirmação:
 ## Limitações
 
 - O draft cobre apenas as entidades suportadas pelo domínio atual (tipos de
-  conta, contas, categorias, receitas, despesas, cartões, configurações,
-  reservas automáticas via conta). Transferências recorrentes e objetivos
-  financeiros não existem no domínio e ficam fora da primeira versão.
+  conta, contas, categorias, receitas, despesas, cartões, transferências
+  pontuais, reservas automáticas via conta, configurações). *Atualização
+  (refactor de contas PF/PJ, entrega E9): transferências entre contas passaram
+  a existir no domínio desde a E7 e já são propostas pelo onboarding
+  (`propose_transfer`) — a limitação original abaixo não vale mais para elas.*
+  Objetivos financeiros continuam fora do domínio e fora do draft.
 - Edições manuais no draft não realimentam automaticamente o contexto textual
   da conversa; o modelo as verá via tool de leitura de contexto no turno
   seguinte.

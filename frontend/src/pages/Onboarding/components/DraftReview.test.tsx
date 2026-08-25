@@ -60,13 +60,13 @@ function fullDraft(overrides: Partial<OnboardingDraft> = {}): OnboardingDraft {
         dayOfMonth: 10,
         incomeCategoryRef: 'cat_1',
         recurrence: 'FIXED',
-        reserveAccountRefs: [],
       }),
     ],
     expenses: [],
     creditCards: [],
+    transfers: [],
     settings: item('settings', {
-      controlScope: 'BUSINESS',
+      dashboardScope: 'ACCOUNT',
     }),
     ...overrides,
   };
@@ -98,7 +98,7 @@ describe('DraftReview', () => {
     expect(await screen.findByText('Nubank PJ')).toBeInTheDocument();
     expect(screen.getByText('Contrato mensal')).toBeInTheDocument();
     expect(screen.getByText(/R\$\s*12\.000,00/)).toBeInTheDocument();
-    expect(screen.getByText(/Controle empresarial \(PJ\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Painel por conta/)).toBeInTheDocument();
   });
 
   it('sem conta principal: mostra pendência e desabilita a confirmação', async () => {
@@ -133,7 +133,7 @@ describe('DraftReview', () => {
     );
   });
 
-  it('marcar reserva automática desmarca conta principal (não podem ser a mesma conta)', async () => {
+  it('marcar reserva automática não desmarca conta principal (podem coexistir na mesma conta)', async () => {
     const draft = fullDraft();
     getDraft.mockResolvedValue(draft);
     updateDraftItem.mockResolvedValue({ item: draft.accounts[0], draft });
@@ -148,14 +148,14 @@ describe('DraftReview', () => {
 
     fireEvent.click(reserveCheckbox);
     expect(reserveCheckbox).toBeChecked();
-    expect(mainCheckbox).not.toBeChecked();
+    expect(mainCheckbox).toBeChecked();
 
     fireEvent.click(screen.getByTestId('save-item'));
 
     await waitFor(() =>
       expect(updateDraftItem).toHaveBeenCalledWith(
         'acc_1',
-        expect.objectContaining({ isMain: false, autoReserveEnabled: true }),
+        expect.objectContaining({ isMain: true, autoReserveEnabled: true }),
       ),
     );
   });

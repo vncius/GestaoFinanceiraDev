@@ -160,6 +160,7 @@ const onboardingApplyService = new OnboardingApplyService(onboardingService, onb
   settingsService,
   creditCardsService,
   cashFlowService,
+  transfersService,
   accountTypesRepo,
   accountsRepo,
   categoriesRepo,

@@ -36,6 +36,8 @@ export interface OnboardingDraft {
   incomes: OnboardingDraftItem[];
   expenses: OnboardingDraftItem[];
   creditCards: OnboardingDraftItem[];
+  /** Transferências pontuais entre contas do draft (E7/E9). */
+  transfers: OnboardingDraftItem[];
   /** Configurações são singleton por tenant; no draft também. */
   settings: OnboardingDraftItem | null;
   /**
@@ -98,6 +100,7 @@ export function createEmptyDraft(): OnboardingDraft {
     incomes: [],
     expenses: [],
     creditCards: [],
+    transfers: [],
     settings: null,
     itemCounters: {},
   };

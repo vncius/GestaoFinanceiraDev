@@ -15,6 +15,7 @@ import {
   DraftCreditCardPayload,
   DraftExpensePayload,
   DraftIncomePayload,
+  DraftTransferPayload,
   OnboardingDraftSection,
   draftAccountPayloadSchema,
   draftAccountTypePayloadSchema,
@@ -23,6 +24,7 @@ import {
   draftExpensePayloadSchema,
   draftIncomePayloadSchema,
   draftSettingsPayloadSchema,
+  draftTransferPayloadSchema,
 } from './onboarding.schemas';
 import { CategoryType } from '../categories/categories.types';
 
@@ -40,6 +42,7 @@ const SECTION_SCHEMAS: Record<OnboardingDraftSection, ZodSchema> = {
   incomes: draftIncomePayloadSchema,
   expenses: draftExpensePayloadSchema,
   creditCards: draftCreditCardPayloadSchema,
+  transfers: draftTransferPayloadSchema,
   settings: draftSettingsPayloadSchema,
 };
 
@@ -53,6 +56,7 @@ const SECTION_ID_PREFIX: Record<OnboardingDraftSection, string> = {
   incomes: 'inc',
   expenses: 'exp',
   creditCards: 'card',
+  transfers: 'transfer',
   settings: 'settings',
 };
 
@@ -71,6 +75,7 @@ const LIST_SECTIONS = [
   'incomes',
   'expenses',
   'creditCards',
+  'transfers',
 ] as const;
 
 export interface DraftMutationResult {
@@ -234,14 +239,11 @@ export class OnboardingDraftService {
     for (const account of draft.accounts) {
       const p = account.payload as unknown as DraftAccountPayload;
       if (p.accountTypeRef === draftItemId) refs.push(account.draftItemId);
+      if (p.autoReserveTargetAccountRef === draftItemId) refs.push(account.draftItemId);
     }
     for (const income of draft.incomes) {
       const p = income.payload as unknown as DraftIncomePayload;
-      if (
-        p.incomeCategoryRef === draftItemId ||
-        p.targetAccountRef === draftItemId ||
-        p.reserveAccountRefs.includes(draftItemId)
-      ) {
+      if (p.incomeCategoryRef === draftItemId || p.targetAccountRef === draftItemId) {
         refs.push(income.draftItemId);
       }
     }
@@ -255,6 +257,12 @@ export class OnboardingDraftService {
       const p = card.payload as unknown as DraftCreditCardPayload;
       if (p.defaultPaymentAccountRef === draftItemId) refs.push(card.draftItemId);
     }
+    for (const transfer of draft.transfers) {
+      const p = transfer.payload as unknown as DraftTransferPayload;
+      if (p.sourceAccountRef === draftItemId || p.targetAccountRef === draftItemId) {
+        refs.push(transfer.draftItemId);
+      }
+    }
     return refs;
   }
 
@@ -262,7 +270,7 @@ export class OnboardingDraftService {
   private validateDraft(draft: OnboardingDraft): void {
     this.validateUniqueNames(draft);
     this.validateSingleMainAccount(draft);
-    this.validateMainReserveConflict(draft);
+    this.validateAutoReserveRule(draft);
     this.validateRefs(draft);
   }
 
@@ -301,24 +309,34 @@ export class OnboardingDraftService {
   }
 
   /**
-   * Conta principal e conta de reserva nunca podem ser a mesma (a reserva
-   * precisa ser uma conta separada — ver onboarding-prompts.ts). Sem essa
-   * checagem, um draft assim passa pela revisão e só quebra na confirmação,
-   * na chamada a settingsService.update (que já valida o mesmo caso para
-   * contas reais), deixando o onboarding travado sem saída pela UI.
+   * Reserva automática (E8): a conta de ORIGEM (autoReserveEnabled) precisa
+   * apontar para uma conta de DESTINO diferente de si mesma. isMain não
+   * participa mais dessa regra — uma conta pode ser principal e ter uma
+   * regra de reserva ao mesmo tempo, desde que o destino seja outra conta.
+   * Sem essa checagem, um draft assim passa pela revisão e só quebra na
+   * confirmação (accountsService.update já valida o mesmo caso para contas
+   * reais), deixando o onboarding travado sem saída pela UI.
    */
-  private validateMainReserveConflict(draft: OnboardingDraft): void {
-    const conflicting = draft.accounts.find((a) => {
-      const p = a.payload as unknown as DraftAccountPayload;
-      return p.isMain && p.autoReserveEnabled;
-    });
-    if (conflicting) {
-      throw new AppError(
-        'A conta principal não pode ser marcada como conta de reserva',
-        409,
-        'onboarding.draft.mainReserveConflict',
-        { accountId: conflicting.draftItemId },
-      );
+  private validateAutoReserveRule(draft: OnboardingDraft): void {
+    for (const account of draft.accounts) {
+      const p = account.payload as unknown as DraftAccountPayload;
+      if (!p.autoReserveEnabled) continue;
+      if (!p.autoReserveTargetAccountRef) {
+        throw new AppError(
+          'Conta de reserva automática precisa de uma conta de destino',
+          409,
+          'onboarding.draft.autoReserveTargetRequired',
+          { accountId: account.draftItemId },
+        );
+      }
+      if (p.autoReserveTargetAccountRef === account.draftItemId) {
+        throw new AppError(
+          'A conta de origem e destino da reserva automática devem ser diferentes',
+          409,
+          'onboarding.draft.autoReserveSameAccount',
+          { accountId: account.draftItemId },
+        );
+      }
     }
   }
 
@@ -345,6 +363,13 @@ export class OnboardingDraftService {
       if (p.accountTypeRef) {
         assertRef(p.accountTypeRef, accountTypeIds.has(p.accountTypeRef), account.draftItemId);
       }
+      if (p.autoReserveTargetAccountRef) {
+        assertRef(
+          p.autoReserveTargetAccountRef,
+          accountIds.has(p.autoReserveTargetAccountRef),
+          account.draftItemId,
+        );
+      }
     }
     for (const income of draft.incomes) {
       const p = income.payload as unknown as DraftIncomePayload;
@@ -355,9 +380,6 @@ export class OnboardingDraftService {
       );
       if (p.targetAccountRef) {
         assertRef(p.targetAccountRef, accountIds.has(p.targetAccountRef), income.draftItemId);
-      }
-      for (const ref of p.reserveAccountRefs) {
-        assertRef(ref, accountIds.has(ref), income.draftItemId);
       }
     }
     for (const expense of draft.expenses) {
@@ -380,6 +402,11 @@ export class OnboardingDraftService {
           card.draftItemId,
         );
       }
+    }
+    for (const transfer of draft.transfers) {
+      const p = transfer.payload as unknown as DraftTransferPayload;
+      assertRef(p.sourceAccountRef, accountIds.has(p.sourceAccountRef), transfer.draftItemId);
+      assertRef(p.targetAccountRef, accountIds.has(p.targetAccountRef), transfer.draftItemId);
     }
   }
 }

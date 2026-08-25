@@ -24,9 +24,9 @@
     "threadLabel": "Conversation with the assistant",
     "welcomeTitle": "Before we start, a few quick concepts:",
     "welcomeMainAccount": "🏦 Main account — the bank account you use day to day, where most of your income comes in and most payments go out.",
-    "welcomeReserveAccount": "💰 Reserve account — a separate account (ideally at another bank) that automatically sets aside a percentage of your income for taxes, emergencies, etc. It can never be the same as the main account.",
+    "welcomeReserveAccount": "💰 Automatic reserve — a rule on a source account that, whenever it receives income, automatically transfers a percentage to a different target account (ideally at another bank) — handy for taxes, emergencies, etc.",
     "welcomeCreditCard": "💳 Credit card — tell us the bank, closing day and due day so the system can calculate each invoice correctly.",
-    "emptyHint": "Let's start: is this for personal use, business (PJ), or both? Feel free to also mention which bank accounts you use day to day.",
+    "emptyHint": "Let's start: which bank accounts do you use day to day (personal and/or business)?",
     "inputLabel": "Your message",
     "inputPlaceholder": "Type your message…",
     "send": "Send",
@@ -55,10 +55,9 @@
     "emptySection": "No items proposed.",
     "mainAccount": "Main",
     "settingsTitle": "Financial settings",
-    "controlScope": {
-      "PERSONAL": "Personal control",
-      "BUSINESS": "Business control",
-      "BOTH": "Personal and business control"
+    "dashboardScope": {
+      "CONSOLIDATED": "Consolidated dashboard (all accounts)",
+      "ACCOUNT": "Per-account dashboard"
     },
     "incomeCategory": "Income category",
     "expenseCategory": "Expense category",
@@ -66,7 +65,8 @@
     "oneTime": "One-time",
     "dayOfMonth": "Day {{day}}",
     "cardDays": "Closes on day {{closing}}, due on day {{due}}",
-    "reserveOf": "Automatic reserve of {{percent}}%",
+    "reserveOf": "Automatic reserve of {{percent}}% to {{account}}",
+    "transferRoute": "From {{from}} to {{to}}",
     "retryHint": "You can try again — the setup resumes from where it stopped, without duplicating anything.",
     "pendencies": {
       "title": "Before confirming, check:",
@@ -79,6 +79,7 @@
       "incomes": "Income",
       "expenses": "Fixed expenses",
       "creditCards": "Credit cards",
+      "transfers": "Transfers",
       "categories": "Categories",
       "settings": "Settings"
     },
@@ -91,6 +92,8 @@
       "isMain": "Main account",
       "autoReserveEnabled": "Automatic reserve",
       "autoReservePercentage": "Reserve percentage (%)",
+      "autoReserveTargetAccountId": "Reserve target account",
+      "accountRefNone": "None",
       "bank": "Bank",
       "closingDay": "Closing day",
       "dueDay": "Due day",

@@ -1,6 +1,6 @@
 # Gestão Financeira PJ/Pessoal
 
-Sistema de controle financeiro para pessoa física e jurídica: fluxo de caixa mensal, contas a receber, cartões de crédito (com fatura e parcelamento), dashboard com indicadores e um assistente de IA que conduz o onboarding de novos usuários.
+Sistema de controle financeiro para pessoa física e jurídica: cada conta é seu próprio contexto financeiro (fluxo de caixa e saldo isolados), com transferências entre contas e reserva automática por transferência, cartões de crédito (com fatura e parcelamento), dashboard com indicadores e um assistente de IA que conduz o onboarding de novos usuários.
 
 ## Stack
 

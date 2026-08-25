@@ -61,7 +61,7 @@ describe('OnboardingChat', () => {
   it('estado vazio mostra a dica inicial', async () => {
     getConversation.mockResolvedValue([]);
     renderChat();
-    expect(await screen.findByText(/pessoal, de empresa \(pj\) ou os dois/i)).toBeInTheDocument();
+    expect(await screen.findByText(/quais contas bancárias você usa no dia a dia/i)).toBeInTheDocument();
   });
 
   it('retomada: renderiza o histórico persistido', async () => {

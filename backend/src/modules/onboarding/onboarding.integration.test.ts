@@ -27,6 +27,7 @@ import {
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
 import { CashFlowService } from '../cash-flow/cash-flow.service';
+import { TransfersService } from '../transfers/transfers.service';
 import {
   CreditCardsRepository,
   CreditCardEntriesRepository,
@@ -268,11 +269,13 @@ function buildEnvironment() {
     transactionsRepo,
     categoriesRepo,
   );
+  const transfersService = new TransfersService(transactionsRepo, accountsRepo);
   const cashFlowService = new CashFlowService(
     transactionsRepo,
     accountsRepo,
     creditCardInvoicesRepo,
     creditCardsRepo,
+    transfersService,
   );
 
   const onboardingStateRepo = new InMemoryOnboardingStateRepo();
@@ -297,6 +300,7 @@ function buildEnvironment() {
     settingsService,
     creditCardsService,
     cashFlowService,
+    transfersService,
     accountTypesRepo,
     accountsRepo,
     categoriesRepo,
@@ -349,10 +353,18 @@ describe('Onboarding — fluxo completo (integração)', () => {
         {
           id: 'c2',
           name: 'propose_account',
+          input: { name: 'Reserva de impostos' },
+        },
+        {
+          id: 'c2b',
+          name: 'update_draft_item',
           input: {
-            name: 'Reserva de impostos',
-            autoReserveEnabled: true,
-            autoReservePercentage: 15,
+            draftItemId: 'acc_1',
+            payload: {
+              autoReserveEnabled: true,
+              autoReservePercentage: 15,
+              autoReserveTargetAccountRef: 'acc_2',
+            },
           },
         },
       ],
@@ -376,7 +388,6 @@ describe('Onboarding — fluxo completo (integração)', () => {
             grossAmount: 1200000,
             dayOfMonth: 10,
             categoryName: 'Serviços',
-            reserveAccountRefs: ['acc_2'],
           },
         },
         {
@@ -394,7 +405,7 @@ describe('Onboarding — fluxo completo (integração)', () => {
           name: 'propose_credit_card',
           input: { name: 'Cartão PJ', bank: 'Nubank', closingDay: 5, dueDay: 12 },
         },
-        { id: 'c6', name: 'propose_settings', input: { controlScope: 'BUSINESS' } },
+        { id: 'c6', name: 'propose_settings', input: { dashboardScope: 'ACCOUNT' } },
       ],
     });
     env.aiProvider.enqueue({
@@ -415,7 +426,18 @@ describe('Onboarding — fluxo completo (integração)', () => {
     const accounts = await env.accountsRepo.findAll(TENANT_A);
     expect(accounts).toHaveLength(2);
     const main = accounts.find((a) => a.name === 'Nubank PJ');
+    const reserve = accounts.find((a) => a.name === 'Reserva de impostos');
     expect(main).toBeDefined();
+    expect(reserve).toBeDefined();
+
+    // Regra de reserva automática (E8) aplicada de verdade via
+    // accountsService.update() no passo 2b — a origem aponta pro destino.
+    expect(main?.autoReserveEnabled).toBe(true);
+    expect(main?.autoReservePercentage).toBe(15);
+    expect(main?.autoReserveTargetAccountId).toBe(reserve?.id);
+
+    const settings = await env.settingsRepo.get(TENANT_A);
+    expect(settings?.dashboardScope).toBe('ACCOUNT');
 
     const transactions = await env.transactionsRepo.findAll(TENANT_A);
     const income = transactions.find((t) => t.type === TransactionType.INCOME);
@@ -431,6 +453,46 @@ describe('Onboarding — fluxo completo (integração)', () => {
 
     const categories = await env.categoriesRepo.findAll(TENANT_A);
     expect(categories.map((c) => c.name).sort()).toEqual(['Moradia', 'Serviços']);
+  });
+
+  it('propose_transfer no draft aplica uma transferência real entre as duas contas na confirmação', async () => {
+    env.aiProvider.enqueue({
+      toolCalls: [
+        { id: 'c1', name: 'propose_account', input: { name: 'Conta A', isMain: true } },
+        { id: 'c2', name: 'propose_account', input: { name: 'Conta B' } },
+        {
+          id: 'c3',
+          name: 'propose_transfer',
+          input: {
+            description: 'Repasse inicial',
+            amount: 50000,
+            dayOfMonth: 10,
+            sourceAccountRef: 'acc_1',
+            targetAccountRef: 'acc_2',
+          },
+        },
+        { id: 'c4', name: 'present_setup_summary', input: {} },
+      ],
+    });
+    env.aiProvider.enqueue({ text: 'Resumo pronto.' });
+    await env.conversationService.sendMessage(TENANT_A, 'Duas contas e já fiz uma transferência entre elas');
+
+    await env.applyService.confirm(TENANT_A, randomUUID());
+
+    const accounts = await env.accountsRepo.findAll(TENANT_A);
+    const accountA = accounts.find((a) => a.name === 'Conta A');
+    const accountB = accounts.find((a) => a.name === 'Conta B');
+    const transfers = (await env.transactionsRepo.findAll(TENANT_A)).filter(
+      (t) => t.type === TransactionType.TRANSFER,
+    );
+    expect(transfers).toHaveLength(2);
+    const outgoing = transfers.find((t) => t.sourceAccountId !== null);
+    const incoming = transfers.find((t) => t.targetAccountId !== null);
+    expect(outgoing?.sourceAccountId).toBe(accountA?.id);
+    expect(outgoing?.amount).toBe(50000);
+    expect(incoming?.targetAccountId).toBe(accountB?.id);
+    expect(incoming?.amount).toBe(50000);
+    expect(outgoing?.transferGroupId).toBe(incoming?.transferGroupId);
   });
 
   it('edição do draft entre o resumo e a confirmação altera o resultado final', async () => {

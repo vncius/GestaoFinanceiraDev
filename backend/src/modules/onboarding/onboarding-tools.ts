@@ -12,6 +12,7 @@ import {
   draftExpensePayloadSchema,
   draftIncomePayloadSchema,
   draftSettingsPayloadSchema,
+  draftTransferPayloadSchema,
 } from './onboarding.schemas';
 import { OnboardingDraft, OnboardingDraftItem, OnboardingStatus } from './onboarding.types';
 
@@ -127,8 +128,12 @@ export function createOnboardingToolRegistry(deps: OnboardingToolsDeps): AiToolR
     name: 'propose_account',
     description:
       'Propõe uma conta bancária no draft. Use accountTypeName para o tipo (ex.: "Conta corrente"); ' +
-      'isMain marca a conta principal (apenas uma); autoReserveEnabled/autoReservePercentage ' +
-      'transformam a conta em reserva com percentual automático das receitas. ' +
+      'isMain marca a conta principal (apenas uma). Reserva automática: autoReserveEnabled + ' +
+      'autoReservePercentage + autoReserveTargetAccountRef ficam na conta de ORIGEM e apontam para ' +
+      'a conta de DESTINO (outro draftItemId, nunca a própria conta) — ao registrar/receber uma ' +
+      'entrada na origem, o percentual é transferido automaticamente para o destino. isMain e a ' +
+      'reserva automática não conflitam: uma conta pode ser principal e ter uma regra de reserva ' +
+      'ao mesmo tempo. Se a conta de destino ainda não existir no draft, proponha-a primeiro. ' +
       'Valores em centavos inteiros.',
     kind: 'proposal',
     inputSchema: proposeAccountInputSchema,
@@ -152,7 +157,8 @@ export function createOnboardingToolRegistry(deps: OnboardingToolsDeps): AiToolR
     description:
       'Propõe uma receita no draft. categoryName é o nome da categoria de receita (criada se não existir); ' +
       'grossAmount em centavos inteiros; dayOfMonth 1-28; recurrence FIXED para mensal, UNIQUE para única; ' +
-      'reserveAccountRefs são draftItemIds de contas de reserva; targetAccountRef é a conta de destino.',
+      'targetAccountRef é a conta de destino (default: conta principal). Reserva automática não se ' +
+      'configura aqui — é uma regra por conta, veja propose_account.',
     kind: 'proposal',
     inputSchema: proposeIncomeInputSchema,
     execute: async (input, context) => {
@@ -214,11 +220,28 @@ export function createOnboardingToolRegistry(deps: OnboardingToolsDeps): AiToolR
     name: 'propose_settings',
     description:
       'Propõe as configurações financeiras (singleton; nova proposta substitui a anterior). ' +
-      'controlScope PERSONAL/BUSINESS/BOTH orienta o restante da configuração.',
+      'dashboardScope CONSOLIDATED soma o resumo/dashboard de todas as contas; ACCOUNT mostra uma ' +
+      'conta por vez (útil quando o usuário quer ver PF e PJ separados no painel inicial). ' +
+      'Só proponha se o usuário tiver mais de uma conta e demonstrar preferência — CONSOLIDATED já é o default.',
     kind: 'proposal',
     inputSchema: draftSettingsPayloadSchema,
     execute: async (input, context) => {
       const result = await draftService.addItem(context.tenantId, 'settings', input, 'ai');
+      return proposalOutput(result.item, result.state.draft);
+    },
+  });
+
+  registry.register({
+    name: 'propose_transfer',
+    description:
+      'Propõe uma transferência pontual entre duas contas do draft (já feita ou já decidida pelo ' +
+      'usuário) — não é a regra de reserva automática recorrente (para isso use propose_account). ' +
+      'sourceAccountRef/targetAccountRef são draftItemIds de contas diferentes; amount em centavos ' +
+      'inteiros; dayOfMonth 1-28.',
+    kind: 'proposal',
+    inputSchema: draftTransferPayloadSchema,
+    execute: async (input, context) => {
+      const result = await draftService.addItem(context.tenantId, 'transfers', input, 'ai');
       return proposalOutput(result.item, result.state.draft);
     },
   });
@@ -311,6 +334,7 @@ export function compactDraft(draft: OnboardingDraft) {
     incomes: view(draft.incomes),
     expenses: view(draft.expenses),
     creditCards: view(draft.creditCards),
+    transfers: view(draft.transfers),
     settings: draft.settings
       ? { draftItemId: draft.settings.draftItemId, ...draft.settings.payload }
       : null,

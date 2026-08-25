@@ -108,6 +108,7 @@ describe('onboarding tools', () => {
       'propose_expense',
       'propose_income',
       'propose_settings',
+      'propose_transfer',
       'remove_draft_item',
       'update_draft_item',
     ]);
@@ -156,21 +157,12 @@ describe('onboarding tools', () => {
   });
 
   it('propose_income cria categoria INCOME por nome e vincula refs', async () => {
-    await registry.execute(
-      call('propose_account', {
-        name: 'Reserva Impostos',
-        autoReserveEnabled: true,
-        autoReservePercentage: 15,
-      }),
-      CONTEXT,
-    );
     const result = await registry.execute(
       call('propose_income', {
         description: 'Contrato mensal',
         grossAmount: 1500000,
         dayOfMonth: 10,
         categoryName: 'Serviços',
-        reserveAccountRefs: ['acc_1'],
       }),
       CONTEXT,
     );
@@ -220,14 +212,14 @@ describe('onboarding tools', () => {
   });
 
   it('propose_settings substitui a proposta anterior (singleton)', async () => {
-    await registry.execute(call('propose_settings', { controlScope: 'PERSONAL' }), CONTEXT);
+    await registry.execute(call('propose_settings', { dashboardScope: 'CONSOLIDATED' }), CONTEXT);
     const result = await registry.execute(
-      call('propose_settings', { controlScope: 'BOTH' }),
+      call('propose_settings', { dashboardScope: 'ACCOUNT' }),
       CONTEXT,
     );
     expect(result.ok).toBe(true);
     const state = await onboardingService.getState(TENANT_ID);
-    expect(state.draft.settings?.payload.controlScope).toBe('BOTH');
+    expect(state.draft.settings?.payload.dashboardScope).toBe('ACCOUNT');
   });
 
   it('update_draft_item e remove_draft_item operam por draftItemId', async () => {
@@ -287,7 +279,7 @@ describe('onboarding tools', () => {
       }),
       CONTEXT,
     );
-    await registry.execute(call('propose_settings', { controlScope: 'PERSONAL' }), CONTEXT);
+    await registry.execute(call('propose_settings', { dashboardScope: 'ACCOUNT' }), CONTEXT);
     expect(accountsRepo.items).toHaveLength(0);
     expect(categoriesRepo.items).toHaveLength(0);
   });

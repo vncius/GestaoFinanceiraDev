@@ -10,6 +10,7 @@ import { CategoriesService } from '../categories/categories.service';
 import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardsService } from '../credit-cards/credit-cards.service';
 import { SettingsService } from '../settings/settings.service';
+import { TransfersService } from '../transfers/transfers.service';
 import { OnboardingService } from './onboarding.service';
 import { OnboardingStateRepository } from './onboarding.repository';
 import {
@@ -19,6 +20,8 @@ import {
   DraftCreditCardPayload,
   DraftExpensePayload,
   DraftIncomePayload,
+  DraftSettingsPayload,
+  DraftTransferPayload,
 } from './onboarding.schemas';
 import {
   OnboardingDraftItem,
@@ -43,6 +46,7 @@ export interface OnboardingApplyServices {
   settingsService: SettingsService;
   creditCardsService: CreditCardsService;
   cashFlowService: CashFlowService;
+  transfersService: TransfersService;
   // Repositórios só para leitura (reuso por nome); escrita passa pelos services.
   accountTypesRepo: AccountTypesRepository;
   accountsRepo: AccountsRepository;
@@ -150,7 +154,7 @@ export class OnboardingApplyService {
       await record(item.draftItemId, id);
     }
 
-    // 2. Contas
+    // 2. Contas (criadas sem a regra de reserva — ver passo 2b)
     let mainAccountId: string | null = null;
     for (const item of draft.accounts) {
       const payload = item.payload as unknown as DraftAccountPayload;
@@ -163,13 +167,33 @@ export class OnboardingApplyService {
               name: payload.name,
               accountTypeId: resolve(payload.accountTypeRef),
               initialBalance: payload.initialBalance,
-              autoReserveEnabled: payload.autoReserveEnabled,
-              autoReservePercentage: payload.autoReservePercentage,
+              autoReserveEnabled: false,
+              autoReservePercentage: 0,
             })
           ).id;
         await record(item.draftItemId, id);
       }
       if (payload.isMain) mainAccountId = applied[item.draftItemId];
+    }
+
+    // 2b. Regras de reserva automática (E8) — sempre roda de novo a cada
+    // tentativa (não gated por applied[], diferente das criações acima):
+    // accountsService.update() com os mesmos valores é um no-op, então isso
+    // é seguro tanto numa retomada após falha parcial quanto para contas
+    // reaproveitadas por nome (o usuário acabou de descrever a regra ao
+    // assistente, então ela vale mesmo que a conta já existisse antes).
+    for (const item of draft.accounts) {
+      const payload = item.payload as unknown as DraftAccountPayload;
+      if (!payload.autoReserveEnabled) continue;
+      await this.services.accountsService.update(
+        applied[item.draftItemId],
+        {
+          autoReserveEnabled: true,
+          autoReservePercentage: payload.autoReservePercentage,
+          autoReserveTargetAccountId: resolve(payload.autoReserveTargetAccountRef),
+        },
+        tenantId,
+      );
     }
 
     // 3. Categorias
@@ -181,11 +205,14 @@ export class OnboardingApplyService {
       await record(item.draftItemId, id);
     }
 
-    // 4. Configurações (singleton). controlScope é só orientação de conversa
-    // — settings não guarda mais conta principal (E5: cada conta é seu
-    // próprio contexto financeiro) nem nenhum outro campo vindo do draft.
+    // 4. Configurações (singleton). dashboardScope é o único campo do draft
+    // que realmente persiste em FinancialSettings (E5); settings não guarda
+    // mais conta principal nem nenhum outro campo vindo do draft.
     if (draft.settings && !applied[draft.settings.draftItemId]) {
-      const settings = await this.services.settingsService.get(tenantId);
+      const payload = draft.settings.payload as unknown as DraftSettingsPayload;
+      const settings = await this.services.settingsService.update(tenantId, {
+        dashboardScope: payload.dashboardScope,
+      });
       await record(draft.settings.draftItemId, settings.id);
     }
 
@@ -242,6 +269,20 @@ export class OnboardingApplyService {
       await record(item.draftItemId, transaction.id);
     }
 
+    // 8. Transferências
+    for (const item of draft.transfers) {
+      if (applied[item.draftItemId]) continue;
+      const payload = item.payload as unknown as DraftTransferPayload;
+      const pair = await this.services.transfersService.createTransfer(tenantId, {
+        sourceAccountId: resolve(payload.sourceAccountRef) as string,
+        targetAccountId: resolve(payload.targetAccountRef) as string,
+        amount: payload.amount,
+        date: anchorDate(payload.dayOfMonth),
+        description: payload.description,
+      });
+      await record(item.draftItemId, pair.transferGroupId);
+    }
+
     // Conclusão
     state = await this.stateRepo.upsert({
       ...(await this.onboardingService.transition(tenantId, OnboardingStatus.COMPLETED)),
@@ -276,23 +317,13 @@ export class OnboardingApplyService {
         { count: mains.length },
       );
     }
-    // Defesa em profundidade: o draft service já bloqueia isMain +
-    // autoReserveEnabled juntos a cada mutação, mas essa é a última barreira
-    // antes de criar a conta de verdade — accountsService.create() não faz
-    // essa checagem (só accountsService.update()), então deixar passar aqui
-    // criaria a conta com reserva ativa e só quebraria depois, no
-    // settingsService.update(mainAccountId), travando o onboarding sem saída.
-    const mainAccountPayload = mains[0].payload as unknown as DraftAccountPayload;
-    if (mainAccountPayload.autoReserveEnabled) {
-      throw new AppError(
-        'A conta principal não pode ser marcada como conta de reserva',
-        422,
-        'onboarding.draft.mainReserveConflict',
-        { accountId: mains[0].draftItemId },
-      );
-    }
     // Refs resolvíveis dentro do draft (o draft service já garante em cada
-    // mutação; revalidação defensiva antes de escrever dados reais).
+    // mutação; revalidação defensiva antes de escrever dados reais). A regra
+    // de reserva automática (origem ≠ destino, destino obrigatório) também já
+    // foi validada a cada mutação do draft (onboarding-draft.service.ts) —
+    // sem defesa em profundidade aqui porque accountsService.update(), chamado
+    // no passo 2b, valida o mesmo caso para contas reais e lançaria um erro
+    // claro (não deixaria o onboarding travado sem saída).
     const ids = new Set<string>([
       ...draft.accountTypes.map((i) => i.draftItemId),
       ...draft.accounts.map((i) => i.draftItemId),
@@ -307,7 +338,7 @@ export class OnboardingApplyService {
         p.targetAccountRef as string | undefined,
         p.sourceAccountRef as string | undefined,
         p.defaultPaymentAccountRef as string | undefined,
-        ...((p.reserveAccountRefs as string[] | undefined) ?? []),
+        p.autoReserveTargetAccountRef as string | undefined,
       ];
     };
     for (const item of [
@@ -315,6 +346,7 @@ export class OnboardingApplyService {
       ...draft.incomes,
       ...draft.expenses,
       ...draft.creditCards,
+      ...draft.transfers,
     ]) {
       for (const ref of allRefs(item)) {
         if (ref && !ids.has(ref)) {

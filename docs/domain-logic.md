@@ -55,7 +55,7 @@ O mesmo padrão de escopo (`CURRENT` vs `CURRENT_AND_FUTURE`) se repete em pagam
 
 ## 2. Lançamentos recorrentes (fixos) fora do cartão
 
-Módulos: `backend/src/modules/cash-flow/cash-flow.service.ts` (`ensureFixedTransactions`) e `backend/src/modules/receivables/receivables.service.ts` (`ensureFixedOccurrences`). A mesma regra é implementada duas vezes (payments/extra-expenses e receivables) — candidata a unificação futura.
+Módulo: `backend/src/modules/cash-flow/cash-flow.service.ts` (`ensureFixedTransactions`) — agnóstico ao `TransactionType`, materializa a recorrência de `PAYMENT`, `EXTRA_EXPENSE` e `INCOME` igualmente (o antigo módulo `receivables`, que tinha sua própria implementação equivalente, foi removido no refactor de contas PF/PJ, entrega E3 — ver `docs/refactor-contas-pf-pj.md`; entradas nativas no fluxo de caixa já usam este mesmo mecanismo).
 
 Um lançamento com `recurrence: FIXED` também é gerado sob demanda, mas por um mecanismo ligeiramente diferente do cartão, porque aqui não existe um "dia de fechamento": a recorrência é ancorada no **dia do mês da primeira ocorrência da série**.
 
@@ -67,4 +67,4 @@ Um lançamento com `recurrence: FIXED` também é gerado sob demanda, mas por um
 
 Cada nova ocorrência copia os dados de `latest` (categoria, valor, conta, etc.), com `status` resetado para pendente/esperado e o mesmo `recurringGroupId`.
 
-Isso roda toda vez que `GET /cash-flow` ou `GET /receivables` é chamado para um mês (`ensureFixedOccurrences`), então a série "alcança" o mês pedido antes de qualquer leitura ou escrita subsequente.
+Isso roda toda vez que `GET /cash-flow` é chamado para um mês (`ensureFixedTransactions`), então a série "alcança" o mês pedido antes de qualquer leitura ou escrita subsequente.

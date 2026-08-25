@@ -7,6 +7,11 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 ## [Unreleased]
 
 ### Added
+- **Refactor de contas PF/PJ** (entregas E1–E9, ver `docs/refactor-contas-pf-pj.md`): cada conta passa a ser seu próprio contexto financeiro — fluxo de caixa, saldo e histórico isolados dos das demais, com um seletor de conta ativa no cabeçalho (`AccountContext`).
+  - Transferências entre contas (`POST/PUT/DELETE /transfers`, `/transfers/:transferGroupId/revert`): sempre um par de transações ligadas por `transferGroupId`, já efetivadas na data informada, com tela própria no Fluxo de Caixa (`TransferModal`/`TransferGrid`) e opção no Lançamento Rápido.
+  - Reserva automática como transferência: a regra agora fica na conta de origem (`Account.autoReserveTargetAccountId` aponta para o destino); ao receber uma entrada na origem, uma transferência automática é gerada/reconfirmada sozinha, com badge própria na UI e rótulo dedicado no CSV do backup.
+  - Escopo do dashboard configurável (`Settings.dashboardScope`): consolidado (soma de todas as contas, default) ou por conta.
+  - Onboarding com IA atualizado: nova tool `propose_transfer`, `propose_account` ganha a regra de reserva automática (origem→destino), `propose_settings` passa a controlar o escopo do dashboard, e o assistente explica que cada conta é um contexto isolado.
 - `frontend/functions/api/[[path]].ts` — Cloudflare Pages Function que faz proxy same-origin de `/api/*` para o backend no Render, corrigindo o bloqueio do cookie de sessão em navegadores mobile (Safari/iOS trata front e back em domínios distintos como cookie de terceiro e bloqueia por padrão, independente de `SameSite=None`). Requer env var `API_ORIGIN` no projeto Cloudflare Pages e `VITE_API_URL=/api` no build de produção. Detalhes em `docs/architecture/stack-template-and-deploy.md` (seção 8).
 - Preparação de multi-tenant: todas as 9 entidades, repositórios, serviços e controllers do backend agora tratam `tenantId` como parâmetro real (não hardcoded), resolvido via header `X-Tenant-Id` com fallback para um tenant default fixo (`backend/src/shared/tenant/tenant.constants.ts`). Sem autenticação/login ainda — é só a camada de dados já pronta para isso.
 - Módulo de backup/export/import (`/backup/*`): backup completo em JSON (export/import, com confirmação obrigatória por ser destrutivo), exportação de lançamentos em CSV por período ou tudo, e importação de extrato bancário (CSV genérico + OFX 1.x, com pré-visualização e detecção de possíveis duplicatas antes de confirmar). Nova página `/backup` no frontend.
@@ -35,4 +40,6 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - CORS deixou de aceitar qualquer origem (`cors()` sem opções) e passou a ser restrito a `CORS_ORIGIN`.
 
 ### Removed
+- Módulo de Recebimentos (`/receivables`) — substituído por entradas nativas do fluxo de caixa (`FinancialTransaction` tipo `INCOME`); dados antigos migrados por script (refactor de contas PF/PJ, entrega E3).
+- Limites de faturamento anual, saldo mínimo e o campo protegido de categoria (Nota Fiscal) — nenhum resquício na API, UI ou onboarding (entrega E4).
 - Dependências não utilizadas `react-hook-form` e `@hookform/resolvers` do frontend (nenhum uso em `src`).

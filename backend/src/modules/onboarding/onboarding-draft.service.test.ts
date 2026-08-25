@@ -106,15 +106,15 @@ describe('OnboardingDraftService', () => {
     });
 
     it('settings é singleton: nova proposta substitui a anterior', async () => {
-      await service.addItem(TENANT_ID, 'settings', { controlScope: 'PERSONAL' }, 'user');
+      await service.addItem(TENANT_ID, 'settings', { dashboardScope: 'CONSOLIDATED' }, 'user');
       const second = await service.addItem(
         TENANT_ID,
         'settings',
-        { controlScope: 'BOTH' },
+        { dashboardScope: 'ACCOUNT' },
         'ai',
       );
       expect(second.item.draftItemId).toBe('settings');
-      expect(second.state.draft.settings?.payload.controlScope).toBe('BOTH');
+      expect(second.state.draft.settings?.payload.dashboardScope).toBe('ACCOUNT');
     });
 
     it('rejeita nome duplicado na mesma seção (case-insensitive)', async () => {
@@ -131,10 +131,37 @@ describe('OnboardingDraftService', () => {
       });
     });
 
-    it('rejeita conta marcada como principal e como reserva ao mesmo tempo', async () => {
+    it('isMain e autoReserveEnabled não conflitam mais: conta principal pode ter regra de reserva', async () => {
+      await addAccount({ name: 'Reserva' });
+      const result = await addAccount({
+        name: 'Principal',
+        isMain: true,
+        autoReserveEnabled: true,
+        autoReservePercentage: 10,
+        autoReserveTargetAccountRef: 'acc_1',
+      });
+      expect(result.item.payload.isMain).toBe(true);
+      expect(result.item.payload.autoReserveEnabled).toBe(true);
+    });
+
+    it('rejeita autoReserveEnabled sem autoReserveTargetAccountRef', async () => {
       await expect(
-        addAccount({ isMain: true, autoReserveEnabled: true, autoReservePercentage: 10 }),
-      ).rejects.toMatchObject({ code: 'onboarding.draft.mainReserveConflict' });
+        addAccount({ autoReserveEnabled: true, autoReservePercentage: 10 }),
+      ).rejects.toMatchObject({ code: 'onboarding.draft.autoReserveTargetRequired' });
+    });
+
+    it('rejeita autoReserveTargetAccountRef apontando para a própria conta', async () => {
+      // acc_1 é o próprio item sendo criado — a ref só existe depois que o
+      // item já foi adicionado ao draft, então simula via updateItem.
+      await addAccount({ name: 'Conta' });
+      await expect(
+        service.updateItem(
+          TENANT_ID,
+          'acc_1',
+          { autoReserveEnabled: true, autoReservePercentage: 10, autoReserveTargetAccountRef: 'acc_1' },
+          'user',
+        ),
+      ).rejects.toMatchObject({ code: 'onboarding.draft.autoReserveSameAccount' });
     });
 
     it('rejeita ref inexistente', async () => {
@@ -162,7 +189,7 @@ describe('OnboardingDraftService', () => {
 
     it('aceita receita completa com refs válidas', async () => {
       await addAccount({ name: 'Principal', isMain: true });
-      await addAccount({ name: 'Reserva', autoReserveEnabled: true, autoReservePercentage: 20 });
+      await addAccount({ name: 'Reserva' });
       await addCategory(CategoryType.INCOME, 'Salário');
       const result = await service.addItem(
         TENANT_ID,
@@ -172,7 +199,6 @@ describe('OnboardingDraftService', () => {
           grossAmount: 500000,
           dayOfMonth: 5,
           incomeCategoryRef: 'cat_1',
-          reserveAccountRefs: ['acc_2'],
           targetAccountRef: 'acc_1',
         },
         'ai',
@@ -205,11 +231,24 @@ describe('OnboardingDraftService', () => {
       ).rejects.toMatchObject({ code: 'onboarding.draft.mainAccountDuplicate' });
     });
 
-    it('rejeita patch que marca reserva na conta já principal', async () => {
+    it('rejeita patch que ativa reserva sem informar conta de destino', async () => {
       await addAccount({ name: 'Principal', isMain: true });
       await expect(
         service.updateItem(TENANT_ID, 'acc_1', { autoReserveEnabled: true }, 'user'),
-      ).rejects.toMatchObject({ code: 'onboarding.draft.mainReserveConflict' });
+      ).rejects.toMatchObject({ code: 'onboarding.draft.autoReserveTargetRequired' });
+    });
+
+    it('aceita patch que ativa reserva na conta principal, apontando para outra conta', async () => {
+      await addAccount({ name: 'Principal', isMain: true });
+      await addAccount({ name: 'Reserva' });
+      const result = await service.updateItem(
+        TENANT_ID,
+        'acc_1',
+        { autoReserveEnabled: true, autoReservePercentage: 20, autoReserveTargetAccountRef: 'acc_2' },
+        'user',
+      );
+      expect(result.item.payload.autoReserveEnabled).toBe(true);
+      expect(result.item.payload.isMain).toBe(true);
     });
 
     it('retorna 404 para item inexistente', async () => {
