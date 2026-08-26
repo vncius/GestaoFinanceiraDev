@@ -8,7 +8,7 @@ import { CurrencyInput } from '../../../components/ui/CurrencyInput';
 import { DateInput } from '../../../components/ui/DateInput';
 import { CreateTransferPayload } from '../../../services/transfers.service';
 import { floatToCents, centsToFloat } from '../../../utils/money';
-import { toInputDate, todayISO } from '../../../utils/date';
+import { toInputDate, defaultEntryDateISO } from '../../../utils/date';
 import { useDialog } from '../../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../../utils/validation';
 import { Field, INPUT } from './shared';
@@ -28,6 +28,8 @@ export function TransferModal({
   item,
   accountId,
   accounts,
+  month,
+  year,
   onSave,
   isSaving,
   onRevert,
@@ -38,6 +40,8 @@ export function TransferModal({
   item?: TransferFlowItem;
   accountId: string;
   accounts: Account[];
+  month: number;
+  year: number;
   onSave: (data: CreateTransferPayload) => void;
   isSaving: boolean;
   onRevert?: (transferGroupId: string) => void;
@@ -63,7 +67,7 @@ export function TransferModal({
     return {
       description: '',
       amount: '',
-      date: todayISO(),
+      date: defaultEntryDateISO(month, year),
       sourceAccountId: accountId,
       targetAccountId: fallbackTarget,
       notes: '',

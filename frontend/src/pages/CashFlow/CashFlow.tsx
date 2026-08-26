@@ -491,6 +491,8 @@ export default function CashFlow() {
         item={modal?.type === 'transfer' ? modal.item : undefined}
         accountId={accountId}
         accounts={accounts as Account[]}
+        month={month}
+        year={year}
         onSave={saveTransfer}
         isSaving={transferSaving}
         onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}

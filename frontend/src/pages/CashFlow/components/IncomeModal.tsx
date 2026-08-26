@@ -8,7 +8,7 @@ import { CurrencyInput } from '../../../components/ui/CurrencyInput';
 import { DateInput } from '../../../components/ui/DateInput';
 import { CreateIncomePayload } from '../../../services/cash-flow.service';
 import { floatToCents, centsToFloat } from '../../../utils/money';
-import { toInputDate, firstDayOfMonthISO } from '../../../utils/date';
+import { toInputDate, defaultEntryDateISO } from '../../../utils/date';
 import { useDialog } from '../../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../../utils/validation';
 import { useRecurrenceLabels } from '../types';
@@ -61,7 +61,7 @@ export function IncomeModal({
     description: item?.description ?? '',
     categoryId: item?.categoryId ?? (incomeCategories[0]?.id ?? ''),
     amount: item ? String(centsToFloat(item.amount)) : '',
-    expectedDate: item ? toInputDate(item.expectedDate) : firstDayOfMonthISO(month, year),
+    expectedDate: item ? toInputDate(item.expectedDate) : defaultEntryDateISO(month, year),
     accountId: item?.targetAccountId ?? mainAccountId ?? '',
     notes: item?.notes ?? '',
     recurrence: item?.recurrence ?? 'UNIQUE',
