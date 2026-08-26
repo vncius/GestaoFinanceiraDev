@@ -371,6 +371,18 @@ export default function CashFlow() {
           clearAllDisabled={clearAllCount === 0}
         />
 
+        {/* Transferências entre contas */}
+        <TransferGrid
+          items={data.transfers}
+          onAdd={() => setModal({ type: 'transfer', mode: 'create' })}
+          onEdit={(item) => setModal({ type: 'transfer', mode: 'edit', item })}
+          onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
+          onDelete={handleDeleteTransfer}
+          pendingRevertId={transfersPendingRevertId}
+          pendingDeleteId={transfersPendingDeleteId}
+          locked={clearingAll}
+        />
+
         {/* Entradas */}
         <EntriesGrid
           items={filteredEntries}
@@ -414,18 +426,6 @@ export default function CashFlow() {
           onDelete={(item) => handleDeleteTransaction('extra-expense', item)}
           pendingToggleId={extrasPendingToggleId}
           pendingDeleteId={extrasPendingDeleteId}
-          locked={clearingAll}
-        />
-
-        {/* Transferências entre contas */}
-        <TransferGrid
-          items={data.transfers}
-          onAdd={() => setModal({ type: 'transfer', mode: 'create' })}
-          onEdit={(item) => setModal({ type: 'transfer', mode: 'edit', item })}
-          onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
-          onDelete={handleDeleteTransfer}
-          pendingRevertId={transfersPendingRevertId}
-          pendingDeleteId={transfersPendingDeleteId}
           locked={clearingAll}
         />
 
