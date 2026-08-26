@@ -418,13 +418,15 @@ export default function Dashboard() {
               )}
             />
           ))}
-          <StatCard
-            label={t('balances.total')}
-            value={formatCurrency(accounts.totalBalance)}
-            icon={<DollarSign size={18} className="text-purple-600 dark:text-purple-400" />}
-            iconBg="bg-purple-50 dark:bg-purple-900/30"
-            valueColor={identityColor(accounts.totalBalance, 'text-purple-700 dark:text-purple-400')}
-          />
+          {!scopedToAccount && (
+            <StatCard
+              label={t('balances.total')}
+              value={formatCurrency(accounts.totalBalance)}
+              icon={<DollarSign size={18} className="text-purple-600 dark:text-purple-400" />}
+              iconBg="bg-purple-50 dark:bg-purple-900/30"
+              valueColor={identityColor(accounts.totalBalance, 'text-purple-700 dark:text-purple-400')}
+            />
+          )}
         </div>
       </section>
 

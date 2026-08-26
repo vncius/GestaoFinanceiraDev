@@ -137,8 +137,8 @@ export class DashboardService {
     }
 
     // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────
-    // accounts.list/totalBalance continuam mostrando todas as contas nos dois
-    // modos — só o restante do dashboard é filtrado pelo escopo.
+    // Em modo por conta, accounts.list/totalBalance mostram só a conta
+    // selecionada — em modo consolidado, todas as contas ativas.
     // isReserve (E8): a flag de reserva automática agora fica na conta de
     // ORIGEM (não mais na própria conta marcada) — "é reserva" passa a
     // significar "é destino de alguma regra de reserva ativa".
@@ -147,7 +147,10 @@ export class DashboardService {
         .filter((a) => a.autoReserveEnabled && a.autoReserveTargetAccountId)
         .map((a) => a.autoReserveTargetAccountId as string),
     );
-    const accountBalances = activeAccounts.map((a) => ({
+    const balanceAccounts = scopedToAccount
+      ? activeAccounts.filter((a) => a.id === accountId)
+      : activeAccounts;
+    const accountBalances = balanceAccounts.map((a) => ({
       id: a.id,
       name: a.name,
       balance: calcAccountBalance(a, allTransactions),

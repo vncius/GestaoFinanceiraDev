@@ -128,7 +128,9 @@ export default function Report() {
           {accounts.list.map((a) => (
             <KeyValueRow key={a.id} label={a.name} value={formatCurrency(a.balance)} />
           ))}
-          <KeyValueRow label={t('balances.total')} value={formatCurrency(accounts.totalBalance)} bold />
+          {!scopedToAccount && (
+            <KeyValueRow label={t('balances.total')} value={formatCurrency(accounts.totalBalance)} bold />
+          )}
         </Section>
 
         <Section title={t('summary.sectionTitle', { monthYear: formatMonthYear(month, year) })}>
