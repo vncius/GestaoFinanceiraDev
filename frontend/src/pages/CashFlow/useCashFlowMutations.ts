@@ -125,15 +125,19 @@ export function useCashFlowMutations({
   });
 
   // ── Invoice mutations ────────────────────────────────────────────────────────
+  // O pagamento de fatura pode ser debitado de uma conta diferente da ativa
+  // (o modal deixa escolher livremente) — invalida como uma transferência,
+  // com prefixo amplo, para não deixar o fluxo de caixa da conta pagadora
+  // com dados desatualizados.
   const payInvoice = useMutation({
     mutationFn: ({ cardId, invoiceId, accountId }: { cardId: string; invoiceId: string; accountId?: string }) =>
       CreditCardsService.payInvoice(cardId, invoiceId, accountId ? { paymentAccountId: accountId } : undefined),
-    onSuccess: () => { invalidate(); clearInvoicePayTarget(); },
+    onSuccess: () => { invalidateTransfer(); clearInvoicePayTarget(); },
   });
   const revertInvoice = useMutation({
     mutationFn: ({ cardId, invoiceId }: { cardId: string; invoiceId: string }) =>
       CreditCardsService.revertInvoice(cardId, invoiceId),
-    onSuccess: invalidate,
+    onSuccess: invalidateTransfer,
   });
 
   // ── Transfer mutations ───────────────────────────────────────────────────────

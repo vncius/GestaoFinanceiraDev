@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AccountsService } from '../services/accounts.service';
 import { Account } from '../types';
 import { useAuth } from './AuthContext';
@@ -18,6 +18,7 @@ const storageKey = (tenantId: string) => `activeAccountId:${tenantId}`;
 export function AccountProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const tenantId = user?.tenantId ?? null;
+  const queryClient = useQueryClient();
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
@@ -44,8 +45,16 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [accounts, accountId]);
 
   function setAccountId(id: string) {
+    if (id === accountId) return;
     setAccountIdState(id);
     if (tenantId) localStorage.setItem(storageKey(tenantId), id);
+    // Reseta (em vez de só invalidar) as queries por conta: se o usuário já
+    // tinha visitado a conta de destino antes, o cache guardado dela pode
+    // estar desatualizado (ex.: uma transferência ou pagamento de fatura
+    // feito enquanto ele estava em outra conta) e sem isso ficaria visível
+    // por alguns segundos antes do refetch corrigir os números.
+    queryClient.resetQueries({ queryKey: ['dashboard'] });
+    queryClient.resetQueries({ queryKey: ['cashFlow'] });
   }
 
   const activeAccount = accounts.find((a) => a.id === accountId) ?? null;
