@@ -1,5 +1,16 @@
 import { FinancialTransaction, TransactionStatus } from '../financial-transactions/financial-transactions.types';
-import { CreditCardInvoice } from '../credit-cards/credit-cards.types';
+import { CreditCard, CreditCardInvoice } from '../credit-cards/credit-cards.types';
+import { Account } from '../accounts/accounts.types';
+
+// Retrato dos dados que o fluxo de caixa consome. Existe para que um chamador
+// que precise da mesma referência em várias contas (o dashboard consolidado)
+// leia cada coleção uma vez só, em vez de uma varredura completa por conta.
+export interface CashFlowDataset {
+  transactions: FinancialTransaction[];
+  accounts: Account[];
+  invoices: CreditCardInvoice[];
+  cards: CreditCard[];
+}
 
 // Perna de transferência (D5) sob a ótica da conta selecionada — não é o
 // FinancialTransaction cru porque o frontend precisa da contraparte (a outra

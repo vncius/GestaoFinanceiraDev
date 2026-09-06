@@ -1,12 +1,8 @@
-import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
   TransactionStatus,
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
-import { AccountsRepository } from '../accounts/accounts.repository';
-import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
-import { CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardEntriesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInstallmentsRepository } from '../credit-cards/credit-cards.repository';
 import { CardEntryType, CreditCardInvoice, InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
@@ -25,7 +21,7 @@ import {
 } from './dashboard.types';
 import { DashboardQuery } from './dashboard.schemas';
 import { CashFlowService } from '../cash-flow/cash-flow.service';
-import { CashFlowSummary } from '../cash-flow/cash-flow.types';
+import { CashFlowDataset, CashFlowSummary } from '../cash-flow/cash-flow.types';
 import { calcAccountBalance } from '../../shared/utils/balance.utils';
 
 const ZERO_SUMMARY: CashFlowSummary = {
@@ -69,11 +65,10 @@ function sumSummaries(a: CashFlowSummary, b: CashFlowSummary): CashFlowSummary {
 }
 
 export class DashboardService {
+  // Transações, contas, cartões e faturas vêm do retrato do CashFlowService
+  // (loadDataset) — o dashboard não lê essas coleções por conta própria, para
+  // não tirar um segundo retrato divergente do primeiro.
   constructor(
-    private readonly transactionsRepo: FinancialTransactionsRepository,
-    private readonly accountsRepo: AccountsRepository,
-    private readonly creditCardsRepo: CreditCardsRepository,
-    private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly cashFlowService: CashFlowService,
     private readonly categoriesRepo: CategoriesRepository,
     private readonly cardEntriesRepo: CreditCardEntriesRepository,
@@ -98,19 +93,19 @@ export class DashboardService {
     }
     const accountId = query.accountId ?? null;
 
-    const [
-      allTransactions,
-      allAccounts,
-      allCards,
-      allInvoices,
-      allCategories,
-      allCardEntries,
-      allInstallments,
-    ] = await Promise.all([
-      this.transactionsRepo.findAll(tenantId),
-      this.accountsRepo.findAll(tenantId),
-      this.creditCardsRepo.findAll(tenantId),
-      this.invoicesRepo.findAll(tenantId),
+    // Um retrato só dos dados do fluxo de caixa, compartilhado entre os
+    // cálculos daqui e os resumos por conta lá embaixo. Vem primeiro porque
+    // materializa a recorrência fixa da referência: ler as transações antes
+    // disso deixaria o dashboard com um retrato sem as ocorrências recém-criadas.
+    const cashFlowData: CashFlowDataset = await this.cashFlowService.loadDataset(tenantId, month, year);
+    const {
+      transactions: allTransactions,
+      accounts: allAccounts,
+      invoices: allInvoices,
+      cards: allCards,
+    } = cashFlowData;
+
+    const [allCategories, allCardEntries, allInstallments] = await Promise.all([
       this.categoriesRepo.findAll(tenantId),
       this.cardEntriesRepo.findAll(tenantId),
       this.installmentsRepo.findAll(tenantId),
@@ -131,17 +126,22 @@ export class DashboardService {
     // Resumo mensal centralizado no CashFlowService (fonte única de verdade):
     // em modo por conta, é o resumo da própria conta; em modo consolidado,
     // soma o resumo de cada conta ativa (mesma lógica de cálculo, sem duplicar
-    // regra de negócio aqui). Sequencial (não Promise.all) para não disparar
-    // ensureFixedTransactions em paralelo e materializar recorrência em duplicidade.
+    // regra de negócio aqui). Os dois caminhos reaproveitam o retrato já lido,
+    // então o custo não cresce com o número de contas.
     let monthSummary: CashFlowSummary;
     if (scopedToAccount) {
-      monthSummary = (await this.cashFlowService.getCashFlow(tenantId, { month, year, accountId: accountId! })).summary;
+      monthSummary = (
+        await this.cashFlowService.getCashFlow(tenantId, { month, year, accountId: accountId! }, cashFlowData)
+      ).summary;
     } else {
-      monthSummary = ZERO_SUMMARY;
-      for (const a of activeAccounts) {
-        const cf = await this.cashFlowService.getCashFlow(tenantId, { month, year, accountId: a.id });
-        monthSummary = sumSummaries(monthSummary, cf.summary);
-      }
+      const flows = await this.cashFlowService.getCashFlowMany(
+        tenantId,
+        month,
+        year,
+        activeAccounts.map((a) => a.id),
+        cashFlowData,
+      );
+      monthSummary = flows.reduce((acc, cf) => sumSummaries(acc, cf.summary), ZERO_SUMMARY);
     }
 
     // ── Saldos atuais das contas (não relativos ao mês) ─────────────────────────

@@ -33,6 +33,13 @@ export function connectMongo(): Promise<Db> {
   return connecting;
 }
 
+// Exposto para o controle de transações (mongo-transaction.ts), que precisa
+// abrir sessões no client — e devolve null antes do bootstrap, para que a
+// execução sem Mongo (testes com repositórios em memória) degrade sozinha.
+export function getClient(): MongoClient | null {
+  return client;
+}
+
 export function getDb(): Db {
   if (!db) {
     throw new Error('MongoDB ainda não conectado. Chame connectMongo() no bootstrap do servidor.');

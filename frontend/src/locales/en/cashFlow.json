@@ -202,7 +202,7 @@
       "title": "Edit fixed entry",
       "description": "is a fixed entry. Do you want to apply this change only to this reference, or to this one and all future ones? The history of already posted/paid/received references is never changed."
     },
-    "confirmClearAll": "Clear all {{count}} entr(y/ies) of this reference (income, payments and extra expenses)? This action cannot be undone.",
+    "confirmClearAll": "Clear all {{count}} entr(ies) in this reference (income, payments, extra expenses and transfers)? Deleted transfers also disappear from the counterpart account. This action cannot be undone.",
     "clearAllError": "Could not clear all entries of this reference.",
     "scopedClearAll": {
       "title": "Clear fixed entries",

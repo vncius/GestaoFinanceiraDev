@@ -387,25 +387,65 @@ describe('BackupService — CSV export', () => {
   });
 
   it('includes a header row and one row per transaction in range', async () => {
+    const conta = await ctx.accountsRepo.create(makeAccount(TENANT_ID, { name: 'Principal' }));
     await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
       description: 'Aluguel',
       amount: 150000,
       expectedDate: '2026-03-10',
+      sourceAccountId: conta.id,
     }));
     await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
       type: TransactionType.INCOME,
       description: 'Projeto X',
       amount: 500000,
       expectedDate: '2026-03-12',
+      targetAccountId: conta.id,
     }));
 
     const csv = await ctx.service.exportTransactionsCsv(TENANT_ID, { all: true } as never);
     const lines = csv.split('\r\n');
 
-    expect(lines[0]).toBe('Data;Tipo;Descrição;Categoria;Valor;Status');
+    expect(lines[0]).toBe('Data;Tipo;Descrição;Categoria;Conta;Contraparte;Valor;Status');
     expect(lines).toHaveLength(3);
-    expect(lines.some((l) => l.includes('Aluguel') && l.includes('1500,00'))).toBe(true);
-    expect(lines.some((l) => l.includes('Projeto X') && l.includes('5000,00'))).toBe(true);
+    // Saída sai negativa, entrada positiva — a coluna Valor é somável.
+    expect(lines.some((l) => l.includes('Aluguel') && l.includes('Principal') && l.includes('-1500,00'))).toBe(true);
+    expect(lines.some((l) => l.includes('Projeto X') && l.includes('Principal') && l.includes('5000,00'))).toBe(true);
+  });
+
+  it('exporta as duas pernas de uma transferência com sinais opostos e a conta contrária', async () => {
+    const pj = await ctx.accountsRepo.create(makeAccount(TENANT_ID, { name: 'PJ' }));
+    const principal = await ctx.accountsRepo.create(makeAccount(TENANT_ID, { name: 'Principal' }));
+    const transferGroupId = randomUUID();
+    await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
+      type: TransactionType.TRANSFER,
+      description: 'Repasse',
+      amount: 100000,
+      expectedDate: '2026-03-15',
+      sourceAccountId: pj.id,
+      transferGroupId,
+    }));
+    await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
+      type: TransactionType.TRANSFER,
+      description: 'Repasse',
+      amount: 100000,
+      expectedDate: '2026-03-15',
+      targetAccountId: principal.id,
+      transferGroupId,
+    }));
+
+    const csv = await ctx.service.exportTransactionsCsv(TENANT_ID, { all: true } as never);
+    const rows = csv.split('\r\n').slice(1).map((l) => l.split(';'));
+
+    const saida = rows.find((r) => r[4] === 'PJ')!;
+    const entrada = rows.find((r) => r[4] === 'Principal')!;
+    expect(saida[5]).toBe('Principal');
+    expect(saida[6]).toBe('-1000,00');
+    expect(entrada[5]).toBe('PJ');
+    expect(entrada[6]).toBe('1000,00');
+
+    // As duas pernas se anulam: somar a coluna Valor não infla mais o total.
+    const total = rows.reduce((s, r) => s + Number(r[6].replace(',', '.')), 0);
+    expect(total).toBe(0);
   });
 
   it('excludes entries outside the requested date range', async () => {

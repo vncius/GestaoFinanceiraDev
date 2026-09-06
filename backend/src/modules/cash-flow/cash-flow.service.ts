@@ -2,6 +2,7 @@ import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
 import { nowISO, addMonths, monthKey, monthYearOf } from '../../shared/utils/date.utils';
 import { calcAccountBalance } from '../../shared/utils/balance.utils';
+import { runInTransaction } from '../../shared/persistence/mongo-transaction';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -14,7 +15,7 @@ import { AccountsRepository } from '../accounts/accounts.repository';
 import { CreditCardsRepository, CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoice, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { TransfersService } from '../transfers/transfers.service';
-import { CashFlowResponse, TransferFlowItem } from './cash-flow.types';
+import { CashFlowDataset, CashFlowResponse, TransferFlowItem } from './cash-flow.types';
 import {
   CashFlowQuery,
   CreateTransactionInput,
@@ -50,22 +51,58 @@ export class CashFlowService {
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
 
-  async getCashFlow(tenantId: string, query: CashFlowQuery): Promise<CashFlowResponse> {
-    const { month, year, accountId } = query;
+  async getCashFlow(
+    tenantId: string,
+    query: CashFlowQuery,
+    dataset?: CashFlowDataset,
+  ): Promise<CashFlowResponse> {
+    const data = dataset ?? (await this.loadDataset(tenantId, query.month, query.year));
+    return this.buildCashFlow(data, query);
+  }
 
+  // Mesma referência em várias contas com uma leitura só de cada coleção. O
+  // dashboard consolidado chamava getCashFlow por conta ativa, e cada chamada
+  // relia tudo — o custo crescia linearmente com o número de contas.
+  async getCashFlowMany(
+    tenantId: string,
+    month: number,
+    year: number,
+    accountIds: string[],
+    dataset?: CashFlowDataset,
+  ): Promise<CashFlowResponse[]> {
+    const data = dataset ?? (await this.loadDataset(tenantId, month, year));
+    return accountIds.map((accountId) => this.buildCashFlow(data, { month, year, accountId }));
+  }
+
+  // Materializa a recorrência fixa da referência e devolve o retrato dos dados
+  // já com ela aplicada. Público para o dashboard tirar um retrato único e
+  // reaproveitá-lo tanto nos próprios cálculos quanto nos resumos por conta.
+  async loadDataset(tenantId: string, month: number, year: number): Promise<CashFlowDataset> {
     await this.ensureFixedTransactions(tenantId, month, year);
 
-    // Uma única leitura de cada arquivo — os filtros por mês e por intervalo
-    // (usados pelas previsões) são feitos em memória sobre esses arrays,
-    // em vez de buscar novamente no repositório por período.
-    const [allTransactions, account, allInvoices, allCards, allAccounts] = await Promise.all([
+    const [transactions, accounts, invoices, cards] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
-      this.accountsRepo.findById(accountId, tenantId),
+      this.accountsRepo.findAll(tenantId),
       this.creditCardInvoicesRepo?.findAll(tenantId) ?? Promise.resolve([]),
       this.creditCardsRepo?.findAll(tenantId) ?? Promise.resolve([]),
-      this.accountsRepo.findAll(tenantId),
     ]);
 
+    return { transactions, accounts, invoices, cards };
+  }
+
+  // Puramente em memória sobre o retrato recebido: os filtros por mês e por
+  // intervalo (usados pelas previsões) são feitos sobre esses arrays, em vez
+  // de buscar novamente no repositório por período.
+  private buildCashFlow(data: CashFlowDataset, query: CashFlowQuery): CashFlowResponse {
+    const { month, year, accountId } = query;
+    const {
+      transactions: allTransactions,
+      accounts: allAccounts,
+      invoices: allInvoices,
+      cards: allCards,
+    } = data;
+
+    const account = allAccounts.find((a) => a.id === accountId);
     if (!account) {
       throw new AppError('Conta não encontrada.', 404, 'account.notFound');
     }
@@ -365,22 +402,31 @@ export class CashFlowService {
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    await this.deleteTransactionChecked(id, TransactionType.INCOME, tenantId, scope, referenceMonth, referenceYear);
-    // A reserva automática só existe enquanto existir a entrada que a gerou:
-    // excluir a entrada cancela as duas pernas da transferência ligada a ela.
-    await this.transfersService?.cascadeCancelForOrigin(tenantId, id);
+    await runInTransaction(async () => {
+      await this.deleteTransactionChecked(id, TransactionType.INCOME, tenantId, scope, referenceMonth, referenceYear);
+      // A reserva automática só existe enquanto existir a entrada que a gerou:
+      // excluir a entrada cancela as duas pernas da transferência ligada a ela.
+      await this.transfersService?.cascadeCancelForOrigin(tenantId, id);
+    });
   }
 
+  // A baixa da entrada e a reserva automática que ela dispara são uma coisa
+  // só: sem a transação, uma falha ao gravar a transferência deixaria a
+  // entrada recebida e a reserva por fazer.
   async receiveIncome(id: string, tenantId: string, input: ReceiveActionInput): Promise<FinancialTransaction> {
-    const tx = await this.settleTransactionChecked(id, TransactionType.INCOME, tenantId, input?.actualDate, input?.amountReceived);
-    await this.applyAutoReserve(tenantId, tx);
-    return tx;
+    return runInTransaction(async () => {
+      const tx = await this.settleTransactionChecked(id, TransactionType.INCOME, tenantId, input?.actualDate, input?.amountReceived);
+      await this.applyAutoReserve(tenantId, tx);
+      return tx;
+    });
   }
 
   async revertIncome(id: string, tenantId: string): Promise<FinancialTransaction> {
-    const tx = await this.revertTransactionChecked(id, TransactionType.INCOME, tenantId);
-    await this.transfersService?.cascadeRevertForOrigin(tenantId, id);
-    return tx;
+    return runInTransaction(async () => {
+      const tx = await this.revertTransactionChecked(id, TransactionType.INCOME, tenantId);
+      await this.transfersService?.cascadeRevertForOrigin(tenantId, id);
+      return tx;
+    });
   }
 
   // ─── Reserva automática (E8) ─────────────────────────────────────────────────

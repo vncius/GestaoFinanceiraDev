@@ -265,13 +265,15 @@ export default function CashFlow() {
 
   const { summary } = data;
 
-  // ── Limpar referência (entradas, pagamentos e gastos extraordinários) ───────
+  // ── Limpar referência (entradas, pagamentos, gastos extras e transferências) ─
   // Cartões de crédito têm seu próprio botão de limpeza (fatura), por isso
   // ficam de fora aqui.
   const allEntries = data.entries;
   const allPayments = data.payments;
   const allExtraExpenses = data.extraExpenses;
-  const clearAllCount = allEntries.length + allPayments.length + allExtraExpenses.length;
+  const allTransfers = data.transfers;
+  const clearAllCount =
+    allEntries.length + allPayments.length + allExtraExpenses.length + allTransfers.length;
   const hasFixedToClear =
     allEntries.some((i) => i.recurrence === 'FIXED') ||
     allPayments.some((i) => i.recurrence === 'FIXED') ||
@@ -297,6 +299,15 @@ export default function CashFlow() {
         await deleteExtra.mutateAsync(
           item.recurrence === 'FIXED' ? { id: item.id, scope, month, year } : { id: item.id },
         );
+      }
+      // Transferências sempre são únicas (não têm recorrência fixa), então não
+      // entram no escopo atual/futuras — mas a perna excluída aqui leva junto a
+      // da outra conta, porque o cancelamento é por transferGroupId.
+      for (const item of allTransfers) {
+        if (item.status === 'PAID' || item.status === 'RECEIVED') {
+          await revertTransfer.mutateAsync(item.transferGroupId);
+        }
+        await deleteTransfer.mutateAsync(item.transferGroupId);
       }
     } catch (err) {
       showError(err instanceof Error ? err.message : t('page.clearAllError'));

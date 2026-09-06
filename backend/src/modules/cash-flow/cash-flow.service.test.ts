@@ -634,3 +634,114 @@ describe('CashFlowService — bordas da reserva automática', () => {
     expect(flow.summary.transferInflow).toBe(300000);
   });
 });
+
+describe('CashFlowService — retrato compartilhado entre contas (dashboard)', () => {
+  let ctx: ReturnType<typeof buildServiceWithTransfers>;
+
+  beforeEach(() => {
+    ctx = buildServiceWithTransfers();
+  });
+
+  // Conta quantas varreduras completas de transações uma operação dispara.
+  function countReads(repo: FakeTransactionsRepo): () => number {
+    let reads = 0;
+    const original = repo.findAll.bind(repo);
+    repo.findAll = async (tenantId: string) => {
+      reads += 1;
+      return original(tenantId);
+    };
+    return () => reads;
+  }
+
+  async function seedAccounts(n: number): Promise<string[]> {
+    const ids: string[] = [];
+    for (let i = 0; i < n; i += 1) {
+      const account = await seedAccount(ctx.accountsRepo, { name: `Conta ${i}`, initialBalance: 1000 * i });
+      ids.push(account.id);
+    }
+    return ids;
+  }
+
+  it('getCashFlowMany devolve exatamente os mesmos resumos das chamadas individuais', async () => {
+    const { service, transfersService } = ctx;
+    const ids = await seedAccounts(3);
+    await service.createIncome(TENANT_ID, ids[0], {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 500000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: ids[0],
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await transfersService.createTransfer(TENANT_ID, {
+      sourceAccountId: ids[0],
+      targetAccountId: ids[1],
+      amount: 120000,
+      date: '2026-08-10T00:00:00.000Z',
+      description: 'Repasse',
+    });
+
+    const many = await service.getCashFlowMany(TENANT_ID, 8, 2026, ids);
+    const individual = [];
+    for (const accountId of ids) {
+      individual.push(await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId }));
+    }
+
+    expect(many.map((f) => f.summary)).toEqual(individual.map((f) => f.summary));
+    expect(many.map((f) => f.transfers)).toEqual(individual.map((f) => f.transfers));
+  });
+
+  it('getCashFlowMany não relê as transações a cada conta', async () => {
+    const { service, transactionsRepo } = ctx;
+    const few = await seedAccounts(2);
+    const reads = countReads(transactionsRepo);
+
+    await service.getCashFlowMany(TENANT_ID, 8, 2026, few);
+    const afterFew = reads();
+
+    const many = [...few, ...(await seedAccounts(6))];
+    await service.getCashFlowMany(TENANT_ID, 8, 2026, many);
+    const afterMany = reads() - afterFew;
+
+    // Custo constante: 8 contas custam o mesmo que 2.
+    expect(afterMany).toBe(afterFew);
+  });
+
+  it('getCashFlow ainda funciona sozinho, lendo os próprios dados', async () => {
+    const { service } = ctx;
+    const [accountId] = await seedAccounts(1);
+
+    const flow = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId });
+
+    expect(flow.month).toBe(8);
+    expect(flow.year).toBe(2026);
+  });
+
+  it('getCashFlow com uma conta inexistente no retrato continua devolvendo account.notFound', async () => {
+    const { service } = ctx;
+    await seedAccounts(1);
+
+    await expect(
+      service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: randomUUID() }),
+    ).rejects.toMatchObject({ code: 'account.notFound' });
+  });
+
+  it('loadDataset materializa a recorrência fixa antes de tirar o retrato', async () => {
+    const { service, accountsRepo } = ctx;
+    const account = await seedAccount(accountsRepo);
+    await service.createPayment(TENANT_ID, account.id, {
+      description: 'Aluguel',
+      categoryId: randomUUID(),
+      amount: 150000,
+      expectedDate: '2026-08-10T00:00:00.000Z',
+      sourceAccountId: account.id,
+      recurrence: RecurrenceType.FIXED,
+    });
+
+    const dataset = await service.loadDataset(TENANT_ID, 10, 2026);
+
+    // Agosto (original), setembro e outubro (materializados na leitura).
+    const alugueis = dataset.transactions.filter((t) => t.description === 'Aluguel');
+    expect(alugueis.length).toBe(3);
+  });
+});

@@ -202,7 +202,7 @@
       "title": "Alterar lançamento fixo",
       "description": "é um lançamento fixo. Deseja aplicar esta alteração apenas a esta referência, ou a esta e a todas as futuras? O histórico de referências já lançadas/pagas/recebidas nunca é alterado."
     },
-    "confirmClearAll": "Limpar todos os {{count}} lançamento(s) desta referência (entradas, pagamentos e gastos extraordinários)? Esta ação não pode ser desfeita.",
+    "confirmClearAll": "Limpar todos os {{count}} lançamento(s) desta referência (entradas, pagamentos, gastos extraordinários e transferências)? Transferências excluídas também somem da conta contrária. Esta ação não pode ser desfeita.",
     "clearAllError": "Não foi possível limpar todos os lançamentos desta referência.",
     "scopedClearAll": {
       "title": "Limpar lançamentos fixos",

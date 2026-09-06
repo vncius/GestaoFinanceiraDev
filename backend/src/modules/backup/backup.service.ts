@@ -151,12 +151,24 @@ export class BackupService {
   // ─── Exportação CSV de lançamentos ─────────────────────────────────────────────
 
   async exportTransactionsCsv(tenantId: string, query: ExportCsvQuery): Promise<string> {
-    const [transactions, categories] = await Promise.all([
+    const [transactions, categories, accounts] = await Promise.all([
       this.transactionsRepo.findAll(tenantId),
       this.categoriesRepo.findAll(tenantId),
+      this.accountsRepo.findAll(tenantId),
     ]);
 
     const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+    const accountName = new Map(accounts.map((a) => [a.id, a.name]));
+
+    // Pernas de transferência indexadas pelo grupo, para resolver a conta da
+    // contraparte sem varrer a lista inteira a cada linha.
+    const legsByGroup = new Map<string, FinancialTransaction[]>();
+    for (const t of transactions) {
+      if (t.type !== TransactionType.TRANSFER || !t.transferGroupId) continue;
+      const group = legsByGroup.get(t.transferGroupId) ?? [];
+      group.push(t);
+      legsByGroup.set(t.transferGroupId, group);
+    }
 
     const inRange = (dateISO: string): boolean => {
       if (query.all) return true;
@@ -164,31 +176,62 @@ export class BackupService {
       return day >= query.from! && day <= query.to!;
     };
 
-    type Row = { date: string; type: string; description: string; category: string; amount: number; status: string };
+    const nameOf = (accountId: string | null): string =>
+      accountId ? accountName.get(accountId) ?? '' : '';
+
+    // Conta da contraparte: só faz sentido para transferência, onde a outra
+    // perna vive em outra conta. Nos demais tipos a coluna fica vazia.
+    const counterpartOf = (t: FinancialTransaction): string => {
+      if (t.type !== TransactionType.TRANSFER || !t.transferGroupId) return '';
+      const sibling = (legsByGroup.get(t.transferGroupId) ?? []).find((l) => l.id !== t.id);
+      if (!sibling) return '';
+      return nameOf(sibling.targetAccountId ?? sibling.sourceAccountId);
+    };
+
+    type Row = {
+      date: string;
+      type: string;
+      description: string;
+      category: string;
+      account: string;
+      counterpart: string;
+      amount: number;
+      status: string;
+    };
 
     const rows: Row[] = transactions
       .filter((t) => inRange(t.expectedDate))
-      .map((t) => ({
-        date: t.expectedDate.slice(0, 10),
-        // Reserva automática (E8) é uma TRANSFER como qualquer outra, mas
-        // ganha rótulo próprio no CSV para não se confundir com
-        // transferências manuais do usuário.
-        type: t.type === TransactionType.TRANSFER && t.originType === OriginType.AUTO_RESERVE
-          ? 'Reserva Automática'
-          : TX_TYPE_LABELS[t.type] ?? t.type,
-        description: t.description,
-        category: t.categoryId ? categoryName.get(t.categoryId) ?? '' : '',
-        amount: t.amount,
-        status: t.status,
-      }))
+      .map((t) => {
+        // Quem recebe entra positivo, quem paga entra negativo — sem isso as
+        // duas pernas de uma transferência apareciam ambas positivas e somar
+        // a coluna Valor inflava o total no dobro do valor transferido.
+        const isInflow = t.targetAccountId !== null;
+        return {
+          date: t.expectedDate.slice(0, 10),
+          // Reserva automática (E8) é uma TRANSFER como qualquer outra, mas
+          // ganha rótulo próprio no CSV para não se confundir com
+          // transferências manuais do usuário.
+          type: t.type === TransactionType.TRANSFER && t.originType === OriginType.AUTO_RESERVE
+            ? 'Reserva Automática'
+            : TX_TYPE_LABELS[t.type] ?? t.type,
+          description: t.description,
+          category: t.categoryId ? categoryName.get(t.categoryId) ?? '' : '',
+          account: nameOf(t.targetAccountId ?? t.sourceAccountId),
+          counterpart: counterpartOf(t),
+          amount: isInflow ? t.amount : -t.amount,
+          status: t.status,
+        };
+      })
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    const header = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Valor', 'Status'];
+    const header = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta', 'Contraparte', 'Valor', 'Status'];
     const lines = [header, ...rows.map((r) => [
       formatDateBR(r.date),
       r.type,
       r.description,
       r.category,
+      r.account,
+      r.counterpart,
       formatAmountBR(r.amount),
       r.status,
     ])];

@@ -9,6 +9,7 @@ import {
   TransactionStatus,
   TransactionType,
 } from '../financial-transactions/financial-transactions.types';
+import { runInTransaction } from '../../shared/persistence/mongo-transaction';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { CreateTransferInput, UpdateTransferInput } from './transfers.schemas';
 import { TransferPair } from './transfers.types';
@@ -95,24 +96,31 @@ export class TransfersService {
     // nas duas pernas), fica fora dos saldos realizados e só entra neles
     // quando o usuário a efetiva pelo joinha (settleTransfer).
     const settled = input.settled ?? !this.isScheduledForFuture(input.date);
-    const outgoing = await this.transactionsRepo.create({
-      ...base,
-      id: generateId(),
-      status: settled ? TransactionStatus.PAID : TransactionStatus.PENDING,
-      actualDate: settled ? input.date : null,
-      sourceAccountId: input.sourceAccountId,
-      targetAccountId: null,
-    });
-    const incoming = await this.transactionsRepo.create({
-      ...base,
-      id: generateId(),
-      status: settled ? TransactionStatus.RECEIVED : TransactionStatus.PENDING,
-      actualDate: settled ? input.date : null,
-      sourceAccountId: null,
-      targetAccountId: input.targetAccountId,
-    });
+    const outgoingId = generateId();
+    const incomingId = generateId();
 
-    return { transferGroupId, outgoing, incoming };
+    // As duas pernas nascem juntas ou não nascem: sem a transação, uma falha
+    // entre os dois inserts deixaria metade de uma transferência no banco.
+    return runInTransaction(async () => {
+      const outgoing = await this.transactionsRepo.create({
+        ...base,
+        id: outgoingId,
+        status: settled ? TransactionStatus.PAID : TransactionStatus.PENDING,
+        actualDate: settled ? input.date : null,
+        sourceAccountId: input.sourceAccountId,
+        targetAccountId: null,
+      });
+      const incoming = await this.transactionsRepo.create({
+        ...base,
+        id: incomingId,
+        status: settled ? TransactionStatus.RECEIVED : TransactionStatus.PENDING,
+        actualDate: settled ? input.date : null,
+        sourceAccountId: null,
+        targetAccountId: input.targetAccountId,
+      });
+
+      return { transferGroupId, outgoing, incoming };
+    });
   }
 
   async updateTransfer(transferGroupId: string, tenantId: string, input: UpdateTransferInput): Promise<TransferPair> {
@@ -144,18 +152,20 @@ export class TransfersService {
       }
     }
 
-    const updatedOutgoing = await this.transactionsRepo.update(
-      outgoing.id,
-      { ...sharedPatch, sourceAccountId: nextSourceAccountId },
-      tenantId,
-    );
-    const updatedIncoming = await this.transactionsRepo.update(
-      incoming.id,
-      { ...sharedPatch, targetAccountId: nextTargetAccountId },
-      tenantId,
-    );
+    return runInTransaction(async () => {
+      const updatedOutgoing = await this.transactionsRepo.update(
+        outgoing.id,
+        { ...sharedPatch, sourceAccountId: nextSourceAccountId },
+        tenantId,
+      );
+      const updatedIncoming = await this.transactionsRepo.update(
+        incoming.id,
+        { ...sharedPatch, targetAccountId: nextTargetAccountId },
+        tenantId,
+      );
 
-    return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+      return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+    });
   }
 
   async deleteTransfer(transferGroupId: string, tenantId: string): Promise<void> {
@@ -169,9 +179,11 @@ export class TransfersService {
     }
 
     const now = nowISO();
-    for (const leg of legs) {
-      await this.transactionsRepo.update(leg.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
-    }
+    await runInTransaction(async () => {
+      for (const leg of legs) {
+        await this.transactionsRepo.update(leg.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
+      }
+    });
   }
 
   // Efetivação pelo joinha, espelhando payPayment/receiveIncome: as duas
@@ -185,17 +197,19 @@ export class TransfersService {
 
     const now = nowISO();
     const effectiveDate = actualDate ?? outgoing.expectedDate;
-    const updatedOutgoing = await this.transactionsRepo.update(
-      outgoing.id,
-      { status: TransactionStatus.PAID, expectedDate: effectiveDate, actualDate: now, updatedAt: now },
-      tenantId,
-    );
-    const updatedIncoming = await this.transactionsRepo.update(
-      incoming.id,
-      { status: TransactionStatus.RECEIVED, expectedDate: effectiveDate, actualDate: now, updatedAt: now },
-      tenantId,
-    );
-    return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+    return runInTransaction(async () => {
+      const updatedOutgoing = await this.transactionsRepo.update(
+        outgoing.id,
+        { status: TransactionStatus.PAID, expectedDate: effectiveDate, actualDate: now, updatedAt: now },
+        tenantId,
+      );
+      const updatedIncoming = await this.transactionsRepo.update(
+        incoming.id,
+        { status: TransactionStatus.RECEIVED, expectedDate: effectiveDate, actualDate: now, updatedAt: now },
+        tenantId,
+      );
+      return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+    });
   }
 
   async revertTransfer(transferGroupId: string, tenantId: string): Promise<TransferPair> {
@@ -238,9 +252,11 @@ export class TransfersService {
       (t) => t.type === TransactionType.TRANSFER && t.status !== TransactionStatus.CANCELED,
     );
     const now = nowISO();
-    for (const leg of legs) {
-      await this.transactionsRepo.update(leg.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
-    }
+    await runInTransaction(async () => {
+      for (const leg of legs) {
+        await this.transactionsRepo.update(leg.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
+      }
+    });
   }
 
   // Reaplica a reserva ligada a uma entrada: cria o par na primeira vez;
@@ -263,17 +279,19 @@ export class TransfersService {
     }
 
     const now = nowISO();
-    const updatedOutgoing = await this.transactionsRepo.update(
-      outgoing.id,
-      { status: TransactionStatus.PAID, amount: input.amount, expectedDate: input.date, actualDate: input.date, updatedAt: now },
-      tenantId,
-    );
-    const updatedIncoming = await this.transactionsRepo.update(
-      incoming.id,
-      { status: TransactionStatus.RECEIVED, amount: input.amount, expectedDate: input.date, actualDate: input.date, updatedAt: now },
-      tenantId,
-    );
-    return { transferGroupId: outgoing.transferGroupId as string, outgoing: updatedOutgoing, incoming: updatedIncoming };
+    return runInTransaction(async () => {
+      const updatedOutgoing = await this.transactionsRepo.update(
+        outgoing.id,
+        { status: TransactionStatus.PAID, amount: input.amount, expectedDate: input.date, actualDate: input.date, updatedAt: now },
+        tenantId,
+      );
+      const updatedIncoming = await this.transactionsRepo.update(
+        incoming.id,
+        { status: TransactionStatus.RECEIVED, amount: input.amount, expectedDate: input.date, actualDate: input.date, updatedAt: now },
+        tenantId,
+      );
+      return { transferGroupId: outgoing.transferGroupId as string, outgoing: updatedOutgoing, incoming: updatedIncoming };
+    });
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -300,17 +318,19 @@ export class TransfersService {
     tenantId: string,
   ): Promise<[FinancialTransaction, FinancialTransaction]> {
     const now = nowISO();
-    const updatedOutgoing = await this.transactionsRepo.update(
-      outgoing.id,
-      { status: TransactionStatus.PENDING, actualDate: null, updatedAt: now },
-      tenantId,
-    );
-    const updatedIncoming = await this.transactionsRepo.update(
-      incoming.id,
-      { status: TransactionStatus.PENDING, actualDate: null, updatedAt: now },
-      tenantId,
-    );
-    return [updatedOutgoing, updatedIncoming];
+    return runInTransaction(async () => {
+      const updatedOutgoing = await this.transactionsRepo.update(
+        outgoing.id,
+        { status: TransactionStatus.PENDING, actualDate: null, updatedAt: now },
+        tenantId,
+      );
+      const updatedIncoming = await this.transactionsRepo.update(
+        incoming.id,
+        { status: TransactionStatus.PENDING, actualDate: null, updatedAt: now },
+        tenantId,
+      );
+      return [updatedOutgoing, updatedIncoming] as [FinancialTransaction, FinancialTransaction];
+    });
   }
 
   private async assertDifferentActiveAccounts(
