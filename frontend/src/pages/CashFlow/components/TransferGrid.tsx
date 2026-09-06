@@ -1,27 +1,30 @@
-import { ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TransferFlowItem } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { formatCurrency } from '../../../utils/money';
 import { formatDate } from '../../../utils/date';
-import { ActionBtn, COL_ACOES, COL_CONTA, COL_DATA, COL_VALOR, COL_VALOR_SECUNDARIO, GridHeader } from './shared';
+import { ActionBtn, COL_ACOES, COL_CONTA, COL_DATA, COL_VALOR, COL_VALOR_SECUNDARIO, GridHeader, PaidToggle } from './shared';
 
 export function TransferGrid({
   items,
   onAdd,
   onEdit,
+  onSettle,
   onRevert,
   onDelete,
-  pendingRevertId,
+  pendingToggleId,
   pendingDeleteId,
   locked = false,
 }: {
   items: TransferFlowItem[];
   onAdd: () => void;
   onEdit: (item: TransferFlowItem) => void;
+  onSettle: (transferGroupId: string) => void;
   onRevert: (transferGroupId: string) => void;
   onDelete: (item: TransferFlowItem) => void;
-  pendingRevertId?: string | null;
+  // Efetivar e reverter compartilham o mesmo joinha, logo o mesmo id de pendência.
+  pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
   locked?: boolean;
 }) {
@@ -55,8 +58,9 @@ export function TransferGrid({
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((item) => {
-                const rowLocked = locked || pendingDeleteId === item.transferGroupId || pendingRevertId === item.transferGroupId;
+                const rowLocked = locked || pendingDeleteId === item.transferGroupId || pendingToggleId === item.transferGroupId;
                 const isIn = item.direction === 'IN';
+                const isSettled = item.status === 'PAID' || item.status === 'RECEIVED';
                 const isPending = item.status === 'PENDING';
                 return (
                   <tr
@@ -91,43 +95,46 @@ export function TransferGrid({
                       {formatDate(item.expectedDate)}
                     </td>
                     <td className={`${COL_ACOES} px-1 sm:px-3 py-3`} onClick={(e) => e.stopPropagation()}>
-                      <div
-                        className={`hidden md:flex items-center justify-end gap-0.5 transition-opacity ${
-                          rowLocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        }`}
-                      >
-                        {item.status !== 'CANCELED' && (
-                          <ActionBtn
-                            title={t('grid.actions.edit')}
-                            onClick={() => onEdit(item)}
-                            disabled={rowLocked}
-                            className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <Pencil size={14} />
-                          </ActionBtn>
-                        )}
-                        {!isPending && (
-                          <ActionBtn
-                            title={t('transferGrid.revert')}
-                            onClick={() => onRevert(item.transferGroupId)}
-                            loading={pendingRevertId === item.transferGroupId}
+                      <div className="flex items-center justify-end gap-0.5">
+                        {(isPending || isSettled) && (
+                          <PaidToggle
+                            paid={isSettled}
+                            loading={pendingToggleId === item.transferGroupId}
                             disabled={locked || pendingDeleteId === item.transferGroupId}
-                            className="text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                          >
-                            <RotateCcw size={14} />
-                          </ActionBtn>
+                            onToggle={() =>
+                              isSettled ? onRevert(item.transferGroupId) : onSettle(item.transferGroupId)
+                            }
+                            paidTitle={t('transferGrid.revert')}
+                            unpaidTitle={t('transferGrid.settle')}
+                          />
                         )}
-                        {isPending && (
-                          <ActionBtn
-                            title={t('grid.actions.delete')}
-                            onClick={() => onDelete(item)}
-                            loading={pendingDeleteId === item.transferGroupId}
-                            disabled={locked || pendingRevertId === item.transferGroupId}
-                            className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-                          >
-                            <Trash2 size={14} />
-                          </ActionBtn>
-                        )}
+                        <div
+                          className={`hidden md:flex items-center gap-0.5 transition-opacity ${
+                            rowLocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          }`}
+                        >
+                          {item.status !== 'CANCELED' && (
+                            <ActionBtn
+                              title={t('grid.actions.edit')}
+                              onClick={() => onEdit(item)}
+                              disabled={rowLocked}
+                              className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <Pencil size={14} />
+                            </ActionBtn>
+                          )}
+                          {(isPending || isSettled) && (
+                            <ActionBtn
+                              title={t('grid.actions.delete')}
+                              onClick={() => onDelete(item)}
+                              loading={pendingDeleteId === item.transferGroupId}
+                              disabled={locked || pendingToggleId === item.transferGroupId}
+                              className="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                            >
+                              <Trash2 size={14} />
+                            </ActionBtn>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>

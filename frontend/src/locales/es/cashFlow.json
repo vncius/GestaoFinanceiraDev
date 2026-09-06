@@ -82,6 +82,7 @@
     "fromLabel": "De {{account}}",
     "toLabel": "Para {{account}}",
     "autoReserveBadge": "Reserva automática",
+    "settle": "Efectivizar transferencia",
     "revert": "Revertir transferencia",
     "emptyState": {
       "title": "Ninguna transferencia este mes"
@@ -168,6 +169,7 @@
     },
     "delete": "Eliminar",
     "cancel": "Cancelar",
+    "settle": "Efectivizar",
     "revert": "Revertir",
     "save": "Guardar",
     "fields": {

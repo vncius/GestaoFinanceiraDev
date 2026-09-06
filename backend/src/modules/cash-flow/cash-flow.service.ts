@@ -168,9 +168,12 @@ export class CashFlowService {
         inSelectedMonth(dateKey(t.expectedDate)),
     );
     const transfers: TransferFlowItem[] = transferLegs.map((leg) => {
-      const sibling = allTransactions.find(
-        (t) => t.transferGroupId === leg.transferGroupId && t.id !== leg.id,
-      );
+      // Sem o guarda de null uma perna legada sem transferGroupId casaria com
+      // a primeira transação comum do tenant (todas têm transferGroupId null)
+      // e exibiria um pagamento qualquer como contraparte.
+      const sibling = leg.transferGroupId
+        ? allTransactions.find((t) => t.transferGroupId === leg.transferGroupId && t.id !== leg.id)
+        : undefined;
       const counterpartAccountId = sibling ? sibling.sourceAccountId ?? sibling.targetAccountId ?? '' : '';
       return {
         id: leg.id,
@@ -288,6 +291,10 @@ export class CashFlowService {
         paidExtraExpenses,
         creditCardInvoices: creditCardInvoicesTotal,
         paidCreditCardInvoices: paidCreditCards,
+        transferInflow: transferInflowRealized,
+        expectedTransferInflow: transferInflowExpected,
+        transferOutflow: transferOutflowRealized,
+        expectedTransferOutflow: transferOutflowExpected,
         projectedBalance:
           projectedInitialBalance +
           expectedIncome +
@@ -358,7 +365,10 @@ export class CashFlowService {
     referenceMonth?: number,
     referenceYear?: number,
   ): Promise<void> {
-    return this.deleteTransactionChecked(id, TransactionType.INCOME, tenantId, scope, referenceMonth, referenceYear);
+    await this.deleteTransactionChecked(id, TransactionType.INCOME, tenantId, scope, referenceMonth, referenceYear);
+    // A reserva automática só existe enquanto existir a entrada que a gerou:
+    // excluir a entrada cancela as duas pernas da transferência ligada a ela.
+    await this.transfersService?.cascadeCancelForOrigin(tenantId, id);
   }
 
   async receiveIncome(id: string, tenantId: string, input: ReceiveActionInput): Promise<FinancialTransaction> {
@@ -390,6 +400,11 @@ export class CashFlowService {
     if (!account?.autoReserveEnabled || !account.autoReserveTargetAccountId || account.autoReservePercentage <= 0) {
       return;
     }
+    // Conta de destino desativada depois de a regra ter sido criada: a perna
+    // de entrada cairia numa conta que o dashboard não lista, fazendo o valor
+    // sumir do consolidado. Melhor a regra ficar inerte até o usuário corrigi-la.
+    const reserveTarget = await this.accountsRepo.findById(account.autoReserveTargetAccountId, tenantId);
+    if (!reserveTarget?.active) return;
     const reserveAmount = Math.round((income.amount * account.autoReservePercentage) / 100);
     if (reserveAmount <= 0) return;
 
@@ -397,7 +412,10 @@ export class CashFlowService {
       sourceAccountId: account.id,
       targetAccountId: account.autoReserveTargetAccountId,
       amount: reserveAmount,
-      date: income.actualDate ?? income.expectedDate,
+      // Data do fato financeiro (a da entrada), não o timestamp da baixa:
+      // actualDate guarda o instante do clique, e usá-lo jogaria a reserva de
+      // uma entrada retroativa para o mês corrente.
+      date: income.expectedDate,
       description: `Reserva automática — ${income.description}`,
     });
   }

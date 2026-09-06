@@ -66,8 +66,14 @@ export function SummaryBar({
   onToggleExpanded: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
-  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
-  const totalExpected = s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices;
+  // Transferências entram nas mesmas linhas dos demais lançamentos: a perna
+  // que chega na conta selecionada é entrada, a que sai é saída. Sem isso o
+  // Saldo Final (que já as considera) não fecharia com Inicial + Entradas − Saídas.
+  const totalReceived = s.receivedIncome + s.transferInflow;
+  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices + s.transferOutflow;
+  const totalExpectedIncome = s.expectedIncome + s.expectedTransferInflow;
+  const totalExpected =
+    s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices + s.expectedTransferOutflow;
 
   const saldoColor = s.realizedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
   const prevSaldoColor = s.projectedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
@@ -78,7 +84,7 @@ export function SummaryBar({
       <div className="flex items-center px-3 sm:px-6 py-2.5">
         <SummaryRow>
           <SummaryCell label={t('summaryBar.initial')} tooltip={t('summaryBar.initialTooltip')} value={s.initialBalance} color={initialColor} />
-          <SummaryCell label={t('summaryBar.income')} value={s.receivedIncome} color="text-green-600 dark:text-green-400" />
+          <SummaryCell label={t('summaryBar.income')} value={totalReceived} color="text-green-600 dark:text-green-400" />
           <SummaryCell label={t('summaryBar.expense')} value={totalPaid} color="text-red-500 dark:text-red-400" />
           <SummaryCell label={t('summaryBar.finalBalance')} tooltip={t('summaryBar.finalBalanceTooltip')} value={s.realizedBalance} color={saldoColor} bold border={false} />
         </SummaryRow>
@@ -97,7 +103,7 @@ export function SummaryBar({
         <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
           <SummaryRow>
             <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
-            <SummaryCell label={t('summaryBar.expectedIncome')} value={s.expectedIncome} color="text-green-600 dark:text-green-400" />
+            <SummaryCell label={t('summaryBar.expectedIncome')} value={totalExpectedIncome} color="text-green-600 dark:text-green-400" />
             <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
             <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
           </SummaryRow>

@@ -39,6 +39,10 @@ const ZERO_SUMMARY: CashFlowSummary = {
   paidExtraExpenses: 0,
   creditCardInvoices: 0,
   paidCreditCardInvoices: 0,
+  transferInflow: 0,
+  expectedTransferInflow: 0,
+  transferOutflow: 0,
+  expectedTransferOutflow: 0,
   projectedBalance: 0,
   realizedBalance: 0,
 };
@@ -55,6 +59,10 @@ function sumSummaries(a: CashFlowSummary, b: CashFlowSummary): CashFlowSummary {
     paidExtraExpenses: a.paidExtraExpenses + b.paidExtraExpenses,
     creditCardInvoices: a.creditCardInvoices + b.creditCardInvoices,
     paidCreditCardInvoices: a.paidCreditCardInvoices + b.paidCreditCardInvoices,
+    transferInflow: a.transferInflow + b.transferInflow,
+    expectedTransferInflow: a.expectedTransferInflow + b.expectedTransferInflow,
+    transferOutflow: a.transferOutflow + b.transferOutflow,
+    expectedTransferOutflow: a.expectedTransferOutflow + b.expectedTransferOutflow,
     projectedBalance: a.projectedBalance + b.projectedBalance,
     realizedBalance: a.realizedBalance + b.realizedBalance,
   };

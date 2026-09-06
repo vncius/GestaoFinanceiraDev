@@ -10,9 +10,11 @@
     "sectionTitle": "Resumo de {{monthYear}}",
     "initialBalance": "Saldo inicial",
     "receivedIncome": "Entradas recebidas",
+    "transfersIn": "Transferências recebidas",
     "payments": "Pagamentos",
     "extraExpenses": "Gastos extras",
     "creditCardInvoices": "Faturas de cartão",
+    "transfersOut": "Transferências enviadas",
     "totalExpenses": "Total de saídas",
     "finalBalance": "Saldo final"
   },

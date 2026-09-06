@@ -102,7 +102,10 @@ export default function Report() {
   if (isLoading || !data) return <PageLoading />;
 
   const { accounts, monthSummary: s, monthlyEvolution, categoryBreakdown } = data;
-  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
+  // Transferências entram no resumo como linhas próprias: a perna que sai
+  // soma nas saídas, a que entra fica logo abaixo das entradas. Sem elas o
+  // saldo final (que já as considera) não fecharia com as parcelas listadas.
+  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices + s.transferOutflow;
 
   return (
     <div className="min-h-screen bg-white">
@@ -136,9 +139,11 @@ export default function Report() {
         <Section title={t('summary.sectionTitle', { monthYear: formatMonthYear(month, year) })}>
           <KeyValueRow label={t('summary.initialBalance')} value={formatCurrency(s.initialBalance)} />
           <KeyValueRow label={t('summary.receivedIncome')} value={formatCurrency(s.receivedIncome)} />
+          <KeyValueRow label={t('summary.transfersIn')} value={formatCurrency(s.transferInflow)} />
           <KeyValueRow label={t('summary.payments')} value={formatCurrency(s.paidPayments)} />
           <KeyValueRow label={t('summary.extraExpenses')} value={formatCurrency(s.paidExtraExpenses)} />
           <KeyValueRow label={t('summary.creditCardInvoices')} value={formatCurrency(s.paidCreditCardInvoices)} />
+          <KeyValueRow label={t('summary.transfersOut')} value={formatCurrency(s.transferOutflow)} />
           <KeyValueRow label={t('summary.totalExpenses')} value={formatCurrency(totalPaid)} />
           <KeyValueRow label={t('summary.finalBalance')} value={formatCurrency(s.realizedBalance)} bold />
         </Section>

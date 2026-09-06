@@ -33,6 +33,16 @@ export interface CashFlowSummary {
   paidExtraExpenses: number;
   creditCardInvoices: number;
   paidCreditCardInvoices: number;
+  // Transferências sob a ótica da conta selecionada: a perna que entra é uma
+  // entrada (prevista/efetiva) e a que sai é uma saída. Ficam em campos
+  // próprios — e não somadas em expectedIncome/receivedIncome — para que o
+  // resumo consiga exibi-las com a badge de transferência, mas entram nas
+  // mesmas linhas de "Entradas"/"Saídas" da barra, sem as quais o saldo
+  // final não fecharia com o que está listado na tela.
+  transferInflow: number;
+  expectedTransferInflow: number;
+  transferOutflow: number;
+  expectedTransferOutflow: number;
   projectedBalance: number;
   realizedBalance: number;
 }

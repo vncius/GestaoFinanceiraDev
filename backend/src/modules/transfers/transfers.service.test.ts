@@ -266,3 +266,226 @@ describe('TransfersService', () => {
     });
   });
 });
+
+// Datas relativas a hoje: uma data fixa no futuro viraria passado com o
+// tempo e o teste passaria a exercitar o caminho errado.
+function isoDaysFromToday(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00:00.000Z`;
+}
+
+describe('TransfersService — transferências programadas', () => {
+  let ctx: ReturnType<typeof buildService>;
+
+  beforeEach(() => {
+    ctx = buildService();
+  });
+
+  it('transferência com data futura nasce prevista nas duas pernas e não mexe nos saldos', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo, { name: 'PJ', initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo, { name: 'Principal' });
+
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: isoDaysFromToday(15),
+      description: 'Repasse programado',
+    });
+
+    expect(pair.outgoing.status).toBe(TransactionStatus.PENDING);
+    expect(pair.incoming.status).toBe(TransactionStatus.PENDING);
+    expect(pair.outgoing.actualDate).toBeNull();
+    expect(pair.incoming.actualDate).toBeNull();
+
+    const all = await transactionsRepo.findAll(TENANT_ID);
+    expect(calcAccountBalance(origem, all)).toBe(1000000);
+    expect(calcAccountBalance(destino, all)).toBe(0);
+  });
+
+  it('transferência com a data de hoje continua nascendo efetivada', async () => {
+    const { service, accountsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo);
+    const destino = await seedAccount(accountsRepo);
+
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 1000,
+      date: isoDaysFromToday(0),
+      description: 'Hoje',
+    });
+
+    expect(pair.outgoing.status).toBe(TransactionStatus.PAID);
+    expect(pair.incoming.status).toBe(TransactionStatus.RECEIVED);
+  });
+
+  it('settleTransfer efetiva as duas pernas e move o saldo das duas contas de uma vez', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo, { initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo);
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: isoDaysFromToday(15),
+      description: 'Repasse programado',
+    });
+
+    const settled = await service.settleTransfer(pair.transferGroupId, TENANT_ID);
+
+    expect(settled.outgoing.status).toBe(TransactionStatus.PAID);
+    expect(settled.incoming.status).toBe(TransactionStatus.RECEIVED);
+    expect(settled.outgoing.actualDate).not.toBeNull();
+    expect(settled.incoming.actualDate).not.toBeNull();
+
+    const all = await transactionsRepo.findAll(TENANT_ID);
+    expect(calcAccountBalance(origem, all)).toBe(750000);
+    expect(calcAccountBalance(destino, all)).toBe(250000);
+  });
+
+  it('settleTransfer recusa uma transferência que já está efetivada', async () => {
+    const { service, accountsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo);
+    const destino = await seedAccount(accountsRepo);
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 1000,
+      date: '2026-08-10T00:00:00.000Z',
+      description: 'Repasse',
+    });
+
+    await expect(service.settleTransfer(pair.transferGroupId, TENANT_ID)).rejects.toMatchObject({
+      code: 'transfer.alreadySettled',
+    });
+  });
+
+  it('reverter e efetivar de novo devolve os saldos ao estado original nas duas contas', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo, { initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo);
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: '2026-08-10T00:00:00.000Z',
+      description: 'Repasse',
+    });
+
+    await service.revertTransfer(pair.transferGroupId, TENANT_ID);
+    let all = await transactionsRepo.findAll(TENANT_ID);
+    expect(calcAccountBalance(origem, all)).toBe(1000000);
+    expect(calcAccountBalance(destino, all)).toBe(0);
+
+    await service.settleTransfer(pair.transferGroupId, TENANT_ID);
+    all = await transactionsRepo.findAll(TENANT_ID);
+    expect(calcAccountBalance(origem, all)).toBe(750000);
+    expect(calcAccountBalance(destino, all)).toBe(250000);
+  });
+
+  it('mover a data de uma transferência efetivada para o futuro a devolve para prevista', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo, { initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo);
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: '2026-08-10T00:00:00.000Z',
+      description: 'Repasse',
+    });
+
+    const updated = await service.updateTransfer(pair.transferGroupId, TENANT_ID, {
+      date: isoDaysFromToday(20),
+    });
+
+    expect(updated.outgoing.status).toBe(TransactionStatus.PENDING);
+    expect(updated.incoming.status).toBe(TransactionStatus.PENDING);
+    expect(updated.outgoing.actualDate).toBeNull();
+
+    const all = await transactionsRepo.findAll(TENANT_ID);
+    expect(calcAccountBalance(origem, all)).toBe(1000000);
+    expect(calcAccountBalance(destino, all)).toBe(0);
+  });
+
+  it('excluir uma transferência prevista cancela as duas pernas (origem e destino)', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo, { initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo);
+    const pair = await service.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: isoDaysFromToday(15),
+      description: 'Repasse programado',
+    });
+
+    await service.deleteTransfer(pair.transferGroupId, TENANT_ID);
+
+    const legs = await transactionsRepo.findByTransferGroup(TENANT_ID, pair.transferGroupId);
+    expect(legs).toHaveLength(2);
+    expect(legs.every((l) => l.status === TransactionStatus.CANCELED)).toBe(true);
+  });
+});
+
+describe('TransfersService — reserva automática excluída', () => {
+  let ctx: ReturnType<typeof buildService>;
+
+  beforeEach(() => {
+    ctx = buildService();
+  });
+
+  it('cascadeCancelForOrigin cancela as duas pernas da reserva ligada à entrada', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo);
+    const destino = await seedAccount(accountsRepo);
+    const originId = randomUUID();
+    const pair = await service.createAutoReserveTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 30000,
+      date: '2026-08-05T00:00:00.000Z',
+      description: 'Reserva automática',
+      originId,
+    });
+
+    await service.cascadeCancelForOrigin(TENANT_ID, originId);
+
+    const legs = await transactionsRepo.findByTransferGroup(TENANT_ID, pair.transferGroupId);
+    expect(legs.every((l) => l.status === TransactionStatus.CANCELED)).toBe(true);
+  });
+
+  it('resettleByOrigin cria um par novo em vez de ressuscitar o par cancelado', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const origem = await seedAccount(accountsRepo);
+    const destino = await seedAccount(accountsRepo);
+    const originId = randomUUID();
+    const first = await service.createAutoReserveTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 30000,
+      date: '2026-08-05T00:00:00.000Z',
+      description: 'Reserva automática',
+      originId,
+    });
+    await service.cascadeCancelForOrigin(TENANT_ID, originId);
+
+    const second = await service.resettleByOrigin(TENANT_ID, originId, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 30000,
+      date: '2026-08-05T00:00:00.000Z',
+      description: 'Reserva automática',
+    });
+
+    expect(second.transferGroupId).not.toBe(first.transferGroupId);
+    const canceled = await transactionsRepo.findByTransferGroup(TENANT_ID, first.transferGroupId);
+    expect(canceled.every((l) => l.status === TransactionStatus.CANCELED)).toBe(true);
+    const revived = await transactionsRepo.findByTransferGroup(TENANT_ID, second.transferGroupId);
+    expect(revived).toHaveLength(2);
+  });
+});

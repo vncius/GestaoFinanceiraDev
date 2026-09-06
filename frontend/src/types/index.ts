@@ -200,6 +200,13 @@ export interface CashFlowSummary {
   paidExtraExpenses: number;
   creditCardInvoices: number;
   paidCreditCardInvoices: number;
+  // Pernas de transferência da conta selecionada (entrada/saída, efetiva e
+  // prevista) — a barra de resumo as soma às linhas de Entradas/Saídas para
+  // que o saldo exibido feche com o que está listado nas grids.
+  transferInflow: number;
+  expectedTransferInflow: number;
+  transferOutflow: number;
+  expectedTransferOutflow: number;
   projectedBalance: number;
   realizedBalance: number;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, Trash2 } from 'lucide-react';
+import { RotateCcw, ThumbsUp, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Account, TransferFlowItem } from '../../../types';
 import { Button } from '../../../components/ui/Button';
@@ -32,6 +32,7 @@ export function TransferModal({
   year,
   onSave,
   isSaving,
+  onSettle,
   onRevert,
   onDelete,
 }: {
@@ -44,6 +45,7 @@ export function TransferModal({
   year: number;
   onSave: (data: CreateTransferPayload) => void;
   isSaving: boolean;
+  onSettle?: (transferGroupId: string) => void;
   onRevert?: (transferGroupId: string) => void;
   onDelete?: (item: TransferFlowItem) => void;
 }) {
@@ -110,6 +112,7 @@ export function TransferModal({
   ) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const isSettled = item?.status === 'PAID' || item?.status === 'RECEIVED';
+  const isPending = item?.status === 'PENDING';
 
   return (
     <Modal
@@ -118,7 +121,7 @@ export function TransferModal({
       title={isEdit ? t('transferModal.title.edit') : t('transferModal.title.new')}
       footer={
         <>
-          {isEdit && item?.status === 'PENDING' && onDelete && (
+          {isEdit && (isPending || isSettled) && onDelete && (
             <button
               type="button"
               title={t('transferModal.delete')}
@@ -130,6 +133,15 @@ export function TransferModal({
             </button>
           )}
           <Button variant="secondary" onClick={onClose}>{t('transferModal.cancel')}</Button>
+          {isEdit && isPending && onSettle && (
+            <Button
+              variant="secondary"
+              icon={<ThumbsUp size={14} />}
+              onClick={() => { onSettle(item!.transferGroupId); onClose(); }}
+            >
+              {t('transferModal.settle')}
+            </Button>
+          )}
           {isEdit && isSettled && onRevert && (
             <Button
               variant="secondary"

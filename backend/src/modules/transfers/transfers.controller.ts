@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { TransfersService } from './transfers.service';
-import { createTransferSchema, updateTransferSchema } from './transfers.schemas';
+import { createTransferSchema, settleTransferSchema, updateTransferSchema } from './transfers.schemas';
 
 export class TransfersController {
   constructor(private readonly service: TransfersService) {}
@@ -20,6 +20,12 @@ export class TransfersController {
   async deleteTransfer(req: Request, res: Response): Promise<void> {
     await this.service.deleteTransfer(req.params.transferGroupId, req.tenantId);
     res.status(204).send();
+  }
+
+  async settleTransfer(req: Request, res: Response): Promise<void> {
+    const input = settleTransferSchema.parse(req.body);
+    const pair = await this.service.settleTransfer(req.params.transferGroupId, req.tenantId, input?.actualDate);
+    res.json(pair);
   }
 
   async revertTransfer(req: Request, res: Response): Promise<void> {

@@ -8,6 +8,7 @@ const controller = controllers.transfers;
 router.post('/', asyncHandler((req, res) => controller.createTransfer(req, res)));
 router.put('/:transferGroupId', asyncHandler((req, res) => controller.updateTransfer(req, res)));
 router.delete('/:transferGroupId', asyncHandler((req, res) => controller.deleteTransfer(req, res)));
+router.post('/:transferGroupId/settle', asyncHandler((req, res) => controller.settleTransfer(req, res)));
 router.post('/:transferGroupId/revert', asyncHandler((req, res) => controller.revertTransfer(req, res)));
 
 export default router;

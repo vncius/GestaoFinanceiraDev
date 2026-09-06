@@ -117,6 +117,7 @@ export default function CashFlow() {
     revertInvoice,
     createTransfer,
     updateTransfer,
+    settleTransfer,
     revertTransfer,
     deleteTransfer,
   } = useCashFlowMutations({
@@ -199,8 +200,13 @@ export default function CashFlow() {
     }
   }
 
+  // Excluir uma transferência já efetivada primeiro a reverte, para que o
+  // valor volte às duas contas (origem e destino) antes de o par ser
+  // cancelado — mesmo protocolo das entradas e pagamentos efetivados.
   async function handleDeleteTransfer(item: TransferFlowItem) {
-    if (!(await confirm(t('page.confirmDelete')))) return;
+    const isSettled = item.status === 'PAID' || item.status === 'RECEIVED';
+    if (!(await confirm(isSettled ? EFFECTED_DELETE_CONFIRM : t('page.confirmDelete')))) return;
+    if (isSettled) await revertTransfer.mutateAsync(item.transferGroupId);
     deleteTransfer.mutate(item.transferGroupId);
   }
 
@@ -350,7 +356,12 @@ export default function CashFlow() {
     (revertInvoice.isPending && (revertInvoice.variables?.invoiceId as string)) || null;
 
   const transferSaving = createTransfer.isPending || updateTransfer.isPending;
-  const transfersPendingRevertId = (revertTransfer.isPending && (revertTransfer.variables as string)) || null;
+  // Efetivar e reverter dividem o mesmo joinha — qualquer uma das duas
+  // mutations em voo trava a linha correspondente.
+  const transfersPendingToggleId =
+    (settleTransfer.isPending && (settleTransfer.variables as string)) ||
+    (revertTransfer.isPending && (revertTransfer.variables as string)) ||
+    null;
   const transfersPendingDeleteId = (deleteTransfer.isPending && (deleteTransfer.variables as string)) || null;
 
   return (
@@ -376,9 +387,10 @@ export default function CashFlow() {
           items={data.transfers}
           onAdd={() => setModal({ type: 'transfer', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'transfer', mode: 'edit', item })}
+          onSettle={(transferGroupId) => settleTransfer.mutate(transferGroupId)}
           onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
           onDelete={handleDeleteTransfer}
-          pendingRevertId={transfersPendingRevertId}
+          pendingToggleId={transfersPendingToggleId}
           pendingDeleteId={transfersPendingDeleteId}
           locked={clearingAll}
         />
@@ -495,6 +507,7 @@ export default function CashFlow() {
         year={year}
         onSave={saveTransfer}
         isSaving={transferSaving}
+        onSettle={(transferGroupId) => settleTransfer.mutate(transferGroupId)}
         onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
         onDelete={handleDeleteTransfer}
       />

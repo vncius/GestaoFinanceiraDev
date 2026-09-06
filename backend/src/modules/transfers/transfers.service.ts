@@ -1,6 +1,6 @@
 import { AppError } from '../../shared/errors/app-error';
 import { generateId } from '../../shared/utils/id.utils';
-import { nowISO } from '../../shared/utils/date.utils';
+import { nowISO, toDateOnly } from '../../shared/utils/date.utils';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
   FinancialTransaction,
@@ -49,6 +49,7 @@ export class TransfersService {
       notes: null,
       originType: OriginType.AUTO_RESERVE,
       originId: input.originId,
+      settled: true,
     });
   }
 
@@ -63,6 +64,9 @@ export class TransfersService {
       notes?: string | null;
       originType: OriginType;
       originId: string | null;
+      // Força o par a nascer efetivado independente da data — usado pela
+      // reserva automática, que deriva de uma entrada já recebida.
+      settled?: boolean;
     },
   ): Promise<TransferPair> {
     const now = nowISO();
@@ -85,22 +89,25 @@ export class TransfersService {
       updatedAt: now,
     };
 
-    // As duas pernas nascem já efetivadas (D5): uma transferência entre
-    // contas próprias representa um movimento que já aconteceu, não uma
-    // obrigação futura a pagar/receber depois.
+    // Com data de hoje ou passada as duas pernas nascem já efetivadas (D5):
+    // uma transferência entre contas próprias representa um movimento que já
+    // aconteceu. Com data futura é uma programação — nasce PREVISTA (PENDING
+    // nas duas pernas), fica fora dos saldos realizados e só entra neles
+    // quando o usuário a efetiva pelo joinha (settleTransfer).
+    const settled = input.settled ?? !this.isScheduledForFuture(input.date);
     const outgoing = await this.transactionsRepo.create({
       ...base,
       id: generateId(),
-      status: TransactionStatus.PAID,
-      actualDate: input.date,
+      status: settled ? TransactionStatus.PAID : TransactionStatus.PENDING,
+      actualDate: settled ? input.date : null,
       sourceAccountId: input.sourceAccountId,
       targetAccountId: null,
     });
     const incoming = await this.transactionsRepo.create({
       ...base,
       id: generateId(),
-      status: TransactionStatus.RECEIVED,
-      actualDate: input.date,
+      status: settled ? TransactionStatus.RECEIVED : TransactionStatus.PENDING,
+      actualDate: settled ? input.date : null,
       sourceAccountId: null,
       targetAccountId: input.targetAccountId,
     });
@@ -124,9 +131,17 @@ export class TransfersService {
     if (input.notes !== undefined) sharedPatch.notes = input.notes ?? null;
     if (input.date !== undefined) {
       sharedPatch.expectedDate = input.date;
-      // Ambas as pernas nascem efetivadas; mudar a data também move a
-      // data de efetivação para manter os dois campos consistentes.
-      if (outgoing.actualDate !== null) sharedPatch.actualDate = input.date;
+      if (this.isScheduledForFuture(input.date)) {
+        // Empurrar a transferência para o futuro a devolve à condição de
+        // prevista nas duas pontas — senão o valor continuaria pesando no
+        // saldo realizado de um movimento que ainda não aconteceu.
+        sharedPatch.status = TransactionStatus.PENDING;
+        sharedPatch.actualDate = null;
+      } else if (outgoing.actualDate !== null) {
+        // Já efetivada: mover a data também move a data de efetivação,
+        // mantendo os dois campos consistentes.
+        sharedPatch.actualDate = input.date;
+      }
     }
 
     const updatedOutgoing = await this.transactionsRepo.update(
@@ -159,6 +174,30 @@ export class TransfersService {
     }
   }
 
+  // Efetivação pelo joinha, espelhando payPayment/receiveIncome: as duas
+  // pernas passam a PAID/RECEIVED na mesma operação, para que origem e
+  // destino nunca fiquem com status divergentes.
+  async settleTransfer(transferGroupId: string, tenantId: string, actualDate?: string): Promise<TransferPair> {
+    const [outgoing, incoming] = await this.getLegsChecked(transferGroupId, tenantId);
+    if (this.isSettled(outgoing) && this.isSettled(incoming)) {
+      throw new AppError('Transferência já foi efetivada.', 400, 'transfer.alreadySettled');
+    }
+
+    const now = nowISO();
+    const effectiveDate = actualDate ?? outgoing.expectedDate;
+    const updatedOutgoing = await this.transactionsRepo.update(
+      outgoing.id,
+      { status: TransactionStatus.PAID, expectedDate: effectiveDate, actualDate: now, updatedAt: now },
+      tenantId,
+    );
+    const updatedIncoming = await this.transactionsRepo.update(
+      incoming.id,
+      { status: TransactionStatus.RECEIVED, expectedDate: effectiveDate, actualDate: now, updatedAt: now },
+      tenantId,
+    );
+    return { transferGroupId, outgoing: updatedOutgoing, incoming: updatedIncoming };
+  }
+
   async revertTransfer(transferGroupId: string, tenantId: string): Promise<TransferPair> {
     const [outgoing, incoming] = await this.getLegsChecked(transferGroupId, tenantId);
     if (!this.isSettled(outgoing) || !this.isSettled(incoming)) {
@@ -181,13 +220,27 @@ export class TransfersService {
   // usuário sobre a própria transferência.
   async cascadeRevertForOrigin(tenantId: string, originId: string): Promise<void> {
     const legs = (await this.transactionsRepo.findByOrigin(tenantId, OriginType.AUTO_RESERVE, originId)).filter(
-      (t) => t.type === TransactionType.TRANSFER,
+      (t) => t.type === TransactionType.TRANSFER && t.status !== TransactionStatus.CANCELED,
     );
     const outgoing = legs.find((t) => t.sourceAccountId !== null);
     const incoming = legs.find((t) => t.targetAccountId !== null);
     if (!outgoing || !incoming) return;
     if (!this.isSettled(outgoing) || !this.isSettled(incoming)) return;
     await this.setLegsPending(outgoing, incoming, tenantId);
+  }
+
+  // Exclusão da entrada que originou a reserva: cancela as duas pernas em
+  // cascata. Sem isso elas sobrariam órfãs — sem origem, previstas para
+  // sempre e somando nos previstos dos dois fluxos de caixa. Tolerante
+  // (nunca lança), como cascadeRevertForOrigin.
+  async cascadeCancelForOrigin(tenantId: string, originId: string): Promise<void> {
+    const legs = (await this.transactionsRepo.findByOrigin(tenantId, OriginType.AUTO_RESERVE, originId)).filter(
+      (t) => t.type === TransactionType.TRANSFER && t.status !== TransactionStatus.CANCELED,
+    );
+    const now = nowISO();
+    for (const leg of legs) {
+      await this.transactionsRepo.update(leg.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
+    }
   }
 
   // Reaplica a reserva ligada a uma entrada: cria o par na primeira vez;
@@ -198,8 +251,10 @@ export class TransfersService {
     originId: string,
     input: { sourceAccountId: string; targetAccountId: string; amount: number; date: string; description: string },
   ): Promise<TransferPair> {
+    // Pernas canceladas ficam de fora: se o usuário excluiu a reserva, um
+    // novo recebimento gera um par novo em vez de ressuscitar o excluído.
     const legs = (await this.transactionsRepo.findByOrigin(tenantId, OriginType.AUTO_RESERVE, originId)).filter(
-      (t) => t.type === TransactionType.TRANSFER,
+      (t) => t.type === TransactionType.TRANSFER && t.status !== TransactionStatus.CANCELED,
     );
     const outgoing = legs.find((t) => t.sourceAccountId !== null);
     const incoming = legs.find((t) => t.targetAccountId !== null);
@@ -225,6 +280,18 @@ export class TransfersService {
 
   private isSettled(t: FinancialTransaction): boolean {
     return t.status === TransactionStatus.PAID || t.status === TransactionStatus.RECEIVED;
+  }
+
+  // Compara só a parte YYYY-MM-DD (como balance.utils) para não sofrer o
+  // offset UTC-vs-local: "2026-08-10T00:00:00Z" é 09/08 21:00 em UTC-3 e uma
+  // comparação por Date classificaria a data de hoje como passada.
+  private isScheduledForFuture(date: string): boolean {
+    return toDateOnly(date) > this.todayDateOnly();
+  }
+
+  private todayDateOnly(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
   private async setLegsPending(

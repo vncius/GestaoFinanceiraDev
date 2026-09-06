@@ -435,3 +435,202 @@ describe('CashFlowService — Reserva automática como transferência (E8)', () 
     expect(all.filter((t) => t.type === TransactionType.TRANSFER)).toHaveLength(0);
   });
 });
+
+describe('CashFlowService — transferências no fluxo das duas contas', () => {
+  let ctx: ReturnType<typeof buildServiceWithTransfers>;
+
+  beforeEach(() => {
+    ctx = buildServiceWithTransfers();
+  });
+
+  // Data relativa a hoje: uma data fixa no futuro viraria passado com o tempo.
+  function futureDate(days: number): { iso: string; month: number; year: number } {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return {
+      iso: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00:00.000Z`,
+      month: d.getMonth() + 1,
+      year: d.getFullYear(),
+    };
+  }
+
+  it('transferência programada entra como entrada prevista no fluxo da conta de destino', async () => {
+    const { service, accountsRepo, transfersService } = ctx;
+    const origem = await seedAccount(accountsRepo, { name: 'PJ', initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo, { name: 'Principal' });
+    const when = futureDate(20);
+
+    await transfersService.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: when.iso,
+      description: 'Repasse programado',
+    });
+
+    const flow = await service.getCashFlow(TENANT_ID, {
+      month: when.month,
+      year: when.year,
+      accountId: destino.id,
+    });
+
+    expect(flow.transfers).toHaveLength(1);
+    expect(flow.transfers[0].direction).toBe('IN');
+    expect(flow.transfers[0].status).toBe(TransactionStatus.PENDING);
+    expect(flow.transfers[0].counterpartAccountId).toBe(origem.id);
+    expect(flow.summary.expectedTransferInflow).toBe(250000);
+    expect(flow.summary.transferInflow).toBe(0);
+    expect(flow.summary.realizedBalance).toBe(0);
+    expect(flow.summary.projectedBalance).toBe(250000);
+  });
+
+  it('efetivar a transferência programada a move de prevista para efetiva nas duas contas', async () => {
+    const { service, accountsRepo, transfersService } = ctx;
+    const origem = await seedAccount(accountsRepo, { name: 'PJ', initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo, { name: 'Principal' });
+    const when = futureDate(20);
+
+    const pair = await transfersService.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: when.iso,
+      description: 'Repasse programado',
+    });
+    await transfersService.settleTransfer(pair.transferGroupId, TENANT_ID);
+
+    const destinoFlow = await service.getCashFlow(TENANT_ID, {
+      month: when.month,
+      year: when.year,
+      accountId: destino.id,
+    });
+    expect(destinoFlow.summary.transferInflow).toBe(250000);
+    expect(destinoFlow.summary.expectedTransferInflow).toBe(0);
+    expect(destinoFlow.summary.realizedBalance).toBe(250000);
+
+    const origemFlow = await service.getCashFlow(TENANT_ID, {
+      month: when.month,
+      year: when.year,
+      accountId: origem.id,
+    });
+    expect(origemFlow.summary.transferOutflow).toBe(250000);
+    expect(origemFlow.summary.expectedTransferOutflow).toBe(0);
+    expect(origemFlow.summary.realizedBalance).toBe(750000);
+  });
+
+  it('excluir a transferência limpa o lançamento e o saldo nas duas contas', async () => {
+    const { service, accountsRepo, transfersService } = ctx;
+    const origem = await seedAccount(accountsRepo, { name: 'PJ', initialBalance: 1000000 });
+    const destino = await seedAccount(accountsRepo, { name: 'Principal' });
+
+    const pair = await transfersService.createTransfer(TENANT_ID, {
+      sourceAccountId: origem.id,
+      targetAccountId: destino.id,
+      amount: 250000,
+      date: '2026-08-10T00:00:00.000Z',
+      description: 'Repasse',
+    });
+    // Protocolo da tela: reverter antes de excluir quando já efetivada.
+    await transfersService.revertTransfer(pair.transferGroupId, TENANT_ID);
+    await transfersService.deleteTransfer(pair.transferGroupId, TENANT_ID);
+
+    const destinoFlow = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: destino.id });
+    expect(destinoFlow.transfers).toHaveLength(0);
+    expect(destinoFlow.summary.transferInflow).toBe(0);
+    expect(destinoFlow.summary.expectedTransferInflow).toBe(0);
+
+    const origemFlow = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: origem.id });
+    expect(origemFlow.transfers).toHaveLength(0);
+    expect(origemFlow.summary.transferOutflow).toBe(0);
+    expect(origemFlow.summary.expectedTransferOutflow).toBe(0);
+    expect(origemFlow.summary.realizedBalance).toBe(1000000);
+  });
+});
+
+describe('CashFlowService — bordas da reserva automática', () => {
+  let ctx: ReturnType<typeof buildServiceWithTransfers>;
+
+  beforeEach(() => {
+    ctx = buildServiceWithTransfers();
+  });
+
+  async function seedPjComReserva(accountsRepo: FakeAccountsRepo, destino: Account) {
+    return seedAccount(accountsRepo, {
+      name: 'PJ',
+      autoReserveEnabled: true,
+      autoReservePercentage: 30,
+      autoReserveTargetAccountId: destino.id,
+    });
+  }
+
+  it('excluir a entrada cancela em cascata as pernas da reserva automática', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const investimentos = await seedAccount(accountsRepo, { name: 'Investimentos' });
+    const pj = await seedPjComReserva(accountsRepo, investimentos);
+
+    const income = await service.createIncome(TENANT_ID, pj.id, {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 1000000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: pj.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+    // Mesmo protocolo da tela: reverter antes de excluir.
+    await service.revertIncome(income.id, TENANT_ID);
+    await service.deleteIncome(income.id, TENANT_ID);
+
+    const legs = await transactionsRepo.findByOrigin(TENANT_ID, OriginType.AUTO_RESERVE, income.id);
+    expect(legs).toHaveLength(2);
+    expect(legs.every((l) => l.status === TransactionStatus.CANCELED)).toBe(true);
+
+    const flow = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: investimentos.id });
+    expect(flow.transfers).toHaveLength(0);
+    expect(flow.summary.expectedTransferInflow).toBe(0);
+  });
+
+  it('regra apontando para uma conta inativa fica inerte em vez de sumir com o valor', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const investimentos = await seedAccount(accountsRepo, { name: 'Investimentos', active: false });
+    const pj = await seedPjComReserva(accountsRepo, investimentos);
+
+    const income = await service.createIncome(TENANT_ID, pj.id, {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 1000000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: pj.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+
+    const all = await transactionsRepo.findAll(TENANT_ID);
+    expect(all.filter((t) => t.type === TransactionType.TRANSFER)).toHaveLength(0);
+  });
+
+  it('a reserva fica no mês da entrada, não no mês em que a baixa foi dada', async () => {
+    const { service, accountsRepo, transactionsRepo } = ctx;
+    const investimentos = await seedAccount(accountsRepo, { name: 'Investimentos' });
+    const pj = await seedPjComReserva(accountsRepo, investimentos);
+
+    const income = await service.createIncome(TENANT_ID, pj.id, {
+      description: 'Projeto X',
+      categoryId: randomUUID(),
+      amount: 1000000,
+      expectedDate: '2026-08-05T00:00:00.000Z',
+      targetAccountId: pj.id,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, undefined);
+
+    const legs = await transactionsRepo.findByOrigin(TENANT_ID, OriginType.AUTO_RESERVE, income.id);
+    expect(legs).toHaveLength(2);
+    expect(legs.every((l) => l.expectedDate.slice(0, 7) === '2026-08')).toBe(true);
+
+    const flow = await service.getCashFlow(TENANT_ID, { month: 8, year: 2026, accountId: investimentos.id });
+    expect(flow.transfers).toHaveLength(1);
+    expect(flow.summary.transferInflow).toBe(300000);
+  });
+});

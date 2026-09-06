@@ -150,6 +150,10 @@ export function useCashFlowMutations({
       TransfersService.update(transferGroupId, data),
     onSuccess: () => { invalidateTransfer(); closeModal(); },
   });
+  const settleTransfer = useMutation({
+    mutationFn: (transferGroupId: string) => TransfersService.settle(transferGroupId),
+    onSuccess: invalidateTransfer,
+  });
   const revertTransfer = useMutation({
     mutationFn: (transferGroupId: string) => TransfersService.revert(transferGroupId),
     onSuccess: invalidateTransfer,
@@ -179,6 +183,7 @@ export function useCashFlowMutations({
     revertInvoice,
     createTransfer,
     updateTransfer,
+    settleTransfer,
     revertTransfer,
     deleteTransfer,
   };

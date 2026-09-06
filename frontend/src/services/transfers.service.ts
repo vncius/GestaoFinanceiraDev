@@ -26,6 +26,9 @@ export const TransfersService = {
   remove: (transferGroupId: string): Promise<void> =>
     api.delete(`/transfers/${transferGroupId}`).then(() => undefined),
 
+  settle: (transferGroupId: string): Promise<TransferPair> =>
+    api.post<TransferPair>(`/transfers/${transferGroupId}/settle`).then((r) => r.data),
+
   revert: (transferGroupId: string): Promise<TransferPair> =>
     api.post<TransferPair>(`/transfers/${transferGroupId}/revert`).then((r) => r.data),
 };
