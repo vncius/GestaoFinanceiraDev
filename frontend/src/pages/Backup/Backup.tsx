@@ -12,6 +12,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useMonth } from '../../contexts/MonthContext';
 import { formatCurrency } from '../../utils/money';
 import { formatDate, firstDayOfMonthISO } from '../../utils/date';
+import { sortByName } from '../../utils/sort';
 
 const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
@@ -310,7 +311,7 @@ function StatementImportSection() {
           <div className="max-w-xs">
             <select className={INPUT} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
               <option value="">{t('statementImport.selectAccountPlaceholder')}</option>
-              {accounts.filter((a) => a.active).map((a) => (
+              {sortByName(accounts.filter((a) => a.active)).map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>

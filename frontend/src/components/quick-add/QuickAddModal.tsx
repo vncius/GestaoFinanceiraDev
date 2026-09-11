@@ -13,6 +13,7 @@ import { todayISO } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
+import { sortByName } from '../../utils/sort';
 
 type QuickAddType = 'payment' | 'extra-expense' | 'income' | 'transfer';
 
@@ -48,7 +49,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
   const qc = useQueryClient();
   const { accountId, accounts } = useAccount();
   const isTransfer = form.type === 'transfer';
-  const otherAccounts = accounts.filter((a) => a.id !== accountId);
+  const otherAccounts = sortByName(accounts.filter((a) => a.id !== accountId));
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -58,7 +59,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
   });
 
   const categoryType = form.type === 'income' ? 'INCOME' : 'EXPENSE';
-  const filteredCategories = categories.filter((c) => c.type === categoryType);
+  const filteredCategories = sortByName(categories.filter((c) => c.type === categoryType));
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ['cashFlow'] });

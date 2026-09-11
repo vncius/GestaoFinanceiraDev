@@ -11,6 +11,7 @@ import { floatToCents, centsToFloat } from '../../../utils/money';
 import { toInputDate, defaultEntryDateISO } from '../../../utils/date';
 import { useDialog } from '../../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../../utils/validation';
+import { sortByName } from '../../../utils/sort';
 import { Field, INPUT } from './shared';
 
 interface TransferFormState {
@@ -51,7 +52,7 @@ export function TransferModal({
 }) {
   const { t } = useTranslation('cashFlow');
   const isEdit = !!item;
-  const activeAccounts = accounts.filter((a) => a.active);
+  const activeAccounts = sortByName(accounts.filter((a) => a.active));
 
   const init = (): TransferFormState => {
     if (item) {

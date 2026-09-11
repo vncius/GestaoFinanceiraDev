@@ -13,6 +13,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { CurrencyInput } from '../../../components/ui/CurrencyInput';
 import { PageLoading } from '../../../components/ui/LoadingSpinner';
 import { formatCurrency } from '../../../utils/money';
+import { compareNames } from '../../../utils/sort';
 
 // Tela de revisão: renderiza SEMPRE o draft retornado pelo backend — nunca o
 // texto livre da IA. Edições passam pela validação completa do servidor.
@@ -441,7 +442,9 @@ function EditItemModal({
 }) {
   const { t } = useTranslation('onboarding');
   const fields = EDIT_FIELDS[section];
-  const accountOptions = accounts.filter((a) => a.draftItemId !== item.draftItemId);
+  const accountOptions = accounts
+    .filter((a) => a.draftItemId !== item.draftItemId)
+    .sort((a, b) => compareNames(String(a.payload.name ?? ''), String(b.payload.name ?? '')));
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
     for (const field of fields) initial[field.key] = item.payload[field.key];

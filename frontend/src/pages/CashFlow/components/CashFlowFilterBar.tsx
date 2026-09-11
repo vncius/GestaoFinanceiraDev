@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
 import { Button } from '../../../components/ui/Button';
+import { sortByName } from '../../../utils/sort';
 
 function TypeFilterToggle({
   value,
@@ -67,8 +68,8 @@ function CategoryFilterPopover({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const incomeCategories = categories.filter((c) => c.type === 'INCOME');
-  const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
+  const incomeCategories = sortByName(categories.filter((c) => c.type === 'INCOME'));
+  const expenseCategories = sortByName(categories.filter((c) => c.type === 'EXPENSE'));
   const selectedCount = categories.length - excludedIds.size;
 
   const renderGroup = (label: string, group: Category[]) =>

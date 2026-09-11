@@ -11,6 +11,7 @@ import { floatToCents, centsToFloat } from '../../../utils/money';
 import { toInputDate, defaultEntryDateISO } from '../../../utils/date';
 import { useDialog } from '../../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../../utils/validation';
+import { sortByName } from '../../../utils/sort';
 import { useRecurrenceLabels } from '../types';
 import { Field, INPUT } from './shared';
 
@@ -56,8 +57,8 @@ export function TransactionModal({
   const { t } = useTranslation('cashFlow');
   const RECURRENCE_LABELS = useRecurrenceLabels();
   const isEdit = !!item;
-  const expenseCategories = categories.filter((c) => c.type === 'EXPENSE');
-  const activeAccounts = accounts.filter((a) => a.active);
+  const expenseCategories = sortByName(categories.filter((c) => c.type === 'EXPENSE'));
+  const activeAccounts = sortByName(accounts.filter((a) => a.active));
   const title = type === 'payment'
     ? (isEdit ? t('transactionModal.title.editPayment') : t('transactionModal.title.newPayment'))
     : (isEdit ? t('transactionModal.title.editExtraExpense') : t('transactionModal.title.newExtraExpense'));

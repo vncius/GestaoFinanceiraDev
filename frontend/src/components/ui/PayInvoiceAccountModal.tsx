@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Account } from '../../types';
 import { Modal } from './Modal';
 import { Button } from './Button';
+import { sortByName } from '../../utils/sort';
 
 interface Props {
   open: boolean;
@@ -16,7 +17,7 @@ const INPUT = 'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-
 
 export function PayInvoiceAccountModal({ open, onClose, accounts, onConfirm, isPaying }: Props) {
   const { t } = useTranslation('common');
-  const activeAccounts = accounts.filter((a) => a.active);
+  const activeAccounts = sortByName(accounts.filter((a) => a.active));
   const [accountId, setAccountId] = useState('');
 
   const [lastOpen, setLastOpen] = useState(false);

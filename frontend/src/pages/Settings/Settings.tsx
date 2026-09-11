@@ -25,6 +25,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 import { invalidateDerivedData } from '../../utils/query-invalidation';
+import { sortByName } from '../../utils/sort';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -249,9 +250,9 @@ function AccountModal({
   isSaving: boolean;
 }) {
   const { t } = useTranslation('settings');
-  const activeTypes = accountTypes.filter((at) => at.active);
+  const activeTypes = sortByName(accountTypes.filter((at) => at.active));
   // Não pode apontar reserva automática para a própria conta (E8).
-  const targetOptions = accounts.filter((a) => a.active && a.id !== item?.id);
+  const targetOptions = sortByName(accounts.filter((a) => a.active && a.id !== item?.id));
 
   const init = (): AccountFormState => ({
     name: item?.name ?? '',
@@ -1005,7 +1006,7 @@ function CardSettingsModal({
   isSaving: boolean;
 }) {
   const { t } = useTranslation('settings');
-  const activeAccounts = accounts.filter((a) => a.active);
+  const activeAccounts = sortByName(accounts.filter((a) => a.active));
   const mainAccountId = activeAccounts[0]?.id ?? '';
 
   const init = (): CardFormState => ({

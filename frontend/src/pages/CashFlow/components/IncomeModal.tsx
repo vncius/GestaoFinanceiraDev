@@ -11,6 +11,7 @@ import { floatToCents, centsToFloat } from '../../../utils/money';
 import { toInputDate, defaultEntryDateISO } from '../../../utils/date';
 import { useDialog } from '../../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../../utils/validation';
+import { sortByName } from '../../../utils/sort';
 import { useRecurrenceLabels } from '../types';
 import { Field, INPUT } from './shared';
 
@@ -54,8 +55,8 @@ export function IncomeModal({
   const { t } = useTranslation('cashFlow');
   const RECURRENCE_LABELS = useRecurrenceLabels();
   const isEdit = !!item;
-  const incomeCategories = categories.filter((c) => c.type === 'INCOME');
-  const activeAccounts = accounts.filter((a) => a.active);
+  const incomeCategories = sortByName(categories.filter((c) => c.type === 'INCOME'));
+  const activeAccounts = sortByName(accounts.filter((a) => a.active));
 
   const init = (): IncomeFormState => ({
     description: item?.description ?? '',

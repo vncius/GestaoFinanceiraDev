@@ -8,6 +8,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { readFileAsText } from '../../utils/file';
 import { formatCurrency } from '../../utils/money';
 import { formatDate, formatMonthYear } from '../../utils/date';
+import { sortByName } from '../../utils/sort';
 import { Category, InvoiceImportPreviewEntry } from '../../types';
 import { CreditCardInvoiceImportService } from '../../services/credit-card-invoice-import.service';
 
@@ -54,7 +55,7 @@ export function ImportInvoiceModal({
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
 
-  const expenseCats = categories.filter((c) => c.type === 'EXPENSE' && c.active);
+  const expenseCats = sortByName(categories.filter((c) => c.type === 'EXPENSE' && c.active));
 
   function reset() {
     setRows(null);
