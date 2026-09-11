@@ -24,6 +24,7 @@ import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
+import { invalidateDerivedData } from '../../utils/query-invalidation';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -399,7 +400,12 @@ function AccountsTab() {
   });
   const accountTypeMap = new Map(accountTypes.map((at) => [at.id, at.name]));
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['accounts'] });
+  // Saldo inicial e reserva automática da conta são insumos do fluxo de caixa
+  // e do dashboard — sem isso os números de outros meses só se corrigiam no F5.
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['accounts'] });
+    invalidateDerivedData(qc);
+  };
 
   const createMut = useMutation({
     mutationFn: AccountsService.create,
@@ -904,7 +910,12 @@ function CategoriesTab() {
     queryFn: CategoriesService.findAll,
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['categories'] });
+  // O dashboard agrupa por categoria no backend e o fluxo de caixa exibe o
+  // nome resolvido — renomear/inativar precisa repropagar para as duas.
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['categories'] });
+    invalidateDerivedData(qc);
+  };
 
   const createMut = useMutation({
     mutationFn: CategoriesService.create,
@@ -1125,7 +1136,9 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
     queryFn: () => CreditCardsService.findAll(),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['creditCards'] });
+  // Cartão alimenta as faturas do fluxo de caixa e o total de cartão do
+  // dashboard; `invalidateDerivedData` já cobre o prefixo `['creditCards']`.
+  const invalidate = () => invalidateDerivedData(qc);
 
   const createMut = useMutation({
     mutationFn: CreditCardsService.create,

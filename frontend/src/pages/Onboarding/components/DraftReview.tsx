@@ -97,8 +97,12 @@ export default function DraftReview({ onBackToChat }: DraftReviewProps) {
     // Uma chave nova por tentativa; após falha parcial o backend retoma de
     // onde parou sem duplicar (ADR 0005).
     mutationFn: () => OnboardingService.confirm(crypto.randomUUID()),
-    onSuccess: () => {
-      invalidate();
+    onSuccess: async () => {
+      // A confirmação materializa contas, tipos de conta, categorias, cartões,
+      // lançamentos e configurações de uma vez — invalida o cache inteiro em
+      // vez de listar as chaves. O await garante que o /dashboard monte com
+      // dados novos, e não com o estado vazio de antes do onboarding.
+      await queryClient.invalidateQueries();
       navigate('/dashboard');
     },
   });

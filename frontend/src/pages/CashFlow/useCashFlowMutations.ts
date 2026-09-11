@@ -37,20 +37,23 @@ export function useCashFlowMutations({
   clearInvoicePayTarget: () => void;
 }) {
   const qc = useQueryClient();
-  const cfKey = ['cashFlow', accountId, month, year] as const;
 
+  // Invalida por PREFIXO (`['cashFlow']`), nunca pela chave completa da
+  // referência ativa. Motivo: quase toda mutação daqui pode atingir outros
+  // meses — marcar um lançamento como fixo, editar/excluir com escopo
+  // CURRENT_AND_FUTURE, transferências e faturas pagas por outra conta.
+  // Como o backend materializa a recorrência de forma preguiçosa
+  // (`ensureFixedTransactions`, que só roda no GET do mês alvo), um mês
+  // futuro já presente no cache nunca era refetchado e o lançamento fixo só
+  // aparecia depois de um F5.
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: cfKey });
-    qc.invalidateQueries({ queryKey: ['dashboard'] });
-  };
-
-  // Uma transferência toca duas contas — invalida o fluxo de caixa de todas
-  // (prefixo amplo, não só a conta ativa) em vez de descobrir e listar as
-  // duas envolvidas.
-  const invalidateTransfer = () => {
     qc.invalidateQueries({ queryKey: ['cashFlow'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
   };
+
+  // Uma transferência toca duas contas — mesmo alcance do invalidate acima,
+  // que já cobre todas as contas e referências.
+  const invalidateTransfer = invalidate;
 
   // ── Income mutations ─────────────────────────────────────────────────────────
   const createIncome = useMutation({
