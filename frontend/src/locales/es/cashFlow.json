@@ -33,6 +33,8 @@
   },
   "grid": {
     "new": "Nuevo",
+    "expand": "Expandir",
+    "collapse": "Contraer",
     "columns": {
       "description": "Descripción",
       "account": "Cuenta"
@@ -89,6 +91,7 @@
     }
   },
   "creditCardsGrid": {
+    "emptyState": { "title": "Ninguna factura de tarjeta en este mes" },
     "title": "Tarjetas de Crédito",
     "cardFallbackName": "Tarjeta",
     "columns": {

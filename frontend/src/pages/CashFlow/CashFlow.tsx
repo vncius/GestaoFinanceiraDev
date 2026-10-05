@@ -25,6 +25,7 @@ import { EntriesGrid } from './components/EntriesGrid';
 import { TransactionGrid } from './components/TransactionGrid';
 import { TransferGrid } from './components/TransferGrid';
 import { CreditCardsGrid } from './components/CreditCardsGrid';
+import { useCollapsibleSections } from './useCollapsibleSections';
 import { IncomeModal } from './components/IncomeModal';
 import { TransactionModal } from './components/TransactionModal';
 import { TransferModal } from './components/TransferModal';
@@ -69,6 +70,9 @@ export default function CashFlow() {
   // Vive no componente da página (que não desmonta ao trocar de mês) para que
   // o estado expandido/recolhido sobreviva à troca de referência.
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+
+  // Cards recolhíveis: vazios iniciam recolhidos; preferência persistida por tenant.
+  const sections = useCollapsibleSections();
 
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');
@@ -396,6 +400,8 @@ export default function CashFlow() {
         {/* Transferências entre contas */}
         <TransferGrid
           items={data.transfers}
+          expanded={sections.isExpanded('transfers', data.transfers.length > 0)}
+          onToggleExpanded={() => sections.toggle('transfers', data.transfers.length > 0)}
           onAdd={() => setModal({ type: 'transfer', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'transfer', mode: 'edit', item })}
           onSettle={(transferGroupId) => settleTransfer.mutate(transferGroupId)}
@@ -409,6 +415,8 @@ export default function CashFlow() {
         {/* Entradas */}
         <EntriesGrid
           items={filteredEntries}
+          expanded={sections.isExpanded('entries', filteredEntries.length > 0)}
+          onToggleExpanded={() => sections.toggle('entries', filteredEntries.length > 0)}
           accounts={accounts as Account[]}
           onAdd={() => setModal({ type: 'income', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'income', mode: 'edit', item })}
@@ -425,6 +433,8 @@ export default function CashFlow() {
           title={t('page.paymentsTitle')}
           icon={<TrendingDown size={16} className="text-red-500" />}
           items={filteredPayments}
+          expanded={sections.isExpanded('payments', filteredPayments.length > 0)}
+          onToggleExpanded={() => sections.toggle('payments', filteredPayments.length > 0)}
           accounts={accounts as Account[]}
           onAdd={() => setModal({ type: 'payment', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'payment', mode: 'edit', item })}
@@ -441,6 +451,8 @@ export default function CashFlow() {
           title={t('page.extraExpensesTitle')}
           icon={<TrendingDown size={16} className="text-orange-500" />}
           items={filteredExtraExpenses}
+          expanded={sections.isExpanded('extraExpenses', filteredExtraExpenses.length > 0)}
+          onToggleExpanded={() => sections.toggle('extraExpenses', filteredExtraExpenses.length > 0)}
           accounts={accounts as Account[]}
           onAdd={() => setModal({ type: 'extra-expense', mode: 'create' })}
           onEdit={(item) => setModal({ type: 'extra-expense', mode: 'edit', item })}
@@ -455,6 +467,8 @@ export default function CashFlow() {
         {/* Cartões de Crédito */}
         <CreditCardsGrid
           items={filteredCreditCards}
+          expanded={sections.isExpanded('creditCards', filteredCreditCards.length > 0)}
+          onToggleExpanded={() => sections.toggle('creditCards', filteredCreditCards.length > 0)}
           cardNames={cardNames}
           onPay={(inv) => setInvoicePayTarget(inv)}
           onRevert={(inv) => revertInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}

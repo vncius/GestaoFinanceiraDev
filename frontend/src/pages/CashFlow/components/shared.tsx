@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/ui/Button';
 import { IconActionButton } from '../../../components/ui/IconActionButton';
@@ -22,24 +22,59 @@ export function GridHeader({
   count,
   onAdd,
   disabled = false,
+  expanded = true,
+  onToggle,
+  controlsId,
 }: {
   title: string;
   icon: React.ReactNode;
   count: number;
-  onAdd: () => void;
+  onAdd?: () => void;
   disabled?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
+  controlsId?: string;
 }) {
   const { t } = useTranslation('cashFlow');
+  const label = (
+    <>
+      {onToggle && (
+        <ChevronRight
+          size={16}
+          className={`text-gray-400 dark:text-gray-500 transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+        />
+      )}
+      {icon}
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h3>
+      <span className="text-xs text-gray-400 dark:text-gray-500">({count})</span>
+    </>
+  );
   return (
-    <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h3>
-        <span className="text-xs text-gray-400 dark:text-gray-500">({count})</span>
-      </div>
-      <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={onAdd} disabled={disabled}>
-        {t('grid.new')}
-      </Button>
+    <div
+      className={`flex items-center justify-between px-5 py-3.5 ${
+        expanded ? 'border-b border-gray-100 dark:border-gray-700' : ''
+      }`}
+    >
+      {onToggle ? (
+        // Título inteiro clicável; "Novo" fica fora para não aninhar botões.
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-controls={controlsId}
+          title={expanded ? t('grid.collapse') : t('grid.expand')}
+          className="flex items-center gap-2 -ml-2 pl-1 pr-2 py-0.5 rounded-md text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          {label}
+        </button>
+      ) : (
+        <div className="flex items-center gap-2">{label}</div>
+      )}
+      {onAdd && (
+        <Button size="sm" variant="ghost" icon={<Plus size={14} />} onClick={onAdd} disabled={disabled}>
+          {t('grid.new')}
+        </Button>
+      )}
     </div>
   );
 }

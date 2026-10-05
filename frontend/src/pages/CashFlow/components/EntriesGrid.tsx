@@ -1,4 +1,5 @@
 import { TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Account, FinancialTransaction } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -26,6 +27,8 @@ export function EntriesGrid({
   pendingToggleId,
   pendingDeleteId,
   locked = false,
+  expanded,
+  onToggleExpanded,
 }: {
   items: FinancialTransaction[];
   accounts: Account[];
@@ -37,8 +40,11 @@ export function EntriesGrid({
   pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
   locked?: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
+  const bodyId = useId();
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   return (
@@ -49,8 +55,13 @@ export function EntriesGrid({
         count={items.length}
         onAdd={onAdd}
         disabled={locked}
+        expanded={expanded}
+        onToggle={onToggleExpanded}
+        controlsId={bodyId}
       />
 
+      {expanded && (
+      <div id={bodyId}>
       {items.length === 0 ? (
         <EmptyState
           title={t('entriesGrid.emptyState.title')}
@@ -139,6 +150,8 @@ export function EntriesGrid({
             </tbody>
           </table>
         </div>
+      )}
+      </div>
       )}
     </div>
   );

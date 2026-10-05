@@ -1,6 +1,8 @@
 import { CreditCard, Pencil } from 'lucide-react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CreditCardInvoice } from '../../../types';
+import { EmptyState } from '../../../components/ui/EmptyState';
 import { formatCurrency } from '../../../utils/money';
 import { formatDate } from '../../../utils/date';
 import {
@@ -10,6 +12,7 @@ import {
   COL_DATA,
   COL_VALOR,
   COL_VALOR_SECUNDARIO,
+  GridHeader,
   PaidToggle,
 } from './shared';
 
@@ -20,6 +23,8 @@ export function CreditCardsGrid({
   onRevert,
   onOpenInvoice,
   pendingRevertId,
+  expanded,
+  onToggleExpanded,
 }: {
   items: CreditCardInvoice[];
   cardNames: Map<string, string>;
@@ -27,17 +32,28 @@ export function CreditCardsGrid({
   onRevert: (invoice: CreditCardInvoice) => void;
   onOpenInvoice: (invoice: CreditCardInvoice) => void;
   pendingRevertId?: string | null;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
-  if (items.length === 0) return null;
+  const bodyId = useId();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
-        <CreditCard size={16} className="text-purple-500" />
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('creditCardsGrid.title')}</h3>
-        <span className="text-xs text-gray-400 dark:text-gray-500">({items.length})</span>
-      </div>
+      <GridHeader
+        title={t('creditCardsGrid.title')}
+        icon={<CreditCard size={16} className="text-purple-500" />}
+        count={items.length}
+        expanded={expanded}
+        onToggle={onToggleExpanded}
+        controlsId={bodyId}
+      />
+
+      {expanded && (
+      <div id={bodyId}>
+      {items.length === 0 ? (
+        <EmptyState title={t('creditCardsGrid.emptyState.title')} />
+      ) : (
       <div className="overflow-x-auto">
         <table className="w-full text-sm table-fixed">
           <thead>
@@ -103,6 +119,9 @@ export function CreditCardsGrid({
           </tbody>
         </table>
       </div>
+      )}
+      </div>
+      )}
     </div>
   );
 }

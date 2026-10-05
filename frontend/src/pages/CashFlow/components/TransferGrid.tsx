@@ -1,4 +1,5 @@
 import { ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Pencil, Trash2 } from 'lucide-react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TransferFlowItem } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -16,6 +17,8 @@ export function TransferGrid({
   pendingToggleId,
   pendingDeleteId,
   locked = false,
+  expanded,
+  onToggleExpanded,
 }: {
   items: TransferFlowItem[];
   onAdd: () => void;
@@ -27,8 +30,11 @@ export function TransferGrid({
   pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
   locked?: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
+  const bodyId = useId();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -38,8 +44,13 @@ export function TransferGrid({
         count={items.length}
         onAdd={onAdd}
         disabled={locked}
+        expanded={expanded}
+        onToggle={onToggleExpanded}
+        controlsId={bodyId}
       />
 
+      {expanded && (
+      <div id={bodyId}>
       {items.length === 0 ? (
         <EmptyState title={t('transferGrid.emptyState.title')} />
       ) : (
@@ -143,6 +154,8 @@ export function TransferGrid({
             </tbody>
           </table>
         </div>
+      )}
+      </div>
       )}
     </div>
   );

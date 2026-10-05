@@ -33,6 +33,8 @@
   },
   "grid": {
     "new": "New",
+    "expand": "Expand",
+    "collapse": "Collapse",
     "columns": {
       "description": "Description",
       "account": "Account"
@@ -89,6 +91,7 @@
     }
   },
   "creditCardsGrid": {
+    "emptyState": { "title": "No credit card invoices this month" },
     "title": "Credit Cards",
     "cardFallbackName": "Card",
     "columns": {

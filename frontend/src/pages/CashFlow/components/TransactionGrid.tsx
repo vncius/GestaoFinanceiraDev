@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from 'lucide-react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Account, FinancialTransaction } from '../../../types';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -28,6 +29,8 @@ export function TransactionGrid({
   pendingToggleId,
   pendingDeleteId,
   locked = false,
+  expanded,
+  onToggleExpanded,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -41,14 +44,28 @@ export function TransactionGrid({
   pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
   locked?: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
+  const bodyId = useId();
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-      <GridHeader title={title} icon={icon} count={items.length} onAdd={onAdd} disabled={locked} />
+      <GridHeader
+        title={title}
+        icon={icon}
+        count={items.length}
+        onAdd={onAdd}
+        disabled={locked}
+        expanded={expanded}
+        onToggle={onToggleExpanded}
+        controlsId={bodyId}
+      />
 
+      {expanded && (
+      <div id={bodyId}>
       {items.length === 0 ? (
         <EmptyState title={t('transactionGrid.emptyState.title')} />
       ) : (
@@ -134,6 +151,8 @@ export function TransactionGrid({
             </tbody>
           </table>
         </div>
+      )}
+      </div>
       )}
     </div>
   );
