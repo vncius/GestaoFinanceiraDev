@@ -10,6 +10,7 @@ import { migrateLegacyAccountConfig } from './shared/migrations/migrate-legacy-a
 import { migrateRemoveLimitsAndNotaFiscal } from './shared/migrations/migrate-remove-limits-and-nf';
 import { migrateAccountContext } from './shared/migrations/migrate-account-context';
 import { migrateResetAutoReserve } from './shared/migrations/migrate-reset-auto-reserve';
+import { migrateCardPaymentAccount } from './shared/migrations/migrate-card-payment-account';
 import authRouter from './modules/auth/auth.routes';
 import accountsRouter from './modules/accounts/accounts.routes';
 import accountTypesRouter from './modules/account-types/account-types.routes';
@@ -69,6 +70,7 @@ async function bootstrap() {
   await migrateRemoveLimitsAndNotaFiscal();
   await migrateAccountContext();
   await migrateResetAutoReserve();
+  await migrateCardPaymentAccount();
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[server] Rodando em http://localhost:${PORT}`);

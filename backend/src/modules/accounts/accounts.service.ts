@@ -4,9 +4,15 @@ import { nowISO } from '../../shared/utils/date.utils';
 import { AccountsRepository } from './accounts.repository';
 import { Account } from './accounts.types';
 import { CreateAccountInput, UpdateAccountInput } from './accounts.schemas';
+import { CreditCardsRepository } from '../credit-cards/credit-cards.repository';
 
 export class AccountsService {
-  constructor(private readonly repo: AccountsRepository) {}
+  constructor(
+    private readonly repo: AccountsRepository,
+    // Opcional: quando presente, impede desativar uma conta que paga a fatura
+    // de algum cartão ativo (U2) — a fatura sumiria de todos os fluxos.
+    private readonly cardsRepo?: Pick<CreditCardsRepository, 'findActive'>,
+  ) {}
 
   findAll(tenantId: string): Promise<Account[]> {
     return this.repo.findActive(tenantId);
@@ -78,6 +84,18 @@ export class AccountsService {
 
   async delete(id: string, tenantId: string): Promise<void> {
     await this.findById(id, tenantId);
+    const payingCards = (await this.cardsRepo?.findActive(tenantId) ?? []).filter(
+      (c) => c.defaultPaymentAccountId === id,
+    );
+    if (payingCards.length > 0) {
+      const names = payingCards.map((c) => c.name).join(', ');
+      throw new AppError(
+        `Esta conta paga a fatura de: ${names}. Troque a conta pagadora desses cartões antes de desativá-la.`,
+        409,
+        'account.paysCreditCard',
+        { cards: names },
+      );
+    }
     await this.repo.update(id, { active: false, updatedAt: nowISO() }, tenantId);
   }
 }

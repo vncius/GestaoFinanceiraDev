@@ -154,3 +154,28 @@ describe('AccountsService — Reserva automática (E8)', () => {
     expect(updated.autoReserveEnabled).toBe(false);
   });
 });
+
+describe('AccountsService — conta pagadora de cartão (U2)', () => {
+  function buildWithCards(cards: { name: string; defaultPaymentAccountId: string | null }[]) {
+    const repo = new FakeAccountsRepo();
+    const cardsRepo = { findActive: async () => cards as never[] };
+    return { repo, service: new AccountsService(repo, cardsRepo) };
+  }
+
+  it('não desativa conta que paga a fatura de um cartão ativo', async () => {
+    const pagadora = { id: randomUUID() };
+    const { repo, service } = buildWithCards([{ name: 'Nubank', defaultPaymentAccountId: pagadora.id }]);
+    await seedAccount(repo, { id: pagadora.id });
+
+    await expect(service.delete(pagadora.id, TENANT_ID)).rejects.toMatchObject({ code: 'account.paysCreditCard' });
+    expect(repo.items[0].active).toBe(true);
+  });
+
+  it('desativa normalmente conta que não paga nenhum cartão', async () => {
+    const { repo, service } = buildWithCards([{ name: 'Nubank', defaultPaymentAccountId: randomUUID() }]);
+    const conta = await seedAccount(repo);
+
+    await service.delete(conta.id, TENANT_ID);
+    expect(repo.items[0].active).toBe(false);
+  });
+});

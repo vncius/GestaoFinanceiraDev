@@ -12,7 +12,8 @@ export interface CreateCreditCardPayload {
   closingDay: number;
   dueDay: number;
   limit: number;
-  defaultPaymentAccountId?: string | null;
+  // Obrigatória: conta que paga a fatura (leva a fatura em aberto ao fluxo dela).
+  defaultPaymentAccountId: string;
 }
 
 export interface CreateCardEntryPayload {

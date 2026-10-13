@@ -21,6 +21,7 @@ import {
   CreditCardInvoicesRepository,
 } from '../credit-cards/credit-cards.repository';
 import { BACKUP_VERSION, BackupBundle, ParsedStatementEntry } from './backup.types';
+import { withPaymentAccount } from '../credit-cards/card-payment-account.utils';
 import { ExportCsvQuery, ImportStatementInput } from './backup.schemas';
 
 const TX_TYPE_LABELS: Record<TransactionType, string> = {
@@ -101,7 +102,8 @@ export class BackupService {
       this.accountsRepo.replaceAll(tenantId, stamp(data.accounts)),
       this.categoriesRepo.replaceAll(tenantId, stamp(data.categories)),
       this.transactionsRepo.replaceAll(tenantId, stamp(data.financialTransactions)),
-      this.creditCardsRepo.replaceAll(tenantId, stamp(data.creditCards)),
+      // Backups anteriores à U2 podem trazer cartão sem conta pagadora.
+      this.creditCardsRepo.replaceAll(tenantId, stamp(withPaymentAccount(data.creditCards, data.accounts))),
       this.creditCardEntriesRepo.replaceAll(tenantId, stamp(data.creditCardEntries)),
       this.creditCardInstallmentsRepo.replaceAll(tenantId, stamp(data.creditCardInstallments)),
       this.creditCardInvoicesRepo.replaceAll(tenantId, stamp(data.creditCardInvoices)),

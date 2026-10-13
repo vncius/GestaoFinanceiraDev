@@ -122,7 +122,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | # | Entrega | Fase | Depende de | Status | Concluída em | Commit |
 |---|---|---|---|---|---|---|
 | U1 | Regra única de resumo mensal + totais pendentes | 0 | — | ✅ | 2026-10-13 | ver git log |
-| U2 | Cartão com conta pagadora obrigatória | 0 | — | ⬜ | | |
+| U2 | Cartão com conta pagadora obrigatória | 0 | — | ✅ | 2026-10-13 | ver git log |
 | U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ⬜ | | |
 | U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ⬜ | | |
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ⬜ | | |
@@ -217,7 +217,9 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 #### U7 — Vocabulário (D7)
 **Escopo**: aplicar a tabela D7 em `frontend/src/locales/{pt,en,es}/*.json`. Trocar o visual do `PaidToggle` (joinha) por checkbox com rótulo acessível "Marcar como pago/recebido", mantendo a prop `loading`. Revisar tooltips (`HelpTip`) para linguagem leiga.
 
-**Critérios de aceite**: busca por "Parametriza", "Efetivar", "Referência", "Fluxo de Caixa" nos locales pt não encontra textos de UI remanescentes (exceto onde intencional — registrar em Notas).
+- **Códigos de erro sem tradução:** o frontend traduz erros pelo `code` (`services/api.ts`) e, sem chave em `locales/*/errors.json`, mostra "Ocorreu um erro inesperado". Em 2026-10-13 havia ~20 códigos do backend sem chave (ex.: `transfer.*`, `creditCardEntry.*`, `creditCardImport.*`, `transaction.updateScopeRequired`, `onboarding.draft.autoReserve*`). Traduzir todos nos 3 idiomas; para listar os faltantes, varrer `AppError(..., '<code>')` em `backend/src` e comparar com `frontend/src/locales/pt/errors.json`.
+
+**Critérios de aceite**: busca por "Parametriza", "Efetivar", "Referência", "Fluxo de Caixa" nos locales pt não encontra textos de UI remanescentes (exceto onde intencional — registrar em Notas); nenhum código de erro do backend fica sem tradução.
 
 ### Fase 2 — Início
 
@@ -299,6 +301,14 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U2 — 2026-10-13
+- Implementado como **migração de boot** (`shared/migrations/migrate-card-payment-account.ts`, chamada em `server.ts`, padrão das migrações E*) + script avulso `npm run migrate:card-payment-account [-- --dry-run]`. Além de nulos, também corrige pagadora apontando para conta inexistente ou **inativa** (fatura de conta inativa não aparece em fluxo nenhum).
+- Regra compartilhada em `credit-cards/card-payment-account.utils.ts` (fallback = primeira conta ativa em ordem alfabética, a mesma que o formulário já sugeria), reaproveitada pela restauração de backup.
+- Desativar conta que paga cartão ativo → 409 `account.paysCreditCard` (com `params.cards`). `AccountsService` e `CreditCardsService` recebem os repositórios extras como parâmetro **opcional** para não quebrar os testes existentes.
+- Onboarding: cartão sem `defaultPaymentAccountRef` fica com a conta principal do draft.
+- **Migração em produção pendente de execução:** o Atlas recusa conexão desta máquina (TLS alert 80 → IP fora do Network Access). Roda sozinha no próximo boot do Render após o deploy, ou manualmente com o IP liberado: `MONGODB_DB_NAME=gestao_financeira npm run migrate:card-payment-account -- --dry-run` e depois sem `--dry-run`.
+- Achados fora do escopo, tratados à parte: (1) `migrateResetAutoReserve` zerava regras de reserva automática novas a cada boot — corrigido em commit próprio (`fix:`); regras configuradas em produção antes do deploy dessa correção podem ter sido apagadas. (2) ~20 códigos de erro sem tradução — traduzidos só os de `account.*` e `creditCard.*` desta entrega; o resto foi para o escopo da U7.
 
 ### U1 — 2026-10-13
 - **Bug corrigido além do escopo previsto:** `projectedBalance` partia do saldo do *início* do mês (`calcAccountBalance(..., monthStart)`) somado só aos itens *pendentes* do intervalo, então tudo que já tinha sido pago/recebido no mês sumia da previsão. Regressão de `726fe67` (que passou a excluir efetivados do intervalo sem mover a base). Agora `projectedInitialBalance = realizedBalance` — o campo mudou de significado: é a **base da projeção** (saldo já realizado até o fim do mês selecionado), não mais um "saldo inicial previsto". Na barra de resumo o rótulo virou "Saldo Realizado".

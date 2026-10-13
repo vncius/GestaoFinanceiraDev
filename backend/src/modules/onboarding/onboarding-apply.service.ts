@@ -216,7 +216,8 @@ export class OnboardingApplyService {
       await record(draft.settings.draftItemId, settings.id);
     }
 
-    // 5. Cartões de crédito
+    // 5. Cartões de crédito — conta pagadora é obrigatória (U2): sem
+    // referência no draft, a fatura fica com a conta principal.
     for (const item of draft.creditCards) {
       if (applied[item.draftItemId]) continue;
       const payload = item.payload as unknown as DraftCreditCardPayload;
@@ -230,7 +231,7 @@ export class OnboardingApplyService {
             closingDay: payload.closingDay,
             dueDay: payload.dueDay,
             limit: payload.limit,
-            defaultPaymentAccountId: resolve(payload.defaultPaymentAccountRef),
+            defaultPaymentAccountId: resolve(payload.defaultPaymentAccountRef) ?? mainAccountId ?? '',
           })
         ).id;
       await record(item.draftItemId, id);

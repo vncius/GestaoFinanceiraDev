@@ -24,7 +24,8 @@
     "dateRange": { "required": "Indica la fecha inicial y final, o selecciona todos los registros." },
     "initialBalance": { "min": "El saldo inicial debe ser mayor o igual a cero" },
     "message": { "required": "Escribe un mensaje", "max": "El mensaje es demasiado largo (máximo 2000 caracteres)" },
-    "idempotencyKey": { "invalid": "Clave de confirmación inválida" }
+    "idempotencyKey": { "invalid": "Clave de confirmación inválida" },
+    "defaultPaymentAccountId": { "required": "Indica la cuenta que paga la factura de la tarjeta" }
   },
   "onboarding": {
     "invalidTransition": "Transición de estado inválida para el onboarding.",
@@ -61,7 +62,9 @@
   },
   "creditCard": {
     "notFound": "Tarjeta no encontrada.",
-    "inactive": "Tarjeta inactiva."
+    "inactive": "Tarjeta inactiva.",
+    "paymentAccountRequired": "Indica la cuenta que paga la factura de la tarjeta.",
+    "paymentAccountNotFound": "Cuenta pagadora de la tarjeta no encontrada o inactiva."
   },
   "creditCardEntry": {
     "inactive": "Registro inactivo.",
@@ -107,7 +110,11 @@
   },
   "account": {
     "notFound": "Cuenta no encontrada",
-    "mainReserveConflict": "La cuenta principal y la cuenta de reserva no pueden ser la misma. Elige cuentas diferentes para que los saldos no se mezclen."
+    "mainReserveConflict": "La cuenta principal y la cuenta de reserva no pueden ser la misma. Elige cuentas diferentes para que los saldos no se mezclen.",
+    "paysCreditCard": "Esta cuenta paga la factura de: {{cards}}. Cambia la cuenta pagadora de esas tarjetas antes de desactivarla.",
+    "autoReserveTargetRequired": "Selecciona la cuenta de destino de la reserva automática.",
+    "autoReserveSameAccount": "Las cuentas de origen y destino de la reserva automática deben ser diferentes.",
+    "autoReserveTargetNotFound": "Cuenta de destino de la reserva automática no encontrada o inactiva."
   },
   "accountType": {
     "notFound": "Tipo de cuenta no encontrado"

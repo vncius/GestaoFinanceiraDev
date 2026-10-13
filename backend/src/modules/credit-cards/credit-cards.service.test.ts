@@ -802,3 +802,48 @@ describe('CreditCardsService — concurrency in fixed entry installment extensio
     expect(june).toHaveLength(1);
   });
 });
+
+describe('CreditCardsService — conta pagadora obrigatória (U2)', () => {
+  const baseInput = { name: 'Nubank', bank: 'Nu', closingDay: 5, dueDay: 12, limit: 100000 };
+
+  function buildWithAccounts(accounts: { id: string; active: boolean }[]) {
+    const { cardsRepo, entriesRepo, installmentsRepo, invoicesRepo, transactionsRepo, categoriesRepo } = buildService();
+    const accountsRepo = {
+      findById: async (id: string) => (accounts.find((a) => a.id === id) ?? null) as never,
+    };
+    const service = new CreditCardsService(
+      cardsRepo,
+      entriesRepo,
+      installmentsRepo,
+      invoicesRepo,
+      transactionsRepo,
+      categoriesRepo,
+      accountsRepo as never,
+    );
+    return { service, cardsRepo };
+  }
+
+  it('recusa criar cartão sem conta pagadora', async () => {
+    const { service } = buildWithAccounts([]);
+    await expect(
+      service.create(TENANT_ID, { ...baseInput, defaultPaymentAccountId: '' }),
+    ).rejects.toMatchObject({ code: 'creditCard.paymentAccountRequired' });
+  });
+
+  it('recusa conta pagadora inativa ou inexistente, na criação e na edição', async () => {
+    const ativa = randomUUID();
+    const inativa = randomUUID();
+    const { service } = buildWithAccounts([{ id: ativa, active: true }, { id: inativa, active: false }]);
+
+    await expect(
+      service.create(TENANT_ID, { ...baseInput, defaultPaymentAccountId: inativa }),
+    ).rejects.toMatchObject({ code: 'creditCard.paymentAccountNotFound' });
+
+    const card = await service.create(TENANT_ID, { ...baseInput, defaultPaymentAccountId: ativa });
+    expect(card.defaultPaymentAccountId).toBe(ativa);
+
+    await expect(
+      service.update(card.id, { defaultPaymentAccountId: randomUUID() }, TENANT_ID),
+    ).rejects.toMatchObject({ code: 'creditCard.paymentAccountNotFound' });
+  });
+});

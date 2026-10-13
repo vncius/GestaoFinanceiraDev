@@ -7,7 +7,11 @@ export const createCreditCardSchema = z.object({
   closingDay: z.number().int().min(1).max(28),
   dueDay: z.number().int().min(1).max(28),
   limit: z.number().int().min(0).default(0),
-  defaultPaymentAccountId: z.string().uuid().nullable().optional(),
+  // Obrigatória (U2): é a conta que leva a fatura em aberto para o fluxo de
+  // caixa. Na atualização pode ser omitida, mas nunca anulada.
+  defaultPaymentAccountId: z
+    .string({ required_error: 'validation.defaultPaymentAccountId.required' })
+    .uuid('validation.defaultPaymentAccountId.required'),
 });
 
 export const updateCreditCardSchema = createCreditCardSchema.partial();

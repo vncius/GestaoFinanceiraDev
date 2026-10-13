@@ -115,7 +115,7 @@
       "closingDayLabel": "Día de cierre",
       "dueDayLabel": "Día de vencimiento",
       "limitLabel": "Límite (R$) *",
-      "defaultAccountLabel": "Cuenta predeterminada de pago"
+      "defaultAccountLabel": "Cuenta que paga la factura"
     }
   }
 }

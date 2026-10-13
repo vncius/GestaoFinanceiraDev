@@ -80,7 +80,7 @@ export const aiProvider = createAiProvider(aiConfig);
 // ─── Serviços ───────────────────────────────────────────────────────────────────
 
 const auditLogService = new AuditLogService(auditLogRepo);
-const accountsService = new AccountsService(accountsRepo);
+const accountsService = new AccountsService(accountsRepo, creditCardsRepo);
 const accountTypesService = new AccountTypesService(accountTypesRepo);
 const categoriesService = new CategoriesService(categoriesRepo);
 const settingsService = new SettingsService(settingsRepo);
@@ -97,6 +97,7 @@ const creditCardsService = new CreditCardsService(
   creditCardInvoicesRepo,
   transactionsRepo,
   categoriesRepo,
+  accountsRepo,
 );
 const creditCardInvoiceImportService = new CreditCardInvoiceImportService(
   creditCardsService,

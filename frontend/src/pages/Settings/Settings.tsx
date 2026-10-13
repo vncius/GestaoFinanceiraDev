@@ -1015,7 +1015,11 @@ function CardSettingsModal({
     closingDay: item ? String(item.closingDay) : '10',
     dueDay: item ? String(item.dueDay) : '20',
     limit: item ? String(centsToFloat(item.limit)) : '',
-    defaultPaymentAccountId: item?.defaultPaymentAccountId ?? mainAccountId,
+    // Pagadora atual só se ainda for uma conta ativa (senão o select mostraria
+    // uma opção e o form guardaria outra); caso contrário, sugere a primeira.
+    defaultPaymentAccountId: activeAccounts.some((a) => a.id === item?.defaultPaymentAccountId)
+      ? (item?.defaultPaymentAccountId as string)
+      : mainAccountId,
   });
 
   const [form, setForm] = useState<CardFormState>(init);
@@ -1037,6 +1041,7 @@ function CardSettingsModal({
       { label: t('validation.nameLabel'), valid: !!form.name },
       { label: t('validation.bankLabel'), valid: !!form.bank },
       { label: t('validation.limitLabel'), valid: !!limit },
+      { label: t('cards.modal.defaultAccountLabel'), valid: !!form.defaultPaymentAccountId },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
     onSave({
@@ -1045,7 +1050,7 @@ function CardSettingsModal({
       closingDay: parseInt(form.closingDay) || 10,
       dueDay: parseInt(form.dueDay) || 20,
       limit,
-      defaultPaymentAccountId: form.defaultPaymentAccountId || null,
+      defaultPaymentAccountId: form.defaultPaymentAccountId,
     });
   }
 

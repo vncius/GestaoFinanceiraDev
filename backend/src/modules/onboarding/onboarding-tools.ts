@@ -207,7 +207,7 @@ export function createOnboardingToolRegistry(deps: OnboardingToolsDeps): AiToolR
     name: 'propose_credit_card',
     description:
       'Propõe um cartão de crédito no draft. closingDay/dueDay 1-28; limit em centavos inteiros; ' +
-      'defaultPaymentAccountRef é o draftItemId da conta que paga a fatura (opcional).',
+      'defaultPaymentAccountRef é o draftItemId da conta que paga a fatura; se omitido, a conta principal paga.',
     kind: 'proposal',
     inputSchema: draftCreditCardPayloadSchema,
     execute: async (input, context) => {

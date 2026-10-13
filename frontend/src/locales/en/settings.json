@@ -115,7 +115,7 @@
       "closingDayLabel": "Closing day",
       "dueDayLabel": "Due day",
       "limitLabel": "Limit ($) *",
-      "defaultAccountLabel": "Default payment account"
+      "defaultAccountLabel": "Account that pays the bill"
     }
   }
 }

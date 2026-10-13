@@ -9,6 +9,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U20) e `CLAUDE.md` apontando para ele.
 - U1: `CashFlowSummary` ganha `pendingIncome`/`pendingExpenses` (+ contagens) — o que ainda falta receber/pagar **só no mês selecionado**, sem acumular; e `frontend/src/utils/month-summary.ts` (`summarizeMonth`), regra única de leitura do resumo usada por Dashboard, Fluxo de Caixa e Relatório.
+- U2: migração de boot `migrateCardPaymentAccount` (+ `npm run migrate:card-payment-account [-- --dry-run]` para execução avulsa) que define a conta pagadora de cartões sem pagadora válida (nula, inexistente ou inativa) como a primeira conta ativa do tenant em ordem alfabética.
 - **Refactor de contas PF/PJ** (entregas E1–E9, ver `docs/refactor-contas-pf-pj.md`): cada conta passa a ser seu próprio contexto financeiro — fluxo de caixa, saldo e histórico isolados dos das demais, com um seletor de conta ativa no cabeçalho (`AccountContext`).
   - Transferências entre contas (`POST/PUT/DELETE /transfers`, `/transfers/:transferGroupId/revert`): sempre um par de transações ligadas por `transferGroupId`, já efetivadas na data informada, com tela própria no Fluxo de Caixa (`TransferModal`/`TransferGrid`) e opção no Lançamento Rápido.
   - Reserva automática como transferência: a regra agora fica na conta de origem (`Account.autoReserveTargetAccountId` aponta para o destino); ao receber uma entrada na origem, uma transferência automática é gerada/reconfirmada sozinha, com badge própria na UI e rótulo dedicado no CSV do backup.
@@ -29,6 +30,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - `VITE_API_URL` (frontend) e `CORS_ORIGIN` (backend) como variáveis de ambiente configuráveis.
 
 ### Changed
+- U2: conta pagadora do cartão (`defaultPaymentAccountId`) passa a ser obrigatória e validada (ativa) na criação/edição; não é mais possível desativar uma conta que paga a fatura de um cartão ativo (`account.paysCreditCard`). Onboarding usa a conta principal quando o draft não indica pagadora; restauração de backup preenche a pagadora de cartões antigos. Rótulo no formulário: "Conta que paga a fatura".
 - `CashFlow.tsx` (1414 linhas, 14 mutations) dividido em componentes/hooks menores em `pages/CashFlow/`.
 - Repositórios/serviços/controllers do backend agora são montados uma única vez em `src/container.ts`, em vez de reinstanciados em cada `*.routes.ts`.
 - Cálculo de saldo de conta (`calcAccountBalance`), antes duplicado entre `CashFlowService` e `DashboardService`, unificado em `shared/utils/balance.utils.ts`.
@@ -37,6 +39,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Cobertura de `aria-label`/`role` ampliada em botões só-ícone (Editar/Excluir/Desativar, toggles de pago/recebido) em CashFlow, Receivables, CreditCards e Settings; item de "próximos vencimentos" do Dashboard agora é focável e acionável via teclado.
 
 ### Fixed
+- Migração de boot `migrateResetAutoReserve` zerava, a cada reinício do servidor (deploy ou cold start no Render), toda regra de reserva automática configurada depois da E8. O reset agora só atinge contas no formato pré-E8. **Regras configuradas antes desta correção podem ter sido apagadas em produção e precisam ser reconfiguradas.**
 - U1: "Saídas" não tem mais três valores diferentes. Transferências entre contas deixaram de ser somadas em Entradas/Saídas no Fluxo de Caixa e no Relatório (o Dashboard já não somava) e passaram a aparecer à parte como "Entre contas" (saldo líquido), só quando há alguma no mês.
 - U1: o saldo previsto ignorava o que já tinha sido recebido/pago no próprio mês (ex.: saldo inicial 1.000, recebido 500 e 200 a pagar → previsto 800 em vez de 1.300). A base da projeção agora é o saldo realizado; regressão introduzida em `726fe67`.
 - `JsonFileStore.writeAll` agora escreve em arquivo temporário e renomeia (operação atômica), evitando corrupção do JSON em caso de crash no meio da escrita.

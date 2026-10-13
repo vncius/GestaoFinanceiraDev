@@ -3,6 +3,7 @@ import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
 import { getInvoiceMonth, addMonths, monthKey } from './credit-cards.date-utils';
 import { CategoriesRepository } from '../categories/categories.repository';
+import { AccountsRepository } from '../accounts/accounts.repository';
 import { CategoryType } from '../categories/categories.types';
 import { FinancialTransactionsRepository } from '../financial-transactions/financial-transactions.repository';
 import {
@@ -65,6 +66,9 @@ export class CreditCardsService {
     private readonly invoicesRepo: CreditCardInvoicesRepository,
     private readonly transactionsRepo: FinancialTransactionsRepository,
     private readonly categoriesRepo: CategoriesRepository,
+    // Opcional para não exigir o repositório em contextos que não criam nem
+    // editam cartão; quando presente, valida a conta pagadora (U2).
+    private readonly accountsRepo?: AccountsRepository,
   ) {}
 
   // CRUD manual: categoria inválida/inativa/tipo errado é rejeitada com erro
@@ -157,6 +161,7 @@ export class CreditCardsService {
   }
 
   async create(tenantId: string, input: CreateCreditCardInput): Promise<CreditCard> {
+    await this.assertPaymentAccount(tenantId, input.defaultPaymentAccountId);
     const now = nowISO();
     return this.cardsRepo.create({
       id: generateId(),
@@ -166,7 +171,7 @@ export class CreditCardsService {
       closingDay: input.closingDay,
       dueDay: input.dueDay,
       limit: input.limit,
-      defaultPaymentAccountId: input.defaultPaymentAccountId ?? null,
+      defaultPaymentAccountId: input.defaultPaymentAccountId,
       active: true,
       createdAt: now,
       updatedAt: now,
@@ -175,7 +180,24 @@ export class CreditCardsService {
 
   async update(id: string, input: UpdateCreditCardInput, tenantId: string): Promise<CreditCard> {
     await this.findById(id, tenantId);
+    if (input.defaultPaymentAccountId !== undefined) {
+      await this.assertPaymentAccount(tenantId, input.defaultPaymentAccountId);
+    }
     return this.cardsRepo.update(id, { ...input, updatedAt: nowISO() }, tenantId);
+  }
+
+  // Todo cartão precisa de uma conta pagadora ativa: é ela que leva a fatura
+  // em aberto para o fluxo de caixa (sem isso a fatura só aparecia depois de
+  // paga).
+  private async assertPaymentAccount(tenantId: string, accountId: string | null | undefined): Promise<void> {
+    if (!accountId) {
+      throw new AppError('Informe a conta que paga a fatura do cartão.', 400, 'creditCard.paymentAccountRequired');
+    }
+    if (!this.accountsRepo) return;
+    const account = await this.accountsRepo.findById(accountId, tenantId);
+    if (!account || !account.active) {
+      throw new AppError('Conta pagadora do cartão não encontrada ou inativa.', 404, 'creditCard.paymentAccountNotFound');
+    }
   }
 
   async softDelete(id: string, tenantId: string): Promise<void> {

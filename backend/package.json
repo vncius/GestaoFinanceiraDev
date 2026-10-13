@@ -10,6 +10,7 @@
     "start": "node dist/server.js",
     "seed": "tsx src/scripts/seed.ts",
     "migrate:mongo": "tsx src/scripts/migrate-json-to-mongo.ts",
+    "migrate:card-payment-account": "tsx src/scripts/migrate-card-payment-account.ts",
     "test": "vitest run"
   },
   "dependencies": {

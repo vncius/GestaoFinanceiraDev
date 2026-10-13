@@ -24,7 +24,8 @@
     "dateRange": { "required": "Provide a start and end date, or select all entries." },
     "initialBalance": { "min": "Initial balance must be greater than or equal to zero" },
     "message": { "required": "Type a message", "max": "Message is too long (2000 characters max)" },
-    "idempotencyKey": { "invalid": "Invalid confirmation key" }
+    "idempotencyKey": { "invalid": "Invalid confirmation key" },
+    "defaultPaymentAccountId": { "required": "Choose the account that pays the card bill" }
   },
   "onboarding": {
     "invalidTransition": "Invalid onboarding status transition.",
@@ -61,7 +62,9 @@
   },
   "creditCard": {
     "notFound": "Card not found.",
-    "inactive": "Card is inactive."
+    "inactive": "Card is inactive.",
+    "paymentAccountRequired": "Choose the account that pays the card bill.",
+    "paymentAccountNotFound": "Card payment account not found or inactive."
   },
   "creditCardEntry": {
     "inactive": "Entry is inactive.",
@@ -107,7 +110,11 @@
   },
   "account": {
     "notFound": "Account not found",
-    "mainReserveConflict": "The main account and the reserve account can't be the same. Choose different accounts so balances don't get mixed up."
+    "mainReserveConflict": "The main account and the reserve account can't be the same. Choose different accounts so balances don't get mixed up.",
+    "paysCreditCard": "This account pays the bill of: {{cards}}. Change those cards' payment account before deactivating it.",
+    "autoReserveTargetRequired": "Choose the automatic reserve destination account.",
+    "autoReserveSameAccount": "The automatic reserve source and destination accounts must be different.",
+    "autoReserveTargetNotFound": "Automatic reserve destination account not found or inactive."
   },
   "accountType": {
     "notFound": "Account type not found"
