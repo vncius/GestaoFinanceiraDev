@@ -51,7 +51,9 @@
     "themes": {
       "light": "Light",
       "dark": "Dark"
-    }
+    },
+    "advancedLabel": "Show advanced details",
+    "advancedHint": "Opens the summary details in Transactions and the full analysis on Home already expanded."
   },
   "accounts": {
     "newButton": "New Account",

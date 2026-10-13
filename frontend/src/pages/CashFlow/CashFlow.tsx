@@ -26,6 +26,7 @@ import { SummaryBar } from './components/SummaryBar';
 import { MovementsList, NewMovementKind, RowBusy } from './components/MovementsList';
 import { filterMovements, groupBySituation, MovementItem, MovementKind, MovementTag, toMovements } from './movements';
 import { useCollapsibleSections } from './useCollapsibleSections';
+import { getAdvancedDetails } from '../../hooks/useAdvancedDetails';
 import { MovementFormKind, MovementModal, MovementSubmit } from '../../components/movement/MovementModal';
 import { TransferModal } from './components/TransferModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
@@ -81,7 +82,7 @@ export default function CashFlow() {
   // ── Summary bar state ────────────────────────────────────────────────────────
   // Vive no componente da página (que não desmonta ao trocar de mês) para que
   // o estado expandido/recolhido sobreviva à troca de referência.
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(getAdvancedDetails);
 
   // Cards recolhíveis: vazios iniciam recolhidos; preferência persistida por tenant.
   const sections = useCollapsibleSections();

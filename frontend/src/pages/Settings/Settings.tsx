@@ -28,6 +28,7 @@ import { sortByName } from '../../utils/sort';
 import { CardSettingsModal } from '../../components/credit-card/CardSettingsModal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAdvancedDetails } from '../../hooks/useAdvancedDetails';
 import { Language } from '../../i18n';
 import BackupSections from '../Backup/Backup';
 
@@ -174,6 +175,7 @@ function PreferencesTab() {
   const { t } = useTranslation('settings');
   const { language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const [advanced, setAdvanced] = useAdvancedDetails();
 
   return (
     <div className="space-y-5 max-w-2xl">
@@ -197,6 +199,13 @@ function PreferencesTab() {
             </select>
           </Field>
         </div>
+        <label className="mt-4 flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
+          <input type="checkbox" className="rounded mt-0.5" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)} />
+          <span>
+            {t('preferences.advancedLabel')}
+            <span className="block text-xs text-gray-500 dark:text-gray-400">{t('preferences.advancedHint')}</span>
+          </span>
+        </label>
       </SectionCard>
     </div>
   );

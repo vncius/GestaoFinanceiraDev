@@ -31,6 +31,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency } from '../../utils/money';
 import { formatDate, formatMonthYear, formatMonthYearShort, lastDayOfMonthISO } from '../../utils/date';
 import { MonthSummaryView, projectionRange, summarizeMonth } from '../../utils/month-summary';
+import { getAdvancedDetails } from '../../hooks/useAdvancedDetails';
 
 // Início (U8 do plano de UX). De cima para baixo, só o que responde
 // "quanto tenho / quanto entrou e saiu / o que ainda falta"; o resto fica
@@ -338,7 +339,9 @@ function EvolutionChart({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
 
 function readAnalysisOpen(): boolean {
   try {
-    return localStorage.getItem(ANALYSIS_KEY) === 'true';
+    const saved = localStorage.getItem(ANALYSIS_KEY);
+    // Sem escolha salva, segue a preferência "Mostrar detalhes avançados".
+    return saved === null ? getAdvancedDetails() : saved === 'true';
   } catch {
     return false;
   }

@@ -51,7 +51,9 @@
     "themes": {
       "light": "Claro",
       "dark": "Escuro"
-    }
+    },
+    "advancedLabel": "Mostrar detalhes avançados",
+    "advancedHint": "Abre já expandidos os detalhes do resumo em Movimentações e a análise completa do Início."
   },
   "accounts": {
     "newButton": "Nova Conta",
