@@ -35,6 +35,10 @@ const ZERO_SUMMARY: CashFlowSummary = {
   paidExtraExpenses: 0,
   creditCardInvoices: 0,
   paidCreditCardInvoices: 0,
+  pendingIncome: 0,
+  pendingIncomeCount: 0,
+  pendingExpenses: 0,
+  pendingExpensesCount: 0,
   transferInflow: 0,
   expectedTransferInflow: 0,
   transferOutflow: 0,
@@ -43,25 +47,14 @@ const ZERO_SUMMARY: CashFlowSummary = {
   realizedBalance: 0,
 };
 
+// Todos os campos do resumo são aditivos; somar pelas chaves de ZERO_SUMMARY
+// evita esquecer um campo novo no consolidado.
 function sumSummaries(a: CashFlowSummary, b: CashFlowSummary): CashFlowSummary {
-  return {
-    initialBalance: a.initialBalance + b.initialBalance,
-    projectedInitialBalance: a.projectedInitialBalance + b.projectedInitialBalance,
-    expectedIncome: a.expectedIncome + b.expectedIncome,
-    receivedIncome: a.receivedIncome + b.receivedIncome,
-    expectedPayments: a.expectedPayments + b.expectedPayments,
-    paidPayments: a.paidPayments + b.paidPayments,
-    expectedExtraExpenses: a.expectedExtraExpenses + b.expectedExtraExpenses,
-    paidExtraExpenses: a.paidExtraExpenses + b.paidExtraExpenses,
-    creditCardInvoices: a.creditCardInvoices + b.creditCardInvoices,
-    paidCreditCardInvoices: a.paidCreditCardInvoices + b.paidCreditCardInvoices,
-    transferInflow: a.transferInflow + b.transferInflow,
-    expectedTransferInflow: a.expectedTransferInflow + b.expectedTransferInflow,
-    transferOutflow: a.transferOutflow + b.transferOutflow,
-    expectedTransferOutflow: a.expectedTransferOutflow + b.expectedTransferOutflow,
-    projectedBalance: a.projectedBalance + b.projectedBalance,
-    realizedBalance: a.realizedBalance + b.realizedBalance,
-  };
+  const out = { ...ZERO_SUMMARY };
+  for (const key of Object.keys(ZERO_SUMMARY) as (keyof CashFlowSummary)[]) {
+    out[key] = a[key] + b[key];
+  }
+  return out;
 }
 
 export class DashboardService {

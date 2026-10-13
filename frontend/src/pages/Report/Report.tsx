@@ -9,6 +9,7 @@ import { useAccount } from '../../contexts/AccountContext';
 import { SettingsService } from '../../services/settings.service';
 import { formatCurrency } from '../../utils/money';
 import { formatMonthYear } from '../../utils/date';
+import { summarizeMonth } from '../../utils/month-summary';
 import { CategoryBreakdownItem, MonthlyEvolutionItem } from '../../types';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -102,10 +103,7 @@ export default function Report() {
   if (isLoading || !data) return <PageLoading />;
 
   const { accounts, monthSummary: s, monthlyEvolution, categoryBreakdown } = data;
-  // Transferências entram no resumo como linhas próprias: a perna que sai
-  // soma nas saídas, a que entra fica logo abaixo das entradas. Sem elas o
-  // saldo final (que já as considera) não fecharia com as parcelas listadas.
-  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices + s.transferOutflow;
+  const v = summarizeMonth(s);
 
   return (
     <div className="min-h-screen bg-white">
@@ -137,15 +135,16 @@ export default function Report() {
         </Section>
 
         <Section title={t('summary.sectionTitle', { monthYear: formatMonthYear(month, year) })}>
-          <KeyValueRow label={t('summary.initialBalance')} value={formatCurrency(s.initialBalance)} />
-          <KeyValueRow label={t('summary.receivedIncome')} value={formatCurrency(s.receivedIncome)} />
-          <KeyValueRow label={t('summary.transfersIn')} value={formatCurrency(s.transferInflow)} />
+          <KeyValueRow label={t('summary.initialBalance')} value={formatCurrency(v.initialBalance)} />
+          <KeyValueRow label={t('summary.receivedIncome')} value={formatCurrency(v.income)} />
           <KeyValueRow label={t('summary.payments')} value={formatCurrency(s.paidPayments)} />
           <KeyValueRow label={t('summary.extraExpenses')} value={formatCurrency(s.paidExtraExpenses)} />
           <KeyValueRow label={t('summary.creditCardInvoices')} value={formatCurrency(s.paidCreditCardInvoices)} />
-          <KeyValueRow label={t('summary.transfersOut')} value={formatCurrency(s.transferOutflow)} />
-          <KeyValueRow label={t('summary.totalExpenses')} value={formatCurrency(totalPaid)} />
-          <KeyValueRow label={t('summary.finalBalance')} value={formatCurrency(s.realizedBalance)} bold />
+          <KeyValueRow label={t('summary.totalExpenses')} value={formatCurrency(v.expenses)} />
+          {v.betweenAccounts !== 0 && (
+            <KeyValueRow label={t('summary.betweenAccounts')} value={formatCurrency(v.betweenAccounts)} />
+          )}
+          <KeyValueRow label={t('summary.finalBalance')} value={formatCurrency(v.balance)} bold />
         </Section>
 
         <div className="grid grid-cols-2 gap-6">

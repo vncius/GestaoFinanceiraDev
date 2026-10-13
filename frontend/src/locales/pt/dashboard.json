@@ -17,7 +17,8 @@
     "expenses": "Saídas",
     "payments": "Pagamentos",
     "extraExpenses": "Gastos Extras",
-    "creditCardInvoices": "Faturas Cartão"
+    "creditCardInvoices": "Faturas Cartão",
+    "betweenAccounts": "Entre suas contas"
   },
   "categoryAnalysis": {
     "sectionTitle": "Análise por Categoria",

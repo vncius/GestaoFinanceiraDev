@@ -275,15 +275,7 @@ export class CashFlowService {
       .reduce((s, t) => s + t.amount, 0);
 
     const monthStart = new Date(year, month - 1, 1);
-    // O saldo inicial da projeção só precisa ser recalculado com um corte
-    // diferente (início do mês atual) quando a referência é futura; nos
-    // demais casos reaproveita o mesmo saldo do mês selecionado (initialBalance).
-    const rangeStart = new Date(rangeStartYear, rangeStartMonth - 1, 1);
-
     const initialBalance = calcAccountBalance(account, allTransactions, monthStart);
-    const projectedInitialBalance = isFutureSelection
-      ? calcAccountBalance(account, allTransactions, rangeStart)
-      : initialBalance;
 
     // realizado — sempre restrito ao mês selecionado
     const receivedIncome = entries
@@ -302,8 +294,36 @@ export class CashFlowService {
       .filter((inv) => inv.status === InvoiceStatus.PAID)
       .reduce((s, inv) => s + inv.totalAmount, 0);
 
+    const realizedBalance =
+      initialBalance +
+      receivedIncome +
+      transferInflowRealized -
+      paidPayments -
+      paidExtraExpenses -
+      paidCreditCards -
+      transferOutflowRealized;
+
+    // pendente — só o mês selecionado, nunca acumulado: responde "quanto
+    // ainda falta receber/pagar neste mês". Transferências ficam de fora
+    // (não são ganho nem gasto); a projeção abaixo as considera à parte.
+    const pendingEntries = entries.filter((t) => t.status !== TransactionStatus.RECEIVED);
+    const pendingOutflows = [
+      ...payments.filter((t) => t.status !== TransactionStatus.PAID),
+      ...extraExpenses.filter((t) => t.status !== TransactionStatus.PAID),
+    ];
+    const pendingInvoices = monthInvoices.filter((inv) => inv.status !== InvoiceStatus.PAID);
+    const pendingIncome = pendingEntries.reduce((s, t) => s + t.amount, 0);
+    const pendingExpenses =
+      pendingOutflows.reduce((s, t) => s + t.amount, 0) +
+      pendingInvoices.reduce((s, inv) => s + inv.totalAmount, 0);
+
     // previsto — mês atual até o mês selecionado (colapsa para o próprio
-    // mês quando a referência não é futura)
+    // mês quando a referência não é futura). Os filtros de intervalo só pegam
+    // itens ainda pendentes, então a base da projeção é o saldo já realizado
+    // até o fim do mês selecionado (= realizedBalance, pelo invariante
+    // initialBalance_mêsSeguinte == realizedBalance_mêsAtual). Partir do saldo
+    // do início do mês deixava de fora o que já foi recebido/pago no mês.
+    const projectedInitialBalance = realizedBalance;
     const expectedIncome = rangeEntries.reduce((s, t) => s + t.amount, 0);
     const expectedPayments = rangePayments.reduce((s, t) => s + t.amount, 0);
     const expectedExtraExpenses = rangeExtraExpenses.reduce((s, t) => s + t.amount, 0);
@@ -328,6 +348,10 @@ export class CashFlowService {
         paidExtraExpenses,
         creditCardInvoices: creditCardInvoicesTotal,
         paidCreditCardInvoices: paidCreditCards,
+        pendingIncome,
+        pendingIncomeCount: pendingEntries.length,
+        pendingExpenses,
+        pendingExpensesCount: pendingOutflows.length + pendingInvoices.length,
         transferInflow: transferInflowRealized,
         expectedTransferInflow: transferInflowExpected,
         transferOutflow: transferOutflowRealized,
@@ -340,14 +364,7 @@ export class CashFlowService {
           expectedExtraExpenses -
           creditCardInvoicesTotal -
           transferOutflowExpected,
-        realizedBalance:
-          initialBalance +
-          receivedIncome +
-          transferInflowRealized -
-          paidPayments -
-          paidExtraExpenses -
-          paidCreditCards -
-          transferOutflowRealized,
+        realizedBalance,
       },
     };
   }

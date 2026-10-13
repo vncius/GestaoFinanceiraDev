@@ -17,7 +17,8 @@
     "expenses": "Expenses",
     "payments": "Payments",
     "extraExpenses": "Extra Expenses",
-    "creditCardInvoices": "Credit Card Invoices"
+    "creditCardInvoices": "Credit Card Invoices",
+    "betweenAccounts": "Between your accounts"
   },
   "categoryAnalysis": {
     "sectionTitle": "Category Analysis",

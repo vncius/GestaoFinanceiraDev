@@ -36,6 +36,7 @@ import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency } from '../../utils/money';
 import { formatDate, formatMonthYear } from '../../utils/date';
+import { summarizeMonth } from '../../utils/month-summary';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -373,7 +374,7 @@ export default function Dashboard() {
     categoryBreakdown,
   } = data;
 
-  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices;
+  const v = summarizeMonth(s);
 
   return (
     <div className="space-y-6">
@@ -439,47 +440,49 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
           <StatCard
             label={t('summary.initialBalance')}
-            value={formatCurrency(s.initialBalance)}
+            value={formatCurrency(v.initialBalance)}
             icon={<History size={16} className="text-slate-500 dark:text-slate-400" />}
             iconBg="bg-slate-100 dark:bg-slate-700/60"
-            valueColor={identityColor(s.initialBalance, 'text-slate-600 dark:text-slate-300')}
+            valueColor={identityColor(v.initialBalance, 'text-slate-600 dark:text-slate-300')}
             sub={t('summary.initialBalanceSub')}
           />
           <StatCard
             label={t('summary.monthBalance')}
-            value={formatCurrency(s.realizedBalance)}
+            value={formatCurrency(v.balance)}
             icon={
               <Scale
                 size={16}
-                className={s.realizedBalance < 0 ? 'text-red-500' : 'text-green-600 dark:text-green-400'}
+                className={v.balance < 0 ? 'text-red-500' : 'text-green-600 dark:text-green-400'}
               />
             }
-            iconBg={s.realizedBalance < 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-green-50 dark:bg-green-900/30'}
-            valueColor={balanceColor(s.realizedBalance)}
+            iconBg={v.balance < 0 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-green-50 dark:bg-green-900/30'}
+            valueColor={balanceColor(v.balance)}
             sub={t('summary.monthBalanceSub')}
           />
           <StatCard
             label={t('summary.income')}
-            value={formatCurrency(s.receivedIncome)}
+            value={formatCurrency(v.income)}
             icon={<TrendingUp size={16} className="text-green-600" />}
             iconBg="bg-green-50 dark:bg-green-900/30"
             valueColor="text-green-700 dark:text-green-400"
           />
           <StatCard
             label={t('summary.expenses')}
-            value={formatCurrency(totalPaid)}
+            value={formatCurrency(v.expenses)}
             icon={<TrendingDown size={16} className="text-red-500" />}
             iconBg="bg-red-50 dark:bg-red-900/30"
             valueColor="text-red-600 dark:text-red-400"
           />
         </div>
 
-        {/* Breakdown de saídas consolidadas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Breakdown de saídas consolidadas + transferências entre contas
+            (fora de Entradas/Saídas; só aparece quando houve alguma) */}
+        <div className={`grid grid-cols-1 gap-3 ${v.betweenAccounts !== 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {[
             { label: t('summary.payments'), value: s.paidPayments },
             { label: t('summary.extraExpenses'), value: s.paidExtraExpenses },
             { label: t('summary.creditCardInvoices'), value: s.paidCreditCardInvoices },
+            ...(v.betweenAccounts !== 0 ? [{ label: t('summary.betweenAccounts'), value: v.betweenAccounts }] : []),
           ].map(({ label, value }) => (
             <div
               key={label}

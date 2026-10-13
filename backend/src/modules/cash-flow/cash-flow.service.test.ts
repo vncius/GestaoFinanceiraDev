@@ -745,3 +745,80 @@ describe('CashFlowService — retrato compartilhado entre contas (dashboard)', (
     expect(alugueis.length).toBe(3);
   });
 });
+
+describe('CashFlowService — resumo: pendentes do mês e base da projeção', () => {
+  let ctx: ReturnType<typeof buildService>;
+
+  beforeEach(() => {
+    ctx = buildService();
+  });
+
+  // Datas relativas a hoje: "previsto" depende de o mês ser atual ou futuro.
+  function dayOfMonthOffset(monthOffset: number): { iso: string; month: number; year: number } {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() + monthOffset, 10);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return {
+      iso: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-10T12:00:00.000Z`,
+      month: d.getMonth() + 1,
+      year: d.getFullYear(),
+    };
+  }
+
+  it('no mês atual, a previsão parte do saldo já realizado (inclui o recebido no mês)', async () => {
+    const { service, accountsRepo } = ctx;
+    const account = await seedAccount(accountsRepo, { initialBalance: 100000 });
+    const now = dayOfMonthOffset(0);
+
+    const income = await service.createIncome(TENANT_ID, account.id, {
+      description: 'Salário',
+      categoryId: randomUUID(),
+      amount: 50000,
+      expectedDate: now.iso,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    await service.receiveIncome(income.id, TENANT_ID, {});
+    await service.createPayment(TENANT_ID, account.id, {
+      description: 'Internet',
+      categoryId: randomUUID(),
+      amount: 20000,
+      expectedDate: now.iso,
+      recurrence: RecurrenceType.UNIQUE,
+    });
+
+    const { summary } = await service.getCashFlow(TENANT_ID, { month: now.month, year: now.year, accountId: account.id });
+
+    expect(summary.realizedBalance).toBe(150000);
+    expect(summary.projectedInitialBalance).toBe(150000);
+    expect(summary.projectedBalance).toBe(130000);
+    expect(summary.pendingIncome).toBe(0);
+    expect(summary.pendingIncomeCount).toBe(0);
+    expect(summary.pendingExpenses).toBe(20000);
+    expect(summary.pendingExpensesCount).toBe(1);
+  });
+
+  it('em mês futuro, pendentes ficam só no mês enquanto o previsto acumula desde o mês atual', async () => {
+    const { service, accountsRepo } = ctx;
+    const account = await seedAccount(accountsRepo, { initialBalance: 100000 });
+    const now = dayOfMonthOffset(0);
+    const next = dayOfMonthOffset(1);
+
+    for (const [when, amount] of [[now, 20000], [next, 30000]] as const) {
+      await service.createPayment(TENANT_ID, account.id, {
+        description: 'Conta',
+        categoryId: randomUUID(),
+        amount,
+        expectedDate: when.iso,
+        recurrence: RecurrenceType.UNIQUE,
+      });
+    }
+
+    const { summary } = await service.getCashFlow(TENANT_ID, { month: next.month, year: next.year, accountId: account.id });
+
+    expect(summary.pendingExpenses).toBe(30000);
+    expect(summary.pendingExpensesCount).toBe(1);
+    expect(summary.expectedPayments).toBe(50000);
+    expect(summary.realizedBalance).toBe(100000);
+    expect(summary.projectedBalance).toBe(50000);
+  });
+});

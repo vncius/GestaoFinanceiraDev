@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CashFlowSummary } from '../../../types';
 import { formatCurrency } from '../../../utils/money';
 import { HelpTip } from '../../../components/ui/Tooltip';
+import { summarizeMonth } from '../../../utils/month-summary';
 
 function SummaryCell({
   label,
@@ -66,27 +67,28 @@ export function SummaryBar({
   onToggleExpanded: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
-  // Transferências entram nas mesmas linhas dos demais lançamentos: a perna
-  // que chega na conta selecionada é entrada, a que sai é saída. Sem isso o
-  // Saldo Final (que já as considera) não fecharia com Inicial + Entradas − Saídas.
-  const totalReceived = s.receivedIncome + s.transferInflow;
-  const totalPaid = s.paidPayments + s.paidExtraExpenses + s.paidCreditCardInvoices + s.transferOutflow;
-  const totalExpectedIncome = s.expectedIncome + s.expectedTransferInflow;
-  const totalExpected =
-    s.expectedPayments + s.expectedExtraExpenses + s.creditCardInvoices + s.expectedTransferOutflow;
+  const v = summarizeMonth(s);
+  // Transferência não é entrada nem saída: tem coluna própria, exibida só
+  // quando há alguma no mês (realizada ou prevista). Nas duas linhas, para
+  // não desalinhar as colunas quando a barra está expandida.
+  const showBetween = v.betweenAccounts !== 0 || v.expectedBetweenAccounts !== 0;
 
-  const saldoColor = s.realizedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
-  const prevSaldoColor = s.projectedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
+  const saldoColor = v.balance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
+  const prevSaldoColor = v.projectedBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
   const initialColor = 'text-gray-600 dark:text-gray-300';
+  const betweenColor = 'text-gray-600 dark:text-gray-300';
 
   return (
     <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
       <div className="flex items-center px-3 sm:px-6 py-2.5">
         <SummaryRow>
-          <SummaryCell label={t('summaryBar.initial')} tooltip={t('summaryBar.initialTooltip')} value={s.initialBalance} color={initialColor} />
-          <SummaryCell label={t('summaryBar.income')} value={totalReceived} color="text-green-600 dark:text-green-400" />
-          <SummaryCell label={t('summaryBar.expense')} value={totalPaid} color="text-red-500 dark:text-red-400" />
-          <SummaryCell label={t('summaryBar.finalBalance')} tooltip={t('summaryBar.finalBalanceTooltip')} value={s.realizedBalance} color={saldoColor} bold border={false} />
+          <SummaryCell label={t('summaryBar.initial')} tooltip={t('summaryBar.initialTooltip')} value={v.initialBalance} color={initialColor} />
+          <SummaryCell label={t('summaryBar.income')} value={v.income} color="text-green-600 dark:text-green-400" />
+          <SummaryCell label={t('summaryBar.expense')} value={v.expenses} color="text-red-500 dark:text-red-400" />
+          {showBetween && (
+            <SummaryCell label={t('summaryBar.betweenAccounts')} tooltip={t('summaryBar.betweenAccountsTooltip')} value={v.betweenAccounts} color={betweenColor} />
+          )}
+          <SummaryCell label={t('summaryBar.finalBalance')} tooltip={t('summaryBar.finalBalanceTooltip')} value={v.balance} color={saldoColor} bold border={false} />
         </SummaryRow>
         <button
           onClick={onToggleExpanded}
@@ -102,10 +104,13 @@ export function SummaryBar({
       {expanded && (
         <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
           <SummaryRow>
-            <SummaryCell label={t('summaryBar.projectedInitialBalance')} value={s.projectedInitialBalance} color={initialColor} />
-            <SummaryCell label={t('summaryBar.expectedIncome')} value={totalExpectedIncome} color="text-green-600 dark:text-green-400" />
-            <SummaryCell label={t('summaryBar.expectedExpense')} value={totalExpected} color="text-red-500 dark:text-red-400" />
-            <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={s.projectedBalance} color={prevSaldoColor} bold border={false} />
+            <SummaryCell label={t('summaryBar.projectedInitialBalance')} tooltip={t('summaryBar.projectedInitialBalanceTooltip')} value={v.projectedBase} color={initialColor} />
+            <SummaryCell label={t('summaryBar.expectedIncome')} value={v.expectedIncome} color="text-green-600 dark:text-green-400" />
+            <SummaryCell label={t('summaryBar.expectedExpense')} value={v.expectedExpenses} color="text-red-500 dark:text-red-400" />
+            {showBetween && (
+              <SummaryCell label={t('summaryBar.expectedBetweenAccounts')} value={v.expectedBetweenAccounts} color={betweenColor} />
+            )}
+            <SummaryCell label={t('summaryBar.projectedBalance')} tooltip={t('summaryBar.projectedBalanceTooltip')} value={v.projectedBalance} color={prevSaldoColor} bold border={false} />
           </SummaryRow>
           <ToggleSpacer label={t('summaryBar.collapse')} />
         </div>

@@ -10,11 +10,10 @@
     "sectionTitle": "Summary for {{monthYear}}",
     "initialBalance": "Initial balance",
     "receivedIncome": "Income received",
-    "transfersIn": "Transfers in",
     "payments": "Payments",
     "extraExpenses": "Extra expenses",
     "creditCardInvoices": "Credit card invoices",
-    "transfersOut": "Transfers out",
+    "betweenAccounts": "Between your accounts (net)",
     "totalExpenses": "Total expenses",
     "finalBalance": "Final balance"
   },

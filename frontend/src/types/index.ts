@@ -200,9 +200,15 @@ export interface CashFlowSummary {
   paidExtraExpenses: number;
   creditCardInvoices: number;
   paidCreditCardInvoices: number;
+  // Ainda pendente só no mês selecionado (nunca acumulado): a receber e a
+  // pagar (pagamentos + gastos extras + faturas). Sem transferências.
+  pendingIncome: number;
+  pendingIncomeCount: number;
+  pendingExpenses: number;
+  pendingExpensesCount: number;
   // Pernas de transferência da conta selecionada (entrada/saída, efetiva e
-  // prevista) — a barra de resumo as soma às linhas de Entradas/Saídas para
-  // que o saldo exibido feche com o que está listado nas grids.
+  // prevista). Não entram em Entradas/Saídas: utils/month-summary.ts as
+  // exibe à parte, como saldo líquido "entre suas contas".
   transferInflow: number;
   expectedTransferInflow: number;
   transferOutflow: number;

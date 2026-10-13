@@ -35,6 +35,8 @@ export interface TransferFlowItem {
 
 export interface CashFlowSummary {
   initialBalance: number;
+  // Base da projeção: saldo já realizado até o fim do mês selecionado (igual
+  // a realizedBalance). projectedBalance = esta base + previstos pendentes.
   projectedInitialBalance: number;
   expectedIncome: number;
   receivedIncome: number;
@@ -44,12 +46,18 @@ export interface CashFlowSummary {
   paidExtraExpenses: number;
   creditCardInvoices: number;
   paidCreditCardInvoices: number;
-  // Transferências sob a ótica da conta selecionada: a perna que entra é uma
-  // entrada (prevista/efetiva) e a que sai é uma saída. Ficam em campos
-  // próprios — e não somadas em expectedIncome/receivedIncome — para que o
-  // resumo consiga exibi-las com a badge de transferência, mas entram nas
-  // mesmas linhas de "Entradas"/"Saídas" da barra, sem as quais o saldo
-  // final não fecharia com o que está listado na tela.
+  // Ainda pendente só no mês selecionado (nunca acumulado, ao contrário dos
+  // expected*): entradas a receber; pagamentos + gastos extras + faturas a
+  // pagar. Transferências não entram — não são ganho nem gasto.
+  pendingIncome: number;
+  pendingIncomeCount: number;
+  pendingExpenses: number;
+  pendingExpensesCount: number;
+  // Transferências sob a ótica da conta selecionada (perna que entra / que
+  // sai, efetiva e prevista). Ficam em campos próprios, fora de
+  // receivedIncome/paid*: transferência não é ganho nem gasto. O frontend as
+  // exibe como saldo líquido "entre suas contas"; realizedBalance e
+  // projectedBalance já as consideram.
   transferInflow: number;
   expectedTransferInflow: number;
   transferOutflow: number;
