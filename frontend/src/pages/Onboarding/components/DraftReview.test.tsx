@@ -98,7 +98,7 @@ describe('DraftReview', () => {
     expect(await screen.findByText('Nubank PJ')).toBeInTheDocument();
     expect(screen.getByText('Contrato mensal')).toBeInTheDocument();
     expect(screen.getByText(/R\$\s*12\.000,00/)).toBeInTheDocument();
-    expect(screen.getByText(/Painel por conta/)).toBeInTheDocument();
+    expect(screen.getByText(/O app abre mostrando uma conta por vez/)).toBeInTheDocument();
   });
 
   it('sem conta principal: mostra pendência e desabilita a confirmação', async () => {

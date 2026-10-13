@@ -220,9 +220,10 @@ export function createOnboardingToolRegistry(deps: OnboardingToolsDeps): AiToolR
     name: 'propose_settings',
     description:
       'Propõe as configurações financeiras (singleton; nova proposta substitui a anterior). ' +
-      'dashboardScope CONSOLIDATED soma o resumo/dashboard de todas as contas; ACCOUNT mostra uma ' +
-      'conta por vez (útil quando o usuário quer ver PF e PJ separados no painel inicial). ' +
-      'Só proponha se o usuário tiver mais de uma conta e demonstrar preferência — CONSOLIDATED já é o default.',
+      'dashboardScope define só a visão inicial do seletor de conta (Início, Movimentações, Cartões): ' +
+      'CONSOLIDATED abre em "Todas as contas"; ACCOUNT abre numa conta por vez (útil para ver PF e PJ separados). ' +
+      'O usuário troca a qualquer momento no seletor. Só proponha se ele tiver mais de uma conta e demonstrar ' +
+      'preferência — CONSOLIDATED já é o default.',
     kind: 'proposal',
     inputSchema: draftSettingsPayloadSchema,
     execute: async (input, context) => {

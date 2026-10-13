@@ -56,8 +56,8 @@
     "mainAccount": "Principal",
     "settingsTitle": "Configuración financiera",
     "dashboardScope": {
-      "CONSOLIDATED": "Panel consolidado (todas las cuentas)",
-      "ACCOUNT": "Panel por cuenta"
+      "CONSOLIDATED": "La app abre mostrando todas las cuentas",
+      "ACCOUNT": "La app abre mostrando una cuenta a la vez"
     },
     "incomeCategory": "Categoría de ingreso",
     "expenseCategory": "Categoría de gasto",

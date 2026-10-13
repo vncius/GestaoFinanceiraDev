@@ -56,8 +56,8 @@
     "mainAccount": "Main",
     "settingsTitle": "Financial settings",
     "dashboardScope": {
-      "CONSOLIDATED": "Consolidated dashboard (all accounts)",
-      "ACCOUNT": "Per-account dashboard"
+      "CONSOLIDATED": "The app opens showing all accounts",
+      "ACCOUNT": "The app opens showing one account at a time"
     },
     "incomeCategory": "Income category",
     "expenseCategory": "Expense category",

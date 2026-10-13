@@ -1,10 +1,12 @@
-const MONTHS_PT = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-];
+import i18n from '../i18n';
 
-export function formatMonthYear(month: number, year: number): string {
-  return `${MONTHS_PT[month - 1]} ${year}`;
+const INTL_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US', es: 'es-ES' };
+
+// "Outubro 2026" / "October 2026" / "Octubre 2026" — no idioma ativo da app.
+export function formatMonthYear(month: number, year: number, language: string = i18n.language ?? 'pt'): string {
+  const locale = INTL_LOCALE[language] ?? language;
+  const name = new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(year, month - 1, 1));
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`;
 }
 
 export function formatDate(iso: string): string {

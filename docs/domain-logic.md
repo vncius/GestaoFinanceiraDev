@@ -68,3 +68,13 @@ Um lançamento com `recurrence: FIXED` também é gerado sob demanda, mas por um
 Cada nova ocorrência copia os dados de `latest` (categoria, valor, conta, etc.), com `status` resetado para pendente/esperado e o mesmo `recurringGroupId`.
 
 Isso roda toda vez que `GET /cash-flow` é chamado para um mês (`ensureFixedTransactions`), então a série "alcança" o mês pedido antes de qualquer leitura ou escrita subsequente.
+
+## 3. Resumo do mês (Início, Movimentações e Relatório)
+
+Regra única em `frontend/src/utils/month-summary.ts` (`summarizeMonth`), sobre o `CashFlowSummary` do backend:
+
+- **Entrou** = entradas recebidas. **Saiu** = pagamentos + gastos fora do comum + faturas pagas.
+- **Transferência não é ganho nem gasto**: aparece à parte como "Entre suas contas" (recebidas − enviadas) e só quando ≠ 0. Na visão "Todas as contas", transferências entre duas contas ativas se anulam e somem da lista.
+- **Saldo** = saldo inicial + entrou − saiu ± entre suas contas (= `realizedBalance`).
+- **Falta receber / Falta pagar** = pendentes **só do mês selecionado** (`pendingIncome`/`pendingExpenses`; faturas com total 0 não contam).
+- **Previsto** = `projectedBalance` = saldo realizado + tudo que ainda está pendente no intervalo. Em mês futuro o intervalo vai do mês atual até o selecionado, e a interface diz isso explicitamente ("Previstos acumulados de out/26 a dez/26").

@@ -56,3 +56,11 @@ describe('formatMonthYearShort', () => {
     expect(formatMonthYearShort(1, 2027, 'en-US')).toBe('Jan/27');
   });
 });
+
+describe('formatMonthYear — idioma', () => {
+  it('usa o idioma informado, com inicial maiúscula', () => {
+    expect(formatMonthYear(10, 2026, 'pt')).toBe('Outubro 2026');
+    expect(formatMonthYear(10, 2026, 'en')).toBe('October 2026');
+    expect(formatMonthYear(10, 2026, 'es')).toBe('Octubre 2026');
+  });
+});

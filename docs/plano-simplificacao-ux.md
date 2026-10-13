@@ -142,7 +142,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U17 | Movimentações consolidada ("Todas as contas") | 5 | U10c, U12 | ✅ | 2026-10-13 | ver git log |
 | U18 | Compra no cartão pelo "+ Novo" | 5 | U12, U13 | ✅ | 2026-10-13 | ver git log |
 | U19 | Preferência "Mostrar detalhes avançados" (densidade) | 5 | U8, U9 | ✅ | 2026-10-13 | ver git log |
-| U20 | Onboarding IA, relatório e documentação alinhados | 5 | U7, U8 | ⬜ | | |
+| U20 | Onboarding IA, relatório e documentação alinhados | 5 | U7, U8 | ✅ | 2026-10-13 | ver git log |
 | U21 | Prints com dados fictícios + README para portfólio | 6 | todas as anteriores que forem feitas | ⬜ | | |
 
 Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional — confirmar com o usuário antes de iniciar. **Fase 6 (U21) é sempre a última atividade**, pedida pelo usuário em 2026-10-13: o app vai para o portfólio dele como desenvolvedor.
@@ -314,6 +314,11 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U20 — 2026-10-13
+- Onboarding IA: prompt e descrição de `propose_settings` explicam `dashboardScope` como **visão inicial do seletor** (Início, Movimentações, Cartões), trocável a qualquer momento; rótulos da revisão do draft idem ("O app abre mostrando todas as contas / uma conta por vez").
+- `formatMonthYear` agora usa o idioma ativo (Intl), com inicial maiúscula — antes era sempre português (pendência registrada na U3/U7).
+- `docs/domain-logic.md` ganhou a seção "Resumo do mês" (regra D2). Relatório já usava `summarizeMonth` desde a U1. README completo fica para a U21 (portfólio).
 
 ### U19 — 2026-10-13
 - `hooks/useAdvancedDetails.ts` (localStorage `pref.showAdvancedDetails`, sincronizado entre componentes por evento). Configurações → Preferências ganhou a caixa. Ligada: "Ver detalhes" de Movimentações abre expandido; "Ver análise completa" do Início abre expandida **enquanto o usuário não tiver aberto/fechado ali manualmente** (a escolha manual, guardada em `dashboard.analysisOpen`, tem prioridade).
