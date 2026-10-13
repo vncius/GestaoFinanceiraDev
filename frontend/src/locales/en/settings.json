@@ -3,7 +3,6 @@
     "accounts": "Accounts",
     "cards": "Cards",
     "categories": "Categories",
-    "accountTypes": "Account Types",
     "preferences": "Preferences",
     "data": "Your data"
   },
@@ -74,7 +73,10 @@
       "autoReserveTooltip": "When enabled, every income received in this account automatically generates a transfer of a percentage of the amount to the target account chosen below.",
       "autoReservePercentageLabel": "Percentage automatically transferred (%)",
       "autoReserveTargetLabel": "Reserve target account",
-      "autoReserveTargetPlaceholder": "Select the target account..."
+      "autoReserveTargetPlaceholder": "Select the target account...",
+      "newTypeOption": "+ New type…",
+      "newTypePlaceholder": "New type name",
+      "newTypeCreate": "Create"
     }
   },
   "accountTypes": {
@@ -86,7 +88,9 @@
       "editTitle": "Edit Account Type",
       "newTitle": "New Account Type",
       "nameLabel": "Name *"
-    }
+    },
+    "sectionTitle": "Account types ({{count}})",
+    "sectionHint": "Optional — just to organize your accounts"
   },
   "categories": {
     "income": "Income",

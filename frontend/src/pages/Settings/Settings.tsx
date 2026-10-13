@@ -33,16 +33,18 @@ import BackupSections from '../Backup/Backup';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-type SettingsTab = 'accounts' | 'cards' | 'categories' | 'accountTypes' | 'preferences' | 'data';
+type SettingsTab = 'accounts' | 'cards' | 'categories' | 'preferences' | 'data';
 
 // Aba vem da URL (?tab=), para que outras telas possam linkar direto (ex.:
 // /backup → /settings?tab=data).
-const TAB_ORDER: SettingsTab[] = ['accounts', 'cards', 'categories', 'accountTypes', 'preferences', 'data'];
+const TAB_ORDER: SettingsTab[] = ['accounts', 'cards', 'categories', 'preferences', 'data'];
 const DEFAULT_TAB: SettingsTab = 'accounts';
 
 function isSettingsTab(value: string | null): value is SettingsTab {
   return TAB_ORDER.includes(value as SettingsTab);
 }
+
+const NEW_TYPE = '__new_type__';
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -246,10 +248,27 @@ function AccountModal({
 
   const [form, setForm] = useState<AccountFormState>(init);
   const [lastOpen, setLastOpen] = useState(false);
-  if (open && !lastOpen) { setForm(init()); setLastOpen(true); }
+  const [creatingType, setCreatingType] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
+  if (open && !lastOpen) { setForm(init()); setCreatingType(false); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
   const { alert } = useDialog();
+  const qc = useQueryClient();
+
+  // Tipo de conta criado sem sair do cadastro da conta (U14 do plano de UX).
+  const createTypeMut = useMutation({
+    mutationFn: AccountTypesService.create,
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: ['accountTypes'] });
+      setForm((f) => ({ ...f, accountTypeId: created.id }));
+      setCreatingType(false);
+    },
+  });
+  function createType() {
+    const name = newTypeName.trim();
+    if (name) createTypeMut.mutate({ name });
+  }
 
   const set =
     (k: keyof AccountFormState) =>
@@ -303,16 +322,42 @@ function AccountModal({
           <input className={INPUT} value={form.name} onChange={set('name')} required />
         </Field>
         <Field label={t('accounts.modal.typeLabel')}>
-          <select
-            className={INPUT}
-            value={form.accountTypeId}
-            onChange={set('accountTypeId')}
-          >
-            <option value="">{t('accounts.modal.typeNone')}</option>
-            {activeTypes.map((at) => (
-              <option key={at.id} value={at.id}>{at.name}</option>
-            ))}
-          </select>
+          {creatingType ? (
+            <div className="flex gap-2">
+              <input
+                className={INPUT}
+                value={newTypeName}
+                onChange={(e) => setNewTypeName(e.target.value)}
+                placeholder={t('accounts.modal.newTypePlaceholder')}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); createType(); }
+                  if (e.key === 'Escape') { e.stopPropagation(); setCreatingType(false); }
+                }}
+              />
+              <Button size="sm" onClick={createType} loading={createTypeMut.isPending} disabled={!newTypeName.trim()}>
+                {t('accounts.modal.newTypeCreate')}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setCreatingType(false)}>
+                {t('actions.cancel')}
+              </Button>
+            </div>
+          ) : (
+            <select
+              className={INPUT}
+              value={form.accountTypeId}
+              onChange={(e) => {
+                if (e.target.value === NEW_TYPE) { setNewTypeName(''); setCreatingType(true); return; }
+                setForm((f) => ({ ...f, accountTypeId: e.target.value }));
+              }}
+            >
+              <option value="">{t('accounts.modal.typeNone')}</option>
+              {activeTypes.map((at) => (
+                <option key={at.id} value={at.id}>{at.name}</option>
+              ))}
+              <option value={NEW_TYPE}>{t('accounts.modal.newTypeOption')}</option>
+            </select>
+          )}
         </Field>
         <Field label={t('accounts.modal.initialBalanceLabel')}>
           <input
@@ -503,6 +548,17 @@ function AccountsTab() {
           </div>
         )}
       </div>
+
+      <details className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <summary className="cursor-pointer select-none list-none flex items-center gap-2 px-5 py-3.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <span className="transition-transform group-open:rotate-90">›</span>
+          {t('accountTypes.sectionTitle', { count: accountTypes.filter((at) => at.active).length })}
+          <span className="font-normal text-xs text-gray-400 dark:text-gray-500">{t('accountTypes.sectionHint')}</span>
+        </summary>
+        <div className="px-5 pb-5">
+          <AccountTypesTab />
+        </div>
+      </details>
 
       <AccountModal
         open={modal !== null}
@@ -1144,7 +1200,6 @@ export default function Settings() {
       </div>
 
       {tab === 'accounts' && <AccountsTab />}
-      {tab === 'accountTypes' && <AccountTypesTab />}
       {tab === 'categories' && <CategoriesTab />}
       {tab === 'cards' && <CardsTab accounts={accounts} />}
       {tab === 'preferences' && <PreferencesTab />}

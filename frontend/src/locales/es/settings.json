@@ -3,7 +3,6 @@
     "accounts": "Cuentas",
     "cards": "Tarjetas",
     "categories": "Categorías",
-    "accountTypes": "Tipos de Cuenta",
     "preferences": "Preferencias",
     "data": "Tus datos"
   },
@@ -74,7 +73,10 @@
       "autoReserveTooltip": "Al activar, cada ingreso recibido en esta cuenta genera automáticamente una transferencia de un porcentaje del valor a la cuenta de destino elegida abajo.",
       "autoReservePercentageLabel": "Porcentaje transferido automáticamente (%)",
       "autoReserveTargetLabel": "Cuenta de destino de la reserva",
-      "autoReserveTargetPlaceholder": "Seleccione la cuenta de destino..."
+      "autoReserveTargetPlaceholder": "Seleccione la cuenta de destino...",
+      "newTypeOption": "+ Nuevo tipo…",
+      "newTypePlaceholder": "Nombre del nuevo tipo",
+      "newTypeCreate": "Crear"
     }
   },
   "accountTypes": {
@@ -86,7 +88,9 @@
       "editTitle": "Editar Tipo de Cuenta",
       "newTitle": "Nuevo Tipo de Cuenta",
       "nameLabel": "Nombre *"
-    }
+    },
+    "sectionTitle": "Tipos de cuenta ({{count}})",
+    "sectionHint": "Opcional — solo para organizar tus cuentas"
   },
   "categories": {
     "income": "Ingresos",

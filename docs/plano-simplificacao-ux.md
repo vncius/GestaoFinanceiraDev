@@ -136,7 +136,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ✅ | 2026-10-13 | ver git log |
 | U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ✅ | 2026-10-13 | ver git log |
 | U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ✅ | 2026-10-13 | ver git log |
-| U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ⬜ | | |
+| U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ✅ | 2026-10-13 | ver git log |
 | U15 | "+ Nova categoria" inline nos formulários | 4 | U12 | ⬜ | | |
 | U16 | Auditoria de divulgação progressiva (1 conta / 0 cartões) | 4 | U8, U10c, U13 | ⬜ | | |
 | U17 | Movimentações consolidada ("Todas as contas") | 5 | U10c, U12 | ⬜ | | |
@@ -314,6 +314,10 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U14 — 2026-10-13
+- Aba "Tipos de Conta" removida (`?tab=accountTypes` cai na aba Contas). No `AccountModal`, o select de tipo ganhou "+ Novo tipo…", que vira um campo inline (Enter cria e já seleciona). Renomear/remover tipos: seção recolhível "Tipos de conta (n)" no fim da aba Contas, reaproveitando o `AccountTypesTab` existente — mais simples que o "pequeno gerenciador a partir do campo" do plano e sem modal dentro de modal.
+- Sem teste de componente (o `AccountModal` não é exportado); verificação visual pendente junto com a U13 (login).
 
 ### U13 — 2026-10-13
 - Seletor de conta (com "Todas") passa a aparecer em Cartões. Numa conta: só os cartões cuja `defaultPaymentAccountId` é ela; em "Todas": todos, agrupados por conta pagadora ("Pagos por …", só no desktop). Conta sem cartão: aviso + "Novo cartão". Sem nenhum cartão selecionado, abre o primeiro da lista.

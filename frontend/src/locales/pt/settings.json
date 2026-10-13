@@ -3,7 +3,6 @@
     "accounts": "Contas",
     "cards": "Cartões",
     "categories": "Categorias",
-    "accountTypes": "Tipos de Conta",
     "preferences": "Preferências",
     "data": "Seus dados"
   },
@@ -74,7 +73,10 @@
       "autoReserveTooltip": "Ao marcar, toda entrada recebida nesta conta gera automaticamente uma transferência de um percentual do valor para a conta de destino escolhida abaixo.",
       "autoReservePercentageLabel": "Percentual transferido automaticamente (%)",
       "autoReserveTargetLabel": "Conta de destino da reserva",
-      "autoReserveTargetPlaceholder": "Selecione a conta de destino..."
+      "autoReserveTargetPlaceholder": "Selecione a conta de destino...",
+      "newTypeOption": "+ Novo tipo…",
+      "newTypePlaceholder": "Nome do novo tipo",
+      "newTypeCreate": "Criar"
     }
   },
   "accountTypes": {
@@ -86,7 +88,9 @@
       "editTitle": "Editar Tipo de Conta",
       "newTitle": "Novo Tipo de Conta",
       "nameLabel": "Nome *"
-    }
+    },
+    "sectionTitle": "Tipos de conta ({{count}})",
+    "sectionHint": "Opcional — só para organizar suas contas"
   },
   "categories": {
     "income": "Receitas",
