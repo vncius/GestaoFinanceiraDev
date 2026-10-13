@@ -48,5 +48,11 @@
     "newEntry": "New quick entry",
     "showHelp": "Show this help",
     "closeModal": "Close modal"
+  },
+  "categorySelect": {
+    "newOption": "+ New category…",
+    "newPlaceholder": "New category name",
+    "create": "Create",
+    "cancel": "Cancel"
   }
 }

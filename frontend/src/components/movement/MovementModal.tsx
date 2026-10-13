@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { DateInput } from '../ui/DateInput';
+import { CategorySelect } from '../ui/CategorySelect';
 import { CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { floatToCents, centsToFloat } from '../../utils/money';
 import { toInputDate, defaultEntryDateISO } from '../../utils/date';
@@ -127,7 +128,6 @@ export function MovementModal({
   if (!open && lastOpen) setLastOpen(false);
 
   const kind: MovementFormKind = form.direction === 'in' ? 'income' : form.extra ? 'extra' : 'payment';
-  const visibleCategories = categoriesFor(form.direction);
 
   function setDirection(direction: 'in' | 'out') {
     if (isEdit || direction === form.direction) return;
@@ -258,10 +258,14 @@ export function MovementModal({
         </div>
 
         <Field label={t('movementForm.fields.category')}>
-          <select className={INPUT} value={form.categoryId} onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}>
-            <option value="">{t('movementForm.fields.selectPlaceholder')}</option>
-            {visibleCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <CategorySelect
+            className={INPUT}
+            value={form.categoryId}
+            onChange={(id) => setForm((f) => ({ ...f, categoryId: id }))}
+            type={isIn ? 'INCOME' : 'EXPENSE'}
+            categories={categories}
+            placeholder={t('movementForm.fields.selectPlaceholder')}
+          />
         </Field>
 
         {!isEdit && (

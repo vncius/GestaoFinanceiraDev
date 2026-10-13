@@ -34,6 +34,7 @@ import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DateInput } from '../../components/ui/DateInput';
+import { CategorySelect } from '../../components/ui/CategorySelect';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
 import { ImportInvoiceModal } from './ImportInvoiceModal';
 import { IconActionButton } from '../../components/ui/IconActionButton';
@@ -194,12 +195,14 @@ function EntryModal({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('entryModal.fields.category')}>
-            <select className={INPUT} value={form.expenseCategoryId} onChange={set('expenseCategoryId')} required>
-              <option value="">{t('entryModal.fields.categoryPlaceholder')}</option>
-              {expenseCats.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <CategorySelect
+              className={INPUT}
+              value={form.expenseCategoryId}
+              onChange={(id) => setForm((f) => ({ ...f, expenseCategoryId: id }))}
+              type="EXPENSE"
+              categories={categories}
+              placeholder={t('entryModal.fields.categoryPlaceholder')}
+            />
           </Field>
           <Field label={t('entryModal.fields.purchaseDate')}>
             <DateInput className={INPUT} value={form.purchaseDate} onChange={(v) => setForm((f) => ({ ...f, purchaseDate: v }))} required />

@@ -48,5 +48,11 @@
     "newEntry": "Nuevo registro rápido",
     "showHelp": "Mostrar esta ayuda",
     "closeModal": "Cerrar modal"
+  },
+  "categorySelect": {
+    "newOption": "+ Nueva categoría…",
+    "newPlaceholder": "Nombre de la nueva categoría",
+    "create": "Crear",
+    "cancel": "Cancelar"
   }
 }
