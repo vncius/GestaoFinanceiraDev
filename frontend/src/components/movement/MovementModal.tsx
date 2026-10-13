@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
-import { Account, Category, FinancialTransaction, RecurrenceType } from '../../types';
+import { Account, Category, CreditCard, FinancialTransaction, RecurrenceType } from '../../types';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { CurrencyInput } from '../ui/CurrencyInput';
 import { DateInput } from '../ui/DateInput';
 import { CategorySelect } from '../ui/CategorySelect';
 import { CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
+import { CreateCardEntryPayload } from '../../services/credit-cards.service';
 import { floatToCents, centsToFloat } from '../../utils/money';
 import { toInputDate, defaultEntryDateISO } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
@@ -23,7 +24,11 @@ export type MovementFormKind = 'income' | 'payment' | 'extra';
 
 export type MovementSubmit =
   | { kind: 'income'; payload: CreateIncomePayload; settleNow: boolean }
-  | { kind: 'payment' | 'extra'; payload: CreateTransactionPayload; settleNow: boolean };
+  | { kind: 'payment' | 'extra'; payload: CreateTransactionPayload; settleNow: boolean }
+  // Compra no cartão pelo mesmo formulário (U18): vira lançamento do cartão.
+  | { kind: 'card'; cardId: string; payload: CreateCardEntryPayload };
+
+const PAY_WITH_ACCOUNT = 'account';
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60';
@@ -49,6 +54,9 @@ interface FormState {
   recurrence: RecurrenceType;
   accountId: string;
   notes: string;
+  // 'account' ou id do cartão
+  payWith: string;
+  installments: string;
 }
 
 export function MovementModal({
@@ -67,6 +75,7 @@ export function MovementModal({
   onDelete,
   onTransfer,
   accountProminent = false,
+  cards = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -88,6 +97,8 @@ export function MovementModal({
   // Visão "Todas as contas": a conta não tem um padrão óbvio, então o campo
   // sai de "Mais opções" e fica à vista (U17).
   accountProminent?: boolean;
+  // Cartões ativos: habilitam "Pagar com" numa saída nova (U18).
+  cards?: CreditCard[];
 }) {
   const { t } = useTranslation('cashFlow');
   const { alert } = useDialog();
@@ -112,6 +123,8 @@ export function MovementModal({
       recurrence: tx?.recurrence ?? 'UNIQUE',
       accountId: (direction === 'in' ? tx?.targetAccountId : tx?.sourceAccountId) ?? defaultAccountId ?? activeAccounts[0]?.id ?? '',
       notes: tx?.notes ?? '',
+      payWith: PAY_WITH_ACCOUNT,
+      installments: '1',
     };
   };
 
@@ -132,6 +145,9 @@ export function MovementModal({
   if (!open && lastOpen) setLastOpen(false);
 
   const kind: MovementFormKind = form.direction === 'in' ? 'income' : form.extra ? 'extra' : 'payment';
+  const activeCards = sortByName(cards.filter((c) => c.active));
+  const canPayWithCard = !isEdit && form.direction === 'out' && activeCards.length > 0;
+  const payingWithCard = canPayWithCard && form.payWith !== PAY_WITH_ACCOUNT;
 
   function setDirection(direction: 'in' | 'out') {
     if (isEdit || direction === form.direction) return;
@@ -152,6 +168,24 @@ export function MovementModal({
       { label: t('movementForm.validation.amount'), valid: !!amount },
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
+
+    if (payingWithCard) {
+      const count = Math.max(1, parseInt(form.installments) || 1);
+      onSubmit({
+        kind: 'card',
+        cardId: form.payWith,
+        payload: {
+          description: form.description.trim(),
+          expenseCategoryId: form.categoryId,
+          totalAmount: amount,
+          purchaseDate: new Date(form.date).toISOString(),
+          entryType: form.recurrence === 'FIXED' ? 'FIXED' : count > 1 ? 'INSTALLMENT' : 'CASH',
+          ...(form.recurrence !== 'FIXED' && count > 1 ? { installmentsCount: count } : {}),
+          notes: form.notes || null,
+        },
+      });
+      return;
+    }
 
     const base = {
       description: form.description.trim(),
@@ -280,9 +314,32 @@ export function MovementModal({
           />
         </Field>
 
-        {activeAccounts.length > 1 && accountProminent && accountField}
+        {canPayWithCard && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('movementForm.fields.payWith')}>
+              <select className={INPUT} value={form.payWith} onChange={(e) => setForm((f) => ({ ...f, payWith: e.target.value, settleNow: false, extra: false }))}>
+                <option value={PAY_WITH_ACCOUNT}>{t('movementForm.fields.payWithAccount')}</option>
+                {activeCards.map((c) => <option key={c.id} value={c.id}>{t('movementForm.fields.payWithCard', { card: c.name })}</option>)}
+              </select>
+            </Field>
+            {payingWithCard && form.recurrence !== 'FIXED' && (
+              <Field label={t('movementForm.fields.installments')}>
+                <select className={INPUT} value={form.installments} onChange={(e) => setForm((f) => ({ ...f, installments: e.target.value }))}>
+                  {Array.from({ length: 24 }, (_, i) => String(i + 1)).map((n) => (
+                    <option key={n} value={n}>{n === '1' ? t('movementForm.fields.cash') : t('movementForm.fields.installmentsN', { count: Number(n) })}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+          </div>
+        )}
+        {payingWithCard && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('movementForm.cardHint')}</p>
+        )}
 
-        {!isEdit && (
+        {activeAccounts.length > 1 && accountProminent && !payingWithCard && accountField}
+
+        {!isEdit && !payingWithCard && (
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
             <input
               type="checkbox"
@@ -320,7 +377,7 @@ export function MovementModal({
               </label>
             )}
 
-            {!isIn && (
+            {!isIn && !payingWithCard && (
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
                   <input
@@ -336,7 +393,7 @@ export function MovementModal({
               </div>
             )}
 
-            {activeAccounts.length > 1 && !accountProminent && accountField}
+            {activeAccounts.length > 1 && !accountProminent && !payingWithCard && accountField}
 
             <Field label={t('movementForm.fields.notes')}>
               <textarea className={INPUT} rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />

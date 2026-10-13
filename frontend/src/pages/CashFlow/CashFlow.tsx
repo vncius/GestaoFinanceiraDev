@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useMonth } from '../../contexts/MonthContext';
 import { useAccount } from '../../contexts/AccountContext';
 import { CashFlowService, CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
-import { CreditCardsService } from '../../services/credit-cards.service';
+import { CreateCardEntryPayload, CreditCardsService } from '../../services/credit-cards.service';
+import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { CategoriesService } from '../../services/categories.service';
 import { AccountsService } from '../../services/accounts.service';
 import { CreateTransferPayload } from '../../services/transfers.service';
@@ -37,6 +38,7 @@ export default function CashFlow() {
   const { accountId, scopeAccountId } = useAccount();
   const consolidated = scopeAccountId === null;
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const { confirm } = useDialog();
   const { showError } = useToast();
@@ -63,6 +65,13 @@ export default function CashFlow() {
     queryKey: ['accounts'],
     queryFn: AccountsService.findAll,
     staleTime: Infinity,
+  });
+
+  // Compra no cartão pelo formulário único (U18).
+  const createCardEntry = useMutation({
+    mutationFn: ({ cardId, payload }: { cardId: string; payload: CreateCardEntryPayload }) =>
+      CreditCardsService.createEntry(cardId, payload),
+    onSuccess: () => { invalidateDerivedData(qc); closeModal(); },
   });
 
   const cardNames = useMemo(() => new Map(cards.map((c) => [c.id, c.name])), [cards]);
@@ -154,6 +163,15 @@ export default function CashFlow() {
 
   async function saveMovement(data: MovementSubmit) {
     const editing = modal && modal.type !== 'transfer' ? modal.item : undefined;
+
+    if (data.kind === 'card') {
+      try {
+        await createCardEntry.mutateAsync({ cardId: data.cardId, payload: data.payload });
+      } catch {
+        /* já notificado */
+      }
+      return;
+    }
 
     if (editing) {
       const settled = editing.status === 'PAID' || editing.status === 'RECEIVED';
@@ -373,6 +391,7 @@ export default function CashFlow() {
     modal && modal.type !== 'transfer' && modal.item ? { kind: movementModalKind, tx: modal.item } : undefined;
 
   const movementSaving =
+    createCardEntry.isPending ||
     createIncome.isPending || updateIncome.isPending ||
     createPayment.isPending || updatePayment.isPending ||
     createExtra.isPending || updateExtra.isPending;
@@ -564,6 +583,7 @@ export default function CashFlow() {
         onDelete={deleteFromModal}
         onTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
         accountProminent={consolidated}
+        cards={cards}
       />
 
       {/* Transfer Modal */}

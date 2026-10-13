@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CategoriesService } from '../../services/categories.service';
 import { CashFlowService } from '../../services/cash-flow.service';
+import { CreditCardsService } from '../../services/credit-cards.service';
+import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { CreateTransferPayload, TransfersService } from '../../services/transfers.service';
 import { useAccount } from '../../contexts/AccountContext';
 import { useMonth } from '../../contexts/MonthContext';
@@ -20,6 +22,13 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
   if (open && !lastOpen) { setMode('movement'); setLastOpen(true); }
   if (!open && lastOpen) setLastOpen(false);
 
+  const { data: cards = [] } = useQuery({
+    queryKey: ['creditCards'],
+    queryFn: () => CreditCardsService.findAll(),
+    staleTime: 60_000,
+    enabled: open,
+  });
+
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: CategoriesService.findAll,
@@ -34,6 +43,10 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const createMovement = useMutation({
     mutationFn: async (data: MovementSubmit) => {
+      if (data.kind === 'card') {
+        await CreditCardsService.createEntry(data.cardId, data.payload);
+        return;
+      }
       if (!accountId) throw new Error('Nenhuma conta selecionada.');
       if (data.kind === 'income') {
         const tx = await CashFlowService.createIncome(accountId, data.payload);
@@ -48,7 +61,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
         else await CashFlowService.payExtraExpense(tx.id);
       }
     },
-    onSuccess: () => { invalidate(); onClose(); },
+    onSuccess: () => { invalidateDerivedData(qc); onClose(); },
   });
 
   const createTransfer = useMutation({
@@ -84,6 +97,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
       onSubmit={(data) => createMovement.mutate(data)}
       // Continua aberto e só troca de formulário.
       onTransfer={() => setMode('transfer')}
+      cards={cards}
     />
   );
 }

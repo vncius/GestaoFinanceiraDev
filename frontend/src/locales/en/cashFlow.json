@@ -188,7 +188,13 @@
       "extraHint": "Something that doesn't happen every month (repair, gift, fine…).",
       "accountIn": "Receiving account",
       "accountOut": "Paying account",
-      "notes": "Notes"
+      "notes": "Notes",
+      "payWith": "Pay with",
+      "payWithAccount": "Account (debit, transfer, cash)",
+      "payWithCard": "{{card}} card",
+      "installments": "Installments",
+      "cash": "Single payment",
+      "installmentsN": "{{count}}x"
     },
     "moreOptions": "More options",
     "lessOptions": "Fewer options",
@@ -203,6 +209,7 @@
       "description": "Description",
       "category": "Category",
       "amount": "Amount"
-    }
+    },
+    "cardHint": "Goes to the card invoice; it's paid when the invoice is paid."
   }
 }

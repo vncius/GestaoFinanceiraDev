@@ -90,3 +90,26 @@ describe('MovementModal', () => {
     expect(screen.queryByLabelText('Já paguei')).toBeNull();
   });
 });
+
+describe('MovementModal — compra no cartão (U18)', () => {
+  const cards = [{ id: 'nu', name: 'Nubank', active: true }] as never;
+
+  it('saída paga com cartão vira lançamento parcelado do cartão', () => {
+    const { onSubmit } = renderForm({ cards });
+    fill('Geladeira', '300000');
+    fireEvent.change(screen.getByDisplayValue('Conta (débito, Pix, dinheiro)'), { target: { value: 'nu' } });
+    fireEvent.change(screen.getByDisplayValue('À vista'), { target: { value: '3' } });
+    expect(screen.queryByLabelText('Já paguei')).toBeNull();
+    fireEvent.click(screen.getByText('Salvar'));
+    expect(onSubmit).toHaveBeenCalledWith({
+      kind: 'card',
+      cardId: 'nu',
+      payload: expect.objectContaining({ description: 'Geladeira', totalAmount: 300000, entryType: 'INSTALLMENT', installmentsCount: 3, expenseCategoryId: 'mercado' }),
+    });
+  });
+
+  it('sem cartão, não mostra "Pagar com"', () => {
+    renderForm();
+    expect(screen.queryByText('Pagar com')).toBeNull();
+  });
+});

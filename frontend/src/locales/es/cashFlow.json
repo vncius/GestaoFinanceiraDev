@@ -188,7 +188,13 @@
       "extraHint": "Algo que no ocurre todos los meses (reparación, regalo, multa…).",
       "accountIn": "Cuenta que recibe",
       "accountOut": "Cuenta que paga",
-      "notes": "Observaciones"
+      "notes": "Observaciones",
+      "payWith": "Pagar con",
+      "payWithAccount": "Cuenta (débito, transferencia, efectivo)",
+      "payWithCard": "Tarjeta {{card}}",
+      "installments": "Cuotas",
+      "cash": "Al contado",
+      "installmentsN": "{{count}}x"
     },
     "moreOptions": "Más opciones",
     "lessOptions": "Menos opciones",
@@ -203,6 +209,7 @@
       "description": "Descripción",
       "category": "Categoría",
       "amount": "Valor"
-    }
+    },
+    "cardHint": "Va a la factura de la tarjeta; se paga cuando se paga la factura."
   }
 }
