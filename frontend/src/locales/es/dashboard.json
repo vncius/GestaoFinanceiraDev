@@ -1,7 +1,7 @@
 {
   "printReport": "Informe para imprimir",
   "error": {
-    "loadFailed": "No se pudo cargar el panel. Verifique si el servidor está en ejecución."
+    "loadFailed": "No se pudo cargar el Inicio. Verifique si el servidor está en ejecución."
   },
   "balances": {
     "sectionTitle": "Saldos Actuales",
@@ -30,7 +30,7 @@
     "title": "Próximos Vencimientos",
     "period": "15 días",
     "empty": "Sin vencimientos en los próximos 15 días",
-    "goToCashFlow": "Ir al flujo de caja de este mes"
+    "goToCashFlow": "Ir a los movimientos de este mes"
   },
   "evolutionChart": {
     "title": "Evolución de los Últimos Meses",

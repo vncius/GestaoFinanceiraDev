@@ -1,7 +1,7 @@
 {
   "printReport": "Printable report",
   "error": {
-    "loadFailed": "Could not load the dashboard. Check whether the server is running."
+    "loadFailed": "Could not load Home. Check whether the server is running."
   },
   "balances": {
     "sectionTitle": "Current Balances",
@@ -30,7 +30,7 @@
     "title": "Upcoming Due Dates",
     "period": "15 days",
     "empty": "No due dates in the next 15 days",
-    "goToCashFlow": "Go to this month's cash flow"
+    "goToCashFlow": "Go to this month's transactions"
   },
   "evolutionChart": {
     "title": "Recent Months Trend",

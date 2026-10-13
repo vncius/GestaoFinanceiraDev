@@ -38,6 +38,8 @@
       "dailyLimitExceeded": "Daily message limit reached. Try again tomorrow or set things up manually."
     },
     "draft": {
+      "autoReserveSameAccount": "The automatic reserve source and destination accounts must be different.",
+      "autoReserveTargetRequired": "The automatic reserve needs a destination account.",
       "locked": "The proposal can no longer be changed.",
       "itemNotFound": "Item not found in the proposal.",
       "invalidRef": "Invalid reference between proposal items.",
@@ -67,9 +69,13 @@
     "paymentAccountNotFound": "Card payment account not found or inactive."
   },
   "creditCardEntry": {
+    "category": { "invalid": "Invalid or inactive category." },
+    "paymentManaged": "This entry was created by the invoice payment and cannot be deleted directly. Mark the invoice as unpaid.",
+    "referenceRequired": "Specify the month to delete from.",
+    "totalAmount": { "mustBeNegativeForRefund": "A refund must have a negative amount.", "positive": "The entry amount must be positive." },
     "inactive": "Entry is inactive.",
     "alreadyInactive": "Entry is already inactive.",
-    "scopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
+    "scopeRequired": "Specify whether to delete only this month or the next months too.",
     "notFound": "Entry not found.",
     "belongsToOtherCard": "Entry does not belong to this card."
   },
@@ -78,17 +84,18 @@
     "belongsToOtherCard": "Invoice does not belong to this card.",
     "alreadyPaid": "Invoice has already been paid.",
     "canceled": "A canceled invoice cannot be paid.",
-    "notPaid": "Only paid invoices can be reverted."
+    "notPaid": "Only paid invoices can be marked as unpaid."
   },
   "transaction": {
+    "updateScopeRequired": "Specify whether to change only this month or the next months too.",
     "canceledCannotEdit": "Canceled entries cannot be edited.",
-    "reversedCannotEdit": "Reverted entries cannot be edited.",
-    "fixedCannotRevertToUnique": "A recurring entry cannot be reverted to a one-time entry.",
-    "settledCannotDelete": "Settled entries (paid or received) cannot be deleted. Revert it first.",
-    "deleteScopeRequired": "Specify whether to delete only this occurrence or this and future ones.",
-    "alreadySettled": "Entry has already been settled (paid or received).",
+    "reversedCannotEdit": "Undone entries cannot be edited.",
+    "fixedCannotRevertToUnique": "A recurring entry cannot be turned into a one-time entry.",
+    "settledCannotDelete": "Paid or received entries cannot be deleted. Mark them as unpaid first.",
+    "deleteScopeRequired": "Specify whether to delete only this month or the next months too.",
+    "alreadySettled": "This entry has already been paid or received.",
     "canceledCannotSettle": "Canceled entries cannot be paid or received.",
-    "notSettledCannotRevert": "Only settled entries (paid or received) can be reverted.",
+    "notSettledCannotRevert": "Only paid or received entries can be marked as unpaid.",
     "notFound": "Entry not found.",
     "wrongType": "Entry is not of type {{type}}."
   },
@@ -118,5 +125,21 @@
   },
   "accountType": {
     "notFound": "Account type not found"
+  },
+  "transfer": {
+    "notFound": "Transfer not found.",
+    "sameAccount": "Source and destination accounts must be different.",
+    "sourceAccountNotFound": "Source account not found or inactive.",
+    "targetAccountNotFound": "Destination account not found or inactive.",
+    "alreadySettled": "This transfer has already been done.",
+    "notSettledCannotRevert": "Only transfers already done can be marked as not done.",
+    "settledCannotDelete": "Transfers already done cannot be deleted. Mark them as not done first.",
+    "canceledCannotEdit": "Deleted transfers cannot be changed."
+  },
+  "creditCardImport": {
+    "onlyOfx": "Only .ofx files are accepted for invoice import.",
+    "noEntriesRecognized": "No entries could be recognized in the uploaded file.",
+    "categoryInvalidNoFallback": "Invalid category and no \"Other\" category exists to use instead. Select a valid category.",
+    "overwriteTargetInvalid": "The entry to overwrite no longer exists or belongs to another card. Reload the preview and try again."
   }
 }

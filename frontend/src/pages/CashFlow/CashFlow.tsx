@@ -371,7 +371,7 @@ export default function CashFlow() {
     (revertInvoice.isPending && (revertInvoice.variables?.invoiceId as string)) || null;
 
   const transferSaving = createTransfer.isPending || updateTransfer.isPending;
-  // Efetivar e reverter dividem o mesmo joinha — qualquer uma das duas
+  // Efetivar e reverter dividem a mesma caixa de pago — qualquer uma das duas
   // mutations em voo trava a linha correspondente.
   const transfersPendingToggleId =
     (settleTransfer.isPending && (settleTransfer.variables as string)) ||

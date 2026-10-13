@@ -13,7 +13,7 @@
       "incomeGroup": "Income",
       "expenseGroup": "Expenses"
     },
-    "clearAllButton": "Clear Reference",
+    "clearAllButton": "Clear month",
     "newTransferButton": "New Transfer"
   },
   "summaryBar": {
@@ -21,19 +21,19 @@
     "initialTooltip": "Selected account balance at the start of the month, before any income or expense.",
     "income": "Income",
     "expense": "Expenses",
-    "finalBalance": "Final Balance",
-    "finalBalanceTooltip": "Selected account balance already settled (paid/received) so far.",
+    "finalBalance": "Balance",
+    "finalBalanceTooltip": "Selected account balance counting only what has already been paid or received.",
     "betweenAccounts": "Between accounts",
     "betweenAccountsTooltip": "Transfers between your own accounts this month (received − sent). They count as neither income nor expense.",
     "collapse": "Collapse",
     "expand": "View forecast",
-    "projectedInitialBalance": "Settled Balance",
-    "projectedInitialBalanceTooltip": "Balance already settled (paid/received). The forecast adds what is still to be received and paid.",
+    "projectedInitialBalance": "Current Balance",
+    "projectedInitialBalanceTooltip": "Balance counting only what has already been paid or received. The forecast adds what is still to be received and paid.",
     "expectedIncome": "Exp. Income",
     "expectedBetweenAccounts": "Exp. Between accounts",
     "expectedExpense": "Exp. Expenses",
     "projectedBalance": "Proj. Balance",
-    "projectedBalanceTooltip": "Projected balance of the selected account including entries not yet settled.",
+    "projectedBalanceTooltip": "Projected balance of the selected account also counting what has not been paid or received yet.",
     "projectionRange": "Forecast accumulated from {{from}} to {{to}}"
   },
   "grid": {
@@ -49,7 +49,7 @@
       "delete": "Delete"
     },
     "toggle": {
-      "revertPaid": "Revert payment"
+      "revertPaid": "Mark as unpaid"
     }
   },
   "entriesGrid": {
@@ -64,7 +64,7 @@
     },
     "toggle": {
       "markReceived": "Mark as received",
-      "revertReceived": "Revert receipt"
+      "revertReceived": "Mark as not received"
     }
   },
   "transactionGrid": {
@@ -89,8 +89,8 @@
     "fromLabel": "From {{account}}",
     "toLabel": "To {{account}}",
     "autoReserveBadge": "Auto reserve",
-    "settle": "Settle transfer",
-    "revert": "Revert transfer",
+    "settle": "Mark transfer as done",
+    "revert": "Mark transfer as not done",
     "emptyState": {
       "title": "No transfers this month"
     }
@@ -120,8 +120,8 @@
     "title": {
       "newPayment": "New Payment",
       "editPayment": "Edit Payment",
-      "newExtraExpense": "New Extra Expense",
-      "editExtraExpense": "Edit Extra Expense"
+      "newExtraExpense": "New Unusual Expense",
+      "editExtraExpense": "Edit Unusual Expense"
     },
     "fields": {
       "description": "Description *",
@@ -177,8 +177,8 @@
     },
     "delete": "Delete",
     "cancel": "Cancel",
-    "settle": "Settle",
-    "revert": "Revert",
+    "settle": "Mark as done",
+    "revert": "Mark as not done",
     "save": "Save",
     "fields": {
       "description": "Description *",
@@ -198,23 +198,23 @@
   },
   "page": {
     "paymentsTitle": "Payments",
-    "extraExpensesTitle": "Extra Expenses",
-    "confirmEdit": "This item has already been settled. Changing this record will recalculate balances and indicators. Do you want to continue?",
-    "confirmDeleteEffected": "This item is already paid/received. Deleting it will revert the payment and recalculate balances. Do you want to continue?",
+    "extraExpensesTitle": "Unusual Expenses",
+    "confirmEdit": "This item has already been paid/received. Changing it recalculates balances and indicators. Do you want to continue?",
+    "confirmDeleteEffected": "This item is already paid/received. Deleting it marks it as unpaid first and recalculates balances. Do you want to continue?",
     "confirmDelete": "Confirm deletion?",
     "scopedDelete": {
       "title": "Delete fixed entry",
-      "description": "is a fixed entry. Do you want to delete only this reference, or this one and all future ones? The history of already posted/paid/received references is never changed."
+      "description": "is a fixed entry. Delete it only from this month, or from this and all next months? Earlier months are never changed."
     },
     "scopedEdit": {
       "title": "Edit fixed entry",
-      "description": "is a fixed entry. Do you want to apply this change only to this reference, or to this one and all future ones? The history of already posted/paid/received references is never changed."
+      "description": "is a fixed entry. Apply this change only to this month, or to this and all next months? Earlier months are never changed."
     },
-    "confirmClearAll": "Clear all {{count}} entr(ies) in this reference (income, payments, extra expenses and transfers)? Deleted transfers also disappear from the counterpart account. This action cannot be undone.",
-    "clearAllError": "Could not clear all entries of this reference.",
+    "confirmClearAll": "Clear all {{count}} entr(ies) of this month (income, payments, unusual expenses and transfers)? Deleted transfers also disappear from the other account. This action cannot be undone.",
+    "clearAllError": "Could not clear all entries of this month.",
     "scopedClearAll": {
       "title": "Clear fixed entries",
-      "description": "This reference includes fixed/recurring entries. Do you want to delete only the current reference of those items, or also the future ones? All other (non-fixed) entries are always deleted entirely."
+      "description": "This month includes fixed/recurring entries. Delete them only from this month, or from the next months too? All other (non-fixed) entries are always deleted entirely."
     }
   }
 }

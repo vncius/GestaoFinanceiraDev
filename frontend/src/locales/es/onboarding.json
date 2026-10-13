@@ -11,7 +11,7 @@
     },
     "manual": {
       "title": "Configurar manualmente",
-      "description": "¿Prefieres hacerlo tú mismo? Ve directo a los ajustes y registra cuentas, categorías e ingresos."
+      "description": "¿Prefieres hacerlo tú mismo? Ve directo a la configuración y registra cuentas, categorías e ingresos."
     },
     "later": {
       "title": "Responder después",
@@ -54,7 +54,7 @@
     "save": "Guardar",
     "emptySection": "Ningún elemento propuesto.",
     "mainAccount": "Principal",
-    "settingsTitle": "Parámetros financieros",
+    "settingsTitle": "Configuración financiera",
     "dashboardScope": {
       "CONSOLIDATED": "Panel consolidado (todas las cuentas)",
       "ACCOUNT": "Panel por cuenta"
@@ -81,7 +81,7 @@
       "creditCards": "Tarjetas de crédito",
       "transfers": "Transferencias",
       "categories": "Categorías",
-      "settings": "Parámetros"
+      "settings": "Configuración"
     },
     "fields": {
       "name": "Nombre",

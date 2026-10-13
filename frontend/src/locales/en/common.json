@@ -7,7 +7,7 @@
   },
   "scopedDelete": {
     "cancel": "Cancel",
-    "currentOnly": "This reference only",
+    "currentOnly": "This month only",
     "currentAndFuture": "This and future ones"
   },
   "monthNavigator": {

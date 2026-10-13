@@ -127,7 +127,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ✅ | 2026-10-13 | ver git log |
 | U6 | Botão global "+ Novo" | 1 | — | ✅ | 2026-10-13 | ver git log |
-| U7 | Vocabulário (D7) em toda a UI | 1 | — | ⬜ | | |
+| U7 | Vocabulário (D7) em toda a UI | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ⬜ | | |
 | U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ⬜ | | |
 | U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ⬜ | | |
@@ -301,6 +301,13 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U7 — 2026-10-13
+- Menu: Início · Movimentações · Cartões · Configurações (en: Home · Transactions · Cards · Settings; es: Inicio · Movimientos · Tarjetas · Configuración). "Referência" virou "mês" nos textos de escopo de fixos; "efetivar/reverter" viraram "marcar/desmarcar como pago/recebido/feita"; "Gasto extraordinário" virou "Gasto fora do comum"; "Saldo Final" da barra virou "Saldo" e a base da previsão, "Saldo Atual".
+- `PaidToggle`: joinha → caixa (`Square`/`CheckSquare`, `role="checkbox"` + `aria-checked`), mesma API e `loading`.
+- 20 códigos de erro do backend sem tradução foram traduzidos nos 3 idiomas (`transfer.*`, `creditCardImport.*`, `creditCardEntry.*`, `transaction.updateScopeRequired`, `onboarding.draft.autoReserve*`). Novo teste `backend/src/shared/errors/error-codes.i18n.test.ts` falha se algum `new AppError(..., '<code>')` ficar sem chave em pt/en/es **e** se en/es divergirem das chaves de pt em qualquer arquivo de locale. Códigos `validation.*` do Zod não entram (só vão em `details`; o toast usa `validation.generic`).
+- **Mantidos de propósito:** tipos do lançamento rápido ("Pagamento", "Gasto Extra") — o formulário é refeito na U12 (Entrada/Saída); "Saldo final" no Relatório impresso (é sempre um mês fechado); "Referência" em textos técnicos do onboarding e da importação OFX.
+- `formatMonthYear` continua só em português (nomes fixos) — fora do escopo do vocabulário; registrar se incomodar.
 
 ### U6 — 2026-10-13
 - `NewEntryButton` em `Layout.tsx`: botão "Novo" no cabeçalho (desktop) e botão flutuante `fixed right-4 bottom-20` (celular, acima da `BottomNav`). Ambos chamam `openQuickAdd` do `QuickAddContext`, o mesmo do atalho N.

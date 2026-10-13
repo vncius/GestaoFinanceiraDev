@@ -26,13 +26,13 @@ function renderNav(cards: { active: boolean }[]) {
 describe('navegação principal', () => {
   it('sem cartão ativo, não mostra Cartões; Backup não aparece mais', async () => {
     renderNav([{ active: false }]);
-    expect((await screen.findAllByText('Parametrizações')).length).toBe(2);
-    expect(screen.queryByText('Cartões de Crédito')).toBeNull();
+    expect((await screen.findAllByText('Configurações')).length).toBe(2);
+    expect(screen.queryByText('Cartões')).toBeNull();
     expect(screen.queryByText(/Backup/)).toBeNull();
   });
 
   it('com cartão ativo, mostra Cartões na lateral e na barra inferior', async () => {
     renderNav([{ active: true }]);
-    expect((await screen.findAllByText('Cartões de Crédito')).length).toBe(2);
+    expect((await screen.findAllByText('Cartões')).length).toBe(2);
   });
 });

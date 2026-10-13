@@ -23,7 +23,7 @@
       "installment": "Parcelado",
       "refund": "Estorno/Crédito"
     },
-    "confirmRecreate": "Alterar valor, data, tipo ou parcelas irá recriar todas as parcelas e pode reverter faturas pagas. Deseja continuar?",
+    "confirmRecreate": "Alterar valor, data, tipo ou parcelas recria todas as parcelas e pode desmarcar faturas já pagas. Deseja continuar?",
     "validation": {
       "description": "Descrição",
       "category": "Categoria",
@@ -40,7 +40,7 @@
       "open": "Em aberto"
     },
     "payButton": "Pagar fatura",
-    "revertButton": "Reverter pagamento"
+    "revertButton": "Desmarcar como paga"
   },
   "installments": {
     "title": "Lançamentos ({{count}})",
@@ -74,7 +74,7 @@
     "clearInvoiceError": "Não foi possível limpar todos os lançamentos desta fatura.",
     "clearInvoiceScopeModal": {
       "title": "Limpar lançamentos fixos",
-      "description": "Esta fatura ({{monthYear}}) inclui lançamentos fixos/recorrentes. Deseja excluir apenas a referência atual desses itens, ou também as futuras? Lançamentos parcelados são cancelados a partir deste mês em diante (meses anteriores não mudam); à vista e estornos são sempre cancelados por completo."
+      "description": "Esta fatura ({{monthYear}}) inclui lançamentos fixos/recorrentes. Deseja excluí-los só deste mês, ou também dos próximos? Parcelados são cancelados deste mês em diante (meses anteriores não mudam); à vista e estornos são sempre cancelados por completo."
     }
   },
   "invoiceImport": {
@@ -112,14 +112,14 @@
   },
   "fixedDeleteModal": {
     "title": "Excluir lançamento fixo",
-    "description": "é um lançamento fixo. Deseja excluir apenas a referência de {{monthYear}}, ou esta e todas as futuras? O histórico de referências já lançadas/pagas nunca é alterado."
+    "description": "é um lançamento fixo. Deseja excluir só de {{monthYear}}, ou deste e de todos os próximos meses? Os meses anteriores nunca são alterados."
   },
   "cardList": {
     "currentMonth": "Mês atual",
     "limit": "Limite",
     "emptyState": {
       "title": "Nenhum cartão cadastrado",
-      "description": "Cadastre cartões de crédito em Parametrizações → Cartões"
+      "description": "Cadastre cartões de crédito em Configurações → Cartões"
     }
   },
   "selectCard": {

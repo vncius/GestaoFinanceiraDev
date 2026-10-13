@@ -2,9 +2,9 @@
   "appName": "Gestión Financiera",
   "appTagline": "Control Empresarial / Personal",
   "nav": {
-    "dashboard": "Dashboard",
-    "cashFlow": "Flujo de Caja",
-    "creditCards": "Tarjetas de Crédito",
+    "dashboard": "Inicio",
+    "cashFlow": "Movimientos",
+    "creditCards": "Tarjetas",
     "settings": "Configuración"
   },
   "header": {

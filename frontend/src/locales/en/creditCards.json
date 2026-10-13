@@ -23,7 +23,7 @@
       "installment": "Installments",
       "refund": "Refund/Credit"
     },
-    "confirmRecreate": "Changing the amount, date, type or installments will recreate all installments and may revert paid invoices. Do you want to continue?",
+    "confirmRecreate": "Changing the amount, date, type or installments recreates all installments and may mark paid invoices as unpaid. Do you want to continue?",
     "validation": {
       "description": "Description",
       "category": "Category",
@@ -40,7 +40,7 @@
       "open": "Open"
     },
     "payButton": "Pay invoice",
-    "revertButton": "Revert payment"
+    "revertButton": "Mark as unpaid"
   },
   "installments": {
     "title": "Entries ({{count}})",
@@ -74,7 +74,7 @@
     "clearInvoiceError": "Could not clear all entries in this invoice.",
     "clearInvoiceScopeModal": {
       "title": "Clear fixed entries",
-      "description": "This invoice ({{monthYear}}) includes fixed/recurring entries. Do you want to delete only the current reference of those, or also the future ones? Installment entries are canceled from this month onward (earlier months are untouched); one-time and refund entries are always fully canceled."
+      "description": "This invoice ({{monthYear}}) includes fixed/recurring entries. Delete them only from this month, or from the next months too? Installment entries are canceled from this month onward (earlier months are untouched); one-time and refund entries are always fully canceled."
     }
   },
   "invoiceImport": {
@@ -112,7 +112,7 @@
   },
   "fixedDeleteModal": {
     "title": "Delete fixed entry",
-    "description": "is a fixed entry. Do you want to delete only the {{monthYear}} reference, or this and all future ones? The history of references already posted/paid is never changed."
+    "description": "is a fixed entry. Delete it only from {{monthYear}}, or from this and all next months? Earlier months are never changed."
   },
   "cardList": {
     "currentMonth": "Current month",

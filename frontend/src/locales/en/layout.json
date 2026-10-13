@@ -2,9 +2,9 @@
   "appName": "Financial Management",
   "appTagline": "Business / Personal Tracking",
   "nav": {
-    "dashboard": "Dashboard",
-    "cashFlow": "Cash Flow",
-    "creditCards": "Credit Cards",
+    "dashboard": "Home",
+    "cashFlow": "Transactions",
+    "creditCards": "Cards",
     "settings": "Settings"
   },
   "header": {

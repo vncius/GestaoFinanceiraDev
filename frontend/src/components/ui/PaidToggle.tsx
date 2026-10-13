@@ -1,4 +1,7 @@
-import { Loader2, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { CheckSquare, Loader2, Square } from 'lucide-react';
+
+// Caixa "pago/recebido" (U7 do plano de UX): substitui o joinha, cujo
+// significado não era óbvio. role="checkbox" para leitores de tela.
 
 export function PaidToggle({
   paid,
@@ -23,6 +26,8 @@ export function PaidToggle({
       type="button"
       title={paid ? paidTitle : unpaidTitle}
       aria-label={paid ? paidTitle : unpaidTitle}
+      role="checkbox"
+      aria-checked={paid}
       aria-busy={loading}
       disabled={isDisabled}
       onClick={onToggle}
@@ -37,9 +42,9 @@ export function PaidToggle({
       {loading ? (
         <Loader2 size={16} className="animate-spin" />
       ) : paid ? (
-        <ThumbsUp size={16} />
+        <CheckSquare size={18} />
       ) : (
-        <ThumbsDown size={16} />
+        <Square size={18} />
       )}
     </button>
   );

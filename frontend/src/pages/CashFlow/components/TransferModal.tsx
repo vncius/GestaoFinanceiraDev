@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, ThumbsUp, Trash2 } from 'lucide-react';
+import { Check, RotateCcw, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Account, TransferFlowItem } from '../../../types';
 import { Button } from '../../../components/ui/Button';
@@ -137,7 +137,7 @@ export function TransferModal({
           {isEdit && isPending && onSettle && (
             <Button
               variant="secondary"
-              icon={<ThumbsUp size={14} />}
+              icon={<Check size={14} />}
               onClick={() => { onSettle(item!.transferGroupId); onClose(); }}
             >
               {t('transferModal.settle')}

@@ -38,6 +38,8 @@
       "dailyLimitExceeded": "Límite diario de mensajes alcanzado. Inténtalo mañana o configura manualmente."
     },
     "draft": {
+      "autoReserveSameAccount": "Las cuentas de origen y destino de la reserva automática deben ser diferentes.",
+      "autoReserveTargetRequired": "La reserva automática necesita una cuenta de destino.",
       "locked": "La propuesta ya no puede modificarse.",
       "itemNotFound": "Elemento no encontrado en la propuesta.",
       "invalidRef": "Referencia inválida entre elementos de la propuesta.",
@@ -67,9 +69,13 @@
     "paymentAccountNotFound": "Cuenta pagadora de la tarjeta no encontrada o inactiva."
   },
   "creditCardEntry": {
+    "category": { "invalid": "Categoría inválida o inactiva." },
+    "paymentManaged": "Este movimiento fue generado por el pago de la factura y no puede eliminarse directamente. Desmarca el pago de la factura.",
+    "referenceRequired": "Indica el mes a partir del cual eliminar.",
+    "totalAmount": { "mustBeNegativeForRefund": "El reembolso debe tener un valor negativo.", "positive": "El valor del movimiento debe ser positivo." },
     "inactive": "Registro inactivo.",
     "alreadyInactive": "El registro ya está inactivo.",
-    "scopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
+    "scopeRequired": "Indica si deseas eliminar solo este mes o también los próximos.",
     "notFound": "Registro no encontrado.",
     "belongsToOtherCard": "El registro no pertenece a esta tarjeta."
   },
@@ -78,17 +84,18 @@
     "belongsToOtherCard": "La factura no pertenece a esta tarjeta.",
     "alreadyPaid": "La factura ya fue pagada.",
     "canceled": "Una factura cancelada no puede pagarse.",
-    "notPaid": "Solo las facturas pagadas pueden revertirse."
+    "notPaid": "Solo las facturas pagadas pueden desmarcarse."
   },
   "transaction": {
+    "updateScopeRequired": "Indica si deseas cambiar solo este mes o también los próximos.",
     "canceledCannotEdit": "Los registros cancelados no pueden editarse.",
-    "reversedCannotEdit": "Los registros revertidos no pueden editarse.",
-    "fixedCannotRevertToUnique": "No es posible revertir un registro fijo a único.",
-    "settledCannotDelete": "Los registros ya efectivados (pagados o recibidos) no pueden eliminarse. Revierte primero.",
-    "deleteScopeRequired": "Indica si deseas eliminar solo esta referencia o también las futuras.",
-    "alreadySettled": "El registro ya fue efectivado (pagado o recibido).",
+    "reversedCannotEdit": "Los registros deshechos no pueden editarse.",
+    "fixedCannotRevertToUnique": "No es posible convertir un registro fijo en único.",
+    "settledCannotDelete": "Los registros ya pagados o recibidos no pueden eliminarse. Desmárcalos primero.",
+    "deleteScopeRequired": "Indica si deseas eliminar solo este mes o también los próximos.",
+    "alreadySettled": "Este registro ya fue pagado o recibido.",
     "canceledCannotSettle": "Los registros cancelados no pueden pagarse ni recibirse.",
-    "notSettledCannotRevert": "Solo los registros ya efectivados (pagados o recibidos) pueden revertirse.",
+    "notSettledCannotRevert": "Solo los registros ya pagados o recibidos pueden desmarcarse.",
     "notFound": "Registro no encontrado.",
     "wrongType": "El registro no es del tipo {{type}}."
   },
@@ -118,5 +125,21 @@
   },
   "accountType": {
     "notFound": "Tipo de cuenta no encontrado"
+  },
+  "transfer": {
+    "notFound": "Transferencia no encontrada.",
+    "sameAccount": "Las cuentas de origen y destino deben ser diferentes.",
+    "sourceAccountNotFound": "Cuenta de origen no encontrada o inactiva.",
+    "targetAccountNotFound": "Cuenta de destino no encontrada o inactiva.",
+    "alreadySettled": "Esta transferencia ya fue hecha.",
+    "notSettledCannotRevert": "Solo las transferencias ya hechas pueden desmarcarse.",
+    "settledCannotDelete": "Las transferencias ya hechas no pueden eliminarse. Desmárcalas primero.",
+    "canceledCannotEdit": "Las transferencias eliminadas no pueden modificarse."
+  },
+  "creditCardImport": {
+    "onlyOfx": "Solo se aceptan archivos .ofx para importar la factura.",
+    "noEntriesRecognized": "No se pudo reconocer ningún movimiento en el archivo enviado.",
+    "categoryInvalidNoFallback": "Categoría inválida y no existe una categoría \"Otros\" para usar en su lugar. Selecciona una categoría válida.",
+    "overwriteTargetInvalid": "El movimiento a sobrescribir ya no existe o es de otra tarjeta. Recarga la vista previa e inténtalo de nuevo."
   }
 }

@@ -13,7 +13,7 @@
       "incomeGroup": "Entradas",
       "expenseGroup": "Saídas"
     },
-    "clearAllButton": "Limpar Referência",
+    "clearAllButton": "Limpar mês",
     "newTransferButton": "Nova Transferência"
   },
   "summaryBar": {
@@ -21,19 +21,19 @@
     "initialTooltip": "Saldo da conta selecionada no início do mês, antes de qualquer entrada ou saída.",
     "income": "Entradas",
     "expense": "Saídas",
-    "finalBalance": "Saldo Final",
-    "finalBalanceTooltip": "Saldo já efetivado (pago/recebido) da conta selecionada até o momento.",
+    "finalBalance": "Saldo",
+    "finalBalanceTooltip": "Saldo da conta selecionada considerando só o que já foi pago ou recebido.",
     "betweenAccounts": "Entre contas",
     "betweenAccountsTooltip": "Transferências entre suas próprias contas no mês (recebidas − enviadas). Não contam como entrada nem saída.",
     "collapse": "Recolher",
     "expand": "Ver previstos",
-    "projectedInitialBalance": "Saldo Realizado",
-    "projectedInitialBalanceTooltip": "Saldo já efetivado (pago/recebido). A previsão soma a ele o que ainda falta receber e pagar.",
+    "projectedInitialBalance": "Saldo Atual",
+    "projectedInitialBalanceTooltip": "Saldo considerando só o que já foi pago ou recebido. A previsão soma a ele o que ainda falta receber e pagar.",
     "expectedIncome": "Prev. Entradas",
     "expectedBetweenAccounts": "Prev. Entre contas",
     "expectedExpense": "Prev. Saídas",
     "projectedBalance": "Prev. Saldo",
-    "projectedBalanceTooltip": "Saldo previsto da conta selecionada considerando lançamentos ainda não efetivados.",
+    "projectedBalanceTooltip": "Saldo previsto da conta selecionada contando também o que ainda não foi pago ou recebido.",
     "projectionRange": "Previstos acumulados de {{from}} a {{to}}"
   },
   "grid": {
@@ -49,7 +49,7 @@
       "delete": "Excluir"
     },
     "toggle": {
-      "revertPaid": "Reverter pagamento"
+      "revertPaid": "Desmarcar como pago"
     }
   },
   "entriesGrid": {
@@ -64,7 +64,7 @@
     },
     "toggle": {
       "markReceived": "Marcar como recebido",
-      "revertReceived": "Reverter recebimento"
+      "revertReceived": "Desmarcar como recebido"
     }
   },
   "transactionGrid": {
@@ -89,8 +89,8 @@
     "fromLabel": "De {{account}}",
     "toLabel": "Para {{account}}",
     "autoReserveBadge": "Reserva automática",
-    "settle": "Efetivar transferência",
-    "revert": "Reverter transferência",
+    "settle": "Marcar transferência como feita",
+    "revert": "Desmarcar transferência",
     "emptyState": {
       "title": "Nenhuma transferência neste mês"
     }
@@ -120,8 +120,8 @@
     "title": {
       "newPayment": "Novo Pagamento",
       "editPayment": "Editar Pagamento",
-      "newExtraExpense": "Novo Gasto Extraordinário",
-      "editExtraExpense": "Editar Gasto Extraordinário"
+      "newExtraExpense": "Novo Gasto Fora do Comum",
+      "editExtraExpense": "Editar Gasto Fora do Comum"
     },
     "fields": {
       "description": "Descrição *",
@@ -177,8 +177,8 @@
     },
     "delete": "Excluir",
     "cancel": "Cancelar",
-    "settle": "Efetivar",
-    "revert": "Reverter",
+    "settle": "Marcar como feita",
+    "revert": "Desmarcar",
     "save": "Salvar",
     "fields": {
       "description": "Descrição *",
@@ -198,23 +198,23 @@
   },
   "page": {
     "paymentsTitle": "Pagamentos",
-    "extraExpensesTitle": "Gastos Extraordinários",
-    "confirmEdit": "Este item já foi efetivado. Alterar este registro irá recalcular saldos e indicadores. Deseja continuar?",
-    "confirmDeleteEffected": "Este item já está pago/recebido. Ao excluir, o pagamento será revertido e os saldos recalculados. Deseja continuar?",
+    "extraExpensesTitle": "Gastos Fora do Comum",
+    "confirmEdit": "Este item já foi pago/recebido. Alterá-lo recalcula saldos e indicadores. Deseja continuar?",
+    "confirmDeleteEffected": "Este item já está pago/recebido. Ao excluir, ele é desmarcado e os saldos são recalculados. Deseja continuar?",
     "confirmDelete": "Confirmar exclusão?",
     "scopedDelete": {
       "title": "Excluir lançamento fixo",
-      "description": "é um lançamento fixo. Deseja excluir apenas esta referência, ou esta e todas as futuras? O histórico de referências já lançadas/pagas/recebidas nunca é alterado."
+      "description": "é um lançamento fixo. Deseja excluir só deste mês, ou deste e de todos os próximos? Os meses anteriores nunca são alterados."
     },
     "scopedEdit": {
       "title": "Alterar lançamento fixo",
-      "description": "é um lançamento fixo. Deseja aplicar esta alteração apenas a esta referência, ou a esta e a todas as futuras? O histórico de referências já lançadas/pagas/recebidas nunca é alterado."
+      "description": "é um lançamento fixo. Deseja aplicar a alteração só neste mês, ou neste e em todos os próximos? Os meses anteriores nunca são alterados."
     },
-    "confirmClearAll": "Limpar todos os {{count}} lançamento(s) desta referência (entradas, pagamentos, gastos extraordinários e transferências)? Transferências excluídas também somem da conta contrária. Esta ação não pode ser desfeita.",
-    "clearAllError": "Não foi possível limpar todos os lançamentos desta referência.",
+    "confirmClearAll": "Limpar todos os {{count}} lançamento(s) deste mês (entradas, pagamentos, gastos fora do comum e transferências)? Transferências excluídas também somem da outra conta. Esta ação não pode ser desfeita.",
+    "clearAllError": "Não foi possível limpar todos os lançamentos deste mês.",
     "scopedClearAll": {
       "title": "Limpar lançamentos fixos",
-      "description": "Esta referência inclui lançamentos fixos/recorrentes. Deseja excluir apenas a referência atual desses itens, ou também as futuras? Os demais lançamentos (não fixos) são sempre excluídos por completo."
+      "description": "Este mês inclui lançamentos fixos/recorrentes. Deseja excluí-los só deste mês, ou também dos próximos? Os demais lançamentos (não fixos) são sempre excluídos por completo."
     }
   }
 }

@@ -11,7 +11,7 @@
     },
     "manual": {
       "title": "Configurar manualmente",
-      "description": "Prefere fazer você mesmo? Vá direto para as parametrizações e cadastre contas, categorias e receitas."
+      "description": "Prefere fazer você mesmo? Vá direto para as configurações e cadastre contas, categorias e receitas."
     },
     "later": {
       "title": "Responder depois",
@@ -54,7 +54,7 @@
     "save": "Salvar",
     "emptySection": "Nenhum item proposto.",
     "mainAccount": "Principal",
-    "settingsTitle": "Parametrizações financeiras",
+    "settingsTitle": "Configurações financeiras",
     "dashboardScope": {
       "CONSOLIDATED": "Painel consolidado (todas as contas)",
       "ACCOUNT": "Painel por conta"
@@ -81,7 +81,7 @@
       "creditCards": "Cartões de crédito",
       "transfers": "Transferências",
       "categories": "Categorias",
-      "settings": "Parametrizações"
+      "settings": "Configurações"
     },
     "fields": {
       "name": "Nome",

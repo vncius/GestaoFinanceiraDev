@@ -26,7 +26,7 @@ export function TransferGrid({
   onSettle: (transferGroupId: string) => void;
   onRevert: (transferGroupId: string) => void;
   onDelete: (item: TransferFlowItem) => void;
-  // Efetivar e reverter compartilham o mesmo joinha, logo o mesmo id de pendência.
+  // Efetivar e reverter compartilham a mesma caixa de pago, logo o mesmo id de pendência.
   pendingToggleId?: string | null;
   pendingDeleteId?: string | null;
   locked?: boolean;

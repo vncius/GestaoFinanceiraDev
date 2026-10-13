@@ -38,6 +38,8 @@
       "dailyLimitExceeded": "Limite diário de mensagens atingido. Tente novamente amanhã ou configure manualmente."
     },
     "draft": {
+      "autoReserveSameAccount": "A conta de origem e a de destino da reserva automática devem ser diferentes.",
+      "autoReserveTargetRequired": "A reserva automática precisa de uma conta de destino.",
       "locked": "A proposta não pode mais ser alterada.",
       "itemNotFound": "Item não encontrado na proposta.",
       "invalidRef": "Referência inválida entre itens da proposta.",
@@ -67,9 +69,13 @@
     "paymentAccountNotFound": "Conta pagadora do cartão não encontrada ou inativa."
   },
   "creditCardEntry": {
+    "category": { "invalid": "Categoria inválida ou inativa." },
+    "paymentManaged": "Este lançamento foi gerado pelo pagamento da fatura e não pode ser excluído diretamente. Desmarque o pagamento da fatura.",
+    "referenceRequired": "Informe o mês a partir do qual excluir.",
+    "totalAmount": { "mustBeNegativeForRefund": "Estorno deve ter valor negativo.", "positive": "O valor do lançamento deve ser positivo." },
     "inactive": "Lançamento inativo.",
     "alreadyInactive": "Lançamento já está inativo.",
-    "scopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
+    "scopeRequired": "Informe se deseja excluir só este mês ou também os próximos.",
     "notFound": "Lançamento não encontrado.",
     "belongsToOtherCard": "Lançamento não pertence a este cartão."
   },
@@ -78,17 +84,18 @@
     "belongsToOtherCard": "Fatura não pertence a este cartão.",
     "alreadyPaid": "Fatura já foi paga.",
     "canceled": "Fatura cancelada não pode ser paga.",
-    "notPaid": "Apenas faturas pagas podem ser revertidas."
+    "notPaid": "Só faturas pagas podem ser desmarcadas."
   },
   "transaction": {
+    "updateScopeRequired": "Informe se deseja alterar só este mês ou também os próximos.",
     "canceledCannotEdit": "Lançamentos cancelados não podem ser editados.",
-    "reversedCannotEdit": "Lançamentos revertidos não podem ser editados.",
-    "fixedCannotRevertToUnique": "Não é possível reverter um lançamento fixo para único.",
-    "settledCannotDelete": "Lançamentos já efetivados (pagos ou recebidos) não podem ser excluídos. Reverta primeiro.",
-    "deleteScopeRequired": "Informe se deseja excluir apenas a referência atual ou também as futuras.",
-    "alreadySettled": "Lançamento já foi efetivado (pago ou recebido).",
+    "reversedCannotEdit": "Lançamentos desfeitos não podem ser editados.",
+    "fixedCannotRevertToUnique": "Não é possível transformar um lançamento fixo em único.",
+    "settledCannotDelete": "Lançamentos já pagos ou recebidos não podem ser excluídos. Desmarque primeiro.",
+    "deleteScopeRequired": "Informe se deseja excluir só este mês ou também os próximos.",
+    "alreadySettled": "Este lançamento já foi pago ou recebido.",
     "canceledCannotSettle": "Lançamentos cancelados não podem ser pagos ou recebidos.",
-    "notSettledCannotRevert": "Apenas lançamentos já efetivados (pagos ou recebidos) podem ser revertidos.",
+    "notSettledCannotRevert": "Só lançamentos já pagos ou recebidos podem ser desmarcados.",
     "notFound": "Lançamento não encontrado.",
     "wrongType": "Lançamento não é do tipo {{type}}."
   },
@@ -118,5 +125,21 @@
   },
   "accountType": {
     "notFound": "Tipo de conta não encontrado"
+  },
+  "transfer": {
+    "notFound": "Transferência não encontrada.",
+    "sameAccount": "A conta de origem e a de destino devem ser diferentes.",
+    "sourceAccountNotFound": "Conta de origem não encontrada ou inativa.",
+    "targetAccountNotFound": "Conta de destino não encontrada ou inativa.",
+    "alreadySettled": "Esta transferência já foi feita.",
+    "notSettledCannotRevert": "Só transferências já feitas podem ser desmarcadas.",
+    "settledCannotDelete": "Transferências já feitas não podem ser excluídas. Desmarque primeiro.",
+    "canceledCannotEdit": "Transferências excluídas não podem ser alteradas."
+  },
+  "creditCardImport": {
+    "onlyOfx": "Só arquivos .ofx são aceitos para importar fatura.",
+    "noEntriesRecognized": "Não foi possível reconhecer nenhum lançamento no arquivo enviado.",
+    "categoryInvalidNoFallback": "Categoria inválida e não há uma categoria \"Outros\" para usar no lugar. Selecione uma categoria válida.",
+    "overwriteTargetInvalid": "O lançamento a substituir não existe mais ou é de outro cartão. Recarregue a prévia e tente de novo."
   }
 }

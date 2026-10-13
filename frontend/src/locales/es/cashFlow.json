@@ -13,7 +13,7 @@
       "incomeGroup": "Entradas",
       "expenseGroup": "Salidas"
     },
-    "clearAllButton": "Limpiar Referencia",
+    "clearAllButton": "Limpiar mes",
     "newTransferButton": "Nueva Transferencia"
   },
   "summaryBar": {
@@ -21,19 +21,19 @@
     "initialTooltip": "Saldo de la cuenta seleccionada al inicio del mes, antes de cualquier entrada o salida.",
     "income": "Entradas",
     "expense": "Salidas",
-    "finalBalance": "Saldo Final",
-    "finalBalanceTooltip": "Saldo ya efectivizado (pagado/recibido) de la cuenta seleccionada hasta el momento.",
+    "finalBalance": "Saldo",
+    "finalBalanceTooltip": "Saldo de la cuenta seleccionada considerando solo lo ya pagado o recibido.",
     "betweenAccounts": "Entre cuentas",
     "betweenAccountsTooltip": "Transferencias entre tus propias cuentas en el mes (recibidas − enviadas). No cuentan como entrada ni salida.",
     "collapse": "Contraer",
     "expand": "Ver previstos",
-    "projectedInitialBalance": "Saldo Efectivizado",
-    "projectedInitialBalanceTooltip": "Saldo ya efectivizado (pagado/recibido). La previsión le suma lo que aún falta recibir y pagar.",
+    "projectedInitialBalance": "Saldo Actual",
+    "projectedInitialBalanceTooltip": "Saldo considerando solo lo ya pagado o recibido. La previsión le suma lo que aún falta recibir y pagar.",
     "expectedIncome": "Prev. Entradas",
     "expectedBetweenAccounts": "Prev. Entre cuentas",
     "expectedExpense": "Prev. Salidas",
     "projectedBalance": "Prev. Saldo",
-    "projectedBalanceTooltip": "Saldo previsto de la cuenta seleccionada considerando registros aún no efectivizados.",
+    "projectedBalanceTooltip": "Saldo previsto de la cuenta seleccionada contando también lo que aún no se pagó o recibió.",
     "projectionRange": "Previstos acumulados de {{from}} a {{to}}"
   },
   "grid": {
@@ -49,7 +49,7 @@
       "delete": "Eliminar"
     },
     "toggle": {
-      "revertPaid": "Revertir pago"
+      "revertPaid": "Desmarcar como pagado"
     }
   },
   "entriesGrid": {
@@ -64,7 +64,7 @@
     },
     "toggle": {
       "markReceived": "Marcar como recibido",
-      "revertReceived": "Revertir cobro"
+      "revertReceived": "Desmarcar como recibido"
     }
   },
   "transactionGrid": {
@@ -89,8 +89,8 @@
     "fromLabel": "De {{account}}",
     "toLabel": "Para {{account}}",
     "autoReserveBadge": "Reserva automática",
-    "settle": "Efectivizar transferencia",
-    "revert": "Revertir transferencia",
+    "settle": "Marcar transferencia como hecha",
+    "revert": "Desmarcar transferencia",
     "emptyState": {
       "title": "Ninguna transferencia este mes"
     }
@@ -120,8 +120,8 @@
     "title": {
       "newPayment": "Nuevo Pago",
       "editPayment": "Editar Pago",
-      "newExtraExpense": "Nuevo Gasto Extraordinario",
-      "editExtraExpense": "Editar Gasto Extraordinario"
+      "newExtraExpense": "Nuevo Gasto Fuera de lo Común",
+      "editExtraExpense": "Editar Gasto Fuera de lo Común"
     },
     "fields": {
       "description": "Descripción *",
@@ -177,8 +177,8 @@
     },
     "delete": "Eliminar",
     "cancel": "Cancelar",
-    "settle": "Efectivizar",
-    "revert": "Revertir",
+    "settle": "Marcar como hecha",
+    "revert": "Desmarcar",
     "save": "Guardar",
     "fields": {
       "description": "Descripción *",
@@ -198,23 +198,23 @@
   },
   "page": {
     "paymentsTitle": "Pagos",
-    "extraExpensesTitle": "Gastos Extraordinarios",
-    "confirmEdit": "Este ítem ya fue efectivizado. Modificar este registro recalculará los saldos e indicadores. ¿Desea continuar?",
-    "confirmDeleteEffected": "Este ítem ya está pagado/recibido. Al eliminarlo, el pago se revertirá y los saldos se recalcularán. ¿Desea continuar?",
+    "extraExpensesTitle": "Gastos Fuera de lo Común",
+    "confirmEdit": "Este ítem ya fue pagado/recibido. Modificarlo recalcula los saldos e indicadores. ¿Desea continuar?",
+    "confirmDeleteEffected": "Este ítem ya está pagado/recibido. Al eliminarlo se desmarca y los saldos se recalculan. ¿Desea continuar?",
     "confirmDelete": "¿Confirmar eliminación?",
     "scopedDelete": {
       "title": "Eliminar registro fijo",
-      "description": "es un registro fijo. ¿Desea eliminar solo esta referencia, o esta y todas las futuras? El historial de referencias ya registradas/pagadas/recibidas nunca se modifica."
+      "description": "es un registro fijo. ¿Desea eliminarlo solo de este mes, o de este y todos los próximos? Los meses anteriores nunca se modifican."
     },
     "scopedEdit": {
       "title": "Editar registro fijo",
-      "description": "es un registro fijo. ¿Desea aplicar este cambio solo a esta referencia, o a esta y a todas las futuras? El historial de referencias ya registradas/pagadas/recibidas nunca se modifica."
+      "description": "es un registro fijo. ¿Desea aplicar el cambio solo a este mes, o a este y todos los próximos? Los meses anteriores nunca se modifican."
     },
-    "confirmClearAll": "¿Limpiar todos los {{count}} registro(s) de esta referencia (entradas, pagos, gastos extraordinarios y transferencias)? Las transferencias eliminadas también desaparecen de la cuenta contraria. Esta acción no se puede deshacer.",
-    "clearAllError": "No se pudieron limpiar todos los registros de esta referencia.",
+    "confirmClearAll": "¿Limpiar todos los {{count}} registro(s) de este mes (entradas, pagos, gastos fuera de lo común y transferencias)? Las transferencias eliminadas también desaparecen de la otra cuenta. Esta acción no se puede deshacer.",
+    "clearAllError": "No se pudieron limpiar todos los registros de este mes.",
     "scopedClearAll": {
       "title": "Limpiar registros fijos",
-      "description": "Esta referencia incluye registros fijos/recurrentes. ¿Desea eliminar solo la referencia actual de esos ítems, o también las futuras? Los demás registros (no fijos) siempre se eliminan por completo."
+      "description": "Este mes incluye registros fijos/recurrentes. ¿Desea eliminarlos solo de este mes, o también de los próximos? Los demás registros (no fijos) siempre se eliminan por completo."
     }
   }
 }

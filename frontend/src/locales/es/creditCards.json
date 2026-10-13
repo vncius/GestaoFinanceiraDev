@@ -23,7 +23,7 @@
       "installment": "En cuotas",
       "refund": "Reembolso/Crédito"
     },
-    "confirmRecreate": "Cambiar el monto, la fecha, el tipo o las cuotas volverá a crear todas las cuotas y puede revertir facturas pagadas. ¿Desea continuar?",
+    "confirmRecreate": "Cambiar el monto, la fecha, el tipo o las cuotas vuelve a crear todas las cuotas y puede desmarcar facturas ya pagadas. ¿Desea continuar?",
     "validation": {
       "description": "Descripción",
       "category": "Categoría",
@@ -40,7 +40,7 @@
       "open": "Pendiente"
     },
     "payButton": "Pagar factura",
-    "revertButton": "Revertir pago"
+    "revertButton": "Desmarcar como pagada"
   },
   "installments": {
     "title": "Movimientos ({{count}})",
@@ -74,7 +74,7 @@
     "clearInvoiceError": "No se pudieron limpiar todos los movimientos de esta factura.",
     "clearInvoiceScopeModal": {
       "title": "Limpiar movimientos fijos",
-      "description": "Esta factura ({{monthYear}}) incluye movimientos fijos/recurrentes. ¿Desea eliminar solo la referencia actual de esos ítems, o también las futuras? Los movimientos en cuotas se cancelan a partir de este mes en adelante (los meses anteriores no cambian); los de contado y reembolsos siempre se cancelan por completo."
+      "description": "Esta factura ({{monthYear}}) incluye movimientos fijos/recurrentes. ¿Desea eliminarlos solo de este mes, o también de los próximos? Los movimientos en cuotas se cancelan de este mes en adelante (los meses anteriores no cambian); los de contado y reembolsos siempre se cancelan por completo."
     }
   },
   "invoiceImport": {
@@ -112,7 +112,7 @@
   },
   "fixedDeleteModal": {
     "title": "Eliminar movimiento fijo",
-    "description": "es un movimiento fijo. ¿Desea eliminar solo la referencia de {{monthYear}}, o esta y todas las futuras? El historial de referencias ya generadas/pagadas nunca se modifica."
+    "description": "es un movimiento fijo. ¿Desea eliminarlo solo de {{monthYear}}, o de este y todos los próximos meses? Los meses anteriores nunca se modifican."
   },
   "cardList": {
     "currentMonth": "Mes actual",

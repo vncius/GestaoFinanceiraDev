@@ -28,9 +28,9 @@
   "general": {
     "dangerZoneTitle": "Zona de perigo",
     "resetButton": "Redefinir conta",
-    "resetDescription": "Apaga todos os dados e parametrizações da sua conta: contas, categorias, lançamentos, cartões e configurações. Esta ação não pode ser desfeita — recomendamos baixar um backup antes, logo acima, em Backup completo.",
+    "resetDescription": "Apaga todos os dados e configurações da sua conta: contas, categorias, lançamentos, cartões e preferências. Esta ação não pode ser desfeita — recomendamos baixar um backup antes, logo acima, em Backup completo.",
     "resetConfirmTitle": "Redefinir conta",
-    "resetConfirmMessage": "Esta ação apagará TODOS os dados e parametrizações da sua conta e não pode ser desfeita.",
+    "resetConfirmMessage": "Esta ação apagará TODOS os dados e configurações da sua conta e não pode ser desfeita.",
     "resetConfirmWord": "REDEFINIR",
     "resetConfirmInputLabel": "Digite {{word}} para confirmar",
     "resetSuccess": "Conta redefinida com sucesso.",

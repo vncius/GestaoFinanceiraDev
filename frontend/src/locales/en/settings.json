@@ -28,7 +28,7 @@
   "general": {
     "dangerZoneTitle": "Danger zone",
     "resetButton": "Reset account",
-    "resetDescription": "Deletes all data and settings from your account: accounts, categories, entries, cards, and settings. This action cannot be undone — we recommend downloading a backup first, just above, under Full backup.",
+    "resetDescription": "Deletes all data and settings from your account: accounts, categories, entries, cards, and preferences. This action cannot be undone — we recommend downloading a backup first, just above, under Full backup.",
     "resetConfirmTitle": "Reset account",
     "resetConfirmMessage": "This action will delete ALL data and settings from your account and cannot be undone.",
     "resetConfirmWord": "RESET",

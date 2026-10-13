@@ -2,10 +2,10 @@
   "appName": "Gestão Financeira",
   "appTagline": "Controle PJ / Pessoal",
   "nav": {
-    "dashboard": "Dashboard",
-    "cashFlow": "Fluxo de Caixa",
-    "creditCards": "Cartões de Crédito",
-    "settings": "Parametrizações"
+    "dashboard": "Início",
+    "cashFlow": "Movimentações",
+    "creditCards": "Cartões",
+    "settings": "Configurações"
   },
   "header": {
     "lightMode": "Modo claro",

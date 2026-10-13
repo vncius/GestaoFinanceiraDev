@@ -1,7 +1,7 @@
 {
   "printReport": "Relatório para impressão",
   "error": {
-    "loadFailed": "Não foi possível carregar o dashboard. Verifique se o servidor está rodando."
+    "loadFailed": "Não foi possível carregar o Início. Verifique se o servidor está rodando."
   },
   "balances": {
     "sectionTitle": "Saldos Atuais",
@@ -30,7 +30,7 @@
     "title": "Próximos Vencimentos",
     "period": "15 dias",
     "empty": "Nenhum vencimento nos próximos 15 dias",
-    "goToCashFlow": "Ir para o fluxo de caixa deste mês"
+    "goToCashFlow": "Ir para as movimentações deste mês"
   },
   "evolutionChart": {
     "title": "Evolução dos Últimos Meses",
