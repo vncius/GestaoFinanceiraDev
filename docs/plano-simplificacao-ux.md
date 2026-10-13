@@ -143,8 +143,9 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U18 | Compra no cartão pelo "+ Novo" | 5 | U12, U13 | ⬜ | | |
 | U19 | Preferência "Mostrar detalhes avançados" (densidade) | 5 | U8, U9 | ⬜ | | |
 | U20 | Onboarding IA, relatório e documentação alinhados | 5 | U7, U8 | ⬜ | | |
+| U21 | Prints com dados fictícios + README para portfólio | 6 | todas as anteriores que forem feitas | ⬜ | | |
 
-Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional — confirmar com o usuário antes de iniciar.
+Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional — confirmar com o usuário antes de iniciar. **Fase 6 (U21) é sempre a última atividade**, pedida pelo usuário em 2026-10-13: o app vai para o portfólio dele como desenvolvedor.
 
 ---
 
@@ -295,6 +296,17 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 
 #### U20 — Onboarding IA, relatório e documentação
 **Escopo**: alinhar `onboarding-prompts.ts`/`onboarding-tools.ts` ao novo vocabulário (D7) e ao significado de `dashboardScope` (D4: valor inicial do seletor); conferir `Report.tsx` com D2/D3; atualizar `README.md`, `docs/domain-logic.md` e este plano (marcar como concluído no cabeçalho).
+
+### Fase 6 — Portfólio (sempre a última atividade)
+
+#### U21 — Prints com dados fictícios + README para portfólio
+**Escopo**
+- **Dados fictícios:** tenant de demonstração num banco separado (nunca `gestao_financeira` de produção nem os dados reais do usuário), populado por script idempotente (evoluir `backend/src/scripts/seed.ts` ou criar `seed-demo.ts`): 2–3 contas (ex.: "Conta corrente", "PJ", "Reserva" com reserva automática), categorias comuns, ~3 meses de entradas/saídas com fixos, alguns atrasados e a vencer, 1–2 cartões com compras parceladas, transferências. Nomes e valores verossímeis, sem dado pessoal real.
+- **Prints** (PNG, em `docs/screenshots/`): Início (desktop, claro e escuro), Movimentações com a lista agrupada, Cartões, Configurações, e 1–2 de celular (375px) — Início e Movimentações. Tirados pelo painel do navegador com o login do usuário no tenant de demonstração. Nada de dado real aparecendo (conferir cada imagem antes de commitar).
+- **README.md:** reescrever para portfólio — título e uma frase do que o app resolve, print principal no topo, galeria de prints, funcionalidades (com o vocabulário novo), stack (React 18 + Vite + Tailwind + TanStack Query / Node + Express + Zod + MongoDB / login Google / IA no onboarding), decisões técnicas que valem destacar (valores em centavos, transferências atômicas, i18n pt/en/es com teste de cobertura, migrações idempotentes de boot), como rodar localmente, link de demonstração se houver. Manter as instruções de setup atuais numa seção "Rodando localmente".
+- Opcional: GIF curto do fluxo "+ Novo → lançamento aparece no Início".
+
+**Critérios de aceite**: README renderiza bem no GitHub com as imagens; nenhuma imagem mostra dado real; o script de demo roda duas vezes sem duplicar dados.
 
 ---
 
