@@ -13,7 +13,10 @@ import { Account, CreditCardInvoice, FinancialTransaction, TransferFlowItem } fr
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
-import { monthYearFromDate } from '../../utils/date';
+import { firstDayOfMonthISO, lastDayOfMonthISO, monthYearFromDate } from '../../utils/date';
+import { BackupService } from '../../services/backup.service';
+import { Modal } from '../../components/ui/Modal';
+import { StatementImportSection } from '../Backup/Backup';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../contexts/ToastContext';
 import { ModalKind, CashFlowTypeFilter } from './types';
@@ -105,6 +108,8 @@ export default function CashFlow() {
     | null
   >(null);
   const [clearingAll, setClearingAll] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [showClearAllScope, setShowClearAllScope] = useState(false);
 
   const {
@@ -327,6 +332,17 @@ export default function CashFlow() {
     }
   }
 
+  async function handleExportMonth() {
+    setExporting(true);
+    try {
+      await BackupService.downloadCsv({ from: firstDayOfMonthISO(month, year), to: lastDayOfMonthISO(month, year) });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('page.exportError'));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleClearAll() {
     if (clearAllCount === 0) return;
     try {
@@ -477,7 +493,9 @@ export default function CashFlow() {
           onSelectAllCategories={() => setExcludedCategoryIds(new Set())}
           onClearCategories={() => setExcludedCategoryIds(new Set(categories.map((c) => c.id)))}
           onClearAll={handleClearAll}
-          onNewTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
+          onImportStatement={() => setImportOpen(true)}
+          onExportMonth={handleExportMonth}
+          exporting={exporting}
           clearingAll={clearingAll}
           clearAllDisabled={clearAllCount === 0}
           search={search}
@@ -505,6 +523,11 @@ export default function CashFlow() {
         />
       </div>
 
+
+      {/* Importar extrato (menu "⋯") — mesma seção de Configurações → Seus dados */}
+      <Modal open={importOpen} onClose={() => setImportOpen(false)} title={t('filterBar.importStatement')} size="xl">
+        <StatementImportSection embedded defaultAccountId={accountId} onImported={() => setImportOpen(false)} />
+      </Modal>
 
       {/* Income Modal */}
       <IncomeModal

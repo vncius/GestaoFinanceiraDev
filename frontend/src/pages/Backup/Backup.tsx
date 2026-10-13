@@ -219,12 +219,22 @@ interface PreviewEntry extends StatementEntry {
   include: boolean;
 }
 
-function StatementImportSection() {
+// Também usada no menu "⋯" de Movimentações (U11), já com a conta da tela.
+export function StatementImportSection({
+  defaultAccountId = '',
+  onImported,
+  embedded = false,
+}: {
+  defaultAccountId?: string;
+  onImported?: () => void;
+  // Dentro de um modal que já tem título: sem o cartão/cabeçalho próprio.
+  embedded?: boolean;
+} = {}) {
   const { t } = useTranslation('backup');
   const { showError, showSuccess } = useToast();
   const qc = useQueryClient();
   const [entries, setEntries] = useState<PreviewEntry[] | null>(null);
-  const [accountId, setAccountId] = useState('');
+  const [accountId, setAccountId] = useState(defaultAccountId);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -273,6 +283,7 @@ function StatementImportSection() {
       await qc.invalidateQueries({ queryKey: ['dashboard'] });
       showSuccess(t('statementImport.importSuccess', { count: created }));
       setEntries(null);
+      onImported?.();
     } catch (err) {
       showError(err instanceof Error ? err.message : t('statementImport.importError'));
     } finally {
@@ -282,12 +293,8 @@ function StatementImportSection() {
 
   const selectedCount = entries?.filter((e) => e.include).length ?? 0;
 
-  return (
-    <SectionCard
-      title={t('statementImport.title')}
-      icon={<Upload size={18} />}
-      description={t('statementImport.description')}
-    >
+  const content = (
+    <>
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="secondary" loading={parsing} onClick={() => fileInputRef.current?.click()}>
           {t('statementImport.selectFileButton')}
@@ -370,6 +377,20 @@ function StatementImportSection() {
           </Button>
         </>
       )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('statementImport.description')}</p>
+        {content}
+      </div>
+    );
+  }
+  return (
+    <SectionCard title={t('statementImport.title')} icon={<Upload size={18} />} description={t('statementImport.description')}>
+      {content}
     </SectionCard>
   );
 }

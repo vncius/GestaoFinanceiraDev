@@ -13,7 +13,6 @@
       "expenseGroup": "Expenses"
     },
     "clearAllButton": "Clear month",
-    "newTransferButton": "New Transfer",
     "searchPlaceholder": "Search entries",
     "clearSearch": "Clear search",
     "tags": {
@@ -26,7 +25,10 @@
         "invoice": "Card invoices",
         "transfer": "Transfers"
       }
-    }
+    },
+    "monthActions": "Month actions",
+    "importStatement": "Import bank statement",
+    "exportMonth": "Export this month's entries (CSV)"
   },
   "summaryBar": {
     "income": "In",
@@ -188,7 +190,8 @@
     "scopedClearAll": {
       "title": "Clear fixed entries",
       "description": "This month includes fixed/recurring entries. Delete them only from this month, or from the next months too? All other (non-fixed) entries are always deleted entirely."
-    }
+    },
+    "exportError": "Could not export this month's entries."
   },
   "movements": {
     "title": "This month's entries",

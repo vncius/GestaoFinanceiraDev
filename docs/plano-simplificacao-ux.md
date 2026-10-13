@@ -133,7 +133,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ✅ | 2026-10-13 | ver git log |
 | U10b | Lista única — ações, filtros e busca | 3 | U10a | ✅ | 2026-10-13 | ver git log |
 | U10c | Remoção das grids antigas e código morto | 3 | U10b | ✅ | 2026-10-13 | ver git log |
-| U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ⬜ | | |
+| U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ✅ | 2026-10-13 | ver git log |
 | U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ⬜ | | |
 | U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ⬜ | | |
 | U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ⬜ | | |
@@ -314,6 +314,11 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U11 — 2026-10-13
+- `MonthActionsMenu` em `CashFlowFilterBar.tsx`: Importar extrato bancário (modal com `StatementImportSection` de `Backup.tsx`, agora exportada, com `embedded` e já com a conta da tela selecionada), Exportar lançamentos do mês (CSV, `BackupService.downloadCsv` com o 1º e o último dia do mês) e Limpar mês (separado, vermelho). Saíram da barra "Nova Transferência" (está no "Novo ▾" da lista desde a U10a) e "Limpar mês"; chave `filterBar.newTransferButton` removida.
+- O CSV exportado é o mesmo de Configurações → Seus dados (não filtra por conta) — comportamento herdado.
+- Verificado no navegador: menu e modal de importação. "Exportar" não foi clicado na verificação (dispara download no navegador).
 
 ### U10c — 2026-10-13
 - Removidos `EntriesGrid`, `TransactionGrid`, `TransferGrid`, `CreditCardsGrid`, `PageFooterContext` (e o `PageFooterProvider` do `Layout`); `shared.tsx` ficou só com `INPUT`/`Field` usados pelos modais; `useCollapsibleSections` só conhece o grupo `done`. 25 chaves i18n de `cashFlow` sem referência removidas nos 3 idiomas.

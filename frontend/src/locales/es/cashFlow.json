@@ -13,7 +13,6 @@
       "expenseGroup": "Salidas"
     },
     "clearAllButton": "Limpiar mes",
-    "newTransferButton": "Nueva Transferencia",
     "searchPlaceholder": "Buscar movimiento",
     "clearSearch": "Limpiar búsqueda",
     "tags": {
@@ -26,7 +25,10 @@
         "invoice": "Facturas de tarjeta",
         "transfer": "Transferencias"
       }
-    }
+    },
+    "monthActions": "Acciones del mes",
+    "importStatement": "Importar extracto bancario",
+    "exportMonth": "Exportar movimientos del mes (CSV)"
   },
   "summaryBar": {
     "income": "Entró",
@@ -188,7 +190,8 @@
     "scopedClearAll": {
       "title": "Limpiar registros fijos",
       "description": "Este mes incluye registros fijos/recurrentes. ¿Desea eliminarlos solo de este mes, o también de los próximos? Los demás registros (no fijos) siempre se eliminan por completo."
-    }
+    },
+    "exportError": "No se pudieron exportar los movimientos del mes."
   },
   "movements": {
     "title": "Movimientos del mes",

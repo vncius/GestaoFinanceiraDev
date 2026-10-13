@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Filter, Eraser, ArrowLeftRight, Search, Tags, X } from 'lucide-react';
+import { Filter, Eraser, Search, Tags, X, MoreHorizontal, Upload, Download, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
 import { MOVEMENT_TAGS, MovementTag } from '../movements';
-import { Button } from '../../../components/ui/Button';
 import { sortByName } from '../../../utils/sort';
 
 function TypeFilterToggle({
@@ -201,6 +200,74 @@ function TagFilterPopover({
   );
 }
 
+// Ações sobre o mês inteiro (U11): ficam fora da barra de filtros para não
+// disputar atenção — e "Limpar mês", destrutiva, vai por último e em vermelho.
+function MonthActionsMenu({
+  onImportStatement,
+  onExportMonth,
+  exporting,
+  onClearAll,
+  clearingAll,
+  clearAllDisabled,
+}: {
+  onImportStatement: () => void;
+  onExportMonth: () => void;
+  exporting: boolean;
+  onClearAll: () => void;
+  clearingAll: boolean;
+  clearAllDisabled: boolean;
+}) {
+  const { t } = useTranslation('cashFlow');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const item = 'w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-md text-left disabled:opacity-50 disabled:cursor-not-allowed';
+  const run = (fn: () => void) => () => { setOpen(false); fn(); };
+
+  return (
+    <div className="relative ml-auto" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={t('filterBar.monthActions')}
+        title={t('filterBar.monthActions')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="p-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+      >
+        {exporting || clearingAll ? <Loader2 size={16} className="animate-spin" /> : <MoreHorizontal size={16} />}
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 z-20 mt-1 w-60 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
+          <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={run(onImportStatement)}>
+            <Upload size={15} /> {t('filterBar.importStatement')}
+          </button>
+          <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={run(onExportMonth)} disabled={exporting}>
+            <Download size={15} /> {t('filterBar.exportMonth')}
+          </button>
+          <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
+          <button
+            role="menuitem"
+            className={`${item} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30`}
+            onClick={run(onClearAll)}
+            disabled={clearAllDisabled || clearingAll}
+          >
+            <Eraser size={15} /> {t('filterBar.clearAllButton')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CashFlowFilterBar({
   typeFilter,
   onTypeChange,
@@ -210,7 +277,9 @@ export function CashFlowFilterBar({
   onSelectAllCategories,
   onClearCategories,
   onClearAll,
-  onNewTransfer,
+  onImportStatement,
+  onExportMonth,
+  exporting = false,
   clearingAll = false,
   clearAllDisabled = false,
   search,
@@ -227,7 +296,9 @@ export function CashFlowFilterBar({
   onSelectAllCategories: () => void;
   onClearCategories: () => void;
   onClearAll: () => void;
-  onNewTransfer: () => void;
+  onImportStatement: () => void;
+  onExportMonth: () => void;
+  exporting?: boolean;
   clearingAll?: boolean;
   clearAllDisabled?: boolean;
   search: string;
@@ -270,26 +341,14 @@ export function CashFlowFilterBar({
         onClearAll={onClearCategories}
       />
       <TagFilterPopover selected={tags} onToggle={onToggleTag} onClear={onClearTags} />
-      <Button
-        size="sm"
-        variant="ghost"
-        icon={<ArrowLeftRight size={14} />}
-        onClick={onNewTransfer}
-        className="ml-auto text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-      >
-        {t('filterBar.newTransferButton')}
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        icon={<Eraser size={14} />}
-        onClick={onClearAll}
-        loading={clearingAll}
-        disabled={clearAllDisabled}
-        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
-      >
-        {t('filterBar.clearAllButton')}
-      </Button>
+      <MonthActionsMenu
+        onImportStatement={onImportStatement}
+        onExportMonth={onExportMonth}
+        exporting={exporting}
+        onClearAll={onClearAll}
+        clearingAll={clearingAll}
+        clearAllDisabled={clearAllDisabled}
+      />
     </div>
   );
 }
