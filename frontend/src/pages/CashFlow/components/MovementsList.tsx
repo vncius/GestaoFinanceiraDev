@@ -49,6 +49,7 @@ function MovementRow({
   item,
   overdue,
   categoryName,
+  accountName,
   busy,
   locked,
   onToggle,
@@ -58,6 +59,7 @@ function MovementRow({
   item: MovementItem;
   overdue: boolean;
   categoryName: string | null;
+  accountName: string | null;
   busy: RowBusy;
   locked: boolean;
   onToggle: () => void;
@@ -111,6 +113,7 @@ function MovementRow({
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
           <span className={overdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}>{formatDate(item.date)}</span>
+          {accountName && <Badge tone="gray">{accountName}</Badge>}
           {categoryName && <span className="truncate max-w-[10rem]">{categoryName}</span>}
           {item.isFixed && (
             <Badge><Repeat size={10} />{t('movements.badges.fixed')}</Badge>
@@ -257,6 +260,7 @@ export function MovementsList({
   onEdit,
   onDelete,
   emptyMessage,
+  accountNames,
 }: {
   groups: MovementGroups;
   categoryNames: Map<string, string>;
@@ -271,6 +275,8 @@ export function MovementsList({
   onDelete: (item: MovementItem) => void;
   // Mensagem quando a lista está vazia por causa da busca/filtro.
   emptyMessage?: string;
+  // Só na visão "Todas as contas": mostra a conta de cada lançamento.
+  accountNames?: Map<string, string>;
 }) {
   const { t } = useTranslation('cashFlow');
   const total = groups.overdue.length + groups.upcoming.length + groups.done.length;
@@ -281,6 +287,7 @@ export function MovementsList({
       item={item}
       overdue={overdue}
       categoryName={item.categoryId ? categoryNames.get(item.categoryId) ?? null : null}
+      accountName={accountNames && item.accountId ? accountNames.get(item.accountId) ?? null : null}
       busy={rowBusy(item)}
       locked={locked}
       onToggle={() => onToggle(item)}

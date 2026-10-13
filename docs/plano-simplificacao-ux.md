@@ -139,7 +139,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ✅ | 2026-10-13 | ver git log |
 | U15 | "+ Nova categoria" inline nos formulários | 4 | U12 | ✅ | 2026-10-13 | ver git log |
 | U16 | Auditoria de divulgação progressiva (1 conta / 0 cartões) | 4 | U8, U10c, U13 | ✅ | 2026-10-13 | ver git log |
-| U17 | Movimentações consolidada ("Todas as contas") | 5 | U10c, U12 | ⬜ | | |
+| U17 | Movimentações consolidada ("Todas as contas") | 5 | U10c, U12 | ✅ | 2026-10-13 | ver git log |
 | U18 | Compra no cartão pelo "+ Novo" | 5 | U12, U13 | ⬜ | | |
 | U19 | Preferência "Mostrar detalhes avançados" (densidade) | 5 | U8, U9 | ⬜ | | |
 | U20 | Onboarding IA, relatório e documentação alinhados | 5 | U7, U8 | ⬜ | | |
@@ -314,6 +314,11 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U17 — 2026-10-13
+- Backend: `GET /cash-flow` sem `accountId` → `CashFlowService.getConsolidatedCashFlow` (une o fluxo de cada conta ativa; transferências entre duas contas ativas somem da lista e se anulam no resumo; transferências com conta inativa ficam). `ZERO_SUMMARY`/`sumSummaries` mudaram de `dashboard.service.ts` para `cash-flow/cash-flow-summary.utils.ts`. `TransferFlowItem` ganhou `accountId` (conta da perna). Teste novo no `cash-flow.service.test.ts`.
+- Frontend: Movimentações aceita "Todas as contas" no seletor; cada linha mostra a conta; no formulário único a conta sai de "Mais opções" e fica à vista (`accountProminent`); "Limpar mês" fica desabilitado no consolidado (apagar o mês de todas as contas de uma vez é arriscado). Criação continua usando a última conta específica como padrão.
+- Isso encerra a restrição da D4 ("Movimentações exige uma conta específica").
 
 ### U16 — 2026-10-13
 - Auditoria feita **pelo código** (o painel perdeu o login Google). Checklist do perfil "1 conta, 0 cartões": seletor de conta oculto ✓; transferência fora do "+ Novo", do "Novo ▾" da lista e do formulário ✓; campo de conta no formulário só com 2+ contas ✓; "Entre suas contas" só quando ≠ 0 ✓; saldo por conta na análise só em "Todas" com 2+ ✓; Cartões fora do menu sem cartão ativo ✓.

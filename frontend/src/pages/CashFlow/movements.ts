@@ -26,6 +26,8 @@ export interface MovementItem {
   isFixed: boolean;
   isAutoReserve: boolean;
   counterpartAccountName: string | null;
+  // Conta do lançamento (exibida na visão "Todas as contas").
+  accountId: string | null;
   // Id usado pelas mutations (transferência usa o transferGroupId).
   actionId: string;
   source: MovementSource;
@@ -54,6 +56,7 @@ function fromTransaction(kind: 'income' | 'payment' | 'extra', t: FinancialTrans
     isFixed: t.recurrence === 'FIXED',
     isAutoReserve: false,
     counterpartAccountName: null,
+    accountId: kind === 'income' ? t.targetAccountId : t.sourceAccountId,
     actionId: t.id,
     source: { kind, item: t },
   };
@@ -72,6 +75,7 @@ export function toMovements(input: MovementsInput): MovementItem[] {
     isFixed: false,
     isAutoReserve: t.isAutoReserve,
     counterpartAccountName: t.counterpartAccountName,
+    accountId: t.accountId,
     actionId: t.transferGroupId,
     source: { kind: 'transfer', item: t },
   }));
@@ -91,6 +95,7 @@ export function toMovements(input: MovementsInput): MovementItem[] {
       isFixed: false,
       isAutoReserve: false,
       counterpartAccountName: null,
+      accountId: inv.paymentAccountId,
       actionId: inv.id,
       source: { kind: 'invoice', item: inv },
     }));

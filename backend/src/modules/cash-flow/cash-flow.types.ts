@@ -19,6 +19,8 @@ export interface CashFlowDataset {
 export interface TransferFlowItem {
   id: string;
   transferGroupId: string;
+  // Conta desta perna (a "selecionada"); necessária na visão consolidada.
+  accountId: string;
   direction: 'IN' | 'OUT';
   description: string;
   amount: number;

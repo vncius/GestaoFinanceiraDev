@@ -223,6 +223,8 @@ export interface CashFlowSummary {
 export interface TransferFlowItem {
   id: string;
   transferGroupId: string;
+  // Conta desta perna — usada na visão "Todas as contas" (U17).
+  accountId: string;
   direction: 'IN' | 'OUT';
   description: string;
   amount: number;

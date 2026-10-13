@@ -12,7 +12,7 @@ function tx(id: string, date: string, status: FinancialTransaction['status'], ex
 }
 
 const transfer: TransferFlowItem = {
-  id: 't1', transferGroupId: 'g1', direction: 'OUT', description: 'Para reserva', amount: 500,
+  id: 't1', transferGroupId: 'g1', accountId: 'a', direction: 'OUT', description: 'Para reserva', amount: 500,
   expectedDate: '2026-10-02T12:00:00.000Z', actualDate: null, status: 'PAID', notes: null,
   counterpartAccountId: 'b', counterpartAccountName: 'Reserva', isAutoReserve: true,
 };
@@ -101,5 +101,20 @@ describe('filterMovements', () => {
 
   it('busca e tipo combinam', () => {
     expect(names({ search: 'conserto', tags: ['fixed'] })).toEqual([]);
+  });
+});
+
+describe('toMovements — conta de cada lançamento (U17)', () => {
+  it('entrada usa a conta de destino, saída a de origem, transferência a da perna', () => {
+    const items = toMovements({
+      entries: [tx('E', '2026-10-05', 'PENDING', { type: 'INCOME', targetAccountId: 'pj', sourceAccountId: null })],
+      payments: [tx('P', '2026-10-05', 'PENDING', { sourceAccountId: 'pf' })],
+      extraExpenses: [],
+      transfers: [{ ...transfer, accountId: 'pj' }],
+      creditCards: [],
+      cardNames: new Map(),
+      cardFallbackName: '',
+    });
+    expect(items.map((i) => i.accountId)).toEqual(['pj', 'pf', 'pj']);
   });
 });

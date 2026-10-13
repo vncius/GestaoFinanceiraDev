@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { RecurrenceType } from '../financial-transactions/financial-transactions.types';
 
+// GET /cash-flow: sem accountId = todas as contas ativas (U17).
+export const cashFlowListQuerySchema = z.object({
+  month: z.coerce.number().int().min(1).max(12),
+  year: z.coerce.number().int().min(2000),
+  accountId: z.string().uuid().optional(),
+});
+
 export const cashFlowQuerySchema = z.object({
   month: z.coerce.number().int().min(1).max(12),
   year: z.coerce.number().int().min(2000),

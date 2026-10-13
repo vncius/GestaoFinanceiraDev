@@ -16,6 +16,7 @@ import { CreditCardsRepository, CreditCardInvoicesRepository } from '../credit-c
 import { CreditCardInvoice, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { TransfersService } from '../transfers/transfers.service';
 import { CashFlowDataset, CashFlowResponse, TransferFlowItem } from './cash-flow.types';
+import { sumSummaries, ZERO_SUMMARY } from './cash-flow-summary.utils';
 import {
   CashFlowQuery,
   CreateTransactionInput,
@@ -72,6 +73,37 @@ export class CashFlowService {
   ): Promise<CashFlowResponse[]> {
     const data = dataset ?? (await this.loadDataset(tenantId, month, year));
     return accountIds.map((accountId) => this.buildCashFlow(data, { month, year, accountId }));
+  }
+
+  // Movimentações em "Todas as contas" (U17 do plano de UX): une o fluxo de
+  // cada conta ativa. Transferência entre duas contas ativas aparece nas duas
+  // listas (uma perna em cada) e se anula no resumo — some da lista
+  // consolidada; transferência com conta inativa/externa permanece.
+  async getConsolidatedCashFlow(
+    tenantId: string,
+    month: number,
+    year: number,
+    dataset?: CashFlowDataset,
+  ): Promise<CashFlowResponse> {
+    const data = dataset ?? (await this.loadDataset(tenantId, month, year));
+    const activeIds = data.accounts.filter((a) => a.active).map((a) => a.id);
+    const active = new Set(activeIds);
+    const flows = activeIds.map((accountId) => this.buildCashFlow(data, { month, year, accountId }));
+
+    const transfers = flows
+      .flatMap((f) => f.transfers)
+      .filter((t) => !active.has(t.counterpartAccountId));
+
+    return {
+      month,
+      year,
+      entries: flows.flatMap((f) => f.entries),
+      payments: flows.flatMap((f) => f.payments),
+      extraExpenses: flows.flatMap((f) => f.extraExpenses),
+      transfers,
+      creditCards: flows.flatMap((f) => f.creditCards),
+      summary: flows.reduce((acc, f) => sumSummaries(acc, f.summary), ZERO_SUMMARY),
+    };
   }
 
   // Materializa a recorrência fixa da referência e devolve o retrato dos dados
@@ -215,6 +247,7 @@ export class CashFlowService {
       return {
         id: leg.id,
         transferGroupId: leg.transferGroupId as string,
+        accountId: accountId,
         direction: leg.targetAccountId === accountId ? 'IN' : 'OUT',
         description: leg.description,
         amount: leg.amount,

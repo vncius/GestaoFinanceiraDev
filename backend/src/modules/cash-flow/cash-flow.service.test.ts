@@ -822,3 +822,35 @@ describe('CashFlowService — resumo: pendentes do mês e base da projeção', (
     expect(summary.projectedBalance).toBe(50000);
   });
 });
+
+describe('CashFlowService — visão consolidada (U17)', () => {
+  it('une as contas ativas, some com transferências internas e soma o resumo', async () => {
+    const { service, accountsRepo, transfersService } = buildServiceWithTransfers();
+    const pf = await seedAccount(accountsRepo, { name: 'PF', initialBalance: 100000 });
+    const pj = await seedAccount(accountsRepo, { name: 'PJ', initialBalance: 200000 });
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-10T12:00:00.000Z`;
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+
+    await service.createIncome(TENANT_ID, pj.id, { description: 'Nota', categoryId: randomUUID(), amount: 50000, expectedDate: iso, recurrence: RecurrenceType.UNIQUE });
+    await service.createPayment(TENANT_ID, pf.id, { description: 'Aluguel', categoryId: randomUUID(), amount: 30000, expectedDate: iso, recurrence: RecurrenceType.UNIQUE });
+    await transfersService.createTransfer(TENANT_ID, { sourceAccountId: pj.id, targetAccountId: pf.id, amount: 70000, date: iso, description: 'Pró-labore' });
+
+    const all = await service.getConsolidatedCashFlow(TENANT_ID, month, year);
+
+    expect(all.entries.map((e) => e.description)).toEqual(['Nota']);
+    expect(all.payments.map((p) => p.description)).toEqual(['Aluguel']);
+    expect(all.transfers).toEqual([]);
+    expect(all.summary.initialBalance).toBe(300000);
+    expect(all.summary.transferInflow - all.summary.transferOutflow).toBe(0);
+
+    const [pfFlow, pjFlow] = await Promise.all([
+      service.getCashFlow(TENANT_ID, { month, year, accountId: pf.id }),
+      service.getCashFlow(TENANT_ID, { month, year, accountId: pj.id }),
+    ]);
+    expect(all.summary.realizedBalance).toBe(pfFlow.summary.realizedBalance + pjFlow.summary.realizedBalance);
+    expect(pfFlow.transfers[0].accountId).toBe(pf.id);
+  });
+});

@@ -66,6 +66,7 @@ export function MovementModal({
   onSettle,
   onDelete,
   onTransfer,
+  accountProminent = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -84,6 +85,9 @@ export function MovementModal({
   onDelete?: (kind: MovementFormKind, tx: FinancialTransaction) => void;
   // Criação com mais de uma conta: atalho para transferência entre contas.
   onTransfer?: () => void;
+  // Visão "Todas as contas": a conta não tem um padrão óbvio, então o campo
+  // sai de "Mais opções" e fica à vista (U17).
+  accountProminent?: boolean;
 }) {
   const { t } = useTranslation('cashFlow');
   const { alert } = useDialog();
@@ -177,6 +181,14 @@ export function MovementModal({
   const canDelete = isEdit && (item!.tx.status === 'PENDING' || item!.tx.status === 'PAID' || item!.tx.status === 'RECEIVED') && !!onDelete;
   const isIn = form.direction === 'in';
 
+  const accountField = (
+    <Field label={isIn ? t('movementForm.fields.accountIn') : t('movementForm.fields.accountOut')}>
+      <select className={INPUT} value={form.accountId} onChange={(e) => setForm((f) => ({ ...f, accountId: e.target.value }))}>
+        {activeAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+      </select>
+    </Field>
+  );
+
   const directionButton = (direction: 'in' | 'out') => {
     const active = form.direction === direction;
     const tone = direction === 'in'
@@ -268,6 +280,8 @@ export function MovementModal({
           />
         </Field>
 
+        {activeAccounts.length > 1 && accountProminent && accountField}
+
         {!isEdit && (
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
             <input
@@ -322,13 +336,7 @@ export function MovementModal({
               </div>
             )}
 
-            {activeAccounts.length > 1 && (
-              <Field label={isIn ? t('movementForm.fields.accountIn') : t('movementForm.fields.accountOut')}>
-                <select className={INPUT} value={form.accountId} onChange={(e) => setForm((f) => ({ ...f, accountId: e.target.value }))}>
-                  {activeAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-              </Field>
-            )}
+            {activeAccounts.length > 1 && !accountProminent && accountField}
 
             <Field label={t('movementForm.fields.notes')}>
               <textarea className={INPUT} rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />

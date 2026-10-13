@@ -38,8 +38,9 @@ export interface DeleteScopeParams {
 }
 
 export const CashFlowService = {
-  get: (month: number, year: number, accountId: string): Promise<CashFlowResponse> =>
-    api.get<CashFlowResponse>('/cash-flow', { params: { month, year, accountId } }).then((r) => r.data),
+  // Sem accountId: todas as contas ativas (U17).
+  get: (month: number, year: number, accountId?: string | null): Promise<CashFlowResponse> =>
+    api.get<CashFlowResponse>('/cash-flow', { params: { month, year, accountId: accountId ?? undefined } }).then((r) => r.data),
 
   // Income
   createIncome: (accountId: string, payload: CreateIncomePayload): Promise<FinancialTransaction> =>

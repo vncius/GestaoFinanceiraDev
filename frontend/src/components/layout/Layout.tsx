@@ -15,7 +15,7 @@ const ROUTE_META: Record<
   { titleKey: string; showMonthNav?: boolean; showAccountSelector?: boolean; allowAllAccounts?: boolean }
 > = {
   '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true, showAccountSelector: true, allowAllAccounts: true },
-  '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true, showAccountSelector: true },
+  '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true, showAccountSelector: true, allowAllAccounts: true },
   '/credit-cards': { titleKey: 'nav.creditCards', showMonthNav: true, showAccountSelector: true, allowAllAccounts: true },
   '/settings': { titleKey: 'nav.settings' },
 };

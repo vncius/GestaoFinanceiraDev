@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { CashFlowService } from './cash-flow.service';
 import {
-  cashFlowQuerySchema,
+  cashFlowListQuerySchema,
   createTransactionSchema,
   updateTransactionSchema,
   updateTransactionQuerySchema,
@@ -17,8 +17,10 @@ export class CashFlowController {
   constructor(private readonly service: CashFlowService) {}
 
   async getCashFlow(req: Request, res: Response): Promise<void> {
-    const query = cashFlowQuerySchema.parse(req.query);
-    const data = await this.service.getCashFlow(req.tenantId, query);
+    const { month, year, accountId } = cashFlowListQuerySchema.parse(req.query);
+    const data = accountId
+      ? await this.service.getCashFlow(req.tenantId, { month, year, accountId })
+      : await this.service.getConsolidatedCashFlow(req.tenantId, month, year);
     res.json(data);
   }
 

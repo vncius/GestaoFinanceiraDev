@@ -32,15 +32,18 @@ import { CashFlowFilterBar } from './components/CashFlowFilterBar';
 export default function CashFlow() {
   const { t } = useTranslation('cashFlow');
   const { month, year } = useMonth();
-  const { accountId } = useAccount();
+  // accountId = última conta específica (padrão para criar lançamentos);
+  // scopeAccountId = o que a tela mostra (null = todas as contas, U17).
+  const { accountId, scopeAccountId } = useAccount();
+  const consolidated = scopeAccountId === null;
   const navigate = useNavigate();
 
   const { confirm } = useDialog();
   const { showError } = useToast();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['cashFlow', accountId, month, year],
-    queryFn: () => CashFlowService.get(month, year, accountId as string),
+    queryKey: ['cashFlow', scopeAccountId ?? 'ALL', month, year],
+    queryFn: () => CashFlowService.get(month, year, scopeAccountId),
     enabled: !!accountId,
   });
 
@@ -64,6 +67,7 @@ export default function CashFlow() {
 
   const cardNames = useMemo(() => new Map(cards.map((c) => [c.id, c.name])), [cards]);
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
+  const accountNames = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
 
   // ── Summary bar state ────────────────────────────────────────────────────────
   // Vive no componente da página (que não desmonta ao trocar de mês) para que
@@ -509,7 +513,8 @@ export default function CashFlow() {
           onExportMonth={handleExportMonth}
           exporting={exporting}
           clearingAll={clearingAll}
-          clearAllDisabled={clearAllCount === 0}
+          // Limpar o mês de todas as contas de uma vez é arriscado demais.
+          clearAllDisabled={clearAllCount === 0 || consolidated}
           search={search}
           onSearchChange={setSearch}
           tags={tagFilter}
@@ -532,6 +537,7 @@ export default function CashFlow() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           emptyMessage={isFiltering ? t('movements.noResults') : undefined}
+          accountNames={consolidated ? accountNames : undefined}
         />
       </div>
 
@@ -557,6 +563,7 @@ export default function CashFlow() {
         onSettle={settleFromModal}
         onDelete={deleteFromModal}
         onTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
+        accountProminent={consolidated}
       />
 
       {/* Transfer Modal */}
