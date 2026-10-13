@@ -125,7 +125,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U2 | Cartão com conta pagadora obrigatória | 0 | — | ✅ | 2026-10-13 | ver git log |
 | U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ✅ | 2026-10-13 | ver git log |
 | U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ✅ | 2026-10-13 | ver git log |
-| U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ⬜ | | |
+| U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ✅ | 2026-10-13 | ver git log |
 | U6 | Botão global "+ Novo" | 1 | — | ⬜ | | |
 | U7 | Vocabulário (D7) em toda a UI | 1 | — | ⬜ | | |
 | U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ⬜ | | |
@@ -301,6 +301,15 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U5 — 2026-10-13
+- `Sidebar.tsx` exporta `Sidebar` (só desktop) e `BottomNav` (só celular, último filho da coluna do `Layout`, depois do slot do `PageFooter` — não usa `position: fixed`, então não cobre a barra de resumo). O drawer/hambúrguer saiu. Cartões aparece quando há cartão ativo (query `['creditCards']`, a mesma do Fluxo de Caixa).
+- Cabeçalho: idioma e tema saíram; menu de perfil (`ProfileMenu` em `Layout.tsx`) com alternar tema e sair. Idioma e tema completos em Configurações → Preferências.
+- Configurações: aba via `?tab=` (default `accounts`), ordem Contas · Cartões · Categorias · Tipos de Conta · Preferências · Seus dados. "Seus dados" = seções de `Backup.tsx` (default export agora é `BackupSections`) + zona de perigo. `/backup` redireciona para `/settings?tab=data`.
+- Rótulos de menu **não** mudaram (ainda "Dashboard", "Fluxo de Caixa", "Parametrizações") — renomear é a U7.
+- **Não feito:** dividir `Settings.tsx` por aba (o plano dizia "considerar"). Fica para quando U13/U14 mexerem nas abas de Cartões e Tipos de conta.
+- Chaves i18n removidas: `layout.nav.backup`, `layout.header.{openMenu,closeMenu,language}`, `settings.tabs.general`.
+- Verificado por teste (`Sidebar.test.tsx`); verificação visual pendente (nota da Fase 0) — conferir especialmente a barra inferior no celular com a barra de resumo do Fluxo de Caixa aberta.
 
 ### U4 — 2026-10-13
 - `AccountContext` ganhou `viewAll`/`setViewAll` (localStorage `viewAllAccounts:<tenant>`; sem valor salvo, vale `settings.dashboardScope !== 'ACCOUNT'`) e `scopeAccountId` (null = todas; com 1 conta, sempre a própria conta). `accountId` continua sendo a última conta específica, usada pelo Fluxo de Caixa.

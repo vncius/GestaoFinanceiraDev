@@ -1,10 +1,11 @@
 {
   "tabs": {
-    "general": "Geral",
     "accounts": "Contas",
-    "accountTypes": "Tipos de Conta",
+    "cards": "Cartões",
     "categories": "Categorias",
-    "cards": "Cartões"
+    "accountTypes": "Tipos de Conta",
+    "preferences": "Preferências",
+    "data": "Seus dados"
   },
   "actions": {
     "edit": "Editar",
@@ -24,9 +25,10 @@
     "bankLabel": "Banco",
     "limitLabel": "Limite"
   },
-  "general": {    "dangerZoneTitle": "Zona de perigo",
+  "general": {
+    "dangerZoneTitle": "Zona de perigo",
     "resetButton": "Redefinir conta",
-    "resetDescription": "Apaga todos os dados e parametrizações da sua conta: contas, categorias, lançamentos, cartões e configurações. Esta ação não pode ser desfeita — recomendamos baixar um backup antes, em Backup e Exportação.",
+    "resetDescription": "Apaga todos os dados e parametrizações da sua conta: contas, categorias, lançamentos, cartões e configurações. Esta ação não pode ser desfeita — recomendamos baixar um backup antes, logo acima, em Backup completo.",
     "resetConfirmTitle": "Redefinir conta",
     "resetConfirmMessage": "Esta ação apagará TODOS os dados e parametrizações da sua conta e não pode ser desfeita.",
     "resetConfirmWord": "REDEFINIR",
@@ -37,6 +39,20 @@
     "resetOnboardingOfferMessage": "Sua conta foi redefinida e está vazia. Deseja configurá-la novamente com o assistente de IA?",
     "resetOnboardingOfferConfirm": "Sim, usar o assistente",
     "resetOnboardingOfferCancel": "Não, agora não"
+  },
+  "preferences": {
+    "title": "Preferências",
+    "languageLabel": "Idioma",
+    "languages": {
+      "pt": "Português",
+      "en": "English",
+      "es": "Español"
+    },
+    "themeLabel": "Tema",
+    "themes": {
+      "light": "Claro",
+      "dark": "Escuro"
+    }
   },
   "accounts": {
     "newButton": "Nova Conta",

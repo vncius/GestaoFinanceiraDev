@@ -5,15 +5,13 @@
     "dashboard": "Dashboard",
     "cashFlow": "Flujo de Caja",
     "creditCards": "Tarjetas de Crédito",
-    "backup": "Copia de Seguridad y Exportación",
     "settings": "Configuración"
   },
   "header": {
-    "openMenu": "Abrir menú",
-    "closeMenu": "Cerrar menú",
     "lightMode": "Modo claro",
     "darkMode": "Modo oscuro",
     "logout": "Cerrar sesión",
-    "language": "Idioma"
+    "profileMenu": "Menú del perfil",
+    "mainNav": "Navegación principal"
   }
 }

@@ -374,11 +374,11 @@ function StatementImportSection() {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Seções (renderizadas em Configurações → Seus dados) ───────────────────────
 
-export default function Backup() {
+export default function BackupSections() {
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4">
       <FullBackupSection />
       <CsvExportSection />
       <StatementImportSection />

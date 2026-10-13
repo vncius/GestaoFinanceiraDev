@@ -1,10 +1,11 @@
 {
   "tabs": {
-    "general": "General",
     "accounts": "Accounts",
-    "accountTypes": "Account Types",
+    "cards": "Cards",
     "categories": "Categories",
-    "cards": "Cards"
+    "accountTypes": "Account Types",
+    "preferences": "Preferences",
+    "data": "Your data"
   },
   "actions": {
     "edit": "Edit",
@@ -24,9 +25,10 @@
     "bankLabel": "Bank",
     "limitLabel": "Limit"
   },
-  "general": {    "dangerZoneTitle": "Danger zone",
+  "general": {
+    "dangerZoneTitle": "Danger zone",
     "resetButton": "Reset account",
-    "resetDescription": "Deletes all data and settings from your account: accounts, categories, entries, cards, and settings. This action cannot be undone — we recommend downloading a backup first, under Backup and Export.",
+    "resetDescription": "Deletes all data and settings from your account: accounts, categories, entries, cards, and settings. This action cannot be undone — we recommend downloading a backup first, just above, under Full backup.",
     "resetConfirmTitle": "Reset account",
     "resetConfirmMessage": "This action will delete ALL data and settings from your account and cannot be undone.",
     "resetConfirmWord": "RESET",
@@ -37,6 +39,20 @@
     "resetOnboardingOfferMessage": "Your account was reset and is now empty. Would you like to set it up again with the AI assistant?",
     "resetOnboardingOfferConfirm": "Yes, use the assistant",
     "resetOnboardingOfferCancel": "No, not now"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "languageLabel": "Language",
+    "languages": {
+      "pt": "Português",
+      "en": "English",
+      "es": "Español"
+    },
+    "themeLabel": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark"
+    }
   },
   "accounts": {
     "newButton": "New Account",

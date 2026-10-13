@@ -13,7 +13,6 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import CashFlow from './pages/CashFlow/CashFlow';
 import CreditCards from './pages/CreditCards/CreditCards';
 import Settings from './pages/Settings/Settings';
-import Backup from './pages/Backup/Backup';
 import Report from './pages/Report/Report';
 
 export default function App() {
@@ -35,7 +34,8 @@ export default function App() {
                         <Route path="cash-flow" element={<CashFlow />} />
                         <Route path="credit-cards" element={<CreditCards />} />
                         <Route path="settings" element={<Settings />} />
-                        <Route path="backup" element={<Backup />} />
+                        {/* Backup virou Configurações → Seus dados (U5); link antigo redireciona. */}
+                        <Route path="backup" element={<Navigate to="/settings?tab=data" replace />} />
                       </Route>
                       {/* Fora do Layout: página de relatório para impressão, sem sidebar/header. */}
                       <Route path="/report" element={<Report />} />

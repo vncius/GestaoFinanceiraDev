@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Trash2, Plus, AlertTriangle } from 'lucide-react';
@@ -25,12 +25,23 @@ import { useToast } from '../../contexts/ToastContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { sortByName } from '../../utils/sort';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Language } from '../../i18n';
+import BackupSections from '../Backup/Backup';
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-type SettingsTab = 'general' | 'accounts' | 'accountTypes' | 'categories' | 'cards';
+type SettingsTab = 'accounts' | 'cards' | 'categories' | 'accountTypes' | 'preferences' | 'data';
 
-const TAB_ORDER: SettingsTab[] = ['general', 'accounts', 'cards', 'categories', 'accountTypes'];
+// Aba vem da URL (?tab=), para que outras telas possam linkar direto (ex.:
+// /backup → /settings?tab=data).
+const TAB_ORDER: SettingsTab[] = ['accounts', 'cards', 'categories', 'accountTypes', 'preferences', 'data'];
+const DEFAULT_TAB: SettingsTab = 'accounts';
+
+function isSettingsTab(value: string | null): value is SettingsTab {
+  return TAB_ORDER.includes(value as SettingsTab);
+}
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
@@ -55,7 +66,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
   );
 }
 
-// ── General Tab ───────────────────────────────────────────────────────────────
+// ── Data Tab (backup, exportação, importação e zona de perigo) ────────────────
 
 function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('settings');
@@ -126,14 +137,16 @@ function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => vo
   );
 }
 
-// O escopo do dashboard saiu daqui (D4 do plano de UX): virou a opção
-// "Todas as contas" do seletor no topo. Sobra a zona de perigo.
-function GeneralTab() {
+// Antiga página "Backup e Exportação" + zona de perigo da antiga aba Geral
+// (U5 do plano de UX): tudo que mexe nos dados como um todo fica junto.
+function DataTab() {
   const { t } = useTranslation('settings');
   const [resetOpen, setResetOpen] = useState(false);
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5 max-w-3xl">
+      <BackupSections />
+
       <SectionCard title={t('general.dangerZoneTitle')}>
         <div className="space-y-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -146,6 +159,42 @@ function GeneralTab() {
       </SectionCard>
 
       <ResetAccountModal open={resetOpen} onClose={() => setResetOpen(false)} />
+    </div>
+  );
+}
+
+// ── Preferences Tab ───────────────────────────────────────────────────────────
+
+const LANGUAGES: Language[] = ['pt', 'en', 'es'];
+
+function PreferencesTab() {
+  const { t } = useTranslation('settings');
+  const { language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <div className="space-y-5 max-w-2xl">
+      <SectionCard title={t('preferences.title')}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label={t('preferences.languageLabel')}>
+            <select className={INPUT} value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
+              {LANGUAGES.map((lang) => (
+                <option key={lang} value={lang}>{t(`preferences.languages.${lang}`)}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('preferences.themeLabel')}>
+            <select
+              className={INPUT}
+              value={theme}
+              onChange={(e) => { if (e.target.value !== theme) toggleTheme(); }}
+            >
+              <option value="light">{t('preferences.themes.light')}</option>
+              <option value="dark">{t('preferences.themes.dark')}</option>
+            </select>
+          </Field>
+        </div>
+      </SectionCard>
     </div>
   );
 }
@@ -1213,7 +1262,10 @@ function CardsTab({ accounts }: { accounts: Account[] }) {
 
 export default function Settings() {
   const { t } = useTranslation('settings');
-  const [tab, setTab] = useState<SettingsTab>('general');
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get('tab');
+  const tab: SettingsTab = isSettingsTab(tabParam) ? tabParam : DEFAULT_TAB;
+  const setTab = (next: SettingsTab) => setParams({ tab: next }, { replace: true });
 
   const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
     queryKey: ['accounts'],
@@ -1226,12 +1278,12 @@ export default function Settings() {
   return (
     <div className="space-y-5">
       {/* Tab navigation */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         {TAB_ORDER.map((tb) => (
           <button
             key={tb}
             onClick={() => setTab(tb)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
               tab === tb
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -1242,11 +1294,12 @@ export default function Settings() {
         ))}
       </div>
 
-      {tab === 'general' && <GeneralTab />}
       {tab === 'accounts' && <AccountsTab />}
       {tab === 'accountTypes' && <AccountTypesTab />}
       {tab === 'categories' && <CategoriesTab />}
       {tab === 'cards' && <CardsTab accounts={accounts} />}
+      {tab === 'preferences' && <PreferencesTab />}
+      {tab === 'data' && <DataTab />}
     </div>
   );
 }
