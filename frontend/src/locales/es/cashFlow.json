@@ -17,23 +17,25 @@
     "newTransferButton": "Nueva Transferencia"
   },
   "summaryBar": {
-    "initial": "Inicial",
-    "initialTooltip": "Saldo de la cuenta seleccionada al inicio del mes, antes de cualquier entrada o salida.",
-    "income": "Entradas",
-    "expense": "Salidas",
+    "income": "Entró",
+    "expense": "Salió",
     "finalBalance": "Saldo",
     "finalBalanceTooltip": "Saldo de la cuenta seleccionada considerando solo lo ya pagado o recibido.",
-    "betweenAccounts": "Entre cuentas",
+    "pendingIncome": "Falta recibir",
+    "pendingExpenses": "Falta pagar",
+    "projectedBalance": "Previsto",
+    "projectedBalanceTooltip": "Saldo más lo que falta recibir, menos lo que falta pagar.",
+    "expand": "Ver detalles",
+    "collapse": "Ocultar detalles",
+    "initial": "Saldo al inicio del mes",
+    "initialTooltip": "Saldo de la cuenta seleccionada al inicio del mes, antes de cualquier entrada o salida.",
+    "betweenAccounts": "Entre tus cuentas",
     "betweenAccountsTooltip": "Transferencias entre tus propias cuentas en el mes (recibidas − enviadas). No cuentan como entrada ni salida.",
-    "collapse": "Contraer",
-    "expand": "Ver previstos",
-    "projectedInitialBalance": "Saldo Actual",
+    "projectedInitialBalance": "Saldo actual",
     "projectedInitialBalanceTooltip": "Saldo considerando solo lo ya pagado o recibido. La previsión le suma lo que aún falta recibir y pagar.",
-    "expectedIncome": "Prev. Entradas",
-    "expectedBetweenAccounts": "Prev. Entre cuentas",
-    "expectedExpense": "Prev. Salidas",
-    "projectedBalance": "Prev. Saldo",
-    "projectedBalanceTooltip": "Saldo previsto de la cuenta seleccionada contando también lo que aún no se pagó o recibió.",
+    "expectedIncome": "Previsto por recibir",
+    "expectedExpense": "Previsto por pagar",
+    "expectedBetweenAccounts": "Previsto entre tus cuentas",
     "projectionRange": "Previstos acumulados de {{from}} a {{to}}"
   },
   "grid": {
@@ -96,7 +98,9 @@
     }
   },
   "creditCardsGrid": {
-    "emptyState": { "title": "Ninguna factura de tarjeta en este mes" },
+    "emptyState": {
+      "title": "Ninguna factura de tarjeta en este mes"
+    },
     "title": "Tarjetas de Crédito",
     "cardFallbackName": "Tarjeta",
     "columns": {

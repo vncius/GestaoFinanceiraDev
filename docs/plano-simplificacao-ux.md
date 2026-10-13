@@ -129,7 +129,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U6 | Botão global "+ Novo" | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U7 | Vocabulário (D7) em toda a UI | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ✅ | 2026-10-13 | ver git log |
-| U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ⬜ | | |
+| U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ✅ | 2026-10-13 | ver git log |
 | U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ⬜ | | |
 | U10b | Lista única — ações, filtros e busca | 3 | U10a | ⬜ | | |
 | U10c | Remoção das grids antigas e código morto | 3 | U10b | ⬜ | | |
@@ -301,6 +301,12 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U9 — 2026-10-13
+- `SummaryBar` (mesmo arquivo/nome) virou um card no topo de Movimentações: Entrou · Saiu · Saldo / Falta receber · Falta pagar · Previsto; "Ver detalhes" mostra saldo no início do mês, entre suas contas (se ≠ 0), saldo atual (base da previsão), previsto a receber/a pagar e entre contas previsto (se ≠ 0). Intervalo acumulado (U3) aparece sempre que o mês é futuro, não só expandido.
+- `PageFooter` ficou sem uso (o `PageFooterProvider` continua no `Layout`) — remover na U10c, como previsto.
+- Celular: valores em `text-sm`/`text-[15px]` (até "R$ 123.456,78" cabe na coluna de 98px a 375px; medido no navegador).
+- Verificado no navegador (desktop e 375px, recolhido e expandido).
 
 ### U8 — 2026-10-13
 - Início: destaque de saldo com rótulo D3 (mês atual: "Saldo hoje" + "Previsto para dd/mm"; passado: "Saldo em dd/mm"; futuro: "Saldo previsto em dd/mm" usando `projectedBalance` + intervalo acumulado de U3) → Entrou · Saiu · Sobrou/Faltou → "Ainda em <mês>" (A receber / A pagar do mês + lista "Atrasados e próximos 15 dias", até 6 itens) ao lado de "Para onde foi o dinheiro" (top 5 + Outros) → "Ver análise completa" (recolhida, lembrada em `localStorage` `dashboard.analysisOpen`): detalhes do mês (saldo inicial, pagamentos, fora do comum, faturas, entre contas, previsto), saldo por conta (só em "Todas as contas"), entradas por categoria, evolução, relatório.

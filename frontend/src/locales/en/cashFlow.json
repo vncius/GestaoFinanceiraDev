@@ -17,23 +17,25 @@
     "newTransferButton": "New Transfer"
   },
   "summaryBar": {
-    "initial": "Initial",
-    "initialTooltip": "Selected account balance at the start of the month, before any income or expense.",
-    "income": "Income",
-    "expense": "Expenses",
+    "income": "In",
+    "expense": "Out",
     "finalBalance": "Balance",
     "finalBalanceTooltip": "Selected account balance counting only what has already been paid or received.",
-    "betweenAccounts": "Between accounts",
+    "pendingIncome": "Still to receive",
+    "pendingExpenses": "Still to pay",
+    "projectedBalance": "Projected",
+    "projectedBalanceTooltip": "Balance plus what is still to be received, minus what is still to be paid.",
+    "expand": "See details",
+    "collapse": "Hide details",
+    "initial": "Balance at month start",
+    "initialTooltip": "Selected account balance at the start of the month, before any income or expense.",
+    "betweenAccounts": "Between your accounts",
     "betweenAccountsTooltip": "Transfers between your own accounts this month (received − sent). They count as neither income nor expense.",
-    "collapse": "Collapse",
-    "expand": "View forecast",
-    "projectedInitialBalance": "Current Balance",
+    "projectedInitialBalance": "Current balance",
     "projectedInitialBalanceTooltip": "Balance counting only what has already been paid or received. The forecast adds what is still to be received and paid.",
-    "expectedIncome": "Exp. Income",
-    "expectedBetweenAccounts": "Exp. Between accounts",
-    "expectedExpense": "Exp. Expenses",
-    "projectedBalance": "Proj. Balance",
-    "projectedBalanceTooltip": "Projected balance of the selected account also counting what has not been paid or received yet.",
+    "expectedIncome": "Expected to receive",
+    "expectedExpense": "Expected to pay",
+    "expectedBetweenAccounts": "Expected between your accounts",
     "projectionRange": "Forecast accumulated from {{from}} to {{to}}"
   },
   "grid": {
@@ -96,7 +98,9 @@
     }
   },
   "creditCardsGrid": {
-    "emptyState": { "title": "No credit card invoices this month" },
+    "emptyState": {
+      "title": "No credit card invoices this month"
+    },
     "title": "Credit Cards",
     "cardFallbackName": "Card",
     "columns": {

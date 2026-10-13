@@ -39,20 +39,28 @@ function renderBar(summary: CashFlowSummary, month = currentMonth, year = curren
 }
 
 describe('SummaryBar', () => {
-  it('sem transferências no mês, não mostra a coluna "Entre contas"', () => {
+  it('mostra o que já aconteceu e o que falta, sem detalhes até pedir', () => {
+    renderBar(base, currentMonth, currentYear, false);
+    for (const label of ['Entrou', 'Saiu', 'Saldo', 'Falta receber', 'Falta pagar', 'Previsto']) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+    expect(screen.queryByText('Saldo no início do mês')).toBeNull();
+  });
+
+  it('sem transferências no mês, os detalhes não mostram "Entre suas contas"', () => {
     renderBar(base);
-    expect(screen.queryByText('Entre contas')).toBeNull();
+    expect(screen.getByText('Saldo no início do mês')).toBeTruthy();
+    expect(screen.queryByText('Entre suas contas')).toBeNull();
   });
 
-  it('transferência fica fora de Saídas e aparece em "Entre contas"', () => {
+  it('transferência fica fora de Saiu e aparece em "Entre suas contas"', () => {
     renderBar({ ...base, transferOutflow: 30000, realizedBalance: 120000 });
-    expect(screen.getByText('Entre contas')).toBeTruthy();
-    // Saídas continua zero: a transferência não é gasto.
-    const saidas = screen.getByText('Saídas').parentElement!;
-    expect(saidas.textContent).toContain('0,00');
+    expect(screen.getByText('Entre suas contas')).toBeTruthy();
+    const saiu = screen.getByText('Saiu').parentElement!;
+    expect(saiu.textContent).toContain('0,00');
   });
 
-  it('em mês futuro, a linha de previstos diz que o valor é acumulado', () => {
+  it('em mês futuro, avisa que os previstos são acumulados', () => {
     renderBar(base, future.getMonth() + 1, future.getFullYear());
     expect(screen.getByText(/Previstos acumulados de/)).toBeTruthy();
   });

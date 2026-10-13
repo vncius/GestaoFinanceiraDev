@@ -17,7 +17,6 @@ import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountMod
 import { monthYearFromDate } from '../../utils/date';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../contexts/ToastContext';
-import { PageFooter } from '../../contexts/PageFooterContext';
 import { ModalKind, CashFlowTypeFilter } from './types';
 import { useCashFlowMutations } from './useCashFlowMutations';
 import { SummaryBar } from './components/SummaryBar';
@@ -382,6 +381,15 @@ export default function CashFlow() {
   return (
     <div>
       <div className="space-y-4">
+        {/* Resumo do mês (U9): no topo, antes das listas */}
+        <SummaryBar
+          summary={summary}
+          month={month}
+          year={year}
+          expanded={summaryExpanded}
+          onToggleExpanded={() => setSummaryExpanded((e) => !e)}
+        />
+
         {/* Filtros */}
         <CashFlowFilterBar
           typeFilter={typeFilter}
@@ -477,16 +485,6 @@ export default function CashFlow() {
         />
       </div>
 
-      {/* Summary bar */}
-      <PageFooter>
-        <SummaryBar
-          summary={summary}
-          month={month}
-          year={year}
-          expanded={summaryExpanded}
-          onToggleExpanded={() => setSummaryExpanded((e) => !e)}
-        />
-      </PageFooter>
 
       {/* Income Modal */}
       <IncomeModal
