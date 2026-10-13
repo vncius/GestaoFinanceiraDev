@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMonth } from '../../contexts/MonthContext';
 import { useAccount } from '../../contexts/AccountContext';
@@ -20,10 +19,8 @@ import { useToast } from '../../contexts/ToastContext';
 import { ModalKind, CashFlowTypeFilter } from './types';
 import { useCashFlowMutations } from './useCashFlowMutations';
 import { SummaryBar } from './components/SummaryBar';
-import { EntriesGrid } from './components/EntriesGrid';
-import { TransactionGrid } from './components/TransactionGrid';
-import { TransferGrid } from './components/TransferGrid';
-import { CreditCardsGrid } from './components/CreditCardsGrid';
+import { MovementsList, NewMovementKind, RowBusy } from './components/MovementsList';
+import { groupBySituation, MovementItem, MovementKind, toMovements } from './movements';
 import { useCollapsibleSections } from './useCollapsibleSections';
 import { IncomeModal } from './components/IncomeModal';
 import { TransactionModal } from './components/TransactionModal';
@@ -64,6 +61,7 @@ export default function CashFlow() {
   });
 
   const cardNames = useMemo(() => new Map(cards.map((c) => [c.id, c.name])), [cards]);
+  const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   // ── Summary bar state ────────────────────────────────────────────────────────
   // Vive no componente da página (que não desmonta ao trocar de mês) para que
@@ -378,6 +376,75 @@ export default function CashFlow() {
     null;
   const transfersPendingDeleteId = (deleteTransfer.isPending && (deleteTransfer.variables as string)) || null;
 
+  // ── Lista única (U10a) ───────────────────────────────────────────────────────
+  // Transferências só aparecem em "Todos": não são entrada nem saída (D2/D8).
+  const movementGroups = groupBySituation(
+    toMovements({
+      entries: filteredEntries,
+      payments: filteredPayments,
+      extraExpenses: filteredExtraExpenses,
+      transfers: typeFilter === 'ALL' ? data.transfers : [],
+      creditCards: filteredCreditCards,
+      cardNames,
+      cardFallbackName: t('creditCardsGrid.cardFallbackName'),
+    }),
+  );
+
+  const PENDING_IDS: Record<MovementKind, { toggle: string | null; del: string | null }> = {
+    income: { toggle: entriesPendingToggleId, del: entriesPendingDeleteId },
+    payment: { toggle: paymentsPendingToggleId, del: paymentsPendingDeleteId },
+    extra: { toggle: extrasPendingToggleId, del: extrasPendingDeleteId },
+    transfer: { toggle: transfersPendingToggleId, del: transfersPendingDeleteId },
+    invoice: { toggle: invoicesPendingRevertId, del: null },
+  };
+  const rowBusy = (item: MovementItem): RowBusy => {
+    const ids = PENDING_IDS[item.kind];
+    if (ids.toggle === item.actionId) return 'toggle';
+    if (ids.del === item.actionId) return 'delete';
+    return null;
+  };
+
+  function handleToggle({ source, settled }: MovementItem) {
+    switch (source.kind) {
+      case 'income': return settled ? revertIncome.mutate(source.item.id) : receiveItem.mutate(source.item.id);
+      case 'payment': return settled ? revertPayment.mutate(source.item.id) : payPayment.mutate(source.item.id);
+      case 'extra': return settled ? revertExtra.mutate(source.item.id) : payExtra.mutate(source.item.id);
+      case 'transfer':
+        return settled
+          ? revertTransfer.mutate(source.item.transferGroupId)
+          : settleTransfer.mutate(source.item.transferGroupId);
+      case 'invoice':
+        return settled
+          ? revertInvoice.mutate({ cardId: source.item.creditCardId, invoiceId: source.item.id })
+          : setInvoicePayTarget(source.item);
+    }
+  }
+
+  function handleEdit({ source }: MovementItem) {
+    switch (source.kind) {
+      case 'income': return setModal({ type: 'income', mode: 'edit', item: source.item });
+      case 'payment': return setModal({ type: 'payment', mode: 'edit', item: source.item });
+      case 'extra': return setModal({ type: 'extra-expense', mode: 'edit', item: source.item });
+      case 'transfer': return setModal({ type: 'transfer', mode: 'edit', item: source.item });
+      case 'invoice': return handleOpenInvoice(source.item);
+    }
+  }
+
+  function handleDelete({ source }: MovementItem) {
+    switch (source.kind) {
+      case 'income': return handleDeleteIncome(source.item);
+      case 'payment': return handleDeleteTransaction('payment', source.item);
+      case 'extra': return handleDeleteTransaction('extra-expense', source.item);
+      case 'transfer': return handleDeleteTransfer(source.item);
+      case 'invoice': return undefined;
+    }
+  }
+
+  function handleNew(kind: NewMovementKind) {
+    const type = kind === 'extra' ? 'extra-expense' : kind;
+    setModal({ type, mode: 'create' } as ModalKind);
+  }
+
   return (
     <div>
       <div className="space-y-4">
@@ -405,83 +472,20 @@ export default function CashFlow() {
           clearAllDisabled={clearAllCount === 0}
         />
 
-        {/* Transferências entre contas */}
-        <TransferGrid
-          items={data.transfers}
-          expanded={sections.isExpanded('transfers', data.transfers.length > 0)}
-          onToggleExpanded={() => sections.toggle('transfers', data.transfers.length > 0)}
-          onAdd={() => setModal({ type: 'transfer', mode: 'create' })}
-          onEdit={(item) => setModal({ type: 'transfer', mode: 'edit', item })}
-          onSettle={(transferGroupId) => settleTransfer.mutate(transferGroupId)}
-          onRevert={(transferGroupId) => revertTransfer.mutate(transferGroupId)}
-          onDelete={handleDeleteTransfer}
-          pendingToggleId={transfersPendingToggleId}
-          pendingDeleteId={transfersPendingDeleteId}
+        {/* Lista única (U10a): entradas, saídas, transferências e faturas
+            agrupadas em Atrasados → A vencer → Concluídos */}
+        <MovementsList
+          groups={movementGroups}
+          categoryNames={categoryNames}
+          rowBusy={rowBusy}
           locked={clearingAll}
-        />
-
-        {/* Entradas */}
-        <EntriesGrid
-          items={filteredEntries}
-          expanded={sections.isExpanded('entries', filteredEntries.length > 0)}
-          onToggleExpanded={() => sections.toggle('entries', filteredEntries.length > 0)}
-          accounts={accounts as Account[]}
-          onAdd={() => setModal({ type: 'income', mode: 'create' })}
-          onEdit={(item) => setModal({ type: 'income', mode: 'edit', item })}
-          onReceive={(id) => receiveItem.mutate(id)}
-          onRevert={(id) => revertIncome.mutate(id)}
-          onDelete={handleDeleteIncome}
-          pendingToggleId={entriesPendingToggleId}
-          pendingDeleteId={entriesPendingDeleteId}
-          locked={clearingAll}
-        />
-
-        {/* Pagamentos */}
-        <TransactionGrid
-          title={t('page.paymentsTitle')}
-          icon={<TrendingDown size={16} className="text-red-500" />}
-          items={filteredPayments}
-          expanded={sections.isExpanded('payments', filteredPayments.length > 0)}
-          onToggleExpanded={() => sections.toggle('payments', filteredPayments.length > 0)}
-          accounts={accounts as Account[]}
-          onAdd={() => setModal({ type: 'payment', mode: 'create' })}
-          onEdit={(item) => setModal({ type: 'payment', mode: 'edit', item })}
-          onPay={(id) => payPayment.mutate(id)}
-          onRevert={(id) => revertPayment.mutate(id)}
-          onDelete={(item) => handleDeleteTransaction('payment', item)}
-          pendingToggleId={paymentsPendingToggleId}
-          pendingDeleteId={paymentsPendingDeleteId}
-          locked={clearingAll}
-        />
-
-        {/* Gastos Extraordinários */}
-        <TransactionGrid
-          title={t('page.extraExpensesTitle')}
-          icon={<TrendingDown size={16} className="text-orange-500" />}
-          items={filteredExtraExpenses}
-          expanded={sections.isExpanded('extraExpenses', filteredExtraExpenses.length > 0)}
-          onToggleExpanded={() => sections.toggle('extraExpenses', filteredExtraExpenses.length > 0)}
-          accounts={accounts as Account[]}
-          onAdd={() => setModal({ type: 'extra-expense', mode: 'create' })}
-          onEdit={(item) => setModal({ type: 'extra-expense', mode: 'edit', item })}
-          onPay={(id) => payExtra.mutate(id)}
-          onRevert={(id) => revertExtra.mutate(id)}
-          onDelete={(item) => handleDeleteTransaction('extra-expense', item)}
-          pendingToggleId={extrasPendingToggleId}
-          pendingDeleteId={extrasPendingDeleteId}
-          locked={clearingAll}
-        />
-
-        {/* Cartões de Crédito */}
-        <CreditCardsGrid
-          items={filteredCreditCards}
-          expanded={sections.isExpanded('creditCards', filteredCreditCards.length > 0)}
-          onToggleExpanded={() => sections.toggle('creditCards', filteredCreditCards.length > 0)}
-          cardNames={cardNames}
-          onPay={(inv) => setInvoicePayTarget(inv)}
-          onRevert={(inv) => revertInvoice.mutate({ cardId: inv.creditCardId, invoiceId: inv.id })}
-          onOpenInvoice={handleOpenInvoice}
-          pendingRevertId={invoicesPendingRevertId}
+          doneExpanded={sections.isExpanded('done', movementGroups.done.length > 0, false)}
+          onToggleDone={() => sections.toggle('done', movementGroups.done.length > 0, false)}
+          canTransfer={accounts.length > 1}
+          onNew={handleNew}
+          onToggle={handleToggle}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       </div>
 

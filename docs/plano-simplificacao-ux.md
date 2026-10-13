@@ -130,7 +130,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U7 | Vocabulário (D7) em toda a UI | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ✅ | 2026-10-13 | ver git log |
 | U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ✅ | 2026-10-13 | ver git log |
-| U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ⬜ | | |
+| U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ✅ | 2026-10-13 | ver git log |
 | U10b | Lista única — ações, filtros e busca | 3 | U10a | ⬜ | | |
 | U10c | Remoção das grids antigas e código morto | 3 | U10b | ⬜ | | |
 | U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ⬜ | | |
@@ -266,6 +266,7 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 - Link secundário "Transferência entre contas" (só se > 1 conta) abre o `TransferModal`.
 - Edição: tipo Entrada/Saída e "gasto fora do comum" **desabilitados** (trocar exigiria excluir+criar; registrar como possível evolução).
 - Marcar "Já foi pago" na criação = criar + efetivar (verificar se a API aceita criar já efetivado; se não, encadear as duas mutations).
+- **`CurrencyInput` só reage a `keydown`** (achado em U10a): colar um valor não funciona e teclados virtuais do Android (Gboard) costumam mandar `keydown` com `key: "Unidentified"`, então o campo pode não aceitar dígitos no celular. Reescrever a partir de `onChange`/`beforeinput` (extrair os dígitos do valor digitado), mantendo a máscara "da direita para a esquerda", e testar colar + digitação.
 
 **Critérios de aceite**: criar entrada, saída comum, saída extraordinária e fixa pelo "+ Novo" e pelo modal de edição; escopo de edição de fixos continua funcionando.
 
@@ -313,6 +314,13 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U10a — 2026-10-13
+- `pages/CashFlow/movements.ts` (`toMovements`, `groupBySituation`, testes) + `components/MovementsList.tsx` no lugar das 5 grids. As grids continuam no código até a U10c.
+- **Escopo ampliado para não publicar regressão:** como cada entrega vai para produção, a U10a já inclui clique na linha → modal de edição do tipo certo (fatura → tela de Cartões), excluir (botão no hover, mesmo protocolo de antes) e um menu "Novo ▾" no cabeçalho da lista (Entrada / Pagamento / Gasto fora do comum / Transferência se > 1 conta) substituindo os "+ Novo" de cada grid. Os filtros existentes (Todos/Entradas/Saídas e categorias) já funcionam porque a lista é montada a partir dos arrays filtrados; transferências só aparecem em "Todos". Fica para a U10b: busca por descrição e filtro por tipo (fixo/fora do comum/cartão/transferência).
+- "Concluídos" começa recolhido (`useCollapsibleSections` ganhou `defaultExpanded`); faturas com total 0 não pagas ficam fora da lista.
+- Verificado no navegador com dados de teste criados no banco **de desenvolvimento** (`Aluguel (teste)` fixo, `Salário (teste)`, `Conserto (teste)`): agrupamento, marcar como pago (resumo recalcula), Concluídos, edição, celular sem rolagem horizontal. Esses lançamentos de teste ficaram no banco de dev.
+- Achado: `CurrencyInput` só aceita `keydown` — registrado no escopo da U12.
 
 ### U9 — 2026-10-13
 - `SummaryBar` (mesmo arquivo/nome) virou um card no topo de Movimentações: Entrou · Saiu · Saldo / Falta receber · Falta pagar · Previsto; "Ver detalhes" mostra saldo no início do mês, entre suas contas (se ≠ 0), saldo atual (base da previsão), previsto a receber/a pagar e entre contas previsto (se ≠ 0). Intervalo acumulado (U3) aparece sempre que o mês é futuro, não só expandido.

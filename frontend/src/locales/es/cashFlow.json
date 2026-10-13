@@ -220,5 +220,27 @@
       "title": "Limpiar registros fijos",
       "description": "Este mes incluye registros fijos/recurrentes. ¿Desea eliminarlos solo de este mes, o también de los próximos? Los demás registros (no fijos) siempre se eliminan por completo."
     }
+  },
+  "movements": {
+    "title": "Movimientos del mes",
+    "empty": "Ningún movimiento este mes",
+    "new": "Nuevo",
+    "newOptions": {
+      "income": "Entrada",
+      "payment": "Pago",
+      "extra": "Gasto fuera de lo común",
+      "transfer": "Transferencia entre cuentas"
+    },
+    "groups": {
+      "overdue": "Atrasados",
+      "upcoming": "Por vencer",
+      "done": "Concluidos"
+    },
+    "badges": {
+      "fixed": "Fijo",
+      "extra": "Fuera de lo común",
+      "card": "Tarjeta"
+    },
+    "invoiceOf": "Factura {{card}}"
   }
 }

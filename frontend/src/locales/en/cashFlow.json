@@ -220,5 +220,27 @@
       "title": "Clear fixed entries",
       "description": "This month includes fixed/recurring entries. Delete them only from this month, or from the next months too? All other (non-fixed) entries are always deleted entirely."
     }
+  },
+  "movements": {
+    "title": "This month's entries",
+    "empty": "No entries this month",
+    "new": "New",
+    "newOptions": {
+      "income": "Income",
+      "payment": "Payment",
+      "extra": "Unusual expense",
+      "transfer": "Transfer between accounts"
+    },
+    "groups": {
+      "overdue": "Overdue",
+      "upcoming": "Upcoming",
+      "done": "Done"
+    },
+    "badges": {
+      "fixed": "Fixed",
+      "extra": "Unusual",
+      "card": "Card"
+    },
+    "invoiceOf": "{{card}} invoice"
   }
 }

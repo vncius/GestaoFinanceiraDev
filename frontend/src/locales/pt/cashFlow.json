@@ -220,5 +220,27 @@
       "title": "Limpar lançamentos fixos",
       "description": "Este mês inclui lançamentos fixos/recorrentes. Deseja excluí-los só deste mês, ou também dos próximos? Os demais lançamentos (não fixos) são sempre excluídos por completo."
     }
+  },
+  "movements": {
+    "title": "Lançamentos do mês",
+    "empty": "Nenhum lançamento neste mês",
+    "new": "Novo",
+    "newOptions": {
+      "income": "Entrada",
+      "payment": "Pagamento",
+      "extra": "Gasto fora do comum",
+      "transfer": "Transferência entre contas"
+    },
+    "groups": {
+      "overdue": "Atrasados",
+      "upcoming": "A vencer",
+      "done": "Concluídos"
+    },
+    "badges": {
+      "fixed": "Fixo",
+      "extra": "Fora do comum",
+      "card": "Cartão"
+    },
+    "invoiceOf": "Fatura {{card}}"
   }
 }

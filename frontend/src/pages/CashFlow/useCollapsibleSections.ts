@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type CashFlowSection = 'transfers' | 'entries' | 'payments' | 'extraExpenses' | 'creditCards';
+export type CashFlowSection = 'transfers' | 'entries' | 'payments' | 'extraExpenses' | 'creditCards' | 'done';
 type OverrideKey = `${CashFlowSection}:${'empty' | 'filled'}`;
 type Overrides = Partial<Record<OverrideKey, boolean>>;
 
@@ -26,16 +26,16 @@ export function useCollapsibleSections() {
   const [overrides, setOverrides] = useState<Overrides>(() => readOverrides(key));
 
   const isExpanded = useCallback(
-    (section: CashFlowSection, hasItems: boolean) =>
-      overrides[`${section}:${hasItems ? 'filled' : 'empty'}`] ?? hasItems,
+    (section: CashFlowSection, hasItems: boolean, defaultExpanded: boolean = hasItems) =>
+      overrides[`${section}:${hasItems ? 'filled' : 'empty'}`] ?? defaultExpanded,
     [overrides],
   );
 
   const toggle = useCallback(
-    (section: CashFlowSection, hasItems: boolean) => {
+    (section: CashFlowSection, hasItems: boolean, defaultExpanded: boolean = hasItems) => {
       setOverrides((prev) => {
         const k: OverrideKey = `${section}:${hasItems ? 'filled' : 'empty'}`;
-        const next = { ...prev, [k]: !(prev[k] ?? hasItems) };
+        const next = { ...prev, [k]: !(prev[k] ?? defaultExpanded) };
         try {
           localStorage.setItem(key, JSON.stringify(next));
         } catch {
