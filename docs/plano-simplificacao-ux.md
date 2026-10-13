@@ -1,4 +1,4 @@
-# Plano: Simplificação da UX e ciclo planejar → executar → comparar → ajustar
+# Plano: Simplificação da UX (interface única com complexidade progressiva)
 
 > Plano de execução incremental. Cada entrega (U1, U2, …) é fechada: compila, passa nos testes, mantém a aplicação funcional e pode ser commitada sozinha.
 > **Este arquivo é a fonte de verdade do andamento.** Qualquer sessão (humana ou IA) deve conseguir continuar o trabalho lendo só este documento + o código.
@@ -34,18 +34,7 @@
 
 ## Objetivo
 
-Reduzir a carga cognitiva para quem nunca usou um sistema financeiro, sem remover recursos avançados, e — a partir da revisão de 2026-10-13 — fazer o produto **ajudar a decidir como usar o dinheiro que já existe**, e não só registrar o passado.
-
-O ciclo do produto é **planejar → executar → comparar → ajustar**:
-
-| Etapa | Pergunta do usuário | Onde |
-|---|---|---|
-| Planejar | "Quanto posso usar e para quê?" | Início (**Livre para usar**) + tela **Plano** |
-| Executar | "Registrei o gasto — ainda cabe?" | "+ Novo" e Movimentações, com "restam R$ X" na hora |
-| Comparar | "Saiu como planejei?" | Plano (planejado × gasto, por categoria) |
-| Ajustar | "O que mudo daqui pra frente?" | Cobrir estouro, replanejar "a partir de", **Revisão do mês** |
-
-Princípios: decisões usam **dinheiro que já está nas contas** (renda prevista e cartão não aumentam o que é "livre"); o plano é **opcional** — o app funciona sem ele e o convida quando faz sentido; replanejar **nunca apaga** o que foi planejado originalmente. Recursos avançados continuam aparecendo por gatilho de dados ou a pedido ("Ver detalhes", "Mais opções", menu "⋯").
+Reduzir a carga cognitiva para quem nunca usou um sistema financeiro, sem remover recursos avançados. A aplicação deve responder de imediato quatro perguntas: **quanto tenho, quanto entrou, quanto saiu, quanto ainda vou receber/pagar**. Recursos avançados aparecem quando os dados do usuário os tornam relevantes (divulgação progressiva) ou quando ele pede ("Ver detalhes", "Mais opções", menu "⋯").
 
 Origem: análise de UX feita em 2026-10-13 (conversa com o usuário). Resumo dos achados que motivam o plano:
 
@@ -74,9 +63,6 @@ Divulgação progressiva por **gatilhos de dados**. Nada de toggle de modo que e
 | ≥ 1 cartão ativo | Item "Cartões" na navegação; opção de cartão nos formulários (U18) |
 | Reserva automática configurada | Indicador de reserva nas transferências automáticas |
 | Lançamento fixo | Ícone ↻ e pergunta de escopo (só este mês / este e próximos) |
-| Sem plano no mês | Convite "Planeje seu mês" no Início; Plano abre o assistente |
-| Categoria com plano | "Restam R$ X" no formulário e no Plano; destaque quando passa |
-| Mês anterior não revisado | Cartão "Revisão do mês" no Início |
 | Ação do usuário | "Ver detalhes", "Mais opções", "Ver análise completa", menu "⋯" |
 
 ### D2 — Regra única de resumo mensal
@@ -127,49 +113,6 @@ Rotas **não** mudam de path nesta fase (`/dashboard`, `/cash-flow`, `/credit-ca
 ### D8 — Movimentações agrupada por situação
 Lista única agrupada em **Atrasados** (pendente com data < hoje; grupo só aparece se houver itens) → **A vencer** → **Concluídos** (recolhível). Ordenação por data dentro do grupo. Filtro rápido `Todos | Entradas | Saídas`; transferências aparecem em "Todos" e não entram nos totais de Entradas/Saídas (D2).
 
-### D9 — "Livre para usar" é o número principal do produto
-Responde "quanto posso usar sem depender de dinheiro que ainda não tenho". Calculado no backend, sempre sobre as **contas do planejamento** (D13), independente do seletor de conta:
-
-```
-Livre para usar = saldo hoje das contas do planejamento
-                − a pagar até o fim do mês corrente (pendentes, inclusive atrasados)
-                − dívida de cartão ainda não paga (todas as parcelas em aberto, inclusive futuras)
-                − restante dos planos de categoria do mês (max(0, planejado − consumido))
-```
-- **Entradas previstas nunca aumentam o Livre** — só contam quando recebidas. Aparecem como informação ("A receber R$ X"). Ao receber uma entrada, o app oferece "Você recebeu R$ X — quer distribuir no plano?".
-- Sem plano, o último termo é zero: o Livre ainda faz sentido (saldo − contas − cartão).
-- Pode ficar negativo; nesse caso o texto muda para "Faltam R$ X para cobrir o que já está comprometido" e mostra o detalhamento.
-- O "Previsto no fim do mês" (D2, que soma renda prevista) deixa de ser destaque: fica em Movimentações → "Ver detalhes" e na análise completa do Início.
-
-### D10 — Plano por categoria de despesa, mês a mês, opcional
-- O usuário define quanto pretende gastar por **categoria de despesa** no mês. Não precisa planejar todas: o que não tem plano cai em "Outros gastos" (só aparece como realizado).
-- **Consumido** de uma categoria no mês = saídas pagas + saídas pendentes (agendadas) + compras no cartão (D12) daquela categoria no mês. Contas fixas já agendadas consomem o plano desde o início do mês ("já separado").
-- Sugestão automática ao criar o plano: valores do mês anterior (plano atual, ou realizado se não havia plano) + soma das contas fixas da categoria. O usuário só confirma/ajusta.
-
-### D11 — Replanejar sem perder o histórico
-- Cada categoria-mês guarda **planejado original**, **planejado atual** e a **lista de ajustes** (`de`, `para`, `quando`, `motivo` opcional, `origem`: edição · cobertura de estouro · revisão do mês).
-- O **original congela** quando o mês começa (primeira leitura do plano com o mês já em curso) ou quando o usuário confirma a Revisão do mês (D14). Antes disso, editar é só rascunho.
-- Mudar "a partir de" um mês cria **nova versão do modelo** (`effectiveFrom`), sem reescrever meses passados. Meses encerrados são somente leitura.
-- Exemplo do usuário: planejou R$ 1.500 em Mercado, gastou R$ 1.800 → o Plano mostra "Passou R$ 300" com três ações: **Cobrir com outra categoria** (move plano de quem tem sobra; os dois lados registram ajuste), **Cobrir com o Livre** (aumenta o plano usando dinheiro sem destino) ou **Ajustar os próximos meses** ("a partir de novembro, R$ 1.800"). Em todos os casos o original (R$ 1.500) continua visível no histórico e na comparação.
-- No nível do lançamento: pagar com valor diferente do previsto **não sobrescreve** o previsto (`plannedAmount`, U23) — hoje `amountPaid` sobrescreve `amount` e o planejado se perde.
-
-### D12 — Cartão é dinheiro gasto na hora da compra
-- Para o plano, compra no cartão consome a categoria no **mês da compra** (à vista) ou **uma parcela por mês a partir do mês da compra** (parcelado) — não no mês em que a fatura é paga. Pagar a fatura **não** consome categoria (evita contar duas vezes).
-- Para o Livre, toda dívida de cartão em aberto (parcelas atuais e futuras) sai na hora da compra (D9). Parcelas futuras aparecem no Plano dos meses seguintes como "já comprometido".
-- O breakdown de categorias do Início (hoje: só faturas pagas, pelo mês da fatura — `dashboard.service.ts`) passa a seguir esta mesma regra, para que "comparar" use um único critério.
-
-### D13 — Contas do planejamento
-Conta ganha `includeInPlan` (default `true`; `false` para contas destino de reserva automática — dinheiro guardado não é livre). Editável em Contas ("Entra no Livre para usar"). Permite deixar PJ, investimentos etc. de fora. O plano é **um por tenant**, sobre essas contas.
-
-### D14 — Revisão do mês é o ritual de "comparar → ajustar"
-Na virada do mês, o Início mostra um cartão "Outubro fechou — revise em 2 minutos". A revisão lista, por categoria: planejado original, ajustado, gasto e diferença; para cada uma, o próximo mês recebe **Manter** / **Usar o gasto real** / **Outro valor**. A sobra do mês pode ir para a reserva ou continuar livre. Confirmar cria o plano do mês seguinte (e congela o original dele).
-
-### D15 — Linguagem do planejamento
-Usar: **Plano**, **Livre para usar**, **Separado**, **Gasto**, **Restam**, **Passou**, **Cobrir**, **Revisão do mês**. Evitar: orçamento, envelope, alocar, provisão, competência.
-
-### D16 — Navegação com o ciclo
-Menu: **Início · Plano · Movimentações · Cartões** (+ Configurações no rodapé). "Plano" concentra planejar, comparar e ajustar; Movimentações é a execução. Antes do primeiro plano, "Plano" abre o assistente (U24); nada é escondido.
-
 ---
 
 ## Status
@@ -178,39 +121,30 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 
 | # | Entrega | Fase | Depende de | Status | Concluída em | Commit |
 |---|---|---|---|---|---|---|
-| U1 | Regra única de resumo mensal + totais pendentes | 0 | — | ✅ | 2026-10-13 | bfcc174 |
-| U2 | Cartão com conta pagadora obrigatória | 0 | — | ✅ | 2026-10-13 | a42a8e6 |
-| U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ✅ | 2026-10-13 | 3ac0663 |
+| U1 | Regra única de resumo mensal + totais pendentes | 0 | — | ✅ | 2026-10-13 | ver git log |
+| U2 | Cartão com conta pagadora obrigatória | 0 | — | ✅ | 2026-10-13 | ver git log |
+| U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ✅ | 2026-10-13 | ver git log |
 | U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ⬜ | | |
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ⬜ | | |
 | U6 | Botão global "+ Novo" | 1 | — | ⬜ | | |
-| U7 | Vocabulário (D7 + D15) e erros sem tradução | 1 | — | ⬜ | | |
-| U23 | Valor planejado preservado no lançamento (`plannedAmount`) | 2 | — | ⬜ | | |
-| U21 | "Livre para usar" (backend) + contas do planejamento | 2 | U2 | ⬜ | | |
-| U22 | Modelo de plano versionado + consumo por categoria (backend) | 2 | U21 | ⬜ | | |
-| U24 | Tela Plano + assistente do primeiro plano | 3 | U5, U22 | ⬜ | | |
-| U25 | Estouro: cobrir e ajustar "a partir de" (com histórico) | 3 | U24 | ⬜ | | |
-| U8 | Novo Início orientado a decisão | 4 | U4, U21, U22 | ⬜ | | |
-| U27 | Revisão do mês | 4 | U25, U8 | ⬜ | | |
-| U9 | Resumo compacto no topo de Movimentações | 5 | U1, U3 | ⬜ | | |
-| U10a | Lista única — view-model + leitura + marcar pago | 5 | U9 | ⬜ | | |
-| U10b | Lista única — ações, filtros e busca | 5 | U10a | ⬜ | | |
-| U10c | Remoção das grids antigas e código morto | 5 | U10b | ⬜ | | |
-| U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 5 | U5, U10b | ⬜ | | |
-| U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 5 | U6 | ⬜ | | |
-| U26 | Feedback do plano na execução ("restam R$ X") | 5 | U12, U22 | ⬜ | | |
-| U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 6 | U2, U4 | ⬜ | | |
-| U18 | Compra no cartão pelo "+ Novo" | 6 | U12, U13 | ⬜ | | |
-| U28 | Cartão no plano: comprometido futuro e alertas | 6 | U22, U13 | ⬜ | | |
-| U14 | Tipo de conta inline no cadastro de conta | 6 | U5 | ⬜ | | |
-| U15 | "+ Nova categoria" inline nos formulários | 6 | U12 | ⬜ | | |
-| U16 | Auditoria de divulgação progressiva (1 conta / 0 cartões / sem plano) | 6 | U8, U10c, U13, U24 | ⬜ | | |
-| U17 | Movimentações consolidada ("Todas as contas") | 7 | U10c, U12 | ⬜ | | |
-| U29 | "Posso gastar R$ X?" (simulação) | 7 | U21, U26 | ⬜ | | |
-| U19 | Preferência "Mostrar detalhes avançados" (densidade) | 7 | U8, U9 | ⬜ | | |
-| U20 | Onboarding IA, relatório e documentação alinhados | 7 | U7, U8, U24 | ⬜ | | |
+| U7 | Vocabulário (D7) em toda a UI | 1 | — | ⬜ | | |
+| U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ⬜ | | |
+| U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ⬜ | | |
+| U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ⬜ | | |
+| U10b | Lista única — ações, filtros e busca | 3 | U10a | ⬜ | | |
+| U10c | Remoção das grids antigas e código morto | 3 | U10b | ⬜ | | |
+| U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ⬜ | | |
+| U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ⬜ | | |
+| U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ⬜ | | |
+| U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ⬜ | | |
+| U15 | "+ Nova categoria" inline nos formulários | 4 | U12 | ⬜ | | |
+| U16 | Auditoria de divulgação progressiva (1 conta / 0 cartões) | 4 | U8, U10c, U13 | ⬜ | | |
+| U17 | Movimentações consolidada ("Todas as contas") | 5 | U10c, U12 | ⬜ | | |
+| U18 | Compra no cartão pelo "+ Novo" | 5 | U12, U13 | ⬜ | | |
+| U19 | Preferência "Mostrar detalhes avançados" (densidade) | 5 | U8, U9 | ⬜ | | |
+| U20 | Onboarding IA, relatório e documentação alinhados | 5 | U7, U8 | ⬜ | | |
 
-A tabela está **na ordem de execução** (não numérica). A revisão de 2026-10-13 adicionou U21–U29 e reordenou as fases: os fundamentos do plano (Fase 2) vêm antes do novo Início, porque o Início passa a ser construído em torno do Livre para usar e do plano. Fase 7 é evolução opcional — confirmar com o usuário antes de iniciar.
+Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional — confirmar com o usuário antes de iniciar.
 
 ---
 
@@ -266,7 +200,7 @@ A tabela está **na ordem de execução** (não numérica). A revisão de 2026-1
 
 #### U5 — Navegação, cabeçalho e Configurações reorganizados
 **Escopo**
-- `Sidebar.tsx`: itens Início, Movimentações, Cartões (oculto se 0 cartões ativos) — "Plano" entra entre Início e Movimentações em U24 (D16) e, separado no rodapé, Configurações. Remover "Backup e Exportação" do menu.
+- `Sidebar.tsx`: itens Início, Movimentações, Cartões (oculto se 0 cartões ativos) e, separado no rodapé, Configurações. Remover "Backup e Exportação" do menu.
 - Mobile: barra inferior com os mesmos itens (substitui o drawer) — se ficar grande, dividir em U5b.
 - `Settings.tsx`: abas via query string (`/settings?tab=accounts`) — **Contas**, **Cartões**, **Categorias**, **Preferências** (idioma, tema), **Seus dados** (conteúdo atual de `Backup.tsx`: backup completo, restaurar, exportar CSV, importar extrato + "Zona de perigo" com reiniciar conta, recolhida). Aba "Tipos de contas" permanece até U14. Aba "Geral" deixa de existir.
 - Rota `/backup` → `<Navigate to="/settings?tab=data" replace />`. Extrair as seções de `Backup.tsx` para componentes reutilizáveis (U11 vai reaproveitar importação/exportação).
@@ -280,70 +214,28 @@ A tabela está **na ordem de execução** (não numérica). A revisão de 2026-1
 
 **Critérios de aceite**: visível em todas as telas do `Layout`; atalho `N` continua funcionando; lançamento criado aparece no Início e em Movimentações.
 
-#### U7 — Vocabulário (D7 + D15)
-**Escopo**: aplicar as tabelas D7 e D15 em `frontend/src/locales/{pt,en,es}/*.json`. Trocar o visual do `PaidToggle` (joinha) por checkbox com rótulo acessível "Marcar como pago/recebido", mantendo a prop `loading`. Revisar tooltips (`HelpTip`) para linguagem leiga.
+#### U7 — Vocabulário (D7)
+**Escopo**: aplicar a tabela D7 em `frontend/src/locales/{pt,en,es}/*.json`. Trocar o visual do `PaidToggle` (joinha) por checkbox com rótulo acessível "Marcar como pago/recebido", mantendo a prop `loading`. Revisar tooltips (`HelpTip`) para linguagem leiga.
 
 - **Códigos de erro sem tradução:** o frontend traduz erros pelo `code` (`services/api.ts`) e, sem chave em `locales/*/errors.json`, mostra "Ocorreu um erro inesperado". Em 2026-10-13 havia ~20 códigos do backend sem chave (ex.: `transfer.*`, `creditCardEntry.*`, `creditCardImport.*`, `transaction.updateScopeRequired`, `onboarding.draft.autoReserve*`). Traduzir todos nos 3 idiomas; para listar os faltantes, varrer `AppError(..., '<code>')` em `backend/src` e comparar com `frontend/src/locales/pt/errors.json`.
 
 **Critérios de aceite**: busca por "Parametriza", "Efetivar", "Referência", "Fluxo de Caixa" nos locales pt não encontra textos de UI remanescentes (exceto onde intencional — registrar em Notas); nenhum código de erro do backend fica sem tradução.
 
-### Fase 2 — Fundamentos do plano (backend)
+### Fase 2 — Início
 
-#### U23 — Valor planejado preservado no lançamento
-**Escopo**: `FinancialTransaction.plannedAmount` (centavos). Na criação = `amount`; editar o lançamento pendente atualiza os dois; pagar/receber com `amountPaid`/`amountReceived` diferente altera só `amount` (realizado) e mantém `plannedAmount`. A recorrência fixa deve gerar o próximo mês a partir do previsto (verificar `ensureFixedTransactions`, que hoje copia `latest.amount` — um mês pago a mais "contaminaria" a série). Migração de boot: `plannedAmount = amount` onde ausente. UI mínima: na linha/modal, quando difere, "previsto R$ X" em texto secundário.
+#### U8 — Novo Início (Dashboard)
+**Escopo** (estrutura de cima para baixo)
+1. **Destaque**: saldo (rótulo D3) + previsto (rótulo U3).
+2. **Mês**: Entrou · Saiu · Sobrou (resultado colorido pelo sinal) — via `summarizeMonth`.
+3. **Ainda neste mês**: totais A receber / A pagar (U1) + lista dos próximos itens, atrasados primeiro em vermelho; "ver todos →" leva a Movimentações. Os **alertas** (`AlertsBar`) deixam de ser banners e viram itens atrasados desta lista. Backend: incluir entradas pendentes em `upcomingDues` (novo `DueType` `INCOME`) e itens vencidos não pagos do mês.
+4. **Para onde foi o dinheiro**: top 5 categorias de despesa (resto agregado em "Outros").
+5. **Ver análise completa** (recolhido; estado lembrado em localStorage): evolução mensal, receitas por categoria, divisão fixos/extraordinários/cartões, saldo inicial, saldos por conta (quando "Todas"), link "Imprimir relatório".
+- Remover: donut `OverviewDonutCard`, card "Saldo inicial" do topo, grid de cards por conta no topo.
+- `OnboardingBanner` permanece.
 
-**Critérios de aceite**: pagar R$ 1.800 uma conta prevista em R$ 1.500 mantém "previsto R$ 1.500" visível; o mês seguinte da série fixa nasce com R$ 1.500.
+**Critérios de aceite**: no primeiro viewport (desktop 1366×768) aparecem só os blocos 1–3; nenhuma informação anterior ficou inacessível (está em "análise completa"); mobile sem rolagem horizontal.
 
-#### U21 — "Livre para usar" (backend) + contas do planejamento
-**Escopo**
-- `Account.includeInPlan` (D13) com migração de boot (default `true`; `false` para contas que são destino de reserva automática). Campo no `AccountModal` ("Entra no Livre para usar", com HelpTip).
-- Novo módulo `backend/src/modules/plan/` com `GET /plan/free` (ou campo no dashboard — decidir na implementação e registrar) devolvendo `{ free, breakdown: { balance, pendingThisMonth, cardDebt, cardDebtFuture, plannedRemaining }, pendingIncome }` segundo D9. Até U22 existir, `plannedRemaining = 0`.
-- Dívida de cartão = parcelas não canceladas de faturas não pagas, de cartões ativos cuja conta pagadora está no planejamento.
-- Testes: entrada prevista não aumenta o Livre; parcela futura reduz o Livre; conta com `includeInPlan=false` fica de fora; resultado negativo.
-
-#### U22 — Modelo de plano versionado + consumo por categoria
-**Escopo**
-- Coleções: `plan_templates` (`categoryId`, `amount`, `effectiveFrom` YYYY-MM; nunca editadas, só nova versão) e `plan_months` (`month`, `year`, `categoryId`, `original`, `current`, `frozenAt`, `adjustments[]` com `{ from, to, at, reason, origin }`).
-- `GET /plan/:year/:month`: materializa `plan_months` a partir do modelo vigente; congela `original` conforme D11; devolve por categoria `{ original, current, consumed, consumedBreakdown: { paid, scheduled, card }, remaining, overspent, adjustments }` + totais + "Outros gastos" (consumo sem plano).
-- Consumo (D10/D12) em um único serviço reutilizado pelo plano, pelo Livre (U21 passa a usar `plannedRemaining` real) e pelo breakdown de categorias do Início.
-- Mutations: `PUT /plan/:y/:m/:categoryId` (novo `current`; registra ajuste se congelado), `POST /plan/:y/:m/cover` (`{ toCategoryId, amount, from: categoryId | 'FREE' }`), `POST /plan/templates` (`{ categoryId, amount, effectiveFrom }`), `GET /plan/:y/:m/suggestion` (sugestão D10, não grava).
-- Backup/restore e reset de tenant incluem as duas coleções. Onboarding IA não muda nesta entrega (U20).
-- Testes: original congela; ajuste preserva original; "a partir de" não altera meses passados; cobrir move entre categorias registrando os dois lados; compra parcelada consome uma parcela por mês a partir do mês da compra.
-
-### Fase 3 — Planejar e ajustar
-
-#### U24 — Tela Plano + assistente do primeiro plano
-**Escopo**
-- Rota `/plan`, item "Plano" no menu (D16). O mês segue o `MonthNavigator`.
-- Topo: **Livre para usar** (U21) com detalhamento recolhível; "Planejado R$ X de R$ Y disponíveis" — se planejou mais do que tem, aviso ("Você planejou R$ 300 a mais do que tem").
-- Lista por categoria planejada: nome, barra planejado × consumido (separando "já separado" de contas agendadas), "Restam R$ X" ou "Passou R$ X". "Outros gastos" no fim. Meses passados: somente leitura, com coluna "planejado original".
-- Assistente (sem plano no mês): 3 passos — (1) quanto você tem hoje e o que já está comprometido; (2) categorias sugeridas com valores do mês anterior (D10), marcar/desmarcar e ajustar; (3) confirmar, mostrando quanto fica livre. "Copiar do mês anterior" como atalho quando já houve plano.
-
-**Critérios de aceite**: usuário sem plano cria o primeiro em até 3 telas; editar valor antes do mês começar não gera ajuste; depois, gera.
-
-#### U25 — Estouro: cobrir e ajustar "a partir de"
-**Escopo**: clicar numa categoria abre painel lateral com histórico (original, ajustes com data/motivo) e ações: **Cobrir com outra categoria** (lista as que têm sobra), **Cobrir com o Livre**, **Ajustar os próximos meses** (novo valor + mês inicial → `POST /plan/templates`), **Editar este mês**. Motivo opcional em todas. Categoria que passou ganha destaque e aparece primeiro.
-
-**Critérios de aceite**: cenário 1.500 → gasto 1.800: cobrir R$ 300 de Lazer deixa Mercado com atual 1.800/original 1.500 e Lazer com ajuste −300; "a partir de novembro, R$ 1.800" não altera outubro.
-
-### Fase 4 — Início e revisão
-
-#### U8 — Novo Início orientado a decisão
-**Escopo** (de cima para baixo; substitui o escopo anterior desta entrega)
-1. **Livre para usar** (U21) em destaque, com uma linha de contexto ("já descontadas as contas do mês, o cartão e o que está separado no plano") e "ver detalhes".
-2. **Seu plano** (se houver): até 4 categorias — as que passaram primeiro, depois as mais próximas do limite — com barra; "ver plano →". Sem plano: convite "Planeje seu mês em 2 minutos" (abre o assistente U24).
-3. **Ainda neste mês**: A pagar (próximos itens, atrasados primeiro; os **alertas** viram itens desta lista) e **A receber** como informação ("não entra no Livre até chegar"). Backend: entradas pendentes em `upcomingDues` (`DueType` `INCOME`).
-4. **Mês até agora**: Entrou · Saiu · Sobrou (`summarizeMonth`).
-5. **Ver análise completa** (recolhido): evolução mensal, gastos e receitas por categoria (regra D12), saldos por conta, previsto do fim do mês (D2/U3), imprimir relatório.
-- Remover: donut, card "Saldo inicial", grid de cards por conta no topo. `OnboardingBanner` permanece.
-- O cartão "Revisão do mês" (U27) aparece aqui quando houver mês anterior não revisado.
-
-**Critérios de aceite**: o primeiro viewport (1366×768) mostra só os blocos 1–3; usuário sem plano vê o Livre e o convite, sem jargão; nenhuma informação anterior ficou inacessível.
-
-#### U27 — Revisão do mês
-**Escopo**: fluxo de D14 em `/plan/review/:year/:month`. Por categoria: original, ajustado, gasto, diferença e escolha para o próximo mês (Manter / Usar o gasto real / Outro). Resumo: "Gastou R$ X a menos/mais do que planejou". Sobra: "Guardar na reserva" (cria transferência para a conta de reserva, só se existir) ou "Deixar livre". Confirmar cria `plan_months` do mês seguinte com o `original` congelado. Mês revisado fica marcado (o convite não se repete).
-
-### Fase 5 — Executar (Movimentações)
+### Fase 3 — Movimentações
 
 #### U9 — Resumo compacto no topo
 **Escopo**: substituir a `SummaryBar` do rodapé (`PageFooter`) por um bloco no topo: linha 1 Entrou · Saiu · Saldo; linha 2 Falta receber · Falta pagar · Previsto; "Ver detalhes ▾" revela saldo inicial, entre suas contas e o detalhamento previsto (U3). Estado expandido sobrevive à troca de mês (como hoje). Avaliar se `PageFooterContext` fica sem uso — se sim, remover em U10c.
@@ -376,19 +268,10 @@ A tabela está **na ordem de execução** (não numérica). A revisão de 2026-1
 
 **Critérios de aceite**: criar entrada, saída comum, saída extraordinária e fixa pelo "+ Novo" e pelo modal de edição; escopo de edição de fixos continua funcionando.
 
-#### U26 — Feedback do plano na execução
-**Escopo**: no `MovementForm`, ao escolher categoria de despesa com plano, mostrar abaixo do campo "Mercado: restam R$ 300 de R$ 1.200" e, se o valor digitado passar, "Isso passa o plano em R$ 80" (informa, não bloqueia). Após salvar, toast com o novo restante. Na lista de Movimentações, agrupamento opcional por categoria com o restante no cabeçalho. Ao **receber** uma entrada, toast "Você recebeu R$ X — distribuir no plano?" (abre o Plano).
-
-### Fase 6 — Cartões e contas
+### Fase 4 — Cartões e contas
 
 #### U13 — Cartões seguem o seletor de conta
 **Escopo**: `CreditCards.tsx` filtra por `defaultPaymentAccountId === scopeAccountId`; em "Todas", lista agrupada por conta. `Layout` passa a mostrar o seletor (com "Todas") em `/credit-cards`. Extrair `CardSettingsModal` de `Settings.tsx` para componente compartilhado e oferecer "⋯ Editar cartão / Novo cartão" na própria tela. Parcelas futuras, importação OFX e limpar fatura ficam sob o "⋯" do detalhe do cartão.
-
-#### U18 — Compra no cartão pelo "+ Novo"
-**Escopo**: em Saída, campo "Pagar com" (Conta X / Cartão Y; só se houver cartão). Escolhendo cartão, o formulário mostra parcelas e cria `CreditCardEntry` em vez de transação. Um único lugar para registrar qualquer gasto.
-
-#### U28 — Cartão no plano: comprometido futuro e alertas
-**Escopo**: na tela Plano, linha "Cartão — já comprometido nos próximos meses: nov R$ X · dez R$ Y" (parcelas futuras, D12). Ao lançar compra parcelada (U18), mostrar antes de salvar quanto cada mês futuro fica comprometido. Alerta no Início quando a próxima fatura for maior que o saldo das contas do planejamento. Em Cartões, o resumo do cartão mostra "já gasto, a pagar" em vez de só "fatura do mês".
 
 #### U14 — Tipo de conta inline
 **Escopo**: remover a aba "Tipos de contas"; no `AccountModal`, o select de tipo ganha "+ Novo tipo…" (cria inline) e o gerenciamento (renomear/remover) vira um pequeno gerenciador acessível a partir desse campo. Backend inalterado.
@@ -397,32 +280,27 @@ A tabela está **na ordem de execução** (não numérica). A revisão de 2026-1
 **Escopo**: no select de categoria do `MovementForm` (e do lançamento de cartão), opção "+ Nova categoria…" que cria com o tipo correto (INCOME/EXPENSE) e já seleciona. A aba Categorias em Configurações permanece para gestão.
 
 #### U16 — Auditoria de divulgação progressiva
-**Escopo**: verificar todo o app com dois perfis — (a) tenant novo com 1 conta, 0 cartões, sem plano; (b) tenant com várias contas, reserva e cartões — e corrigir onde aparecer conceito que o perfil (a) não usa (seletor, transferências, "Entre suas contas", coluna de conta, item Cartões, reserva). Registrar o checklist executado em Notas.
+**Escopo**: verificar todo o app com dois perfis — (a) tenant novo com 1 conta, 0 cartões; (b) tenant com várias contas, reserva e cartões — e corrigir onde aparecer conceito que o perfil (a) não usa (seletor, transferências, "Entre suas contas", coluna de conta, item Cartões, reserva). Registrar o checklist executado em Notas.
 
-### Fase 7 — Evoluções (confirmar com o usuário antes)
+### Fase 5 — Evoluções (confirmar com o usuário antes)
 
 #### U17 — Movimentações consolidada
 **Escopo**: endpoint (ou modo do `GET /cash-flow` sem `accountId`) que usa `getCashFlowMany` e une as listas, **descartando os pares de transferência interna** entre contas ativas; resumo consolidado igual ao do dashboard. Frontend: Movimentações aceita "Todas"; cada linha mostra a conta; no formulário, "Conta" sai de Mais opções e fica obrigatória.
 
-#### U29 — "Posso gastar R$ X?"
-**Escopo**: ação no Início (e atalho no "+ Novo"): o usuário digita valor, categoria e forma (conta/cartão/parcelado) e vê o efeito no Livre e no plano da categoria — sem gravar nada. "Registrar agora" leva ao formulário preenchido.
+#### U18 — Compra no cartão pelo "+ Novo"
+**Escopo**: em Saída, campo "Pagar com" (Conta X / Cartão Y; só se houver cartão). Escolhendo cartão, o formulário mostra parcelas e cria `CreditCardEntry` em vez de transação. Um único lugar para registrar qualquer gasto.
 
 #### U19 — Preferência de densidade
 **Escopo**: em Preferências, "Mostrar detalhes avançados" (default desligado) — quando ligado, "Ver detalhes" do resumo e "análise completa" do Início já abrem expandidos. Não esconde nada quando desligado.
 
 #### U20 — Onboarding IA, relatório e documentação
-**Escopo**: alinhar `onboarding-prompts.ts`/`onboarding-tools.ts` ao novo vocabulário (D7/D15), ao significado de `dashboardScope` (D4: valor inicial do seletor) e ao planejamento (o assistente pode propor o primeiro plano por categoria e o `includeInPlan` das contas); conferir `Report.tsx` com D2/D3; atualizar `README.md`, `docs/domain-logic.md` e este plano (marcar como concluído no cabeçalho).
+**Escopo**: alinhar `onboarding-prompts.ts`/`onboarding-tools.ts` ao novo vocabulário (D7) e ao significado de `dashboardScope` (D4: valor inicial do seletor); conferir `Report.tsx` com D2/D3; atualizar `README.md`, `docs/domain-logic.md` e este plano (marcar como concluído no cabeçalho).
 
 ---
 
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
-
-### Revisão do plano — 2026-10-13 (planejar → executar → comparar → ajustar)
-- Pedido do usuário: o app deve ajudar a decidir como usar o dinheiro que já existe, sem depender de renda futura ou de cartão, com replanejamento que preserve o planejado original. Entraram D9–D16 e U21–U29; a U8 foi reescopada; as fases foram reordenadas (fundamentos do plano antes do novo Início).
-- Achados no código que embasam as decisões: (1) já existe "plano por item" (lançamentos pendentes + recorrência fixa), mas não por categoria; (2) `settleTransactionChecked` grava `amountPaid` em `amount`, então o previsto do item se perde (U23); (3) o breakdown por categoria do dashboard só conta cartão quando a fatura é paga, pelo mês da fatura (D12 muda para o mês da compra).
-- **Pontos a confirmar com o usuário antes de U21/U22** (os defaults já estão escritos nas decisões): (a) parcelas futuras do cartão saem do Livre já na compra (D9/D12) ou só a fatura do mês?; (b) contas PJ/investimento ficam fora do Livre por padrão, ou só as de reserva (D13)?; (c) o original do plano congela no início do mês ou só quando o usuário confirma (D11)?
 
 ### Fase 0 — verificação visual pendente
 - O backend local não sobe: o Atlas recusa a conexão desta máquina (TLS alert 80, IP fora do Network Access) e o login é Google. Por isso U1–U3 foram verificadas só por testes (backend + teste de componente `SummaryBar.test.tsx`). **Ao retomar com o app rodando (local com IP liberado, ou em produção após deploy), conferir:** barra do Fluxo de Caixa com/sem transferência, expandida em mês atual e futuro; Dashboard por conta vs. Fluxo de Caixa da mesma conta (Entradas/Saídas/Saldo iguais); Relatório; cadastro/edição de cartão; tentativa de desativar conta pagadora.
