@@ -1,6 +1,5 @@
 {
   "filterBar": {
-    "label": "Filtros:",
     "typeToggle": {
       "all": "Todos",
       "income": "Entradas",
@@ -14,7 +13,20 @@
       "expenseGroup": "Salidas"
     },
     "clearAllButton": "Limpiar mes",
-    "newTransferButton": "Nueva Transferencia"
+    "newTransferButton": "Nueva Transferencia",
+    "searchPlaceholder": "Buscar movimiento",
+    "clearSearch": "Limpiar búsqueda",
+    "tags": {
+      "button": "Tipo",
+      "hint": "Mostrar solo:",
+      "clear": "Mostrar todos",
+      "options": {
+        "fixed": "Fijos",
+        "extra": "Fuera de lo común",
+        "invoice": "Facturas de tarjeta",
+        "transfer": "Transferencias"
+      }
+    }
   },
   "summaryBar": {
     "income": "Entró",
@@ -241,6 +253,7 @@
       "extra": "Fuera de lo común",
       "card": "Tarjeta"
     },
-    "invoiceOf": "Factura {{card}}"
+    "invoiceOf": "Factura {{card}}",
+    "noResults": "Ningún movimiento coincide con estos filtros"
   }
 }

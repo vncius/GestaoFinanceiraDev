@@ -131,7 +131,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ✅ | 2026-10-13 | ver git log |
 | U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ✅ | 2026-10-13 | ver git log |
 | U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ✅ | 2026-10-13 | ver git log |
-| U10b | Lista única — ações, filtros e busca | 3 | U10a | ⬜ | | |
+| U10b | Lista única — ações, filtros e busca | 3 | U10a | ✅ | 2026-10-13 | ver git log |
 | U10c | Remoção das grids antigas e código morto | 3 | U10b | ⬜ | | |
 | U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ⬜ | | |
 | U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ⬜ | | |
@@ -314,6 +314,12 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U10b — 2026-10-13
+- Ações (editar, excluir, abrir fatura) já tinham entrado na U10a. Esta entrega adicionou: busca (`filterMovements` em `movements.ts`, sem acento/caixa, casando descrição, nome da categoria e conta da transferência) e filtro "Tipo" (Fixos / Fora do comum / Faturas de cartão / Transferências — "mostrar só", combinável com busca, Todos/Entradas/Saídas e categorias). Lista vazia por filtro mostra "Nenhum lançamento encontrado com esses filtros".
+- O resumo do topo **não** é filtrado (é sempre o mês inteiro da conta) — decisão consciente, para o saldo não mudar ao buscar.
+- Chave `cashFlow.filterBar.label` ("Filtros:") removida — a barra ficou com busca + chips.
+- Verificado no navegador (desktop e 375px).
 
 ### U10a — 2026-10-13
 - `pages/CashFlow/movements.ts` (`toMovements`, `groupBySituation`, testes) + `components/MovementsList.tsx` no lugar das 5 grids. As grids continuam no código até a U10c.

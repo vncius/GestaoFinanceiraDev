@@ -1,6 +1,5 @@
 {
   "filterBar": {
-    "label": "Filters:",
     "typeToggle": {
       "all": "All",
       "income": "Income",
@@ -14,7 +13,20 @@
       "expenseGroup": "Expenses"
     },
     "clearAllButton": "Clear month",
-    "newTransferButton": "New Transfer"
+    "newTransferButton": "New Transfer",
+    "searchPlaceholder": "Search entries",
+    "clearSearch": "Clear search",
+    "tags": {
+      "button": "Type",
+      "hint": "Show only:",
+      "clear": "Show all",
+      "options": {
+        "fixed": "Fixed",
+        "extra": "Unusual",
+        "invoice": "Card invoices",
+        "transfer": "Transfers"
+      }
+    }
   },
   "summaryBar": {
     "income": "In",
@@ -241,6 +253,7 @@
       "extra": "Unusual",
       "card": "Card"
     },
-    "invoiceOf": "{{card}} invoice"
+    "invoiceOf": "{{card}} invoice",
+    "noResults": "No entries match these filters"
   }
 }

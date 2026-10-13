@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupBySituation, toMovements } from './movements';
+import { filterMovements, groupBySituation, toMovements } from './movements';
 import { CreditCardInvoice, FinancialTransaction, TransferFlowItem } from '../../types';
 
 function tx(id: string, date: string, status: FinancialTransaction['status'], extra: Partial<FinancialTransaction> = {}): FinancialTransaction {
@@ -67,5 +67,39 @@ describe('groupBySituation', () => {
     expect(g.overdue.map((i) => i.description)).toEqual(['A']);
     expect(g.upcoming.map((i) => i.description)).toEqual(['Hoje', 'C']);
     expect(g.done.map((i) => i.description)).toEqual(['Pago']);
+  });
+});
+
+describe('filterMovements', () => {
+  const items = toMovements({
+    entries: [tx('Salário', '2026-10-05', 'PENDING', { type: 'INCOME', categoryId: 'renda' })],
+    payments: [tx('Aluguél', '2026-10-10', 'PENDING', { recurrence: 'FIXED', categoryId: 'moradia' })],
+    extraExpenses: [tx('Conserto', '2026-10-20', 'PENDING', { type: 'EXTRA_EXPENSE' })],
+    transfers: [transfer],
+    creditCards: [invoice('i1', 30000, 'OPEN')],
+    cardNames: new Map([['card', 'Nubank']]),
+    cardFallbackName: 'Cartão',
+  });
+  const categoryNames = new Map([['moradia', 'Moradia'], ['renda', 'Rendimento']]);
+  const names = (opts: { search?: string; tags?: string[] }) =>
+    filterMovements(items, { search: opts.search ?? '', tags: new Set(opts.tags ?? []) as never, categoryNames }).map((i) => i.description);
+
+  it('sem busca nem tipo, devolve tudo', () => {
+    expect(names({})).toHaveLength(5);
+  });
+
+  it('busca ignora acento e caixa e também olha categoria e conta da transferência', () => {
+    expect(names({ search: 'ALUGUEL' })).toEqual(['Aluguél']);
+    expect(names({ search: 'moradia' })).toEqual(['Aluguél']);
+    expect(names({ search: 'reserva' })).toEqual(['Para reserva']);
+  });
+
+  it('tipos marcados mostram só os itens que têm algum deles', () => {
+    expect(names({ tags: ['fixed'] })).toEqual(['Aluguél']);
+    expect(names({ tags: ['extra', 'invoice'] }).sort()).toEqual(['Conserto', 'Nubank']);
+  });
+
+  it('busca e tipo combinam', () => {
+    expect(names({ search: 'conserto', tags: ['fixed'] })).toEqual([]);
   });
 });

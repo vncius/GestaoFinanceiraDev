@@ -256,6 +256,7 @@ export function MovementsList({
   onToggle,
   onEdit,
   onDelete,
+  emptyMessage,
 }: {
   groups: MovementGroups;
   categoryNames: Map<string, string>;
@@ -268,6 +269,8 @@ export function MovementsList({
   onToggle: (item: MovementItem) => void;
   onEdit: (item: MovementItem) => void;
   onDelete: (item: MovementItem) => void;
+  // Mensagem quando a lista está vazia por causa da busca/filtro.
+  emptyMessage?: string;
 }) {
   const { t } = useTranslation('cashFlow');
   const total = groups.overdue.length + groups.upcoming.length + groups.done.length;
@@ -296,7 +299,7 @@ export function MovementsList({
       </div>
 
       {total === 0 ? (
-        <EmptyState title={t('movements.empty')} />
+        <EmptyState title={emptyMessage ?? t('movements.empty')} />
       ) : (
         <div className="py-1">
           <Group title={t('movements.groups.overdue')} items={groups.overdue} overdue render={row(true)} />

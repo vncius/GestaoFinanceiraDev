@@ -20,7 +20,7 @@ import { ModalKind, CashFlowTypeFilter } from './types';
 import { useCashFlowMutations } from './useCashFlowMutations';
 import { SummaryBar } from './components/SummaryBar';
 import { MovementsList, NewMovementKind, RowBusy } from './components/MovementsList';
-import { groupBySituation, MovementItem, MovementKind, toMovements } from './movements';
+import { filterMovements, groupBySituation, MovementItem, MovementKind, MovementTag, toMovements } from './movements';
 import { useCollapsibleSections } from './useCollapsibleSections';
 import { IncomeModal } from './components/IncomeModal';
 import { TransactionModal } from './components/TransactionModal';
@@ -74,6 +74,15 @@ export default function CashFlow() {
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');
   const [excludedCategoryIds, setExcludedCategoryIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [tagFilter, setTagFilter] = useState<Set<MovementTag>>(new Set());
+  const toggleTag = (tag: MovementTag) =>
+    setTagFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
   const toggleCategoryFilter = (id: string) =>
     setExcludedCategoryIds((prev) => {
       const next = new Set(prev);
@@ -379,7 +388,7 @@ export default function CashFlow() {
   // ── Lista única (U10a) ───────────────────────────────────────────────────────
   // Transferências só aparecem em "Todos": não são entrada nem saída (D2/D8).
   const movementGroups = groupBySituation(
-    toMovements({
+    filterMovements(toMovements({
       entries: filteredEntries,
       payments: filteredPayments,
       extraExpenses: filteredExtraExpenses,
@@ -387,8 +396,9 @@ export default function CashFlow() {
       creditCards: filteredCreditCards,
       cardNames,
       cardFallbackName: t('creditCardsGrid.cardFallbackName'),
-    }),
+    }), { search, tags: tagFilter, categoryNames }),
   );
+  const isFiltering = search.trim() !== '' || tagFilter.size > 0;
 
   const PENDING_IDS: Record<MovementKind, { toggle: string | null; del: string | null }> = {
     income: { toggle: entriesPendingToggleId, del: entriesPendingDeleteId },
@@ -470,6 +480,11 @@ export default function CashFlow() {
           onNewTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
           clearingAll={clearingAll}
           clearAllDisabled={clearAllCount === 0}
+          search={search}
+          onSearchChange={setSearch}
+          tags={tagFilter}
+          onToggleTag={toggleTag}
+          onClearTags={() => setTagFilter(new Set())}
         />
 
         {/* Lista única (U10a): entradas, saídas, transferências e faturas
@@ -486,6 +501,7 @@ export default function CashFlow() {
           onToggle={handleToggle}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          emptyMessage={isFiltering ? t('movements.noResults') : undefined}
         />
       </div>
 

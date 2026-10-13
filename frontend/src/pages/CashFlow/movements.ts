@@ -129,3 +129,41 @@ export function groupBySituation(items: MovementItem[], todayKey: string = local
     done: items.filter((i) => i.settled).sort(byDate),
   };
 }
+
+// ── Busca e filtro por tipo (U10b) ────────────────────────────────────────────
+
+export type MovementTag = 'fixed' | 'extra' | 'invoice' | 'transfer';
+export const MOVEMENT_TAGS: MovementTag[] = ['fixed', 'extra', 'invoice', 'transfer'];
+
+function hasTag(item: MovementItem, tag: MovementTag): boolean {
+  switch (tag) {
+    case 'fixed': return item.isFixed;
+    case 'extra': return item.kind === 'extra';
+    case 'invoice': return item.kind === 'invoice';
+    case 'transfer': return item.kind === 'transfer';
+  }
+}
+
+// Sem acento e sem caixa: "aluguel" acha "Aluguél", "AGUA" acha "Água".
+export function normalizeText(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+// Busca casa descrição, nome da categoria e conta da transferência. Tipos
+// marcados funcionam como "mostrar só": basta o item ter um deles.
+export function filterMovements(
+  items: MovementItem[],
+  { search, tags, categoryNames }: { search: string; tags: Set<MovementTag>; categoryNames: Map<string, string> },
+): MovementItem[] {
+  const q = normalizeText(search);
+  return items.filter((item) => {
+    if (tags.size > 0 && ![...tags].some((tag) => hasTag(item, tag))) return false;
+    if (!q) return true;
+    const haystack = [
+      item.description,
+      item.categoryId ? categoryNames.get(item.categoryId) ?? '' : '',
+      item.counterpartAccountName ?? '',
+    ].join(' ');
+    return normalizeText(haystack).includes(q);
+  });
+}

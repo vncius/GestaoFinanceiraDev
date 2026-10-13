@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Filter, Eraser, ArrowLeftRight } from 'lucide-react';
+import { Filter, Eraser, ArrowLeftRight, Search, Tags, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
+import { MOVEMENT_TAGS, MovementTag } from '../movements';
 import { Button } from '../../../components/ui/Button';
 import { sortByName } from '../../../utils/sort';
 
@@ -135,6 +136,71 @@ function CategoryFilterPopover({
   );
 }
 
+// Filtro por tipo (U10b): fixo, fora do comum, cartão, transferência. Nada
+// marcado = todos; marcados = mostrar só os que têm algum deles.
+function TagFilterPopover({
+  selected,
+  onToggle,
+  onClear,
+}: {
+  selected: Set<MovementTag>;
+  onToggle: (tag: MovementTag) => void;
+  onClear: () => void;
+}) {
+  const { t } = useTranslation('cashFlow');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const active = selected.size > 0;
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border ${
+          active
+            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+        }`}
+      >
+        <Tags size={13} />
+        {t('filterBar.tags.button')}
+        {active && <span>({selected.size})</span>}
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2">
+          <p className="px-1 pb-1.5 mb-1 text-[11px] text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-700">
+            {t('filterBar.tags.hint')}
+          </p>
+          {MOVEMENT_TAGS.map((tag) => (
+            <label
+              key={tag}
+              className="flex items-center gap-2 px-1 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer"
+            >
+              <input type="checkbox" className="rounded" checked={selected.has(tag)} onChange={() => onToggle(tag)} />
+              {t(`filterBar.tags.options.${tag}`)}
+            </label>
+          ))}
+          {active && (
+            <button type="button" onClick={onClear} className="mt-1 px-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline">
+              {t('filterBar.tags.clear')}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CashFlowFilterBar({
   typeFilter,
   onTypeChange,
@@ -147,6 +213,11 @@ export function CashFlowFilterBar({
   onNewTransfer,
   clearingAll = false,
   clearAllDisabled = false,
+  search,
+  onSearchChange,
+  tags,
+  onToggleTag,
+  onClearTags,
 }: {
   typeFilter: CashFlowTypeFilter;
   onTypeChange: (v: CashFlowTypeFilter) => void;
@@ -159,11 +230,36 @@ export function CashFlowFilterBar({
   onNewTransfer: () => void;
   clearingAll?: boolean;
   clearAllDisabled?: boolean;
+  search: string;
+  onSearchChange: (v: string) => void;
+  tags: Set<MovementTag>;
+  onToggleTag: (tag: MovementTag) => void;
+  onClearTags: () => void;
 }) {
   const { t } = useTranslation('cashFlow');
   return (
     <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3">
-      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('filterBar.label')}</span>
+      <div className="relative w-full sm:w-56">
+        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={t('filterBar.searchPlaceholder')}
+          aria-label={t('filterBar.searchPlaceholder')}
+          className="w-full pl-8 pr-7 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-search-cancel-button]:hidden"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => onSearchChange('')}
+            aria-label={t('filterBar.clearSearch')}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
       <TypeFilterToggle value={typeFilter} onChange={onTypeChange} />
       <CategoryFilterPopover
         categories={categories}
@@ -173,6 +269,7 @@ export function CashFlowFilterBar({
         onSelectAll={onSelectAllCategories}
         onClearAll={onClearCategories}
       />
+      <TagFilterPopover selected={tags} onToggle={onToggleTag} onClear={onClearTags} />
       <Button
         size="sm"
         variant="ghost"

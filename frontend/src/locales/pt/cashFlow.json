@@ -1,6 +1,5 @@
 {
   "filterBar": {
-    "label": "Filtros:",
     "typeToggle": {
       "all": "Todos",
       "income": "Entradas",
@@ -14,7 +13,20 @@
       "expenseGroup": "Saídas"
     },
     "clearAllButton": "Limpar mês",
-    "newTransferButton": "Nova Transferência"
+    "newTransferButton": "Nova Transferência",
+    "searchPlaceholder": "Buscar lançamento",
+    "clearSearch": "Limpar busca",
+    "tags": {
+      "button": "Tipo",
+      "hint": "Mostrar só:",
+      "clear": "Mostrar todos",
+      "options": {
+        "fixed": "Fixos",
+        "extra": "Fora do comum",
+        "invoice": "Faturas de cartão",
+        "transfer": "Transferências"
+      }
+    }
   },
   "summaryBar": {
     "income": "Entrou",
@@ -241,6 +253,7 @@
       "extra": "Fora do comum",
       "card": "Cartão"
     },
-    "invoiceOf": "Fatura {{card}}"
+    "invoiceOf": "Fatura {{card}}",
+    "noResults": "Nenhum lançamento encontrado com esses filtros"
   }
 }
