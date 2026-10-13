@@ -621,6 +621,7 @@ export default function CashFlow() {
         open={!!invoicePayTarget}
         onClose={() => setInvoicePayTarget(null)}
         accounts={accounts as Account[]}
+        defaultAccountId={accountId}
         isPaying={payInvoice.isPending}
         onConfirm={(accountId) => {
           if (invoicePayTarget) {

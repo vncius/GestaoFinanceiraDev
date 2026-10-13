@@ -23,7 +23,8 @@
     "cancel": "Cancelar",
     "confirm": "Confirmar pago",
     "accountLabel": "Cuenta para débito",
-    "selectPlaceholder": "Seleccione..."
+    "selectPlaceholder": "Seleccione...",
+    "singleAccount": "La factura se pagará con la cuenta {{account}}."
   },
   "toast": {
     "closeNotification": "Cerrar notificación"

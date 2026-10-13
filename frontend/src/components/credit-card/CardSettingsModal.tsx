@@ -166,17 +166,19 @@ export function CardSettingsModal({
             />
           </Field>
         </div>
-        <Field label={t('cards.modal.defaultAccountLabel')}>
-          <select
-            className={INPUT}
-            value={form.defaultPaymentAccountId}
-            onChange={set('defaultPaymentAccountId')}
-          >
-            {activeAccounts.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
-        </Field>
+        {activeAccounts.length > 1 && (
+          <Field label={t('cards.modal.defaultAccountLabel')}>
+            <select
+              className={INPUT}
+              value={form.defaultPaymentAccountId}
+              onChange={set('defaultPaymentAccountId')}
+            >
+              {activeAccounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </Field>
+        )}
       </form>
     </Modal>
   );

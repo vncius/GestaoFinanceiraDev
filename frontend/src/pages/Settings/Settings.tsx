@@ -368,6 +368,8 @@ function AccountModal({
             onChange={set('initialBalance')}
           />
         </Field>
+        {(targetOptions.length > 0 || form.autoReserveEnabled) && (
+        <>
         <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
           <input
             type="checkbox"
@@ -405,6 +407,8 @@ function AccountModal({
             </Field>
           </>
         )}
+        </>
+        )}
       </form>
     </Modal>
   );
@@ -426,6 +430,8 @@ function AccountsTab() {
     staleTime: 30_000,
   });
   const accountTypeMap = new Map(accountTypes.map((at) => [at.id, at.name]));
+  // Reserva automática só faz sentido com 2+ contas (U16).
+  const showReserveColumn = accounts.filter((a) => a.active).length > 1 || accounts.some((a) => a.autoReserveEnabled);
 
   // Saldo inicial e reserva automática da conta são insumos do fluxo de caixa
   // e do dashboard — sem isso os números de outros meses só se corrigiam no F5.
@@ -479,7 +485,7 @@ function AccountsTab() {
                 <tr className="border-b border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   <th className="text-left px-3 sm:px-5 py-3 font-medium">{t('accounts.tableName')}</th>
                   <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableType')}</th>
-                  <th className="hidden md:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableAutoReserve')}</th>
+                  {showReserveColumn && <th className="hidden md:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableAutoReserve')}</th>}
                   <th className="text-right px-2 sm:px-3 py-3 font-medium">{t('accounts.tableInitialBalance')}</th>
                   <th className="hidden sm:table-cell text-left px-3 py-3 font-medium">{t('accounts.tableStatus')}</th>
                   <th className="px-1 sm:px-3 py-3" />
@@ -496,7 +502,7 @@ function AccountsTab() {
                     <td className="hidden sm:table-cell px-3 py-3 text-gray-500 dark:text-gray-400 text-xs">
                       {a.accountTypeId ? accountTypeMap.get(a.accountTypeId) ?? '—' : '—'}
                     </td>
-                    <td className="hidden md:table-cell px-3 py-3 text-xs">
+                    {showReserveColumn && <td className="hidden md:table-cell px-3 py-3 text-xs">
                       {a.autoReserveEnabled ? (
                         <span className="inline-flex px-2 py-0.5 rounded-full font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                           {a.autoReservePercentage}%
@@ -504,7 +510,7 @@ function AccountsTab() {
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">—</span>
                       )}
-                    </td>
+                    </td>}
                     <td className="px-2 sm:px-3 py-3 text-right text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {formatCurrency(a.initialBalance)}
                     </td>

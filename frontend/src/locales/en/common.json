@@ -23,7 +23,8 @@
     "cancel": "Cancel",
     "confirm": "Confirm payment",
     "accountLabel": "Account to debit",
-    "selectPlaceholder": "Select..."
+    "selectPlaceholder": "Select...",
+    "singleAccount": "The invoice will be paid from {{account}}."
   },
   "toast": {
     "closeNotification": "Close notification"

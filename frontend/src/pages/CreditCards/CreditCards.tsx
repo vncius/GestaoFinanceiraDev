@@ -712,6 +712,7 @@ function CardDetail({
         open={!!invoicePayTarget}
         onClose={() => setInvoicePayTarget(null)}
         accounts={accounts}
+        defaultAccountId={card.defaultPaymentAccountId}
         isPaying={payMut.isPending}
         onConfirm={(accountId) => {
           if (invoicePayTarget) {
