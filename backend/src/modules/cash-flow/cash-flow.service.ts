@@ -311,7 +311,8 @@ export class CashFlowService {
       ...payments.filter((t) => t.status !== TransactionStatus.PAID),
       ...extraExpenses.filter((t) => t.status !== TransactionStatus.PAID),
     ];
-    const pendingInvoices = monthInvoices.filter((inv) => inv.status !== InvoiceStatus.PAID);
+    // Fatura sem nenhum lançamento (total 0) não é algo a pagar.
+    const pendingInvoices = monthInvoices.filter((inv) => inv.status !== InvoiceStatus.PAID && inv.totalAmount > 0);
     const pendingIncome = pendingEntries.reduce((s, t) => s + t.amount, 0);
     const pendingExpenses =
       pendingOutflows.reduce((s, t) => s + t.amount, 0) +

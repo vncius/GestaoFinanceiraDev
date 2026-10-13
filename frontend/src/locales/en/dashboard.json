@@ -3,46 +3,63 @@
   "error": {
     "loadFailed": "Could not load Home. Check whether the server is running."
   },
-  "balances": {
-    "sectionTitle": "Current Balances",
-    "total": "Grand Total"
+  "hero": {
+    "today": "Balance today",
+    "onDate": "Balance on {{date}}",
+    "projectedOnDate": "Projected balance on {{date}}",
+    "projectedLine": "Projected for {{date}}:",
+    "projectedTooltip": "Today's balance plus what is still to be received, minus what is still to be paid this month.",
+    "projectionRange": "Includes everything expected from {{from}} to {{to}}."
   },
-  "summary": {
-    "sectionTitle": "Summary for {{monthYear}}",
-    "initialBalance": "Initial Balance",
-    "initialBalanceSub": "Before the month",
-    "monthBalance": "Month Balance",
-    "monthBalanceSub": "Consolidated",
-    "income": "Income",
-    "expenses": "Expenses",
-    "payments": "Payments",
-    "extraExpenses": "Extra Expenses",
-    "creditCardInvoices": "Credit Card Invoices",
-    "betweenAccounts": "Between your accounts"
+  "month": {
+    "title": "{{monthYear}}",
+    "income": "In",
+    "expenses": "Out",
+    "result": "Left over",
+    "resultNegative": "Short",
+    "betweenAccounts": "Moved between your accounts: {{amount}} (counts as neither income nor expense)"
   },
-  "categoryAnalysis": {
-    "sectionTitle": "Category Analysis",
-    "incomeByCategory": "Income by Category",
-    "expensesByCategory": "Expenses by Category",
-    "empty": "No entries in this period"
+  "pending": {
+    "title": "Still in {{monthYear}}",
+    "toReceive": "To receive",
+    "toPay": "To pay",
+    "count_zero": "no items",
+    "count_one": "{{count}} item",
+    "count_other": "{{count}} items"
   },
-  "upcomingDue": {
-    "title": "Upcoming Due Dates",
-    "period": "15 days",
-    "empty": "No due dates in the next 15 days",
+  "upcoming": {
+    "title": "Overdue and next 15 days",
+    "empty": "Nothing overdue or due in the next 15 days",
+    "overdue": "Overdue since {{date}}",
+    "seeAll": "See transactions",
+    "seeAllCount": "See all {{count}}",
     "goToCashFlow": "Go to this month's transactions"
   },
+  "whereMoneyWent": {
+    "title": "Where the money went",
+    "empty": "No entries in the period",
+    "others": "Other"
+  },
+  "analysis": {
+    "show": "See full analysis",
+    "hide": "Hide full analysis",
+    "detailsTitle": "Month details",
+    "initialBalance": "Balance at month start",
+    "payments": "Payments",
+    "extraExpenses": "Unusual expenses",
+    "creditCardInvoices": "Card invoices",
+    "betweenAccounts": "Between your accounts",
+    "projectedBalance": "Projected at month end",
+    "balancesTitle": "Each account balance today",
+    "total": "Total",
+    "incomeByCategory": "Income by category"
+  },
   "evolutionChart": {
-    "title": "Recent Months Trend",
+    "title": "Last Months Trend",
     "income": "Income",
     "expenses": "Expenses",
     "incomeTooltip": "Income: {{amount}}",
     "expensesTooltip": "Expenses: {{amount}}",
     "resultTooltip": "Result: {{amount}}"
-  },
-  "overview": {
-    "title": "Month Overview",
-    "income": "Income",
-    "expenses": "Expenses"
   }
 }

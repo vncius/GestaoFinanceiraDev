@@ -3,34 +3,56 @@
   "error": {
     "loadFailed": "Não foi possível carregar o Início. Verifique se o servidor está rodando."
   },
-  "balances": {
-    "sectionTitle": "Saldos Atuais",
-    "total": "Total Geral"
+  "hero": {
+    "today": "Saldo hoje",
+    "onDate": "Saldo em {{date}}",
+    "projectedOnDate": "Saldo previsto em {{date}}",
+    "projectedLine": "Previsto para {{date}}:",
+    "projectedTooltip": "Saldo de hoje mais o que ainda falta receber, menos o que ainda falta pagar neste mês.",
+    "projectionRange": "Inclui tudo o que está previsto de {{from}} a {{to}}."
   },
-  "summary": {
-    "sectionTitle": "Resumo de {{monthYear}}",
-    "initialBalance": "Saldo Inicial",
-    "initialBalanceSub": "Antes do mês",
-    "monthBalance": "Saldo do Mês",
-    "monthBalanceSub": "Consolidado",
-    "income": "Entradas",
-    "expenses": "Saídas",
-    "payments": "Pagamentos",
-    "extraExpenses": "Gastos Extras",
-    "creditCardInvoices": "Faturas Cartão",
-    "betweenAccounts": "Entre suas contas"
+  "month": {
+    "title": "{{monthYear}}",
+    "income": "Entrou",
+    "expenses": "Saiu",
+    "result": "Sobrou",
+    "resultNegative": "Faltou",
+    "betweenAccounts": "Movimentado entre suas contas: {{amount}} (não conta como entrada nem saída)"
   },
-  "categoryAnalysis": {
-    "sectionTitle": "Análise por Categoria",
-    "incomeByCategory": "Receitas por Categoria",
-    "expensesByCategory": "Gastos por Categoria",
-    "empty": "Sem lançamentos no período"
+  "pending": {
+    "title": "Ainda em {{monthYear}}",
+    "toReceive": "A receber",
+    "toPay": "A pagar",
+    "count_zero": "nenhum item",
+    "count_one": "{{count}} item",
+    "count_other": "{{count}} itens"
   },
-  "upcomingDue": {
-    "title": "Próximos Vencimentos",
-    "period": "15 dias",
-    "empty": "Nenhum vencimento nos próximos 15 dias",
+  "upcoming": {
+    "title": "Atrasados e próximos 15 dias",
+    "empty": "Nada atrasado nem vencendo nos próximos 15 dias",
+    "overdue": "Atrasado desde {{date}}",
+    "seeAll": "Ver movimentações",
+    "seeAllCount": "Ver todos os {{count}}",
     "goToCashFlow": "Ir para as movimentações deste mês"
+  },
+  "whereMoneyWent": {
+    "title": "Para onde foi o dinheiro",
+    "empty": "Sem lançamentos no período",
+    "others": "Outros"
+  },
+  "analysis": {
+    "show": "Ver análise completa",
+    "hide": "Ocultar análise completa",
+    "detailsTitle": "Detalhes do mês",
+    "initialBalance": "Saldo no início do mês",
+    "payments": "Pagamentos",
+    "extraExpenses": "Gastos fora do comum",
+    "creditCardInvoices": "Faturas de cartão",
+    "betweenAccounts": "Entre suas contas",
+    "projectedBalance": "Previsto no fim do mês",
+    "balancesTitle": "Saldo de cada conta hoje",
+    "total": "Total",
+    "incomeByCategory": "Entradas por categoria"
   },
   "evolutionChart": {
     "title": "Evolução dos Últimos Meses",
@@ -39,10 +61,5 @@
     "incomeTooltip": "Entradas: {{amount}}",
     "expensesTooltip": "Saídas: {{amount}}",
     "resultTooltip": "Resultado: {{amount}}"
-  },
-  "overview": {
-    "title": "Visão Geral do Mês",
-    "income": "Receitas",
-    "expenses": "Gastos"
   }
 }

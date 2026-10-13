@@ -84,13 +84,14 @@ function ProfileMenu() {
 }
 
 // "+ Novo" global (U6): abre o mesmo lançamento rápido do atalho N. No
-// desktop fica no cabeçalho; no celular vira botão flutuante acima da barra
-// de navegação inferior.
-function NewEntryButton() {
+// desktop fica no cabeçalho; no celular vira botão flutuante ancorado à área
+// de conteúdo (não à tela), para nunca cobrir a barra de resumo da página nem
+// a navegação inferior.
+function NewEntryButton({ variant }: { variant: 'header' | 'floating' }) {
   const { t } = useTranslation('common');
   const { openQuickAdd } = useQuickAdd();
-  return (
-    <>
+  if (variant === 'header') {
+    return (
       <button
         onClick={openQuickAdd}
         className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 mr-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
@@ -99,14 +100,16 @@ function NewEntryButton() {
         <Plus size={16} />
         {t('quickAdd.openButton')}
       </button>
-      <button
-        onClick={openQuickAdd}
-        className="md:hidden fixed right-4 bottom-20 z-30 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center mb-[env(safe-area-inset-bottom)]"
-        aria-label={t('quickAdd.openButton')}
-      >
-        <Plus size={24} />
-      </button>
-    </>
+    );
+  }
+  return (
+    <button
+      onClick={openQuickAdd}
+      className="md:hidden absolute right-4 bottom-4 z-30 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center"
+      aria-label={t('quickAdd.openButton')}
+    >
+      <Plus size={24} />
+    </button>
   );
 }
 
@@ -135,7 +138,7 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center justify-end shrink-0 md:flex-1">
-              <NewEntryButton />
+              <NewEntryButton variant="header" />
               <ProfileMenu />
             </div>
           </header>
@@ -145,9 +148,12 @@ export default function Layout() {
           </h2>
 
           <PageFooterProvider>
-            <main className="flex-1 overflow-auto p-3 sm:p-6">
-              <Outlet />
-            </main>
+            <div className="relative flex-1 min-h-0 flex flex-col">
+              <main className="flex-1 overflow-auto p-3 sm:p-6 pb-20 md:pb-6">
+                <Outlet />
+              </main>
+              <NewEntryButton variant="floating" />
+            </div>
           </PageFooterProvider>
 
           <BottomNav />

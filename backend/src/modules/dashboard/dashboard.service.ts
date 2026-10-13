@@ -152,44 +152,47 @@ export class DashboardService {
     const totalBalance = accountBalances.reduce((s, a) => s + a.balance, 0);
 
     // ── Upcoming dues ───────────────────────────────────────────────────────────
-    const cutoff = new Date(
-      today.getTime() + query.upcomingDays * 24 * 60 * 60 * 1000,
-    );
+    // Tudo que está pendente e venceu (qualquer data antes de hoje) + o que
+    // vence nos próximos `upcomingDays` dias: saídas, faturas e — para o
+    // "A receber" do Início — entradas. Datas comparadas como YYYY-MM-DD
+    // (sem passar por Date) para não sofrer o deslocamento de fuso.
+    const dayKey = (iso: string) => iso.slice(0, 10);
+    const localKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const todayKey = localKey(today);
+    const cutoffKey = localKey(new Date(today.getTime() + query.upcomingDays * 24 * 60 * 60 * 1000));
+    const isDueOrOverdue = (iso: string) => dayKey(iso) <= cutoffKey;
+
+    const DUE_TYPE_BY_TX: Partial<Record<TransactionType, DueType>> = {
+      [TransactionType.PAYMENT]: DueType.PAYMENT,
+      [TransactionType.EXTRA_EXPENSE]: DueType.EXTRA_EXPENSE,
+      [TransactionType.INCOME]: DueType.INCOME,
+    };
 
     const upcomingTxDues: UpcomingDue[] = allTransactions
       .filter((t) => {
         if (t.status !== TransactionStatus.PENDING) return false;
-        if (
-          t.type !== TransactionType.PAYMENT &&
-          t.type !== TransactionType.EXTRA_EXPENSE
-        )
-          return false;
-        if (!matchesScope(t.sourceAccountId)) return false;
-        const d = new Date(t.expectedDate);
-        return d >= today && d <= cutoff;
+        if (!DUE_TYPE_BY_TX[t.type]) return false;
+        const owner = t.type === TransactionType.INCOME ? t.targetAccountId : t.sourceAccountId;
+        if (!matchesScope(owner)) return false;
+        return isDueOrOverdue(t.expectedDate);
       })
       .map((t) => ({
-        type:
-          t.type === TransactionType.PAYMENT
-            ? DueType.PAYMENT
-            : DueType.EXTRA_EXPENSE,
+        type: DUE_TYPE_BY_TX[t.type] as DueType,
         id: t.id,
         description: t.description,
         dueDate: t.expectedDate,
         amount: t.amount,
         status: t.status,
+        overdue: dayKey(t.expectedDate) < todayKey,
       }));
 
     const upcomingInvoiceDues: UpcomingDue[] = allInvoices
       .filter((inv) => {
-        if (
-          inv.status !== InvoiceStatus.OPEN &&
-          inv.status !== InvoiceStatus.OVERDUE
-        )
-          return false;
+        if (inv.status !== InvoiceStatus.OPEN && inv.status !== InvoiceStatus.OVERDUE) return false;
+        if (inv.totalAmount <= 0) return false;
         if (!matchesScope(invoicePayerAccountId(inv))) return false;
-        const d = new Date(inv.dueDate);
-        return d >= today && d <= cutoff;
+        return isDueOrOverdue(inv.dueDate);
       })
       .map((inv) => {
         const card = cardMap.get(inv.creditCardId);
@@ -200,11 +203,13 @@ export class DashboardService {
           dueDate: inv.dueDate,
           amount: inv.totalAmount,
           status: inv.status,
+          overdue: dayKey(inv.dueDate) < todayKey,
         };
       });
 
+    // Atrasados primeiro; dentro de cada grupo, por data.
     const upcomingDues = [...upcomingTxDues, ...upcomingInvoiceDues].sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
+      (x, y) => Number(y.overdue) - Number(x.overdue) || dayKey(x.dueDate).localeCompare(dayKey(y.dueDate)),
     );
 
     // ── Alerts ──────────────────────────────────────────────────────────────────

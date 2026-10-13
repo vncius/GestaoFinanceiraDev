@@ -1278,7 +1278,7 @@ export default function Settings() {
   return (
     <div className="space-y-5">
       {/* Tab navigation */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto overflow-y-hidden">
         {TAB_ORDER.map((tb) => (
           <button
             key={tb}

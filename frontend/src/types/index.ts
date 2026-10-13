@@ -253,7 +253,7 @@ export type AlertType =
   | 'INVOICE_DUE_SOON';
 
 export type AlertSeverity = 'INFO' | 'WARNING' | 'ERROR';
-export type DueType = 'PAYMENT' | 'EXTRA_EXPENSE' | 'CREDIT_CARD_INVOICE';
+export type DueType = 'PAYMENT' | 'EXTRA_EXPENSE' | 'CREDIT_CARD_INVOICE' | 'INCOME';
 
 export interface DashboardAlert {
   type: AlertType;
@@ -268,6 +268,8 @@ export interface UpcomingDue {
   dueDate: string;
   amount: number;
   status: string;
+  // Venceu e não foi pago/recebido (qualquer data antes de hoje).
+  overdue: boolean;
 }
 
 export interface MonthlyEvolutionItem {

@@ -17,6 +17,7 @@ export enum DueType {
   PAYMENT = 'PAYMENT',
   EXTRA_EXPENSE = 'EXTRA_EXPENSE',
   CREDIT_CARD_INVOICE = 'CREDIT_CARD_INVOICE',
+  INCOME = 'INCOME',
 }
 
 export interface AccountBalance {
@@ -39,6 +40,9 @@ export interface UpcomingDue {
   dueDate: string;
   amount: number;
   status: string;
+  // Venceu e ainda não foi pago/recebido (qualquer mês anterior a hoje). No
+  // Início, os atrasados vêm primeiro e substituem os antigos banners de alerta.
+  overdue: boolean;
 }
 
 export interface MonthlyEvolutionItem {

@@ -128,7 +128,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ✅ | 2026-10-13 | ver git log |
 | U6 | Botão global "+ Novo" | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U7 | Vocabulário (D7) em toda a UI | 1 | — | ✅ | 2026-10-13 | ver git log |
-| U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ⬜ | | |
+| U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ✅ | 2026-10-13 | ver git log |
 | U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ⬜ | | |
 | U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ⬜ | | |
 | U10b | Lista única — ações, filtros e busca | 3 | U10a | ⬜ | | |
@@ -302,6 +302,14 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
 
+### U8 — 2026-10-13
+- Início: destaque de saldo com rótulo D3 (mês atual: "Saldo hoje" + "Previsto para dd/mm"; passado: "Saldo em dd/mm"; futuro: "Saldo previsto em dd/mm" usando `projectedBalance` + intervalo acumulado de U3) → Entrou · Saiu · Sobrou/Faltou → "Ainda em <mês>" (A receber / A pagar do mês + lista "Atrasados e próximos 15 dias", até 6 itens) ao lado de "Para onde foi o dinheiro" (top 5 + Outros) → "Ver análise completa" (recolhida, lembrada em `localStorage` `dashboard.analysisOpen`): detalhes do mês (saldo inicial, pagamentos, fora do comum, faturas, entre contas, previsto), saldo por conta (só em "Todas as contas"), entradas por categoria, evolução, relatório.
+- Removidos: `AlertsBar` (banners), donut, cards de saldo inicial e de cada conta no topo. `alerts` continua na resposta da API (sem uso no front).
+- Backend `upcomingDues`: inclui entradas pendentes (`DueType.INCOME`) e **todo** item vencido não pago de qualquer data (antes só de hoje em diante), com `overdue: boolean`; atrasados primeiro. Datas comparadas como YYYY-MM-DD. Faturas com total 0 ficam de fora. Teste novo em `dashboard.service.test.ts`.
+- Bug achado na verificação visual: `pendingExpensesCount` contava fatura vazia (total 0) → "A pagar R$ 0,00 · 1 item". `pendingInvoices` agora exige `totalAmount > 0`.
+- Ajustes da verificação visual da Fase 1: botão flutuante "Novo" passou de `fixed` para `absolute` dentro da área de conteúdo (cobria o "Saldo" e o botão de expandir da barra de resumo no celular); abas de Configurações sem barra de rolagem vertical.
+- **Verificação visual feita** (login do usuário no painel, banco `gestao_financeira_dev`, quase vazio): Início desktop e celular (375px, sem rolagem horizontal), análise completa, Movimentações no celular, `/backup` → Seus dados, Preferências. Não deu para ver listas cheias — o banco de dev tem poucos dados.
+
 ### U7 — 2026-10-13
 - Menu: Início · Movimentações · Cartões · Configurações (en: Home · Transactions · Cards · Settings; es: Inicio · Movimientos · Tarjetas · Configuración). "Referência" virou "mês" nos textos de escopo de fixos; "efetivar/reverter" viraram "marcar/desmarcar como pago/recebido/feita"; "Gasto extraordinário" virou "Gasto fora do comum"; "Saldo Final" da barra virou "Saldo" e a base da previsão, "Saldo Atual".
 - `PaidToggle`: joinha → caixa (`Square`/`CheckSquare`, `role="checkbox"` + `aria-checked`), mesma API e `loading`.
@@ -331,7 +339,7 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 - **Desvio:** o seletor ainda não mostra saldo nem ícone de reserva ao lado de cada conta — é um `<select>` nativo, que não comporta ícone, e o saldo exigiria buscar o dashboard consolidado só para isso. Avaliar num seletor customizado (U5 ou U16).
 - Verificado por teste de componente (`AccountSelector.test.tsx`); verificação visual segue pendente (ver nota da Fase 0).
 
-### Fase 0 — verificação visual pendente
+### Fase 0 — verificação visual (feita parcialmente em 2026-10-13 com o banco de dev; ver U8)
 - O backend local não sobe: o Atlas recusa a conexão desta máquina (TLS alert 80, IP fora do Network Access) e o login é Google. Por isso U1–U3 foram verificadas só por testes (backend + teste de componente `SummaryBar.test.tsx`). **Ao retomar com o app rodando (local com IP liberado, ou em produção após deploy), conferir:** barra do Fluxo de Caixa com/sem transferência, expandida em mês atual e futuro; Dashboard por conta vs. Fluxo de Caixa da mesma conta (Entradas/Saídas/Saldo iguais); Relatório; cadastro/edição de cartão; tentativa de desativar conta pagadora.
 
 ### U3 — 2026-10-13
