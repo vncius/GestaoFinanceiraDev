@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import '../../i18n';
 import { MovementModal, MovementSubmit } from './MovementModal';
 import { DialogProvider } from '../../contexts/DialogContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Category, FinancialTransaction } from '../../types';
 
 const categories = [
@@ -14,6 +15,7 @@ const accounts = [{ id: 'a1', name: 'Conta', active: true }] as never;
 function renderForm(props: Partial<React.ComponentProps<typeof MovementModal>> = {}) {
   const onSubmit = vi.fn<(d: MovementSubmit) => void>();
   render(
+    <QueryClientProvider client={new QueryClient()}>
     <DialogProvider>
       <MovementModal
         open
@@ -27,7 +29,8 @@ function renderForm(props: Partial<React.ComponentProps<typeof MovementModal>> =
         onSubmit={onSubmit}
         {...props}
       />
-    </DialogProvider>,
+    </DialogProvider>
+    </QueryClientProvider>,
   );
   return { onSubmit };
 }
