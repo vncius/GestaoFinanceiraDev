@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "start": "node dist/server.js",
     "seed": "tsx src/scripts/seed.ts",
+    "seed:demo": "tsx src/scripts/seed-demo.ts",
     "migrate:mongo": "tsx src/scripts/migrate-json-to-mongo.ts",
     "migrate:card-payment-account": "tsx src/scripts/migrate-card-payment-account.ts",
     "test": "vitest run"
