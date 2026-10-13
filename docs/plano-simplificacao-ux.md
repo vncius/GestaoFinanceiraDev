@@ -132,7 +132,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ✅ | 2026-10-13 | ver git log |
 | U10a | Lista única — view-model + leitura + marcar pago | 3 | U9 | ✅ | 2026-10-13 | ver git log |
 | U10b | Lista única — ações, filtros e busca | 3 | U10a | ✅ | 2026-10-13 | ver git log |
-| U10c | Remoção das grids antigas e código morto | 3 | U10b | ⬜ | | |
+| U10c | Remoção das grids antigas e código morto | 3 | U10b | ✅ | 2026-10-13 | ver git log |
 | U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ⬜ | | |
 | U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ⬜ | | |
 | U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ⬜ | | |
@@ -314,6 +314,11 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U10c — 2026-10-13
+- Removidos `EntriesGrid`, `TransactionGrid`, `TransferGrid`, `CreditCardsGrid`, `PageFooterContext` (e o `PageFooterProvider` do `Layout`); `shared.tsx` ficou só com `INPUT`/`Field` usados pelos modais; `useCollapsibleSections` só conhece o grupo `done`. 25 chaves i18n de `cashFlow` sem referência removidas nos 3 idiomas.
+- `CashFlow.tsx` não encolheu nesta entrega (619 linhas): a troca das grids pela lista já tinha acontecido na U10a. O grosso do arquivo são handlers e estado dos modais — encolhe de verdade na U12 (formulário único).
+- Pendência antiga vista no `tsc --noUnusedLocals`: `month`/`year` sem uso em `useCashFlowMutations` (não mexido).
 
 ### U10b — 2026-10-13
 - Ações (editar, excluir, abrir fatura) já tinham entrado na U10a. Esta entrega adicionou: busca (`filterMovements` em `movements.ts`, sem acento/caixa, casando descrição, nome da categoria e conta da transferência) e filtro "Tipo" (Fixos / Fora do comum / Faturas de cartão / Transferências — "mostrar só", combinável com busca, Todos/Entradas/Saídas e categorias). Lista vazia por filtro mostra "Nenhum lançamento encontrado com esses filtros".

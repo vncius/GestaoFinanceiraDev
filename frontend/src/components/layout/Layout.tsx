@@ -9,7 +9,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { QuickAddProvider, useQuickAdd } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
-import { PageFooterProvider } from '../../contexts/PageFooterContext';
 
 const ROUTE_META: Record<
   string,
@@ -147,14 +146,12 @@ export default function Layout() {
             {title}
           </h2>
 
-          <PageFooterProvider>
-            <div className="relative flex-1 min-h-0 flex flex-col">
-              <main className="flex-1 overflow-auto p-3 sm:p-6 pb-20 md:pb-6">
-                <Outlet />
-              </main>
-              <NewEntryButton variant="floating" />
-            </div>
-          </PageFooterProvider>
+          <div className="relative flex-1 min-h-0 flex flex-col">
+            <main className="flex-1 overflow-auto p-3 sm:p-6 pb-20 md:pb-6">
+              <Outlet />
+            </main>
+            <NewEntryButton variant="floating" />
+          </div>
 
           <BottomNav />
         </div>

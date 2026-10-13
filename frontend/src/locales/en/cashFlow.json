@@ -51,13 +51,6 @@
     "projectionRange": "Forecast accumulated from {{from}} to {{to}}"
   },
   "grid": {
-    "new": "New",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "columns": {
-      "description": "Description",
-      "account": "Account"
-    },
     "actions": {
       "edit": "Edit",
       "delete": "Delete"
@@ -67,59 +60,25 @@
     }
   },
   "entriesGrid": {
-    "title": "Income",
-    "columns": {
-      "amount": "Amount",
-      "expectedDate": "Expected date"
-    },
-    "emptyState": {
-      "title": "No income this month",
-      "description": "Click New to add an income"
-    },
     "toggle": {
       "markReceived": "Mark as received",
       "revertReceived": "Mark as not received"
     }
   },
   "transactionGrid": {
-    "columns": {
-      "value": "Amount",
-      "dueDate": "Due date"
-    },
-    "emptyState": {
-      "title": "No records this month"
-    },
     "toggle": {
       "markPaid": "Mark as paid"
     }
   },
   "transferGrid": {
-    "title": "Transfers",
-    "columns": {
-      "counterpart": "Account",
-      "amount": "Amount",
-      "date": "Date"
-    },
     "fromLabel": "From {{account}}",
     "toLabel": "To {{account}}",
     "autoReserveBadge": "Auto reserve",
     "settle": "Mark transfer as done",
-    "revert": "Mark transfer as not done",
-    "emptyState": {
-      "title": "No transfers this month"
-    }
+    "revert": "Mark transfer as not done"
   },
   "creditCardsGrid": {
-    "emptyState": {
-      "title": "No credit card invoices this month"
-    },
-    "title": "Credit Cards",
     "cardFallbackName": "Card",
-    "columns": {
-      "card": "Card",
-      "invoiceAmount": "Invoice amount",
-      "dueDate": "Due date"
-    },
     "toggle": {
       "pay": "Pay invoice",
       "payOverdue": "Overdue invoice — pay"
@@ -213,8 +172,6 @@
     }
   },
   "page": {
-    "paymentsTitle": "Payments",
-    "extraExpensesTitle": "Unusual Expenses",
     "confirmEdit": "This item has already been paid/received. Changing it recalculates balances and indicators. Do you want to continue?",
     "confirmDeleteEffected": "This item is already paid/received. Deleting it marks it as unpaid first and recalculates balances. Do you want to continue?",
     "confirmDelete": "Confirm deletion?",

@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type CashFlowSection = 'transfers' | 'entries' | 'payments' | 'extraExpenses' | 'creditCards' | 'done';
+// Hoje só o grupo Concluídos da lista é recolhível; chaves antigas das grids
+// que ainda estejam no localStorage são simplesmente ignoradas.
+export type CashFlowSection = 'done';
 type OverrideKey = `${CashFlowSection}:${'empty' | 'filled'}`;
 type Overrides = Partial<Record<OverrideKey, boolean>>;
 
@@ -15,10 +17,9 @@ function readOverrides(key: string): Overrides {
   }
 }
 
-// Padrão: card com itens expandido, card vazio recolhido. A escolha do usuário
-// é guardada separadamente para o estado "vazio" e "com itens" de cada card,
-// assim recolher Pagamentos num mês cheio não afeta meses sem lançamentos e
-// o primeiro item adicionado num card vazio expande automaticamente.
+// Padrão: grupo com itens segue defaultExpanded (por padrão, aberto se tiver
+// itens). A escolha do usuário é guardada separadamente para o estado "vazio"
+// e "com itens".
 export function useCollapsibleSections() {
   const { user } = useAuth();
   const key = storageKey(user?.tenantId);

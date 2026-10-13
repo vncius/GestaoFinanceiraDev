@@ -56,6 +56,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - CORS deixou de aceitar qualquer origem (`cors()` sem opções) e passou a ser restrito a `CORS_ORIGIN`.
 
 ### Removed
+- U10c: grids antigas de Movimentações (`EntriesGrid`, `TransactionGrid`, `TransferGrid`, `CreditCardsGrid`), `PageFooterContext` e 25 textos sem uso nos três idiomas.
 - Módulo de Recebimentos (`/receivables`) — substituído por entradas nativas do fluxo de caixa (`FinancialTransaction` tipo `INCOME`); dados antigos migrados por script (refactor de contas PF/PJ, entrega E3).
 - Limites de faturamento anual, saldo mínimo e o campo protegido de categoria (Nota Fiscal) — nenhum resquício na API, UI ou onboarding (entrega E4).
 - Dependências não utilizadas `react-hook-form` e `@hookform/resolvers` do frontend (nenhum uso em `src`).

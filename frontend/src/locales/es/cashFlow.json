@@ -51,13 +51,6 @@
     "projectionRange": "Previstos acumulados de {{from}} a {{to}}"
   },
   "grid": {
-    "new": "Nuevo",
-    "expand": "Expandir",
-    "collapse": "Contraer",
-    "columns": {
-      "description": "Descripción",
-      "account": "Cuenta"
-    },
     "actions": {
       "edit": "Editar",
       "delete": "Eliminar"
@@ -67,59 +60,25 @@
     }
   },
   "entriesGrid": {
-    "title": "Entradas",
-    "columns": {
-      "amount": "Valor",
-      "expectedDate": "Fecha prev."
-    },
-    "emptyState": {
-      "title": "Ninguna entrada este mes",
-      "description": "Haga clic en Nuevo para agregar una entrada"
-    },
     "toggle": {
       "markReceived": "Marcar como recibido",
       "revertReceived": "Desmarcar como recibido"
     }
   },
   "transactionGrid": {
-    "columns": {
-      "value": "Valor",
-      "dueDate": "Fecha de vencimiento"
-    },
-    "emptyState": {
-      "title": "Ningún registro este mes"
-    },
     "toggle": {
       "markPaid": "Marcar como pagado"
     }
   },
   "transferGrid": {
-    "title": "Transferencias",
-    "columns": {
-      "counterpart": "Cuenta",
-      "amount": "Valor",
-      "date": "Fecha"
-    },
     "fromLabel": "De {{account}}",
     "toLabel": "Para {{account}}",
     "autoReserveBadge": "Reserva automática",
     "settle": "Marcar transferencia como hecha",
-    "revert": "Desmarcar transferencia",
-    "emptyState": {
-      "title": "Ninguna transferencia este mes"
-    }
+    "revert": "Desmarcar transferencia"
   },
   "creditCardsGrid": {
-    "emptyState": {
-      "title": "Ninguna factura de tarjeta en este mes"
-    },
-    "title": "Tarjetas de Crédito",
     "cardFallbackName": "Tarjeta",
-    "columns": {
-      "card": "Tarjeta",
-      "invoiceAmount": "Valor factura",
-      "dueDate": "Vencimiento"
-    },
     "toggle": {
       "pay": "Pagar factura",
       "payOverdue": "Factura vencida — pagar"
@@ -213,8 +172,6 @@
     }
   },
   "page": {
-    "paymentsTitle": "Pagos",
-    "extraExpensesTitle": "Gastos Fuera de lo Común",
     "confirmEdit": "Este ítem ya fue pagado/recibido. Modificarlo recalcula los saldos e indicadores. ¿Desea continuar?",
     "confirmDeleteEffected": "Este ítem ya está pagado/recibido. Al eliminarlo se desmarca y los saldos se recalculan. ¿Desea continuar?",
     "confirmDelete": "¿Confirmar eliminación?",
