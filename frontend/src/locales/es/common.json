@@ -39,6 +39,8 @@
     "missingFields": "Complete los campos obligatorios: {{fields}}."
   },
   "quickAdd": {
+    "openButton": "Nuevo",
+    "openButtonHint": "Nuevo movimiento (atajo: N)",
     "title": "Registro Rápido",
     "types": {
       "payment": "Pago",

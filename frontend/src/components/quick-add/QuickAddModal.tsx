@@ -49,6 +49,10 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
   const qc = useQueryClient();
   const { accountId, accounts } = useAccount();
   const isTransfer = form.type === 'transfer';
+  // Transferência só faz sentido com mais de uma conta (D1 do plano de UX).
+  const availableTypes = (Object.keys(TYPE_LABELS) as QuickAddType[]).filter(
+    (type) => type !== 'transfer' || accounts.length > 1,
+  );
   const otherAccounts = sortByName(accounts.filter((a) => a.id !== accountId));
 
   const { data: categories = [] } = useQuery({
@@ -125,7 +129,7 @@ export function QuickAddModal({ open, onClose }: { open: boolean; onClose: () =>
     }>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden w-full">
-          {(Object.keys(TYPE_LABELS) as QuickAddType[]).map((type, i) => (
+          {availableTypes.map((type, i) => (
             <button
               key={type}
               type="button"

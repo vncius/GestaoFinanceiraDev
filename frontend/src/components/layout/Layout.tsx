@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, LogOut, Loader2, UserCircle } from 'lucide-react';
+import { Moon, Sun, LogOut, Loader2, UserCircle, Plus } from 'lucide-react';
 import Sidebar, { BottomNav } from './Sidebar';
 import { MonthNavigator } from '../ui/MonthNavigator';
 import { AccountSelector } from '../ui/AccountSelector';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { QuickAddProvider } from '../../contexts/QuickAddContext';
+import { QuickAddProvider, useQuickAdd } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
 import { PageFooterProvider } from '../../contexts/PageFooterContext';
 
@@ -83,6 +83,33 @@ function ProfileMenu() {
   );
 }
 
+// "+ Novo" global (U6): abre o mesmo lançamento rápido do atalho N. No
+// desktop fica no cabeçalho; no celular vira botão flutuante acima da barra
+// de navegação inferior.
+function NewEntryButton() {
+  const { t } = useTranslation('common');
+  const { openQuickAdd } = useQuickAdd();
+  return (
+    <>
+      <button
+        onClick={openQuickAdd}
+        className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 mr-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+        title={t('quickAdd.openButtonHint')}
+      >
+        <Plus size={16} />
+        {t('quickAdd.openButton')}
+      </button>
+      <button
+        onClick={openQuickAdd}
+        className="md:hidden fixed right-4 bottom-20 z-30 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center mb-[env(safe-area-inset-bottom)]"
+        aria-label={t('quickAdd.openButton')}
+      >
+        <Plus size={24} />
+      </button>
+    </>
+  );
+}
+
 export default function Layout() {
   const { t } = useTranslation('layout');
   const location = useLocation();
@@ -108,6 +135,7 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center justify-end shrink-0 md:flex-1">
+              <NewEntryButton />
               <ProfileMenu />
             </div>
           </header>

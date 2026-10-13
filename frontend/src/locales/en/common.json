@@ -39,6 +39,8 @@
     "missingFields": "Fill in the required fields: {{fields}}."
   },
   "quickAdd": {
+    "openButton": "New",
+    "openButtonHint": "New entry (shortcut: N)",
     "title": "Quick Add",
     "types": {
       "payment": "Payment",

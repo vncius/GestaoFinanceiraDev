@@ -39,6 +39,8 @@
     "missingFields": "Preencha os campos obrigatórios: {{fields}}."
   },
   "quickAdd": {
+    "openButton": "Novo",
+    "openButtonHint": "Novo lançamento (atalho: N)",
     "title": "Lançamento Rápido",
     "types": {
       "payment": "Pagamento",

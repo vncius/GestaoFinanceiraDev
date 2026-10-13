@@ -126,7 +126,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ✅ | 2026-10-13 | ver git log |
 | U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ✅ | 2026-10-13 | ver git log |
-| U6 | Botão global "+ Novo" | 1 | — | ⬜ | | |
+| U6 | Botão global "+ Novo" | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U7 | Vocabulário (D7) em toda a UI | 1 | — | ⬜ | | |
 | U8 | Novo Início (Dashboard) | 2 | U1, U3, U4 | ⬜ | | |
 | U9 | Resumo compacto no topo de Movimentações | 3 | U1, U3 | ⬜ | | |
@@ -301,6 +301,11 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U6 — 2026-10-13
+- `NewEntryButton` em `Layout.tsx`: botão "Novo" no cabeçalho (desktop) e botão flutuante `fixed right-4 bottom-20` (celular, acima da `BottomNav`). Ambos chamam `openQuickAdd` do `QuickAddContext`, o mesmo do atalho N.
+- `QuickAddModal` esconde "Transferência" com uma conta só. O lançamento vai para a última conta específica do seletor (`accountId`), mesmo com "Todas as contas" ativo no Dashboard — a escolha de conta no formulário entra em U12 ("Mais opções → Conta").
+- Atenção para U9/U16: o botão flutuante pode cobrir o canto direito da barra de resumo do Fluxo de Caixa no celular quando expandida; conferir na verificação visual.
 
 ### U5 — 2026-10-13
 - `Sidebar.tsx` exporta `Sidebar` (só desktop) e `BottomNav` (só celular, último filho da coluna do `Layout`, depois do slot do `PageFooter` — não usa `position: fixed`, então não cobre a barra de resumo). O drawer/hambúrguer saiu. Cartões aparece quando há cartão ativo (query `['creditCards']`, a mesma do Fluxo de Caixa).
