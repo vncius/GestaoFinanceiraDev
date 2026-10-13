@@ -15,7 +15,8 @@
     "nextMonth": "Next month"
   },
   "accountSelector": {
-    "label": "Active account"
+    "label": "Active account",
+    "all": "All accounts"
   },
   "payInvoiceModal": {
     "title": "Pay Invoice",

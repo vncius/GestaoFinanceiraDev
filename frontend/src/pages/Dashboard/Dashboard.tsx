@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import { useAccount } from '../../contexts/AccountContext';
-import { SettingsService } from '../../services/settings.service';
 import { DashboardService } from '../../services/dashboard.service';
 import {
   CashFlowSummary,
@@ -338,22 +337,16 @@ function OverviewDonutCard({ summary }: { summary: CashFlowSummary }) {
 export default function Dashboard() {
   const { t } = useTranslation('dashboard');
   const { month, year } = useMonth();
-  const { accountId } = useAccount();
-
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: SettingsService.get,
-    staleTime: Infinity,
-  });
-  const scopedToAccount = settings?.dashboardScope === 'ACCOUNT';
+  // null = "Todas as contas" (consolidado).
+  const { scopeAccountId } = useAccount();
+  const scopedToAccount = scopeAccountId !== null;
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard', scopedToAccount ? accountId : 'ALL', month, year],
-    queryFn: () => DashboardService.get({ month, year, accountId: scopedToAccount ? accountId as string : undefined }),
-    enabled: !settings || !scopedToAccount || !!accountId,
+    queryKey: ['dashboard', scopeAccountId ?? 'ALL', month, year],
+    queryFn: () => DashboardService.get({ month, year, accountId: scopeAccountId ?? undefined }),
   });
 
-  if (isLoading || (scopedToAccount && !accountId)) return <PageLoading />;
+  if (isLoading) return <PageLoading />;
 
   if (isError || !data) {
     return (
@@ -391,7 +384,7 @@ export default function Dashboard() {
             {t('balances.sectionTitle')}
           </h2>
           <a
-            href={`/report?month=${month}&year=${year}${scopedToAccount && accountId ? `&accountId=${accountId}` : ''}`}
+            href={`/report?month=${month}&year=${year}${scopeAccountId ? `&accountId=${scopeAccountId}` : ''}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"

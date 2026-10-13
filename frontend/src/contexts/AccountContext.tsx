@@ -1,12 +1,22 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AccountsService } from '../services/accounts.service';
+import { SettingsService } from '../services/settings.service';
 import { Account } from '../types';
 import { useAuth } from './AuthContext';
 
 interface AccountContextValue {
+  // Última conta específica escolhida — sempre preenchida quando há contas.
+  // Telas que exigem uma conta (Fluxo de Caixa) usam esta.
   accountId: string | null;
   setAccountId: (id: string) => void;
+  // "Todas as contas" (D4 do plano de UX): escolha de visualização, não
+  // configuração. Só tem efeito com mais de uma conta ativa.
+  viewAll: boolean;
+  setViewAll: (value: boolean) => void;
+  // Escopo para telas que aceitam consolidado (Dashboard, Relatório):
+  // null = todas as contas.
+  scopeAccountId: string | null;
   accounts: Account[];
   activeAccount: Account | null;
 }
@@ -14,6 +24,7 @@ interface AccountContextValue {
 const AccountContext = createContext<AccountContextValue | null>(null);
 
 const storageKey = (tenantId: string) => `activeAccountId:${tenantId}`;
+const viewAllKey = (tenantId: string) => `viewAllAccounts:${tenantId}`;
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -27,12 +38,24 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     staleTime: 30_000,
   });
 
+  // settings.dashboardScope só define o valor inicial do "Todas as contas"
+  // no primeiro acesso do tenant; depois vale a escolha salva no seletor.
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: SettingsService.get,
+    enabled: !!user,
+    staleTime: Infinity,
+  });
+
   const [accountId, setAccountIdState] = useState<string | null>(null);
+  const [storedViewAll, setStoredViewAll] = useState<boolean | null>(null);
 
   // Ao trocar de tenant (login/logout), recarrega a seleção salva daquele tenant
   // — nunca herda a seleção de um tenant anterior.
   useEffect(() => {
     setAccountIdState(tenantId ? localStorage.getItem(storageKey(tenantId)) : null);
+    const saved = tenantId ? localStorage.getItem(viewAllKey(tenantId)) : null;
+    setStoredViewAll(saved === null ? null : saved === 'true');
   }, [tenantId]);
 
   // Garante que a seleção aponta para uma conta que existe (ex.: primeiro
@@ -57,10 +80,19 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     queryClient.resetQueries({ queryKey: ['cashFlow'] });
   }
 
+  function setViewAll(value: boolean) {
+    setStoredViewAll(value);
+    if (tenantId) localStorage.setItem(viewAllKey(tenantId), String(value));
+  }
+
+  const viewAll = storedViewAll ?? settings?.dashboardScope !== 'ACCOUNT';
+  const scopeAccountId = viewAll && accounts.length > 1 ? null : accountId;
   const activeAccount = accounts.find((a) => a.id === accountId) ?? null;
 
   return (
-    <AccountContext.Provider value={{ accountId, setAccountId, accounts, activeAccount }}>
+    <AccountContext.Provider
+      value={{ accountId, setAccountId, viewAll, setViewAll, scopeAccountId, accounts, activeAccount }}
+    >
       {children}
     </AccountContext.Provider>
   );

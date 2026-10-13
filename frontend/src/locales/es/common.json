@@ -15,7 +15,8 @@
     "nextMonth": "Mes siguiente"
   },
   "accountSelector": {
-    "label": "Cuenta activa"
+    "label": "Cuenta activa",
+    "all": "Todas las cuentas"
   },
   "payInvoiceModal": {
     "title": "Pagar Factura",

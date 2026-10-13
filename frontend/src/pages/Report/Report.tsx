@@ -5,8 +5,6 @@ import { Printer, ArrowLeft } from 'lucide-react';
 import { DashboardService } from '../../services/dashboard.service';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { useMonth } from '../../contexts/MonthContext';
-import { useAccount } from '../../contexts/AccountContext';
-import { SettingsService } from '../../services/settings.service';
 import { formatCurrency } from '../../utils/money';
 import { formatMonthYear } from '../../utils/date';
 import { summarizeMonth } from '../../utils/month-summary';
@@ -81,23 +79,17 @@ function EvolutionTable({ evolution }: { evolution: MonthlyEvolutionItem[] }) {
 export default function Report() {
   const { t } = useTranslation('report');
   const { month: currentMonth, year: currentYear } = useMonth();
-  const { accountId: contextAccountId } = useAccount();
   const [params] = useSearchParams();
   const month = Number(params.get('month')) || currentMonth;
   const year = Number(params.get('year')) || currentYear;
-  const accountIdParam = params.get('accountId') ?? contextAccountId ?? undefined;
-
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: SettingsService.get,
-    staleTime: Infinity,
-  });
-  const scopedToAccount = settings?.dashboardScope === 'ACCOUNT';
+  // O link do Dashboard só leva accountId quando o seletor está numa conta;
+  // sem ele, o relatório é consolidado (mesma regra do Dashboard).
+  const scopeAccountId = params.get('accountId');
+  const scopedToAccount = scopeAccountId !== null;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard', scopedToAccount ? accountIdParam : 'ALL', month, year],
-    queryFn: () => DashboardService.get({ month, year, accountId: scopedToAccount ? accountIdParam : undefined }),
-    enabled: !settings || !scopedToAccount || !!accountIdParam,
+    queryKey: ['dashboard', scopeAccountId ?? 'ALL', month, year],
+    queryFn: () => DashboardService.get({ month, year, accountId: scopeAccountId ?? undefined }),
   });
 
   if (isLoading || !data) return <PageLoading />;

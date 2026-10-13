@@ -24,15 +24,7 @@
     "bankLabel": "Banco",
     "limitLabel": "Límite"
   },
-  "general": {
-    "dashboardScopeTitle": "Panel Inicial",
-    "dashboardScopeLabel": "Alcance del panel",
-    "dashboardScopeTooltip": "Consolidado suma el resumen, alertas y gráficos de todas las cuentas activas. Por cuenta muestra solo la cuenta seleccionada en el selector superior.",
-    "dashboardScopeConsolidated": "Consolidado (todas las cuentas)",
-    "dashboardScopeAccount": "Por cuenta",
-    "saveButton": "Guardar configuración",
-    "savedMessage": "¡Guardado!",
-    "dangerZoneTitle": "Zona de peligro",
+  "general": {    "dangerZoneTitle": "Zona de peligro",
     "resetButton": "Restablecer cuenta",
     "resetDescription": "Elimina todos los datos y configuraciones de su cuenta: cuentas, categorías, movimientos, tarjetas y configuraciones. Esta acción no se puede deshacer — recomendamos descargar una copia de seguridad antes, en Copia de Seguridad y Exportación.",
     "resetConfirmTitle": "Restablecer cuenta",

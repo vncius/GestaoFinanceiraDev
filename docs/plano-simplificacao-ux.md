@@ -124,7 +124,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U1 | Regra única de resumo mensal + totais pendentes | 0 | — | ✅ | 2026-10-13 | ver git log |
 | U2 | Cartão com conta pagadora obrigatória | 0 | — | ✅ | 2026-10-13 | ver git log |
 | U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ✅ | 2026-10-13 | ver git log |
-| U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ⬜ | | |
+| U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ✅ | 2026-10-13 | ver git log |
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ⬜ | | |
 | U6 | Botão global "+ Novo" | 1 | — | ⬜ | | |
 | U7 | Vocabulário (D7) em toda a UI | 1 | — | ⬜ | | |
@@ -301,6 +301,14 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U4 — 2026-10-13
+- `AccountContext` ganhou `viewAll`/`setViewAll` (localStorage `viewAllAccounts:<tenant>`; sem valor salvo, vale `settings.dashboardScope !== 'ACCOUNT'`) e `scopeAccountId` (null = todas; com 1 conta, sempre a própria conta). `accountId` continua sendo a última conta específica, usada pelo Fluxo de Caixa.
+- Backend: `DashboardService` não lê mais settings; escopo = presença de `accountId` (removidos o erro `dashboard.accountRequired` e a dependência de `SettingsRepository`).
+- Relatório: escopo vem só da URL (`accountId` presente = por conta), igual ao link do Dashboard.
+- Aba Geral ficou só com a zona de perigo (sai em U5). Chaves i18n `general.dashboardScope*`/`saveButton`/`savedMessage` removidas.
+- **Desvio:** o seletor ainda não mostra saldo nem ícone de reserva ao lado de cada conta — é um `<select>` nativo, que não comporta ícone, e o saldo exigiria buscar o dashboard consolidado só para isso. Avaliar num seletor customizado (U5 ou U16).
+- Verificado por teste de componente (`AccountSelector.test.tsx`); verificação visual segue pendente (ver nota da Fase 0).
 
 ### Fase 0 — verificação visual pendente
 - O backend local não sobe: o Atlas recusa a conexão desta máquina (TLS alert 80, IP fora do Network Access) e o login é Google. Por isso U1–U3 foram verificadas só por testes (backend + teste de componente `SummaryBar.test.tsx`). **Ao retomar com o app rodando (local com IP liberado, ou em produção após deploy), conferir:** barra do Fluxo de Caixa com/sem transferência, expandida em mês atual e futuro; Dashboard por conta vs. Fluxo de Caixa da mesma conta (Entradas/Saídas/Saldo iguais); Relatório; cadastro/edição de cartão; tentativa de desativar conta pagadora.

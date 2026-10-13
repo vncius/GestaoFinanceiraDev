@@ -7,8 +7,6 @@ import { CreditCardEntriesRepository } from '../credit-cards/credit-cards.reposi
 import { CreditCardInstallmentsRepository } from '../credit-cards/credit-cards.repository';
 import { CardEntryType, CreditCardInvoice, InstallmentStatus, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CategoriesRepository } from '../categories/categories.repository';
-import { SettingsRepository } from '../settings/settings.repository';
-import { AppError } from '../../shared/errors/app-error';
 import {
   AlertSeverity,
   AlertType,
@@ -66,7 +64,6 @@ export class DashboardService {
     private readonly categoriesRepo: CategoriesRepository,
     private readonly cardEntriesRepo: CreditCardEntriesRepository,
     private readonly installmentsRepo: CreditCardInstallmentsRepository,
-    private readonly settingsRepo: SettingsRepository,
   ) {}
 
   async getDashboard(tenantId: string, query: DashboardQuery): Promise<DashboardResponse> {
@@ -75,16 +72,11 @@ export class DashboardService {
     const year = query.year ?? now.getFullYear();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const settings = await this.settingsRepo.get(tenantId);
-    const scopedToAccount = settings?.dashboardScope === 'ACCOUNT';
-    if (scopedToAccount && !query.accountId) {
-      throw new AppError(
-        'Selecione uma conta para o dashboard por conta.',
-        400,
-        'dashboard.accountRequired',
-      );
-    }
+    // Escopo decidido pela query (D4 do plano de UX): com accountId, só
+    // aquela conta; sem, consolidado de todas as contas ativas. O antigo
+    // settings.dashboardScope virou só o valor inicial do seletor no front.
     const accountId = query.accountId ?? null;
+    const scopedToAccount = accountId !== null;
 
     // Um retrato só dos dados do fluxo de caixa, compartilhado entre os
     // cálculos daqui e os resumos por conta lá embaixo. Vem primeiro porque

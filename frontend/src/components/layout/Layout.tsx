@@ -13,8 +13,11 @@ import { QuickAddProvider } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
 import { PageFooterProvider } from '../../contexts/PageFooterContext';
 
-const ROUTE_META: Record<string, { titleKey: string; showMonthNav?: boolean; showAccountSelector?: boolean }> = {
-  '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true, showAccountSelector: true },
+const ROUTE_META: Record<
+  string,
+  { titleKey: string; showMonthNav?: boolean; showAccountSelector?: boolean; allowAllAccounts?: boolean }
+> = {
+  '/dashboard': { titleKey: 'nav.dashboard', showMonthNav: true, showAccountSelector: true, allowAllAccounts: true },
   '/cash-flow': { titleKey: 'nav.cashFlow', showMonthNav: true, showAccountSelector: true },
   '/credit-cards': { titleKey: 'nav.creditCards', showMonthNav: true },
   '/backup': { titleKey: 'nav.backup' },
@@ -67,7 +70,7 @@ export default function Layout() {
             </h2>
 
             <div className="flex-1 flex items-center justify-end gap-3 md:flex-1 md:justify-center min-w-0">
-              {meta?.showAccountSelector && <AccountSelector />}
+              {meta?.showAccountSelector && <AccountSelector allowAll={meta.allowAllAccounts} />}
               {meta?.showMonthNav && <MonthNavigator />}
             </div>
 

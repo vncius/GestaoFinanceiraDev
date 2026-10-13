@@ -24,15 +24,7 @@
     "bankLabel": "Bank",
     "limitLabel": "Limit"
   },
-  "general": {
-    "dashboardScopeTitle": "Home Dashboard",
-    "dashboardScopeLabel": "Dashboard scope",
-    "dashboardScopeTooltip": "Consolidated adds up the summary, alerts, and charts across all active accounts. Per account shows only the account selected in the top selector.",
-    "dashboardScopeConsolidated": "Consolidated (all accounts)",
-    "dashboardScopeAccount": "Per account",
-    "saveButton": "Save settings",
-    "savedMessage": "Saved!",
-    "dangerZoneTitle": "Danger zone",
+  "general": {    "dangerZoneTitle": "Danger zone",
     "resetButton": "Reset account",
     "resetDescription": "Deletes all data and settings from your account: accounts, categories, entries, cards, and settings. This action cannot be undone — we recommend downloading a backup first, under Backup and Export.",
     "resetConfirmTitle": "Reset account",

@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Trash2, Plus, Check, AlertTriangle } from 'lucide-react';
-import { SettingsService } from '../../services/settings.service';
+import { Pencil, Trash2, Plus, AlertTriangle } from 'lucide-react';
 import { BackupService } from '../../services/backup.service';
 import { AccountsService, CreateAccountPayload } from '../../services/accounts.service';
 import { AccountTypesService, CreateAccountTypePayload } from '../../services/account-types.service';
@@ -12,7 +11,7 @@ import {
   CreditCardsService,
   CreateCreditCardPayload,
 } from '../../services/credit-cards.service';
-import { Account, AccountTypeItem, Category, CreditCard, DashboardScope, FinancialSettings } from '../../types';
+import { Account, AccountTypeItem, Category, CreditCard } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { IconActionButton } from '../../components/ui/IconActionButton';
@@ -57,10 +56,6 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 // ── General Tab ───────────────────────────────────────────────────────────────
-
-interface GeneralFormState {
-  dashboardScope: DashboardScope;
-}
 
 function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('settings');
@@ -131,78 +126,14 @@ function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => vo
   );
 }
 
-function GeneralTab({
-  settings,
-}: {
-  settings: FinancialSettings;
-}) {
+// O escopo do dashboard saiu daqui (D4 do plano de UX): virou a opção
+// "Todas as contas" do seletor no topo. Sobra a zona de perigo.
+function GeneralTab() {
   const { t } = useTranslation('settings');
-  const qc = useQueryClient();
   const [resetOpen, setResetOpen] = useState(false);
-
-  const initForm = (s: FinancialSettings): GeneralFormState => ({
-    dashboardScope: s.dashboardScope,
-  });
-
-  const [form, setForm] = useState<GeneralFormState>(() => initForm(settings));
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setForm(initForm(settings));
-  }, [settings.id]);
-
-  const updateMut = useMutation({
-    mutationFn: SettingsService.update,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['settings'] });
-      qc.invalidateQueries({ queryKey: ['categories'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    },
-  });
-
-  function handleSave() {
-    updateMut.mutate({
-      dashboardScope: form.dashboardScope,
-    });
-  }
 
   return (
     <div className="space-y-5 max-w-2xl">
-      <SectionCard title={t('general.dashboardScopeTitle')}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field
-            label={
-              <span className="inline-flex items-center gap-1">
-                {t('general.dashboardScopeLabel')}
-                <HelpTip text={t('general.dashboardScopeTooltip')} />
-              </span>
-            }
-          >
-            <select
-              className={INPUT}
-              value={form.dashboardScope}
-              onChange={(e) => setForm({ dashboardScope: e.target.value as DashboardScope })}
-            >
-              <option value="CONSOLIDATED">{t('general.dashboardScopeConsolidated')}</option>
-              <option value="ACCOUNT">{t('general.dashboardScopeAccount')}</option>
-            </select>
-          </Field>
-        </div>
-      </SectionCard>
-
-      <div className="flex items-center gap-3">
-        <Button onClick={handleSave} loading={updateMut.isPending}>
-          {t('general.saveButton')}
-        </Button>
-        {saved && (
-          <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 font-medium">
-            <Check size={14} /> {t('general.savedMessage')}
-          </span>
-        )}
-      </div>
-
       <SectionCard title={t('general.dangerZoneTitle')}>
         <div className="space-y-3">
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -1284,18 +1215,13 @@ export default function Settings() {
   const { t } = useTranslation('settings');
   const [tab, setTab] = useState<SettingsTab>('general');
 
-  const { data: settings, isLoading: loadingSettings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: SettingsService.get,
-  });
   const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
     queryKey: ['accounts'],
     queryFn: AccountsService.findAll,
     staleTime: 30_000,
   });
 
-  if (loadingSettings || loadingAccounts) return <PageLoading />;
-  if (!settings) return null;
+  if (loadingAccounts) return <PageLoading />;
 
   return (
     <div className="space-y-5">
@@ -1316,7 +1242,7 @@ export default function Settings() {
         ))}
       </div>
 
-      {tab === 'general' && <GeneralTab settings={settings} />}
+      {tab === 'general' && <GeneralTab />}
       {tab === 'accounts' && <AccountsTab />}
       {tab === 'accountTypes' && <AccountTypesTab />}
       {tab === 'categories' && <CategoriesTab />}

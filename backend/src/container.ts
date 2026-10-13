@@ -121,7 +121,6 @@ const dashboardService = new DashboardService(
   categoriesRepo,
   creditCardEntriesRepo,
   creditCardInstallmentsRepo,
-  settingsRepo,
 );
 const backupService = new BackupService(
   accountsRepo,
