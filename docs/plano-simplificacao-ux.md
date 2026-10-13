@@ -123,7 +123,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 |---|---|---|---|---|---|---|
 | U1 | Regra única de resumo mensal + totais pendentes | 0 | — | ✅ | 2026-10-13 | ver git log |
 | U2 | Cartão com conta pagadora obrigatória | 0 | — | ✅ | 2026-10-13 | ver git log |
-| U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ⬜ | | |
+| U3 | Rótulo explícito do previsto acumulado | 0 | U1 | ✅ | 2026-10-13 | ver git log |
 | U4 | Seletor com "Todas as contas" (substitui `dashboardScope` na UI) | 1 | — | ⬜ | | |
 | U5 | Navegação, cabeçalho e Configurações reorganizados | 1 | U4 | ⬜ | | |
 | U6 | Botão global "+ Novo" | 1 | — | ⬜ | | |
@@ -301,6 +301,13 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### Fase 0 — verificação visual pendente
+- O backend local não sobe: o Atlas recusa a conexão desta máquina (TLS alert 80, IP fora do Network Access) e o login é Google. Por isso U1–U3 foram verificadas só por testes (backend + teste de componente `SummaryBar.test.tsx`). **Ao retomar com o app rodando (local com IP liberado, ou em produção após deploy), conferir:** barra do Fluxo de Caixa com/sem transferência, expandida em mês atual e futuro; Dashboard por conta vs. Fluxo de Caixa da mesma conta (Entradas/Saídas/Saldo iguais); Relatório; cadastro/edição de cartão; tentativa de desativar conta pagadora.
+
+### U3 — 2026-10-13
+- `projectionRange(month, year)` em `utils/month-summary.ts` + `formatMonthYearShort` em `utils/date.ts` ("out/26", no idioma ativo). Na barra expandida, mês futuro mostra "Previstos acumulados de out/26 a dez/26" acima da linha de previstos. O Início (U8) deve reaproveitar o mesmo helper.
+- Observação: `formatMonthYear` ainda é só em português (nomes fixos) — pré-existente; considerar em U7.
 
 ### U2 — 2026-10-13
 - Implementado como **migração de boot** (`shared/migrations/migrate-card-payment-account.ts`, chamada em `server.ts`, padrão das migrações E*) + script avulso `npm run migrate:card-payment-account [-- --dry-run]`. Além de nulos, também corrige pagadora apontando para conta inexistente ou **inativa** (fatura de conta inativa não aparece em fluxo nenhum).

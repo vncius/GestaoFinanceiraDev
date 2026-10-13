@@ -47,3 +47,11 @@ export function monthYearFromDate(iso: string): { month: number; year: number } 
   const parts = iso.slice(0, 10).split('-').map(Number);
   return { month: parts[1], year: parts[0] };
 }
+
+// "out/26" — mês abreviado no idioma informado + ano com dois dígitos.
+export function formatMonthYearShort(month: number, year: number, locale = 'pt-BR'): string {
+  const name = new Intl.DateTimeFormat(locale, { month: 'short' })
+    .format(new Date(year, month - 1, 1))
+    .replace('.', '');
+  return `${name}/${String(year).slice(2)}`;
+}

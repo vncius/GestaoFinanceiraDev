@@ -50,3 +50,17 @@ export function summarizeMonth(s: CashFlowSummary): MonthSummaryView {
     projectedBalance: s.projectedBalance,
   };
 }
+
+export interface MonthRef {
+  month: number;
+  year: number;
+}
+
+// Em mês futuro, os previstos (expected*/projectedBalance) acumulam desde o
+// mês atual até o selecionado — o rótulo precisa dizer o intervalo. Mês
+// atual ou passado: null (o previsto é só do próprio mês).
+export function projectionRange(month: number, year: number, today: Date = new Date()): { from: MonthRef; to: MonthRef } | null {
+  const current = { month: today.getMonth() + 1, year: today.getFullYear() };
+  const isFuture = year > current.year || (year === current.year && month > current.month);
+  return isFuture ? { from: current, to: { month, year } } : null;
+}

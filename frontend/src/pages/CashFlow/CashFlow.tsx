@@ -481,6 +481,8 @@ export default function CashFlow() {
       <PageFooter>
         <SummaryBar
           summary={summary}
+          month={month}
+          year={year}
           expanded={summaryExpanded}
           onToggleExpanded={() => setSummaryExpanded((e) => !e)}
         />

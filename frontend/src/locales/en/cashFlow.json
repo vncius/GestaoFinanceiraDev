@@ -33,7 +33,8 @@
     "expectedBetweenAccounts": "Exp. Between accounts",
     "expectedExpense": "Exp. Expenses",
     "projectedBalance": "Proj. Balance",
-    "projectedBalanceTooltip": "Projected balance of the selected account including entries not yet settled."
+    "projectedBalanceTooltip": "Projected balance of the selected account including entries not yet settled.",
+    "projectionRange": "Forecast accumulated from {{from}} to {{to}}"
   },
   "grid": {
     "new": "New",

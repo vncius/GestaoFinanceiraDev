@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CashFlowSummary } from '../types';
-import { summarizeMonth } from './month-summary';
+import { projectionRange, summarizeMonth } from './month-summary';
 
 // Resumo coerente com o backend: realizedBalance e projectedBalance já vêm
 // fechados a partir das parcelas abaixo.
@@ -52,5 +52,19 @@ describe('summarizeMonth', () => {
     expect(v.pendingIncome).toBe(20000);
     expect(v.pendingExpenses).toBe(27000);
     expect(v.pendingExpensesCount).toBe(2);
+  });
+});
+
+describe('projectionRange', () => {
+  const today = new Date(2026, 9, 13); // 13/10/2026
+
+  it('é null no mês atual e em meses passados', () => {
+    expect(projectionRange(10, 2026, today)).toBeNull();
+    expect(projectionRange(9, 2026, today)).toBeNull();
+    expect(projectionRange(12, 2025, today)).toBeNull();
+  });
+
+  it('em mês futuro vai do mês atual ao selecionado, inclusive virando o ano', () => {
+    expect(projectionRange(2, 2027, today)).toEqual({ from: { month: 10, year: 2026 }, to: { month: 2, year: 2027 } });
   });
 });

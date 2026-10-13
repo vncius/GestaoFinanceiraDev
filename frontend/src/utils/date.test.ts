@@ -4,6 +4,7 @@ import {
   formatDate,
   formatDateShort,
   formatMonthYear,
+  formatMonthYearShort,
   monthYearFromDate,
   toInputDate,
 } from './date';
@@ -46,5 +47,12 @@ describe('firstDayOfMonthISO', () => {
 describe('monthYearFromDate', () => {
   it('extracts month and year from an ISO date', () => {
     expect(monthYearFromDate('2026-07-15')).toEqual({ month: 7, year: 2026 });
+  });
+});
+
+describe('formatMonthYearShort', () => {
+  it('abrevia o mês sem ponto e usa o ano com dois dígitos', () => {
+    expect(formatMonthYearShort(10, 2026, 'pt-BR')).toBe('out/26');
+    expect(formatMonthYearShort(1, 2027, 'en-US')).toBe('Jan/27');
   });
 });

@@ -33,7 +33,8 @@
     "expectedBetweenAccounts": "Prev. Entre contas",
     "expectedExpense": "Prev. Saídas",
     "projectedBalance": "Prev. Saldo",
-    "projectedBalanceTooltip": "Saldo previsto da conta selecionada considerando lançamentos ainda não efetivados."
+    "projectedBalanceTooltip": "Saldo previsto da conta selecionada considerando lançamentos ainda não efetivados.",
+    "projectionRange": "Previstos acumulados de {{from}} a {{to}}"
   },
   "grid": {
     "new": "Novo",

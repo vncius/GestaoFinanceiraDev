@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { CashFlowSummary } from '../../../types';
 import { formatCurrency } from '../../../utils/money';
 import { HelpTip } from '../../../components/ui/Tooltip';
-import { summarizeMonth } from '../../../utils/month-summary';
+import { projectionRange, summarizeMonth } from '../../../utils/month-summary';
+import { formatMonthYearShort } from '../../../utils/date';
 
 function SummaryCell({
   label,
@@ -59,15 +60,28 @@ function ToggleSpacer({ label }: { label: string }) {
 
 export function SummaryBar({
   summary: s,
+  month,
+  year,
   expanded,
   onToggleExpanded,
 }: {
   summary: CashFlowSummary;
+  month: number;
+  year: number;
   expanded: boolean;
   onToggleExpanded: () => void;
 }) {
-  const { t } = useTranslation('cashFlow');
+  const { t, i18n } = useTranslation('cashFlow');
   const v = summarizeMonth(s);
+  // Em mês futuro os previstos acumulam desde o mês atual: o intervalo vai
+  // escrito na linha de previstos para não parecer valor só deste mês.
+  const range = projectionRange(month, year);
+  const rangeLabel = range
+    ? t('summaryBar.projectionRange', {
+        from: formatMonthYearShort(range.from.month, range.from.year, i18n.language),
+        to: formatMonthYearShort(range.to.month, range.to.year, i18n.language),
+      })
+    : null;
   // Transferência não é entrada nem saída: tem coluna própria, exibida só
   // quando há alguma no mês (realizada ou prevista). Nas duas linhas, para
   // não desalinhar as colunas quando a barra está expandida.
@@ -101,8 +115,13 @@ export function SummaryBar({
         </button>
       </div>
 
+      {expanded && rangeLabel && (
+        <p className="px-3 sm:px-6 pt-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-400 text-right border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
+          {rangeLabel}
+        </p>
+      )}
       {expanded && (
-        <div className="flex items-center px-3 sm:px-6 py-2 border-t border-gray-100 dark:border-gray-700 sm:border-t-0">
+        <div className={`flex items-center px-3 sm:px-6 py-2 ${rangeLabel ? '' : 'border-t border-gray-100 dark:border-gray-700 sm:border-t-0'}`}>
           <SummaryRow>
             <SummaryCell label={t('summaryBar.projectedInitialBalance')} tooltip={t('summaryBar.projectedInitialBalanceTooltip')} value={v.projectedBase} color={initialColor} />
             <SummaryCell label={t('summaryBar.expectedIncome')} value={v.expectedIncome} color="text-green-600 dark:text-green-400" />
