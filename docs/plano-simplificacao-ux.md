@@ -134,7 +134,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U10b | Lista única — ações, filtros e busca | 3 | U10a | ✅ | 2026-10-13 | ver git log |
 | U10c | Remoção das grids antigas e código morto | 3 | U10b | ✅ | 2026-10-13 | ver git log |
 | U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ✅ | 2026-10-13 | ver git log |
-| U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ⬜ | | |
+| U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ✅ | 2026-10-13 | ver git log |
 | U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ⬜ | | |
 | U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ⬜ | | |
 | U15 | "+ Nova categoria" inline nos formulários | 4 | U12 | ⬜ | | |
@@ -314,6 +314,12 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U12 — 2026-10-13
+- `components/movement/MovementModal.tsx`: Saída/Entrada, descrição, valor, data, categoria, "Já paguei/recebi" (só na criação: cria e efetiva); "Mais opções": repete todo mês, gasto fora do comum (só saída), conta (se > 1), observações. Edição trava o tipo; lançamento fixo mostra aviso em vez do seletor. Usado em Movimentações (substitui `IncomeModal`/`TransactionModal`, apagados) e no "+ Novo"/atalho N (`QuickAddModal` reescrito; "Transferência entre suas contas" troca para o `TransferModal`).
+- `CurrencyInput` reescrito para ler o valor no `onChange` (dígitos → centavos): colar e teclado virtual funcionam. Testes em `CurrencyInput.test.tsx`.
+- Verificado no navegador (dev): digitação real no valor, criação de saída. Lançamento de teste "Feira (teste)" ficou no banco de dev.
+- Backlog do usuário registrado em `docs/backlog.md` (caixinhas de reserva; relatório mensal com IA).
 
 ### U11 — 2026-10-13
 - `MonthActionsMenu` em `CashFlowFilterBar.tsx`: Importar extrato bancário (modal com `StatementImportSection` de `Backup.tsx`, agora exportada, com `embedded` e já com a conta da tela selecionada), Exportar lançamentos do mês (CSV, `BackupService.downloadCsv` com o 1º e o último dia do mês) e Limpar mês (separado, vermelho). Saíram da barra "Nova Transferência" (está no "Novo ▾" da lista desde a U10a) e "Limpar mês"; chave `filterBar.newTransferButton` removida.

@@ -40,24 +40,7 @@
   },
   "quickAdd": {
     "openButton": "Nuevo",
-    "openButtonHint": "Nuevo movimiento (atajo: N)",
-    "title": "Registro Rápido",
-    "types": {
-      "payment": "Pago",
-      "extraExpense": "Gasto Extra",
-      "income": "Ingreso",
-      "transfer": "Transferencia"
-    },
-    "fields": {
-      "description": "Descripción",
-      "category": "Categoría",
-      "targetAccount": "Cuenta de destino",
-      "date": "Fecha",
-      "amount": "Monto"
-    },
-    "categoryPlaceholder": "Selecciona...",
-    "cancel": "Cancelar",
-    "save": "Guardar"
+    "openButtonHint": "Nuevo movimiento (atajo: N)"
   },
   "shortcuts": {
     "title": "Atajos de teclado",

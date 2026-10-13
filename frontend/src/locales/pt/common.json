@@ -40,24 +40,7 @@
   },
   "quickAdd": {
     "openButton": "Novo",
-    "openButtonHint": "Novo lançamento (atalho: N)",
-    "title": "Lançamento Rápido",
-    "types": {
-      "payment": "Pagamento",
-      "extraExpense": "Gasto Extra",
-      "income": "Entrada",
-      "transfer": "Transferência"
-    },
-    "fields": {
-      "description": "Descrição",
-      "category": "Categoria",
-      "targetAccount": "Conta de destino",
-      "date": "Data",
-      "amount": "Valor"
-    },
-    "categoryPlaceholder": "Selecione...",
-    "cancel": "Cancelar",
-    "save": "Salvar"
+    "openButtonHint": "Novo lançamento (atalho: N)"
   },
   "shortcuts": {
     "title": "Atalhos de teclado",

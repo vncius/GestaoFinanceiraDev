@@ -1,13 +1,4 @@
-import { useTranslation } from 'react-i18next';
-import { FinancialTransaction, RecurrenceType, TransferFlowItem } from '../../types';
-
-export function useRecurrenceLabels(): Record<RecurrenceType, string> {
-  const { t } = useTranslation('cashFlow');
-  return {
-    UNIQUE: t('recurrence.unique'),
-    FIXED: t('recurrence.fixed'),
-  };
-}
+import { FinancialTransaction, TransferFlowItem } from '../../types';
 
 export type ModalKind =
   | { type: 'income'; mode: 'create' | 'edit'; item?: FinancialTransaction }

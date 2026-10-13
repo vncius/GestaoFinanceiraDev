@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const MAX_CENTS = 999_999_999;
+
 function centsToDisplay(cents: number): string {
   if (cents === 0) return '';
   const str = String(cents).padStart(3, '0');
@@ -14,6 +16,17 @@ function parseToCents(floatStr: string): number {
   const f = parseFloat(floatStr);
   if (isNaN(f)) return 0;
   return Math.round(f * 100);
+}
+
+// Máscara "da direita para a esquerda": os dígitos do texto viram centavos.
+// Lê o valor do próprio campo (onChange) em vez de interceptar teclas — assim
+// funciona ao colar e em teclados virtuais do Android, que mandam keydown com
+// key "Unidentified" (U12 do plano de UX).
+export function digitsToCents(text: string): number {
+  const digits = text.replace(/\D/g, '').replace(/^0+/, '');
+  if (!digits) return 0;
+  const n = Number(digits.slice(0, String(MAX_CENTS).length));
+  return Math.min(n, MAX_CENTS);
 }
 
 interface CurrencyInputProps {
@@ -31,30 +44,21 @@ export function CurrencyInput({ value, onChange, className = '', placeholder = '
     setCents((prev) => (prev !== next ? next : prev));
   }, [value]);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      const n = Math.floor(cents / 10);
-      setCents(n);
-      onChange(n === 0 ? '' : String(n / 100));
-    } else if (e.key >= '0' && e.key <= '9') {
-      e.preventDefault();
-      const n = cents * 10 + parseInt(e.key);
-      if (n > 999_999_999) return;
-      setCents(n);
-      onChange(String(n / 100));
-    }
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const n = digitsToCents(e.target.value);
+    setCents(n);
+    onChange(n === 0 ? '' : String(n / 100));
   }
 
   return (
     <input
       type="text"
       inputMode="numeric"
+      autoComplete="off"
       className={className}
       value={centsToDisplay(cents)}
       placeholder={placeholder}
-      onKeyDown={handleKeyDown}
-      onChange={() => {}}
+      onChange={handleChange}
     />
   );
 }

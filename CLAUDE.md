@@ -6,6 +6,10 @@
 
 Ao pedir para "continuar o plano", "seguir para a próxima etapa" ou citar uma entrega (U1, U2, …): leia o plano inteiro e siga a seção **Como continuar**. O plano é a fonte de verdade do andamento: atualize a tabela **Status** e as **Notas de implementação** ao concluir cada entrega.
 
+## Backlog
+
+Ideias para depois (fora do plano atual): [`docs/backlog.md`](docs/backlog.md).
+
 ## Comandos
 
 - Frontend: `cd frontend && npm run build` (inclui `tsc`) · `npm test`

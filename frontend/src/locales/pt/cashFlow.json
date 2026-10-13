@@ -89,64 +89,6 @@
       "openInvoice": "Abrir fatura"
     }
   },
-  "recurrence": {
-    "unique": "Único",
-    "fixed": "Fixo (recorrente)"
-  },
-  "transactionModal": {
-    "title": {
-      "newPayment": "Novo Pagamento",
-      "editPayment": "Editar Pagamento",
-      "newExtraExpense": "Novo Gasto Fora do Comum",
-      "editExtraExpense": "Editar Gasto Fora do Comum"
-    },
-    "fields": {
-      "description": "Descrição *",
-      "category": "Categoria *",
-      "selectPlaceholder": "Selecione...",
-      "entryDate": "Data de lançamento *",
-      "amount": "Valor *",
-      "debitAccount": "Conta de débito",
-      "recurrenceType": "Tipo de lançamento",
-      "notes": "Observações"
-    },
-    "fixedRecurrenceHint": "Para encerrar a recorrência, exclua \"esta e as futuras\".",
-    "delete": "Excluir",
-    "cancel": "Cancelar",
-    "pay": "Pagar",
-    "save": "Salvar",
-    "validation": {
-      "description": "Descrição",
-      "category": "Categoria",
-      "amount": "Valor"
-    }
-  },
-  "incomeModal": {
-    "title": {
-      "new": "Nova Entrada",
-      "edit": "Editar Entrada"
-    },
-    "delete": "Excluir",
-    "cancel": "Cancelar",
-    "receive": "Receber",
-    "save": "Salvar",
-    "fields": {
-      "description": "Descrição *",
-      "category": "Categoria *",
-      "selectPlaceholder": "Selecione...",
-      "expectedDate": "Data prevista *",
-      "amount": "Valor *",
-      "recurrenceType": "Tipo de lançamento",
-      "targetAccount": "Conta de destino",
-      "notes": "Observações"
-    },
-    "fixedRecurrenceHint": "Para encerrar a recorrência, exclua \"esta e as futuras\".",
-    "validation": {
-      "description": "Descrição",
-      "category": "Categoria",
-      "amount": "Valor"
-    }
-  },
   "transferModal": {
     "title": {
       "new": "Nova Transferência",
@@ -215,5 +157,52 @@
     },
     "invoiceOf": "Fatura {{card}}",
     "noResults": "Nenhum lançamento encontrado com esses filtros"
+  },
+  "movementForm": {
+    "title": {
+      "new": "Novo lançamento",
+      "editIncome": "Editar entrada",
+      "editExpense": "Editar saída",
+      "editExtra": "Editar gasto fora do comum"
+    },
+    "directionLabel": "Tipo do lançamento",
+    "direction": {
+      "in": "Entrada",
+      "out": "Saída"
+    },
+    "lockedInEdit": "Para trocar entre entrada e saída, exclua e crie de novo.",
+    "placeholders": {
+      "in": "Ex.: Salário, Freela",
+      "out": "Ex.: Mercado, Aluguel"
+    },
+    "fields": {
+      "description": "Descrição",
+      "amount": "Valor",
+      "date": "Data",
+      "category": "Categoria",
+      "selectPlaceholder": "Selecione...",
+      "settledIn": "Já recebi",
+      "settledOut": "Já paguei",
+      "fixed": "Repete todo mês",
+      "extra": "Gasto fora do comum",
+      "extraHint": "Algo que não acontece todo mês (conserto, presente, multa…).",
+      "accountIn": "Conta que recebe",
+      "accountOut": "Conta que paga",
+      "notes": "Observações"
+    },
+    "moreOptions": "Mais opções",
+    "lessOptions": "Menos opções",
+    "fixedLocked": "Lançamento fixo: repete todo mês. Para parar, exclua \"este e os próximos\".",
+    "transferLink": "Transferência entre suas contas",
+    "markReceived": "Marcar como recebido",
+    "markPaid": "Marcar como pago",
+    "delete": "Excluir",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "validation": {
+      "description": "Descrição",
+      "category": "Categoria",
+      "amount": "Valor"
+    }
   }
 }

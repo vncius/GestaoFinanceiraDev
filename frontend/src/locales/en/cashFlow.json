@@ -89,64 +89,6 @@
       "openInvoice": "Open invoice"
     }
   },
-  "recurrence": {
-    "unique": "One-time",
-    "fixed": "Fixed (recurring)"
-  },
-  "transactionModal": {
-    "title": {
-      "newPayment": "New Payment",
-      "editPayment": "Edit Payment",
-      "newExtraExpense": "New Unusual Expense",
-      "editExtraExpense": "Edit Unusual Expense"
-    },
-    "fields": {
-      "description": "Description *",
-      "category": "Category *",
-      "selectPlaceholder": "Select...",
-      "entryDate": "Entry date *",
-      "amount": "Amount *",
-      "debitAccount": "Debit account",
-      "recurrenceType": "Entry type",
-      "notes": "Notes"
-    },
-    "fixedRecurrenceHint": "To end the recurrence, delete \"this and future ones\".",
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "pay": "Pay",
-    "save": "Save",
-    "validation": {
-      "description": "Description",
-      "category": "Category",
-      "amount": "Amount"
-    }
-  },
-  "incomeModal": {
-    "title": {
-      "new": "New Income",
-      "edit": "Edit Income"
-    },
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "receive": "Receive",
-    "save": "Save",
-    "fields": {
-      "description": "Description *",
-      "category": "Category *",
-      "selectPlaceholder": "Select...",
-      "expectedDate": "Expected date *",
-      "amount": "Amount *",
-      "recurrenceType": "Entry type",
-      "targetAccount": "Target account",
-      "notes": "Notes"
-    },
-    "fixedRecurrenceHint": "To end the recurrence, delete \"this and future ones\".",
-    "validation": {
-      "description": "Description",
-      "category": "Category",
-      "amount": "Amount"
-    }
-  },
   "transferModal": {
     "title": {
       "new": "New Transfer",
@@ -215,5 +157,52 @@
     },
     "invoiceOf": "{{card}} invoice",
     "noResults": "No entries match these filters"
+  },
+  "movementForm": {
+    "title": {
+      "new": "New entry",
+      "editIncome": "Edit income",
+      "editExpense": "Edit expense",
+      "editExtra": "Edit unusual expense"
+    },
+    "directionLabel": "Entry type",
+    "direction": {
+      "in": "Income",
+      "out": "Expense"
+    },
+    "lockedInEdit": "To switch between income and expense, delete it and create it again.",
+    "placeholders": {
+      "in": "E.g.: Salary, Freelance",
+      "out": "E.g.: Groceries, Rent"
+    },
+    "fields": {
+      "description": "Description",
+      "amount": "Amount",
+      "date": "Date",
+      "category": "Category",
+      "selectPlaceholder": "Select...",
+      "settledIn": "Already received",
+      "settledOut": "Already paid",
+      "fixed": "Repeats every month",
+      "extra": "Unusual expense",
+      "extraHint": "Something that doesn't happen every month (repair, gift, fine…).",
+      "accountIn": "Receiving account",
+      "accountOut": "Paying account",
+      "notes": "Notes"
+    },
+    "moreOptions": "More options",
+    "lessOptions": "Fewer options",
+    "fixedLocked": "Fixed entry: repeats every month. To stop it, delete \"this and the next ones\".",
+    "transferLink": "Transfer between your accounts",
+    "markReceived": "Mark as received",
+    "markPaid": "Mark as paid",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "validation": {
+      "description": "Description",
+      "category": "Category",
+      "amount": "Amount"
+    }
   }
 }

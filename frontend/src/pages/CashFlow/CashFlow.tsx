@@ -25,8 +25,7 @@ import { SummaryBar } from './components/SummaryBar';
 import { MovementsList, NewMovementKind, RowBusy } from './components/MovementsList';
 import { filterMovements, groupBySituation, MovementItem, MovementKind, MovementTag, toMovements } from './movements';
 import { useCollapsibleSections } from './useCollapsibleSections';
-import { IncomeModal } from './components/IncomeModal';
-import { TransactionModal } from './components/TransactionModal';
+import { MovementFormKind, MovementModal, MovementSubmit } from '../../components/movement/MovementModal';
 import { TransferModal } from './components/TransferModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
 
@@ -149,37 +148,51 @@ export default function CashFlow() {
   const EFFECTED_CONFIRM = t('page.confirmEdit');
   const EFFECTED_DELETE_CONFIRM = t('page.confirmDeleteEffected');
 
-  async function saveIncome(payload: CreateIncomePayload) {
-    if (modal?.type !== 'income') return;
-    if (modal.item?.status === 'RECEIVED' && !(await confirm(EFFECTED_CONFIRM))) return;
-    if (modal.item) {
-      if (modal.item.recurrence === 'FIXED') {
+  async function saveMovement(data: MovementSubmit) {
+    const editing = modal && modal.type !== 'transfer' ? modal.item : undefined;
+
+    if (editing) {
+      const settled = editing.status === 'PAID' || editing.status === 'RECEIVED';
+      if (settled && !(await confirm(EFFECTED_CONFIRM))) return;
+      if (editing.recurrence === 'FIXED') {
         closeModal();
-        setFixedEditTarget({ kind: 'income', item: modal.item, payload });
+        if (data.kind === 'income') setFixedEditTarget({ kind: 'income', item: editing, payload: data.payload });
+        else setFixedEditTarget({ kind: data.kind === 'extra' ? 'extra-expense' : 'payment', item: editing, payload: data.payload });
         return;
       }
-      updateIncome.mutate({ id: modal.item.id, data: payload });
-    } else {
-      createIncome.mutate(payload);
+      if (data.kind === 'income') updateIncome.mutate({ id: editing.id, data: data.payload });
+      else if (data.kind === 'payment') updatePayment.mutate({ id: editing.id, data: data.payload });
+      else updateExtra.mutate({ id: editing.id, data: data.payload });
+      return;
+    }
+
+    // Criação + "Já paguei/recebi": cria e em seguida efetiva. Erros já viram
+    // toast pelo MutationCache global; aqui só não deixamos a promise solta.
+    try {
+      if (data.kind === 'income') {
+        const tx = await createIncome.mutateAsync(data.payload);
+        if (data.settleNow) receiveItem.mutate(tx.id);
+      } else if (data.kind === 'payment') {
+        const tx = await createPayment.mutateAsync(data.payload);
+        if (data.settleNow) payPayment.mutate(tx.id);
+      } else {
+        const tx = await createExtra.mutateAsync(data.payload);
+        if (data.settleNow) payExtra.mutate(tx.id);
+      }
+    } catch {
+      /* já notificado */
     }
   }
 
-  async function saveTransaction(payload: CreateTransactionPayload) {
-    if (modal?.type !== 'payment' && modal?.type !== 'extra-expense') return;
-    const isPayment = modal.type === 'payment';
-    if (modal.item?.status === 'PAID' && !(await confirm(EFFECTED_CONFIRM))) return;
-    if (modal.item) {
-      if (modal.item.recurrence === 'FIXED') {
-        closeModal();
-        setFixedEditTarget({ kind: modal.type, item: modal.item, payload });
-        return;
-      }
-      if (isPayment) updatePayment.mutate({ id: modal.item.id, data: payload });
-      else updateExtra.mutate({ id: modal.item.id, data: payload });
-    } else {
-      if (isPayment) createPayment.mutate(payload);
-      else createExtra.mutate(payload);
-    }
+  function settleFromModal(kind: MovementFormKind, tx: FinancialTransaction) {
+    if (kind === 'income') receiveItem.mutate(tx.id);
+    else if (kind === 'payment') payPayment.mutate(tx.id);
+    else payExtra.mutate(tx.id);
+  }
+
+  function deleteFromModal(kind: MovementFormKind, tx: FinancialTransaction) {
+    if (kind === 'income') handleDeleteIncome(tx);
+    else handleDeleteTransaction(kind === 'extra' ? 'extra-expense' : 'payment', tx);
   }
 
   function runScopedEdit(scope: 'CURRENT' | 'CURRENT_AND_FUTURE') {
@@ -193,11 +206,6 @@ export default function CashFlow() {
       updateExtra.mutate({ id: fixedEditTarget.item.id, data: fixedEditTarget.payload, scope, month: m, year: y });
     }
     setFixedEditTarget(null);
-  }
-
-  function handleTxPay(id: string) {
-    if (modal?.type === 'payment') payPayment.mutate(id);
-    else if (modal?.type === 'extra-expense') payExtra.mutate(id);
   }
 
   function handleOpenInvoice(inv: CreditCardInvoice) {
@@ -355,11 +363,15 @@ export default function CashFlow() {
     else await runClearAll();
   }
 
-  const txSaving =
+  const movementModalKind: MovementFormKind =
+    modal?.type === 'income' ? 'income' : modal?.type === 'extra-expense' ? 'extra' : 'payment';
+  const movementModalItem =
+    modal && modal.type !== 'transfer' && modal.item ? { kind: movementModalKind, tx: modal.item } : undefined;
+
+  const movementSaving =
+    createIncome.isPending || updateIncome.isPending ||
     createPayment.isPending || updatePayment.isPending ||
     createExtra.isPending || updateExtra.isPending;
-
-  const rxSaving = createIncome.isPending || updateIncome.isPending;
 
   // ── Per-row pending ids (evita clique duplo em ações de linha) ──────────────
   const entriesPendingToggleId =
@@ -529,40 +541,23 @@ export default function CashFlow() {
         <StatementImportSection embedded defaultAccountId={accountId} onImported={() => setImportOpen(false)} />
       </Modal>
 
-      {/* Income Modal */}
-      <IncomeModal
-        open={modal?.type === 'income'}
+      {/* Formulário único de entrada/saída (U12) */}
+      <MovementModal
+        open={!!modal && modal.type !== 'transfer'}
         onClose={closeModal}
-        item={modal?.type === 'income' ? modal.item : undefined}
+        item={movementModalItem}
+        initialKind={movementModalKind}
         categories={categories}
         accounts={accounts as Account[]}
-        mainAccountId={accountId}
+        defaultAccountId={accountId}
         month={month}
         year={year}
-        onSave={saveIncome}
-        isSaving={rxSaving}
-        onReceive={(id) => { receiveItem.mutate(id); }}
-        onDelete={handleDeleteIncome}
+        saving={movementSaving}
+        onSubmit={saveMovement}
+        onSettle={settleFromModal}
+        onDelete={deleteFromModal}
+        onTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
       />
-
-      {/* Transaction Modal */}
-      {(modal?.type === 'payment' || modal?.type === 'extra-expense') && (
-        <TransactionModal
-          open
-          onClose={closeModal}
-          type={modal.type}
-          item={modal.item}
-          categories={categories}
-          accounts={accounts as Account[]}
-          mainAccountId={accountId}
-          month={month}
-          year={year}
-          onSave={saveTransaction}
-          isSaving={txSaving}
-          onPay={handleTxPay}
-          onDelete={(item) => handleDeleteTransaction(modal.type, item)}
-        />
-      )}
 
       {/* Transfer Modal */}
       <TransferModal

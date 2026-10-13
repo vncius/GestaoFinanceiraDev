@@ -40,24 +40,7 @@
   },
   "quickAdd": {
     "openButton": "New",
-    "openButtonHint": "New entry (shortcut: N)",
-    "title": "Quick Add",
-    "types": {
-      "payment": "Payment",
-      "extraExpense": "Extra Expense",
-      "income": "Income",
-      "transfer": "Transfer"
-    },
-    "fields": {
-      "description": "Description",
-      "category": "Category",
-      "targetAccount": "Target account",
-      "date": "Date",
-      "amount": "Amount"
-    },
-    "categoryPlaceholder": "Select...",
-    "cancel": "Cancel",
-    "save": "Save"
+    "openButtonHint": "New entry (shortcut: N)"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
