@@ -135,7 +135,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U10c | Remoção das grids antigas e código morto | 3 | U10b | ✅ | 2026-10-13 | ver git log |
 | U11 | Menu "⋯" de Movimentações (importar, exportar, limpar) | 3 | U5, U10b | ✅ | 2026-10-13 | ver git log |
 | U12 | Formulário único de lançamento (Entrada/Saída + Mais opções) | 3 | U6 | ✅ | 2026-10-13 | ver git log |
-| U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ⬜ | | |
+| U13 | Cartões seguem o seletor de conta + editar cartão na própria tela | 4 | U2, U4 | ✅ | 2026-10-13 | ver git log |
 | U14 | Tipo de conta inline no cadastro de conta | 4 | U5 | ⬜ | | |
 | U15 | "+ Nova categoria" inline nos formulários | 4 | U12 | ⬜ | | |
 | U16 | Auditoria de divulgação progressiva (1 conta / 0 cartões) | 4 | U8, U10c, U13 | ⬜ | | |
@@ -314,6 +314,12 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 ## Notas de implementação
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
+
+### U13 — 2026-10-13
+- Seletor de conta (com "Todas") passa a aparecer em Cartões. Numa conta: só os cartões cuja `defaultPaymentAccountId` é ela; em "Todas": todos, agrupados por conta pagadora ("Pagos por …", só no desktop). Conta sem cartão: aviso + "Novo cartão". Sem nenhum cartão selecionado, abre o primeiro da lista.
+- `CardSettingsModal` extraído de `Settings.tsx` para `components/credit-card/CardSettingsModal.tsx` (com `defaultAccountId`); a tela de Cartões ganhou "Novo cartão" e o lápis "Editar cartão" no cabeçalho da fatura. Configurações → Cartões continua funcionando.
+- No detalhe do cartão, "Importar fatura" e "Limpar fatura" foram para o menu "⋯"; "Novo lançamento" continua visível.
+- Verificado por teste de componente (`CreditCards.test.tsx`). Visual pendente: o painel do navegador reiniciou e perdeu o login Google.
 
 ### U12 — 2026-10-13
 - `components/movement/MovementModal.tsx`: Saída/Entrada, descrição, valor, data, categoria, "Já paguei/recebi" (só na criação: cria e efetiva); "Mais opções": repete todo mês, gasto fora do comum (só saída), conta (se > 1), observações. Edição trava o tipo; lançamento fixo mostra aviso em vez do seletor. Usado em Movimentações (substitui `IncomeModal`/`TransactionModal`, apagados) e no "+ Novo"/atalho N (`QuickAddModal` reescrito; "Transferência entre suas contas" troca para o `TransferModal`).

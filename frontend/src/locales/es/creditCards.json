@@ -75,7 +75,8 @@
     "clearInvoiceScopeModal": {
       "title": "Limpiar movimientos fijos",
       "description": "Esta factura ({{monthYear}}) incluye movimientos fijos/recurrentes. ¿Desea eliminarlos solo de este mes, o también de los próximos? Los movimientos en cuotas se cancelan de este mes en adelante (los meses anteriores no cambian); los de contado y reembolsos siempre se cancelan por completo."
-    }
+    },
+    "moreActions": "Más acciones de la factura"
   },
   "invoiceImport": {
     "title": "Importar Factura (OFX)",
@@ -119,8 +120,12 @@
     "limit": "Límite",
     "emptyState": {
       "title": "Ninguna tarjeta registrada",
-      "description": "Registre tarjetas de crédito en Configuración → Tarjetas"
-    }
+      "description": "Registra tu primera tarjeta para seguir facturas y cuotas."
+    },
+    "newCard": "Nueva tarjeta",
+    "editCard": "Editar tarjeta",
+    "emptyForAccount": "Ninguna tarjeta pagada por esta cuenta",
+    "paidBy": "Pagadas por {{account}}"
   },
   "selectCard": {
     "title": "Seleccione una tarjeta",

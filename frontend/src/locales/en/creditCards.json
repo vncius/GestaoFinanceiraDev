@@ -75,7 +75,8 @@
     "clearInvoiceScopeModal": {
       "title": "Clear fixed entries",
       "description": "This invoice ({{monthYear}}) includes fixed/recurring entries. Delete them only from this month, or from the next months too? Installment entries are canceled from this month onward (earlier months are untouched); one-time and refund entries are always fully canceled."
-    }
+    },
+    "moreActions": "More invoice actions"
   },
   "invoiceImport": {
     "title": "Import Invoice (OFX)",
@@ -119,8 +120,12 @@
     "limit": "Limit",
     "emptyState": {
       "title": "No cards registered",
-      "description": "Register credit cards in Settings → Cards"
-    }
+      "description": "Add your first card to track invoices and installments."
+    },
+    "newCard": "New card",
+    "editCard": "Edit card",
+    "emptyForAccount": "No cards paid by this account",
+    "paidBy": "Paid by {{account}}"
   },
   "selectCard": {
     "title": "Select a card",

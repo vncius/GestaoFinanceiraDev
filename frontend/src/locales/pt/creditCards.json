@@ -75,7 +75,8 @@
     "clearInvoiceScopeModal": {
       "title": "Limpar lançamentos fixos",
       "description": "Esta fatura ({{monthYear}}) inclui lançamentos fixos/recorrentes. Deseja excluí-los só deste mês, ou também dos próximos? Parcelados são cancelados deste mês em diante (meses anteriores não mudam); à vista e estornos são sempre cancelados por completo."
-    }
+    },
+    "moreActions": "Mais ações da fatura"
   },
   "invoiceImport": {
     "title": "Importar Fatura (OFX)",
@@ -119,8 +120,12 @@
     "limit": "Limite",
     "emptyState": {
       "title": "Nenhum cartão cadastrado",
-      "description": "Cadastre cartões de crédito em Configurações → Cartões"
-    }
+      "description": "Cadastre seu primeiro cartão para acompanhar faturas e parcelas."
+    },
+    "newCard": "Novo cartão",
+    "editCard": "Editar cartão",
+    "emptyForAccount": "Nenhum cartão pago por esta conta",
+    "paidBy": "Pagos por {{account}}"
   },
   "selectCard": {
     "title": "Selecione um cartão",

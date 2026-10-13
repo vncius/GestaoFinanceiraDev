@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,12 +12,17 @@ import {
   ChevronRight,
   CreditCard as CreditCardIcon,
   Upload,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useMonth } from '../../contexts/MonthContext';
 import {
   CreditCardsService,
   CreateCardEntryPayload,
+  CreateCreditCardPayload,
 } from '../../services/credit-cards.service';
+import { useAccount } from '../../contexts/AccountContext';
+import { CardSettingsModal } from '../../components/credit-card/CardSettingsModal';
+import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { CategoriesService } from '../../services/categories.service';
 import { AccountsService } from '../../services/accounts.service';
 import { Category, CreditCard, CreditCardEntry, CreditCardInvoice } from '../../types';
@@ -248,14 +253,67 @@ function EntryModal({
 
 // ── Card Detail ───────────────────────────────────────────────────────────────
 
+function InvoiceActionsMenu({
+  onImport,
+  onClear,
+  clearing,
+}: {
+  onImport: () => void;
+  onClear?: () => void;
+  clearing: boolean;
+}) {
+  const { t } = useTranslation('creditCards');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const item = 'w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-md text-left';
+  return (
+    <div className="relative" ref={ref}>
+      <IconActionButton
+        title={t('installments.moreActions')}
+        onClick={() => setOpen((o) => !o)}
+        loading={clearing}
+        className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <MoreHorizontal size={16} />
+      </IconActionButton>
+      {open && (
+        <div role="menu" className="absolute right-0 z-20 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
+          <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={() => { setOpen(false); onImport(); }}>
+            <Upload size={15} /> {t('installments.importButton')}
+          </button>
+          {onClear && (
+            <>
+              <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
+              <button role="menuitem" className={`${item} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30`} onClick={() => { setOpen(false); onClear(); }}>
+                <Eraser size={15} /> {t('installments.clearButton')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CardDetail({
   card,
   month,
   year,
+  onEditCard,
 }: {
   card: CreditCard;
   month: number;
   year: number;
+  onEditCard: () => void;
 }) {
   const { t } = useTranslation('creditCards');
   const qc = useQueryClient();
@@ -412,10 +470,17 @@ function CardDetail({
               </p>
             )}
           </div>
-          <div>
+          <div className="flex items-center gap-2">
             {invoice
               ? invoiceStatusBadge(invoice.status)
               : <span className="text-xs text-gray-400 dark:text-gray-500">{t('invoiceHeader.noInvoice')}</span>}
+            <IconActionButton
+              title={t('cardList.editCard')}
+              onClick={onEditCard}
+              className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Pencil size={14} />
+            </IconActionButton>
           </div>
         </div>
 
@@ -471,31 +536,16 @@ function CardDetail({
             <Button
               size="sm"
               variant="ghost"
-              icon={<Upload size={14} />}
-              onClick={() => setShowImportModal(true)}
-            >
-              <span className="hidden sm:inline">{t('installments.importButton')}</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
               icon={<Plus size={14} />}
               onClick={() => setShowEntryModal(true)}
             >
               <span className="hidden sm:inline">{t('installments.addButton')}</span>
             </Button>
-            {activeEntries.length > 0 && (
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={<Eraser size={14} />}
-                onClick={handleClearInvoice}
-                loading={clearingInvoice}
-                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
-              >
-                <span className="hidden sm:inline">{t('installments.clearButton')}</span>
-              </Button>
-            )}
+            <InvoiceActionsMenu
+              onImport={() => setShowImportModal(true)}
+              onClear={activeEntries.length > 0 ? handleClearInvoice : undefined}
+              clearing={clearingInvoice}
+            />
           </div>
         </div>
 
@@ -672,11 +722,50 @@ function CardDetail({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+function CardButton({ card, selected, onSelect }: { card: CreditCard; selected: boolean; onSelect: () => void }) {
+  const { t } = useTranslation('creditCards');
+  return (
+    <button
+      onClick={onSelect}
+      className={`text-left p-4 rounded-xl border transition-all w-64 shrink-0 lg:w-full ${
+        selected
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{card.name}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{card.bank}</p>
+        </div>
+        <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 shrink-0 mt-1" />
+      </div>
+      <div className="mt-3 space-y-1">
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-400 dark:text-gray-500">{t('cardList.currentMonth')}</span>
+          <span className="font-semibold text-red-500 dark:text-red-400">{formatCurrency(card.currentMonthAmount)}</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-400 dark:text-gray-500">{t('cardList.limit')}</span>
+          <span className="text-gray-600 dark:text-gray-300">{formatCurrency(card.limit)}</span>
+        </div>
+        {card.currentInvoice && <div className="pt-1">{invoiceStatusBadge(card.currentInvoice.status)}</div>}
+      </div>
+    </button>
+  );
+}
+
+// Cartões seguem o seletor de conta (U13 do plano de UX): numa conta, só os
+// cartões que ela paga; em "Todas as contas", todos, agrupados por conta.
+// Criar e editar cartão também acontece aqui (antes só em Configurações).
 export default function CreditCards() {
   const { t } = useTranslation('creditCards');
   const { month, year } = useMonth();
   const location = useLocation();
+  const qc = useQueryClient();
+  const { scopeAccountId, accounts } = useAccount();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [cardModal, setCardModal] = useState<{ item?: CreditCard } | null>(null);
 
   useEffect(() => {
     const cardId = (location.state as { cardId?: string } | null)?.cardId;
@@ -688,77 +777,99 @@ export default function CreditCards() {
     queryFn: () => CreditCardsService.findAll(month, year),
   });
 
+  const saveCard = useMutation({
+    mutationFn: (payload: CreateCreditCardPayload) =>
+      cardModal?.item ? CreditCardsService.update(cardModal.item.id, payload) : CreditCardsService.create(payload),
+    onSuccess: (card) => {
+      invalidateDerivedData(qc);
+      setCardModal(null);
+      setSelectedCardId(card.id);
+    },
+  });
+
   const activeCards = cards.filter((c) => c.active);
-  const selectedCard = activeCards.find((c) => c.id === selectedCardId) ?? null;
+  const visibleCards = scopeAccountId
+    ? activeCards.filter((c) => c.defaultPaymentAccountId === scopeAccountId)
+    : activeCards;
+  const selectedCard = visibleCards.find((c) => c.id === selectedCardId) ?? visibleCards[0] ?? null;
+
+  // Em "Todas as contas", agrupa por conta pagadora (ordem alfabética).
+  const accountName = new Map(accounts.map((a) => [a.id, a.name]));
+  const groups = scopeAccountId || accounts.length <= 1
+    ? [{ accountId: scopeAccountId, cards: visibleCards }]
+    : sortByName(
+        [...new Set(visibleCards.map((c) => c.defaultPaymentAccountId ?? ''))].map((id) => ({
+          id,
+          name: accountName.get(id) ?? '—',
+        })),
+      ).map(({ id }) => ({ accountId: id, cards: visibleCards.filter((c) => (c.defaultPaymentAccountId ?? '') === id) }));
 
   if (isLoading) return <PageLoading />;
 
-  if (activeCards.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <EmptyState
-          title={t('cardList.emptyState.title')}
-          description={t('cardList.emptyState.description')}
-          icon={<CreditCardIcon size={24} className="text-gray-300" />}
-        />
-      </div>
-    );
-  }
+  const newCardButton = (
+    <Button size="sm" variant="secondary" icon={<Plus size={14} />} onClick={() => setCardModal({})}>
+      {t('cardList.newCard')}
+    </Button>
+  );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0">
-      {/* Card list */}
-      <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:w-60 lg:shrink-0 pb-1 lg:pb-0">
-        {activeCards.map((card) => (
-          <button
-            key={card.id}
-            onClick={() => setSelectedCardId(card.id)}
-            className={`text-left p-4 rounded-xl border transition-all w-64 shrink-0 lg:w-full ${
-              selectedCardId === card.id
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{card.name}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{card.bank}</p>
-              </div>
-              <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 shrink-0 mt-1" />
+    <>
+      {visibleCards.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <EmptyState
+            title={activeCards.length === 0 ? t('cardList.emptyState.title') : t('cardList.emptyForAccount')}
+            description={activeCards.length === 0 ? t('cardList.emptyState.description') : undefined}
+            icon={<CreditCardIcon size={24} className="text-gray-300" />}
+          />
+          {newCardButton}
+        </div>
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0">
+          {/* Card list */}
+          <div className="lg:w-60 lg:shrink-0 space-y-3">
+            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto pb-1 lg:pb-0">
+              {groups.map((g) => (
+                <div key={g.accountId ?? 'scope'} className="contents lg:block lg:space-y-2">
+                  {groups.length > 1 && (
+                    <p className="hidden lg:block px-1 pt-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      {t('cardList.paidBy', { account: accountName.get(g.accountId ?? '') ?? '—' })}
+                    </p>
+                  )}
+                  {g.cards.map((card) => (
+                    <CardButton key={card.id} card={card} selected={selectedCard?.id === card.id} onSelect={() => setSelectedCardId(card.id)} />
+                  ))}
+                </div>
+              ))}
             </div>
-            <div className="mt-3 space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-400 dark:text-gray-500">{t('cardList.currentMonth')}</span>
-                <span className="font-semibold text-red-500 dark:text-red-400">
-                  {formatCurrency(card.currentMonthAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-400 dark:text-gray-500">{t('cardList.limit')}</span>
-                <span className="text-gray-600 dark:text-gray-300">{formatCurrency(card.limit)}</span>
-              </div>
-              {card.currentInvoice && (
-                <div className="pt-1">{invoiceStatusBadge(card.currentInvoice.status)}</div>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Card detail */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
-        {selectedCard ? (
-          <CardDetail card={selectedCard} month={month} year={year} />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <EmptyState
-              title={t('selectCard.title')}
-              description={t('selectCard.description')}
-              icon={<CreditCardIcon size={24} className="text-gray-300" />}
-            />
+            {newCardButton}
           </div>
-        )}
-      </div>
-    </div>
+
+          {/* Card detail */}
+          <div className="flex-1 min-w-0 overflow-y-auto">
+            {selectedCard ? (
+              <CardDetail card={selectedCard} month={month} year={year} onEditCard={() => setCardModal({ item: selectedCard })} />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <EmptyState
+                  title={t('selectCard.title')}
+                  description={t('selectCard.description')}
+                  icon={<CreditCardIcon size={24} className="text-gray-300" />}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <CardSettingsModal
+        open={cardModal !== null}
+        onClose={() => setCardModal(null)}
+        item={cardModal?.item}
+        accounts={accounts}
+        defaultAccountId={scopeAccountId}
+        onSave={(payload) => saveCard.mutate(payload)}
+        isSaving={saveCard.isPending}
+      />
+    </>
   );
 }
