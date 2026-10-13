@@ -5,13 +5,20 @@ import { getDb } from '../persistence/mongo-client';
 // agora marca a conta de ORIGEM (que precisa também de
 // autoReserveTargetAccountId, campo novo). Não há dado antigo para inferir o
 // destino automaticamente (D4b), então toda configuração existente é zerada;
-// o usuário reconfigura manualmente pela tela de Contas. `$set`/`$unset` são
-// no-ops seguros sobre documentos já normalizados, então roda em todo boot.
+// o usuário reconfigura manualmente pela tela de Contas.
+//
+// Roda em todo boot, então o reset só pode tocar documentos no formato
+// pré-E8 — os que ainda não têm autoReserveTargetAccountId. Sem esse filtro,
+// toda regra configurada depois da E8 (enabled + destino) era zerada a cada
+// reinício do servidor.
 export async function migrateResetAutoReserve(): Promise<void> {
   const db = getDb();
 
   const flagsResult = await db.collection('accounts').updateMany(
-    { $or: [{ autoReserveEnabled: true }, { autoReservePercentage: { $gt: 0 } }] },
+    {
+      autoReserveTargetAccountId: { $exists: false },
+      $or: [{ autoReserveEnabled: true }, { autoReservePercentage: { $gt: 0 } }],
+    },
     { $set: { autoReserveEnabled: false, autoReservePercentage: 0, autoReserveTargetAccountId: null } },
   );
   if (flagsResult.modifiedCount > 0) {
