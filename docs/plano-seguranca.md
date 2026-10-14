@@ -68,7 +68,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S1 | Dependências vulneráveis (`npm audit fix`) | — | ✅ | 2026-10-14 | 4800e26 |
 | S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ✅ | 2026-10-14 | ver `git log` |
 | S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ✅ | 2026-10-14 | ver `git log` |
-| S4 | IP real do cliente | — | ⬜ | | |
+| S4 | IP real do cliente | — | ✅ | 2026-10-14 | ver `git log` |
 | S5 | Limites de requisição e de corpo | S4 | ⬜ | | |
 | S6 | Exigir e-mail verificado no login Google | — | ⬜ | | |
 | S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ⬜ | | |
@@ -110,3 +110,8 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Verificado com `npm run build` (`VITE_API_URL=/api`) + `vite preview` (config `frontend-preview` no `launch.json`): CSP aplicada, iframe do Google Identity Services carrega, nenhuma violação no console.
 - `_headers` não se aplica às respostas das Pages Functions (`/api/*`); essas levam os cabeçalhos do `helmet`.
 - Origem (`Origin`) não é conferida no backend: com o proxy o navegador não faz CORS, então um `CORS_ORIGIN` desatualizado passaria despercebido e uma checagem de `Origin` derrubaria produção. O cabeçalho customizado já cobre.
+
+### S4
+- Não dá para confiar no `CF-Connecting-IP`/`X-Forwarded-For` que chega ao Render: o backend é público e qualquer um forja esses cabeçalhos chamando-o direto. Por isso o segredo compartilhado.
+- **Sem `PROXY_SHARED_SECRET` configurado nos dois lados, todo tráfego via proxy aparece com IP do Cloudflare** — e o limite por IP da S5 passa a valer para todos juntos. Configurar antes do deploy (ver Ações de deploy).
+- Não verificado em produção (exige deploy). Conferir depois no `audit_log`: o `ip` do `login` deve ser o IP público de quem entrou.

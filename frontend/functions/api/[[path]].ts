@@ -16,6 +16,8 @@
  */
 interface Env {
   API_ORIGIN: string;
+  /** Segredo compartilhado com o backend (mesma env var no Render). */
+  PROXY_SHARED_SECRET?: string;
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
@@ -33,6 +35,18 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
   const headers = new Headers(request.headers);
   headers.delete('host');
+
+  // IP real do cliente para o backend (rate limit e auditoria). Visto do
+  // Render, quem conecta é o Cloudflare; o segredo prova que o X-Client-IP
+  // veio deste proxy e não de alguém chamando o backend direto. Valores
+  // enviados pelo próprio navegador nesses cabeçalhos são descartados.
+  headers.delete('x-client-ip');
+  headers.delete('x-proxy-secret');
+  const clientIp = request.headers.get('cf-connecting-ip');
+  if (env.PROXY_SHARED_SECRET && clientIp) {
+    headers.set('x-client-ip', clientIp);
+    headers.set('x-proxy-secret', env.PROXY_SHARED_SECRET);
+  }
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   const upstreamRequest = new Request(targetUrl.toString(), {

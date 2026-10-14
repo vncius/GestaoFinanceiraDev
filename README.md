@@ -91,6 +91,8 @@ O script apaga e recria, só nesse banco, três meses de movimentação fictíci
 | `MONGODB_DB_NAME` | `gestao_financeira` | Nome do banco |
 | `JWT_SECRET` | — | Segredo para assinar o cookie de sessão |
 | `GOOGLE_CLIENT_ID` | — | OAuth Client ID do Google |
+| `PROXY_SHARED_SECRET` | — | Segredo compartilhado com o proxy `/api` do Cloudflare (mesmo valor nos dois) para o backend confiar no IP real do cliente |
+| `TRUST_PROXY_HOPS` | `1` | Proxies confiáveis à frente do Express (load balancer do Render) |
 | `COOKIE_SAME_SITE` | `lax` | `SameSite` do cookie de sessão. Só use `none` em deploy cross-site sem o proxy `/api` |
 | `AI_PROVIDER` | `fake` | `fake` (determinístico, sem rede), `anthropic` ou `openai` |
 | `AI_API_KEY` | — | Chave do provedor ativo — nunca exposta ao frontend |
@@ -98,7 +100,7 @@ O script apaga e recria, só nesse banco, três meses de movimentação fictíci
 
 **`frontend/.env`**: `VITE_API_URL` (default `http://localhost:3100`; em produção no Cloudflare Pages, `/api`).
 
-**Cloudflare Pages** (variável do projeto, usada por `frontend/functions/api/[[path]].ts`): `API_ORIGIN` = URL pública do backend. Detalhes em [`stack-template-and-deploy.md`](docs/architecture/stack-template-and-deploy.md#8-problema-conhecido-cookie-de-sessão-bloqueado-em-navegadores-mobile).
+**Cloudflare Pages** (variável do projeto, usada por `frontend/functions/api/[[path]].ts`): `API_ORIGIN` = URL pública do backend e `PROXY_SHARED_SECRET` = o mesmo valor do backend. Detalhes em [`stack-template-and-deploy.md`](docs/architecture/stack-template-and-deploy.md#8-problema-conhecido-cookie-de-sessão-bloqueado-em-navegadores-mobile).
 
 ### Testes e build
 

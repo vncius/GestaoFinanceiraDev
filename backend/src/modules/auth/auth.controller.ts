@@ -29,14 +29,14 @@ export class AuthController {
         tenantId: user.tenantId,
         userId: user.id,
         email: user.email,
-        ip: req.ip,
+        ip: req.clientIp,
         userAgent: req.get('user-agent'),
       });
       res.json({ user: toPublicUser(user) });
     } catch (err) {
       await this.auditLog.record({
         action: 'login_failed',
-        ip: req.ip,
+        ip: req.clientIp,
         userAgent: req.get('user-agent'),
       });
       throw err;
@@ -65,7 +65,7 @@ export class AuthController {
       action: 'logout',
       tenantId: actor?.tenantId,
       userId: actor?.sub,
-      ip: req.ip,
+      ip: req.clientIp,
       userAgent: req.get('user-agent'),
     });
     res.status(204).send();
@@ -86,7 +86,7 @@ export class AuthController {
       action: 'logout_all',
       tenantId: actor.tenantId,
       userId: actor.sub,
-      ip: req.ip,
+      ip: req.clientIp,
       userAgent: req.get('user-agent'),
     });
     res.status(204).send();

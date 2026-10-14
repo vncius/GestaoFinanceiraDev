@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { requireCsrfHeader } from './shared/middlewares/csrf.middleware';
+import { clientIp, trustProxyHops } from './shared/middlewares/client-ip.middleware';
 import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
@@ -27,6 +28,9 @@ import onboardingRouter from './modules/onboarding/onboarding.routes';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3100;
+// req.ip passa a ser o IP de quem conectou no load balancer do Render, não o
+// do próprio load balancer (ver client-ip.middleware.ts).
+app.set('trust proxy', trustProxyHops());
 
 // Origem do frontend Vite. Configurável via env para deploys fora de
 // localhost; em dev aponta para a porta padrão definida em vite.config.ts.
@@ -39,6 +43,7 @@ app.use(
     contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
   }),
 );
+app.use(clientIp);
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(requireCsrfHeader);
 // Limite apertado para a rota de chat do onboarding — precisa rodar ANTES do
