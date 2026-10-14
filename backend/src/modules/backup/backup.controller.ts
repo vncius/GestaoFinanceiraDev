@@ -35,16 +35,16 @@ export class BackupController {
   }
 
   async exportCsv(req: Request, res: Response): Promise<void> {
-    const query = exportCsvQuerySchema.parse(req.query);
+    // Não é XSS (falso positivo do Semgrep, que marca do req.query até o
+    // res.send): a resposta é text/csv baixada como anexo, com nosniff do
+    // helmet — nunca renderizada como HTML; fórmulas já neutralizadas no service.
+    const query = exportCsvQuerySchema.parse(req.query); // nosemgrep: ajinabraham.njsscan.xss.xss_node.express_xss
     const csv = await this.service.exportTransactionsCsv(req.tenantId, query);
     const filename = `lancamentos-${new Date().toISOString().slice(0, 10)}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     // BOM para o Excel reconhecer UTF-8 corretamente.
-    // Não é XSS: resposta text/csv baixada como anexo (com nosniff do helmet),
-    // nunca renderizada como HTML; fórmulas já neutralizadas no service.
-    // nosemgrep: ajinabraham.njsscan.xss.xss_node.express_xss
-    res.send('﻿' + csv);
+    res.send('﻿' + csv); // nosemgrep: ajinabraham.njsscan.xss.xss_node.express_xss
   }
 
   async parseStatement(req: Request, res: Response): Promise<void> {
