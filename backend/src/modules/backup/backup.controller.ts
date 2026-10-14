@@ -41,6 +41,9 @@ export class BackupController {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     // BOM para o Excel reconhecer UTF-8 corretamente.
+    // Não é XSS: resposta text/csv baixada como anexo (com nosniff do helmet),
+    // nunca renderizada como HTML; fórmulas já neutralizadas no service.
+    // nosemgrep: ajinabraham.njsscan.xss.xss_node.express_xss
     res.send('﻿' + csv);
   }
 

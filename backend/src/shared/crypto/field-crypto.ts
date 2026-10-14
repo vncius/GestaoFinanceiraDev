@@ -83,7 +83,11 @@ export function decryptValue(value: string): string {
   const keys = loadKeys();
   if (!keys) throw new Error('Dado criptografado no banco, mas ENCRYPTION_KEY não está configurada.');
   const raw = Buffer.from(value.slice(PREFIX.length), 'base64');
-  const decipher = createDecipheriv('aes-256-gcm', keys.enc, raw.subarray(0, IV_BYTES));
+  // authTagLength explícito: sem ele o Node aceitaria uma tag truncada, o que
+  // facilita forjar um valor que passe na verificação.
+  const decipher = createDecipheriv('aes-256-gcm', keys.enc, raw.subarray(0, IV_BYTES), {
+    authTagLength: TAG_BYTES,
+  });
   decipher.setAuthTag(raw.subarray(IV_BYTES, IV_BYTES + TAG_BYTES));
   return Buffer.concat([decipher.update(raw.subarray(IV_BYTES + TAG_BYTES)), decipher.final()]).toString('utf8');
 }

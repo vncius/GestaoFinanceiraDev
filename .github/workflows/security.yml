@@ -25,6 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Falha só com achados de severidade ERROR; os demais aparecem no log.
+      # Testes ficam de fora: usam segredos falsos de propósito (segredos
+      # reais em teste continuam cobertos pelo Gitleaks).
       - run: >-
           semgrep scan
           --config p/typescript
@@ -32,6 +34,7 @@ jobs:
           --config p/owasp-top-ten
           --config p/secrets
           --exclude node_modules --exclude dist
+          --exclude '*.test.ts' --exclude '*.test.tsx'
           --severity ERROR --error
 
   gitleaks:
