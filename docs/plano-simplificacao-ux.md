@@ -143,7 +143,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | U18 | Compra no cartão pelo "+ Novo" | 5 | U12, U13 | ✅ | 2026-10-13 | ver git log |
 | U19 | Preferência "Mostrar detalhes avançados" (densidade) | 5 | U8, U9 | ✅ | 2026-10-13 | ver git log |
 | U20 | Onboarding IA, relatório e documentação alinhados | 5 | U7, U8 | ✅ | 2026-10-13 | ver git log |
-| U21 | Prints com dados fictícios + README para portfólio | 6 | todas as anteriores que forem feitas | ⬜ | | |
+| U21 | Prints com dados fictícios + README para portfólio | 6 | todas as anteriores que forem feitas | ✅ | 2026-10-13 | |
 
 Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional — confirmar com o usuário antes de iniciar. **Fase 6 (U21) é sempre a última atividade**, pedida pelo usuário em 2026-10-13: o app vai para o portfólio dele como desenvolvedor.
 
@@ -315,12 +315,19 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
 
+### U21 — 2026-10-13
+- `npm run seed:demo` (com `MONGODB_DB_NAME=gestao_financeira_demo`; recusa banco sem `demo` no nome) apaga e recria o tenant de demonstração: 3 contas (corrente, reserva, PJ com reserva automática de 10%), fixos, variáveis em 3 meses, gasto fora do comum, pró-labore, cartão "Platinum" com parcelas e assinaturas, um item atrasado. Rodar duas vezes não duplica.
+- `.claude/launch.json` tem a configuração `backend-demo` (backend apontando para o banco de demo) — use-a para refazer os prints.
+- Prints em `docs/screenshots/` (7 PNGs: Início escuro/claro, Movimentações, Novo lançamento com compra parcelada, Cartões, Início e Movimentações no celular 390px). Tirados com Edge headless via puppeteer-core (script fora do repositório), desktop 1440×900 @2x e celular @3x. Configurações ficou fora da galeria (pouco valor visual).
+- Durante os prints apareceram e foram corrigidos: balões de ajuda causando rolagem horizontal no iPhone (`HelpTip` só monta aberto e se ajusta à tela) e seletor de conta sobrepondo a navegação de mês no cabeçalho em larguras intermediárias.
+- O cartão de demo se chama "Platinum" (não "Cartão Platinum") porque o "Pagar com" já prefixa "Cartão".
+
 ### Revisão geral — 2026-10-13
 - Suíte completa verde (build, 103 testes front, 280 back) e checagem `tsc --noUnusedLocals`.
 - **Bug corrigido (introduzido na U17):** na visão "Todas as contas", editar uma transferência de outra conta abria o `TransferModal` usando a última conta específica do seletor como "esta" conta — salvar regravaria origem/destino errados. Agora usa `item.accountId`. Teste em `TransferModal.test.tsx`.
 - Pagar fatura na visão consolidada sugere a conta que já paga a fatura (`paymentAccountId` ou pagadora padrão do cartão), não a última conta selecionada. Fatura ainda não paga mostra a conta pagadora padrão na lista consolidada.
 - Limpeza: import sem uso em `Settings.tsx`; `seed:demo` deixa "Plano de saúde" (dia 8) como o item atrasado de propósito.
-- Fica pendente para a U21 (amanhã): rodar `seed:demo`, prints e README (o README novo já está escrito e **não commitado**, aguardando as imagens). O Atlas voltou a recusar a conexão desta máquina (TLS alert 80) — liberar o IP de novo antes.
+- U21 concluída em seguida (ver acima).
 
 ### U20 — 2026-10-13
 - Onboarding IA: prompt e descrição de `propose_settings` explicam `dashboardScope` como **visão inicial do seletor** (Início, Movimentações, Cartões), trocável a qualquer momento; rótulos da revisão do draft idem ("O app abre mostrando todas as contas / uma conta por vez").

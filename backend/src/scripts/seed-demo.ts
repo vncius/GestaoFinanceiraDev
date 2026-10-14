@@ -149,7 +149,7 @@ async function main() {
   }
 
   // ── Cartão ────────────────────────────────────────────────────────────────
-  const card = await cards.create(tenantId, { name: 'Cartão Platinum', bank: 'Banco Digital', closingDay: 3, dueDay: 10, limit: reais(12000), defaultPaymentAccountId: pessoal.id });
+  const card = await cards.create(tenantId, { name: 'Platinum', bank: 'Banco Digital', closingDay: 3, dueDay: 10, limit: reais(12000), defaultPaymentAccountId: pessoal.id });
   const purchase = async (description: string, category: string, value: number, date: string, type: CardEntryType, installmentsCount?: number) =>
     cards.createEntry(card.id, tenantId, { description, expenseCategoryId: c(category), totalAmount: reais(value), purchaseDate: date, entryType: type, ...(installmentsCount ? { installmentsCount } : {}) });
   await purchase('Notebook', 'Educação', 4800, day(-2, 2), CardEntryType.INSTALLMENT, 10);

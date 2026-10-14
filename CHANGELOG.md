@@ -7,7 +7,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 ## [Unreleased]
 
 ### Added
-- **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U20) e `CLAUDE.md` apontando para ele.
+- **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.
 - U1: `CashFlowSummary` ganha `pendingIncome`/`pendingExpenses` (+ contagens) — o que ainda falta receber/pagar **só no mês selecionado**, sem acumular; e `frontend/src/utils/month-summary.ts` (`summarizeMonth`), regra única de leitura do resumo usada por Dashboard, Fluxo de Caixa e Relatório.
 - U2: migração de boot `migrateCardPaymentAccount` (+ `npm run migrate:card-payment-account [-- --dry-run]` para execução avulsa) que define a conta pagadora de cartões sem pagadora válida (nula, inexistente ou inativa) como a primeira conta ativa do tenant em ordem alfabética.
 - U3: em mês futuro, a barra de resumo expandida indica que os previstos são acumulados ("Previstos acumulados de out/26 a dez/26").
@@ -29,6 +29,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - U18: compra no cartão direto pelo "+ Novo" — em Saída, "Pagar com" (conta ou cartão) e parcelas; vai para a fatura do cartão.
 - U19: preferência "Mostrar detalhes avançados" (Configurações → Preferências) para abrir já expandidos os detalhes do resumo e a análise completa.
 - U20: onboarding com IA explica a "visão inicial" do seletor de conta; nome do mês segue o idioma escolhido (antes era sempre português); documentação da regra do resumo do mês.
+- U21: `npm run seed:demo` (backend) popula um banco de demonstração (nome com `demo`) com três meses de dados fictícios; README reescrito para portfólio com prints em `docs/screenshots/` (desktop claro/escuro e celular).
 - **Refactor de contas PF/PJ** (entregas E1–E9, ver `docs/refactor-contas-pf-pj.md`): cada conta passa a ser seu próprio contexto financeiro — fluxo de caixa, saldo e histórico isolados dos das demais, com um seletor de conta ativa no cabeçalho (`AccountContext`).
   - Transferências entre contas (`POST/PUT/DELETE /transfers`, `/transfers/:transferGroupId/revert`): sempre um par de transações ligadas por `transferGroupId`, já efetivadas na data informada, com tela própria no Fluxo de Caixa (`TransferModal`/`TransferGrid`) e opção no Lançamento Rápido.
   - Reserva automática como transferência: a regra agora fica na conta de origem (`Account.autoReserveTargetAccountId` aponta para o destino); ao receber uma entrada na origem, uma transferência automática é gerada/reconfirmada sozinha, com badge própria na UI e rótulo dedicado no CSV do backup.
