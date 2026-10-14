@@ -39,7 +39,7 @@ export class BackupController {
     // res.send): a resposta é text/csv baixada como anexo, com nosniff do
     // helmet — nunca renderizada como HTML; fórmulas já neutralizadas no service.
     const query = exportCsvQuerySchema.parse(req.query); // nosemgrep: ajinabraham.njsscan.xss.xss_node.express_xss
-    const csv = await this.service.exportTransactionsCsv(req.tenantId, query);
+    const csv = await this.service.exportTransactionsCsv(req.tenantId, query); // nosemgrep: ajinabraham.njsscan.xss.xss_node.express_xss
     const filename = `lancamentos-${new Date().toISOString().slice(0, 10)}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
