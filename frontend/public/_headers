@@ -1,0 +1,17 @@
+# Cabeçalhos de segurança do Cloudflare Pages (D3 do plano de segurança).
+# Valem para os arquivos estáticos; as respostas de /api/* vêm do backend
+# (helmet). `npm run build && npx vite preview` aplica este mesmo arquivo
+# localmente (ver vite.config.ts).
+#
+# CSP: só o próprio domínio + Google Identity Services (botão de login).
+# connect-src 'self' pressupõe VITE_API_URL=/api (proxy same-origin); um
+# deploy chamando o backend direto precisa incluir a URL dele aqui.
+# COOP same-origin-allow-popups: o login do Google pode abrir popup.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://accounts.google.com/gsi/; img-src 'self' data: https://*.googleusercontent.com https://*.gstatic.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups

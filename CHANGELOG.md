@@ -10,6 +10,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - **Plano de segurança e LGPD** (`docs/plano-seguranca.md`, entregas S1–S13).
 - S1: dependências com vulnerabilidade conhecida atualizadas — backend `express` 4.22.3 (`proxy-addr`, `body-parser`, `qs`) e `vitest`; frontend `axios`, `react-router-dom` 7 e `vite` 6. Restam só avisos de build (`braces`/`postcss-selector-parser` via Tailwind 3), sem impacto em produção.
 - S2: sessão expira em 24h (antes 30 dias) e passa a ser revogável — cada usuário tem `sessionVersion`, conferida a cada requisição (cache de 60s). "Sair" pergunta se é só deste dispositivo ou de todos (`POST /auth/logout-all`, registrado na auditoria como `logout_all`).
+- S3: proteção CSRF — cookie de sessão `SameSite=Lax` (o proxy `/api` o torna first-party, então segue funcionando no Safari/iOS; `COOKIE_SAME_SITE` para outros cenários) e cabeçalho `X-Requested-With: XMLHttpRequest` obrigatório em toda requisição que altera dados. Cabeçalhos de segurança: `helmet` no backend e `frontend/public/_headers` (CSP liberando só o próprio domínio e o login do Google, HSTS, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`); `vite preview` aplica os mesmos cabeçalhos para testar localmente.
 
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.

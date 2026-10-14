@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { authService } from '../../container';
-
-const COOKIE_NAME = 'session';
+import { SESSION_COOKIE_NAME as COOKIE_NAME } from '../../modules/auth/session-cookie';
 
 // Resolve usuário/tenant da requisição a partir do cookie de sessão emitido
 // no login (Google). Aplicado a todas as rotas montadas após ele em

@@ -91,6 +91,7 @@ O script apaga e recria, só nesse banco, três meses de movimentação fictíci
 | `MONGODB_DB_NAME` | `gestao_financeira` | Nome do banco |
 | `JWT_SECRET` | — | Segredo para assinar o cookie de sessão |
 | `GOOGLE_CLIENT_ID` | — | OAuth Client ID do Google |
+| `COOKIE_SAME_SITE` | `lax` | `SameSite` do cookie de sessão. Só use `none` em deploy cross-site sem o proxy `/api` |
 | `AI_PROVIDER` | `fake` | `fake` (determinístico, sem rede), `anthropic` ou `openai` |
 | `AI_API_KEY` | — | Chave do provedor ativo — nunca exposta ao frontend |
 | `AI_MODEL` | — | Modelo do provedor ativo (obrigatório junto com `AI_API_KEY`) |

@@ -3,9 +3,7 @@ import { AuthService } from './auth.service';
 import { googleLoginSchema } from './auth.schemas';
 import { PublicUser, User } from './auth.types';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { SESSION_TTL_SECONDS } from './auth.service';
-
-const COOKIE_NAME = 'session';
+import { clearSessionCookieOptions, SESSION_COOKIE_NAME as COOKIE_NAME, sessionCookieOptions } from './session-cookie';
 
 function toPublicUser(user: User): PublicUser {
   return { id: user.id, email: user.email, name: user.name, tenantId: user.tenantId };
@@ -16,17 +14,9 @@ export class AuthController {
     private readonly service: AuthService,
     private readonly auditLog: AuditLogService,
   ) {}
-  
 
   private setSessionCookie(res: Response, token: string): void {
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    res.cookie(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: SESSION_TTL_SECONDS * 1000,
-    });
+    res.cookie(COOKIE_NAME, token, sessionCookieOptions());
   }
 
   async google(req: Request, res: Response): Promise<void> {
@@ -70,7 +60,7 @@ export class AuthController {
     // só não conseguimos identificar o autor no log de auditoria.
     const actor = token ? await this.service.verifySession(token).catch(() => null) : null;
 
-    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(COOKIE_NAME, clearSessionCookieOptions());
     await this.auditLog.record({
       action: 'logout',
       tenantId: actor?.tenantId,
@@ -91,7 +81,7 @@ export class AuthController {
     }
     const actor = await this.service.verifySession(token);
     await this.service.revokeAllSessions(actor.sub);
-    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(COOKIE_NAME, clearSessionCookieOptions());
     await this.auditLog.record({
       action: 'logout_all',
       tenantId: actor.tenantId,

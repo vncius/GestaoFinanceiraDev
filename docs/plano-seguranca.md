@@ -67,7 +67,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 |---|---|---|---|---|---|
 | S1 | Dependências vulneráveis (`npm audit fix`) | — | ✅ | 2026-10-14 | 4800e26 |
 | S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ✅ | 2026-10-14 | ver `git log` |
-| S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ⬜ | | |
+| S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ✅ | 2026-10-14 | ver `git log` |
 | S4 | IP real do cliente | — | ⬜ | | |
 | S5 | Limites de requisição e de corpo | S4 | ⬜ | | |
 | S6 | Exigir e-mail verificado no login Google | — | ⬜ | | |
@@ -104,3 +104,9 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Token leva `sv` (versão de sessão); tokens antigos sem `sv` valem como 0 e continuam aceitos até expirar, então o deploy não desloga ninguém.
 - `verifySession` agora também confere se o usuário existe — base da exclusão de conta (S11).
 - `LogoutDialog` (`frontend/src/components/auth/`) é usado no menu de perfil e no botão de sair do onboarding.
+
+### S3
+- **Pré-requisito em produção:** o frontend precisa estar chamando a API por `/api` (proxy). Se ainda estiver com `VITE_API_URL` apontando direto para o Render, o cookie Lax não é enviado (cross-site) e a CSP (`connect-src 'self'`) bloqueia a chamada — nesse caso definir `COOKIE_SAME_SITE=none` e incluir a URL do backend no `connect-src` até migrar.
+- Verificado com `npm run build` (`VITE_API_URL=/api`) + `vite preview` (config `frontend-preview` no `launch.json`): CSP aplicada, iframe do Google Identity Services carrega, nenhuma violação no console.
+- `_headers` não se aplica às respostas das Pages Functions (`/api/*`); essas levam os cabeçalhos do `helmet`.
+- Origem (`Origin`) não é conferida no backend: com o proxy o navegador não faz CORS, então um `CORS_ORIGIN` desatualizado passaria despercebido e uma checagem de `Origin` derrubaria produção. O cabeçalho customizado já cobre.

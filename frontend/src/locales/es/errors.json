@@ -104,7 +104,8 @@
     "googleTokenMissingEmail": "El token de Google no tiene correo electrónico",
     "userNotFound": "Usuario no encontrado",
     "invalidSession": "Sesión inválida o expirada",
-    "emailAlreadyRegistered": "Este correo ya está registrado mediante {{provider}}"
+    "emailAlreadyRegistered": "Este correo ya está registrado mediante {{provider}}",
+    "csrfHeaderMissing": "Solicitud bloqueada por seguridad. Recarga la página e inténtalo de nuevo."
   },
   "category": {
     "notFound": "Categoría no encontrada",

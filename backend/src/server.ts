@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import { requireCsrfHeader } from './shared/middlewares/csrf.middleware';
 import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
@@ -30,7 +32,15 @@ const PORT = Number(process.env.PORT) || 3100;
 // localhost; em dev aponta para a porta padrão definida em vite.config.ts.
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
 
+// A API só devolve JSON: CSP fechada (nada é renderizado a partir dela) e os
+// demais cabeçalhos padrão do helmet (HSTS, nosniff, sem X-Powered-By…).
+app.use(
+  helmet({
+    contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
+  }),
+);
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
+app.use(requireCsrfHeader);
 // Limite apertado para a rota de chat do onboarding — precisa rodar ANTES do
 // parser global: body-parser pula a mensagens já parseadas (req._body), então
 // montar esta versão primeiro faz o limite de 16kb prevalecer só nessa rota.

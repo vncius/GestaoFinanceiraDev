@@ -104,7 +104,8 @@
     "googleTokenMissingEmail": "Google token has no email",
     "userNotFound": "User not found",
     "invalidSession": "Invalid or expired session",
-    "emailAlreadyRegistered": "This email is already registered via {{provider}}"
+    "emailAlreadyRegistered": "This email is already registered via {{provider}}",
+    "csrfHeaderMissing": "Request blocked for security reasons. Reload the page and try again."
   },
   "category": {
     "notFound": "Category not found",

@@ -6,6 +6,9 @@ export const api = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    // Exigido pelo backend em toda requisição que altera dados (proteção
+    // CSRF — ver backend/src/shared/middlewares/csrf.middleware.ts).
+    'X-Requested-With': 'XMLHttpRequest',
   },
 });
 
