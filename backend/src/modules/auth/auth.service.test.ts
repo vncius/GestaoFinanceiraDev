@@ -1,5 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from './auth.service';
+
+// O ID-token do Google é validado contra as chaves públicas do Google (rede);
+// aqui só a verificação dele (a que passa `audience`) é simulada — a sessão
+// própria continua usando o jose de verdade.
+const googlePayload = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
+vi.mock('jose', async (importOriginal) => {
+  const original = await importOriginal<typeof import('jose')>();
+  return {
+    ...original,
+    jwtVerify: vi.fn((token: string, key: unknown, options?: { audience?: string }) =>
+      options?.audience
+        ? Promise.resolve({ payload: googlePayload.current })
+        : original.jwtVerify(token, key as Uint8Array, options),
+    ),
+  };
+});
 import { UsersMongoRepository } from './users.mongo-repository';
 import { User } from './auth.types';
 
@@ -89,5 +105,43 @@ describe('AuthService — sessão', () => {
     const token = await issue(service, baseUser);
     process.env.JWT_SECRET = 'outro-segredo-qualquer-bem-comprido';
     await expect(service.verifySession(token)).rejects.toMatchObject({ code: 'auth.invalidSession' });
+  });
+});
+
+describe('AuthService — login com Google', () => {
+  beforeEach(() => {
+    process.env.JWT_SECRET = 'segredo-de-teste-com-tamanho-suficiente';
+    process.env.GOOGLE_CLIENT_ID = 'client-id-teste';
+  });
+
+  it('recusa e-mail não verificado pelo Google', async () => {
+    const { repo, users } = makeRepo([]);
+    const service = new AuthService(repo);
+    googlePayload.current = { sub: 'g-2', email: 'novo@x.com', email_verified: false };
+
+    await expect(service.loginWithGoogle('token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'auth.googleEmailNotVerified',
+    });
+    expect(users.size).toBe(0);
+  });
+
+  it('recusa quando o Google não informa email_verified', async () => {
+    const { repo } = makeRepo([]);
+    const service = new AuthService(repo);
+    googlePayload.current = { sub: 'g-2', email: 'novo@x.com' };
+    await expect(service.loginWithGoogle('token')).rejects.toMatchObject({ code: 'auth.googleEmailNotVerified' });
+  });
+
+  it('cria o usuário e a sessão com e-mail verificado', async () => {
+    const { repo, users } = makeRepo([]);
+    const service = new AuthService(repo);
+    googlePayload.current = { sub: 'g-2', email: 'novo@x.com', email_verified: true, name: 'Novo' };
+
+    const { user, session } = await service.loginWithGoogle('token');
+
+    expect(user).toMatchObject({ email: 'novo@x.com', name: 'Novo', sessionVersion: 0 });
+    expect(users.size).toBe(1);
+    await expect(service.verifySession(session)).resolves.toMatchObject({ sub: user.id });
   });
 });

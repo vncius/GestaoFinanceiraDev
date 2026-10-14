@@ -70,7 +70,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ✅ | 2026-10-14 | ver `git log` |
 | S4 | IP real do cliente | — | ✅ | 2026-10-14 | ver `git log` |
 | S5 | Limites de requisição e de corpo | S4 | ✅ | 2026-10-14 | ver `git log` |
-| S6 | Exigir e-mail verificado no login Google | — | ⬜ | | |
+| S6 | Exigir e-mail verificado no login Google | — | ✅ | 2026-10-14 | ver `git log` |
 | S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ⬜ | | |
 | S8 | Auditoria de ações destrutivas | S4 | ⬜ | | |
 | S9 | Logs de requisição sem query string | — | ⬜ | | |
@@ -121,3 +121,8 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - `globalIpLimiter` fica depois do `cors()`: um 429 sem cabeçalhos CORS apareceria no frontend como erro de rede.
 - A CSP do helmet precisa de `useDefaults: false`, senão ele mistura as diretivas padrão (que liberam `https:` em estilo/fonte) com a nossa.
 - Verificado com o backend local: sem `X-Requested-With` → 403; corpo de 2 MB em `/auth/google` → 413; JSON malformado → 400; 21ª tentativa de login no mesmo minuto → 429 com `retryAfterSeconds`; `/health` com `Content-Security-Policy: default-src 'none';frame-ancestors 'none'` e `X-Frame-Options: DENY`.
+
+### S6
+- Contas Gmail sempre vêm com `email_verified: true`; o caso real bloqueado é conta Google criada com e-mail de outro provedor sem confirmação.
+- E-mail **não** foi normalizado para minúsculas: usuários existentes foram gravados como o Google mandou, e mudar a busca agora poderia criar um segundo tenant para a mesma pessoa.
+- Testes simulam só a verificação do ID-token (`vi.mock('jose')` com passthrough para a sessão própria).

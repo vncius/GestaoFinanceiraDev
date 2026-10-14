@@ -105,6 +105,7 @@
   "auth": {
     "invalidGoogleToken": "Token do Google inválido",
     "googleTokenMissingEmail": "Token do Google sem e-mail",
+    "googleEmailNotVerified": "Seu e-mail ainda não foi verificado no Google. Verifique-o na sua conta Google e tente de novo.",
     "userNotFound": "Usuário não encontrado",
     "invalidSession": "Sessão inválida ou expirada",
     "emailAlreadyRegistered": "Este e-mail já está cadastrado via {{provider}}",

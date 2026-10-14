@@ -54,6 +54,12 @@ export class AuthService {
 
     const email = payload.email as string | undefined;
     if (!email) throw new AppError('Token do Google sem e-mail', 401, 'auth.googleTokenMissingEmail');
+    // A conta é identificada pelo e-mail: sem a confirmação do Google de que
+    // a pessoa é dona dele, alguém poderia entrar na conta de outra pessoa
+    // usando uma conta Google criada com aquele e-mail sem verificação.
+    if (payload.email_verified !== true) {
+      throw new AppError('E-mail do Google não verificado', 401, 'auth.googleEmailNotVerified');
+    }
     const name = (payload.name as string | undefined) ?? email;
 
     const user = await this.findOrCreateUser('google', payload.sub as string, email, name);
