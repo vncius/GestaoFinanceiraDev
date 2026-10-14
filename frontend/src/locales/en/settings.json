@@ -131,5 +131,17 @@
       "limitLabel": "Limit ($) *",
       "defaultAccountLabel": "Account that pays the bill"
     }
+  },
+  "privacy": {
+    "title": "Privacy and account",
+    "policies": "See how we handle your data in the <privacy>Privacy Policy</privacy> and the <terms>Terms of Use</terms>. To take your data elsewhere, use the full backup or the CSV export above.",
+    "deleteDescription": "Permanently deletes your account: all financial data, the assistant conversation and your profile. You are logged out of every device. This cannot be undone — download a backup first if you want to keep anything.",
+    "deleteButton": "Delete my account",
+    "deleteConfirmTitle": "Delete my account",
+    "deleteConfirmMessage": "Your account and ALL its data will be deleted now and cannot be recovered. If you sign in again with the same Google account, you start a new, empty account.",
+    "deleteConfirmWord": "DELETE",
+    "deleteConfirmInputLabel": "Type {{word}} to confirm",
+    "deleteError": "Could not delete the account.",
+    "deleted": "Your account has been deleted."
   }
 }

@@ -4,6 +4,7 @@ export type AuditLogAction =
   | 'logout'
   | 'logout_all'
   | 'consent_accepted'
+  | 'account_deleted'
   // Ações sobre os dados (S8 do plano de segurança): o que apaga, substitui
   // em massa ou tira dados do sistema.
   | 'record_deleted'

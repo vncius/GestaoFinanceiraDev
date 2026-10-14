@@ -131,5 +131,17 @@
       "limitLabel": "Límite (R$) *",
       "defaultAccountLabel": "Cuenta que paga la factura"
     }
+  },
+  "privacy": {
+    "title": "Privacidad y cuenta",
+    "policies": "Mira cómo tratamos tus datos en la <privacy>Política de Privacidad</privacy> y en los <terms>Términos de Uso</terms>. Para llevar tus datos a otro lugar, usa la copia de seguridad completa o la exportación CSV de arriba.",
+    "deleteDescription": "Elimina tu cuenta definitivamente: todos los datos financieros, la conversación con el asistente y tu registro. Se cierra la sesión en todos los dispositivos. No se puede deshacer — descarga una copia de seguridad antes si quieres guardar algo.",
+    "deleteButton": "Eliminar mi cuenta",
+    "deleteConfirmTitle": "Eliminar mi cuenta",
+    "deleteConfirmMessage": "Tu cuenta y TODOS sus datos se eliminarán ahora, sin posibilidad de recuperación. Si vuelves a entrar con la misma cuenta de Google, empiezas una cuenta nueva y vacía.",
+    "deleteConfirmWord": "ELIMINAR",
+    "deleteConfirmInputLabel": "Escribe {{word}} para confirmar",
+    "deleteError": "No se pudo eliminar la cuenta.",
+    "deleted": "Tu cuenta fue eliminada."
   }
 }

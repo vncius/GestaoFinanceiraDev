@@ -46,4 +46,8 @@ export class UsersMongoRepository {
       { $set: { consentVersion, consentAcceptedAt: acceptedAt, updatedAt: acceptedAt } } as never,
     );
   }
+
+  async delete(id: string): Promise<void> {
+    await this.collection().deleteOne({ id } as never);
+  }
 }

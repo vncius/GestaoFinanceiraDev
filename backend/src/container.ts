@@ -44,6 +44,7 @@ import { OnboardingApplyService } from './modules/onboarding/onboarding-apply.se
 import { TenantBootstrapService } from './modules/tenant-bootstrap/tenant-bootstrap.service';
 
 import { AuthController } from './modules/auth/auth.controller';
+import { AccountDeletionService } from './modules/auth/account-deletion.service';
 import { AccountsController } from './modules/accounts/accounts.controller';
 import { AccountTypesController } from './modules/account-types/account-types.controller';
 import { CategoriesController } from './modules/categories/categories.controller';
@@ -175,7 +176,11 @@ const onboardingConversationService = new OnboardingConversationService(
 // ─── Controllers ──────────────────────────────────────────────────────────────
 
 export const controllers = {
-  auth: new AuthController(authService, auditLogService),
+  auth: new AuthController(
+    authService,
+    auditLogService,
+    new AccountDeletionService(backupService, usersRepo, auditLogRepo, authService),
+  ),
   accounts: new AccountsController(accountsService),
   accountTypes: new AccountTypesController(accountTypesService),
   categories: new CategoriesController(categoriesService),

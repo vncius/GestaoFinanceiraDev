@@ -35,9 +35,17 @@ export const importLimiter = createRateLimiter({
   code: 'common.rateLimited',
 });
 
-/** Operações que apagam tudo (zerar dados, excluir conta), por tenant. */
+/** Zerar todos os dados, por tenant. */
 export const destructiveLimiter = createRateLimiter({
   windowMs: 60 * MINUTE,
   max: 5,
   code: 'common.rateLimited',
+});
+
+/** Exclusão de conta, por IP (a rota fica antes do authMiddleware, sem tenant resolvido). */
+export const accountDeletionLimiter = createRateLimiter({
+  windowMs: 60 * MINUTE,
+  max: 5,
+  code: 'common.rateLimited',
+  keyFn: byIp,
 });

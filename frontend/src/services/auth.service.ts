@@ -33,6 +33,10 @@ export const AuthService = {
     return data.user;
   },
 
+  async deleteAccount(): Promise<void> {
+    await api.delete('/auth/account', { data: { confirm: true } });
+  },
+
   async logoutAll(): Promise<void> {
     await api.post('/auth/logout-all');
   },

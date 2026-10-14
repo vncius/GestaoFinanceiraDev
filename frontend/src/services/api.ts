@@ -1,6 +1,8 @@
 import axios from 'axios';
 import i18n from '../i18n';
 
+export const CONSENT_REQUIRED_EVENT = 'auth:consent-required';
+
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3100',
   withCredentials: true,
@@ -26,9 +28,11 @@ api.interceptors.response.use(
     }
     const code = error.response?.data?.code;
     // Políticas mudaram (ou o aceite ainda não foi feito) com o app aberto:
-    // recarregar faz o /auth/me trazer consentRequired e mostra a tela de aceite.
+    // o AuthContext rebusca /auth/me e a rota protegida mostra a tela de
+    // aceite. Evento em vez de recarregar a página: chamadas feitas fora da
+    // rota protegida (providers) recebem 403 de novo e entrariam em loop.
     if (error.response?.status === 403 && code === 'auth.consentRequired') {
-      window.location.href = '/';
+      window.dispatchEvent(new Event(CONSENT_REQUIRED_EVENT));
     }
     const params = error.response?.data?.params;
     const message = code

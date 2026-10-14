@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Trash2, Plus, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, Plus, AlertTriangle, UserX } from 'lucide-react';
 import { BackupService } from '../../services/backup.service';
 import { AccountsService, CreateAccountPayload } from '../../services/accounts.service';
 import { AccountTypesService, CreateAccountTypePayload } from '../../services/account-types.service';
@@ -21,6 +21,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { LegalLinks } from '../../components/legal/LegalLinks';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { sortByName } from '../../utils/sort';
@@ -140,11 +142,79 @@ function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => vo
   );
 }
 
+// Exclusão completa da conta (LGPD — S11 do plano de segurança). Mesma
+// confirmação por palavra digitada do "Redefinir conta".
+function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation('settings');
+  const navigate = useNavigate();
+  const { deleteAccount } = useAuth();
+  const { showError, showSuccess } = useToast();
+  const [text, setText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const [lastOpen, setLastOpen] = useState(false);
+  if (open && !lastOpen) { setText(''); setLastOpen(true); }
+  if (!open && lastOpen) setLastOpen(false);
+
+  const word = t('privacy.deleteConfirmWord');
+  const canConfirm = text.trim().toUpperCase() === word.toUpperCase();
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      showSuccess(t('privacy.deleted'));
+      navigate('/login', { replace: true });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : t('privacy.deleteError'));
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t('privacy.deleteConfirmTitle')}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>{t('actions.cancel')}</Button>
+          <Button
+            variant="danger"
+            disabled={!canConfirm}
+            loading={deleting}
+            onClick={handleDelete}
+            data-testid="delete-account-confirm"
+          >
+            {t('privacy.deleteButton')}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-700 dark:text-gray-300">{t('privacy.deleteConfirmMessage')}</p>
+        <Field label={t('privacy.deleteConfirmInputLabel', { word })}>
+          <input
+            className={INPUT}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={word}
+            autoComplete="off"
+            data-testid="delete-account-input"
+          />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
 // Antiga página "Backup e Exportação" + zona de perigo da antiga aba Geral
 // (U5 do plano de UX): tudo que mexe nos dados como um todo fica junto.
 function DataTab() {
   const { t } = useTranslation('settings');
   const [resetOpen, setResetOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <div className="space-y-5 max-w-3xl">
@@ -158,10 +228,26 @@ function DataTab() {
           <Button variant="danger" icon={<AlertTriangle size={14} />} onClick={() => setResetOpen(true)}>
             {t('general.resetButton')}
           </Button>
+          <p className="text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-100 dark:border-gray-800">
+            {t('privacy.deleteDescription')}
+          </p>
+          <Button
+            variant="danger"
+            icon={<UserX size={14} />}
+            onClick={() => setDeleteOpen(true)}
+            data-testid="delete-account-open"
+          >
+            {t('privacy.deleteButton')}
+          </Button>
         </div>
       </SectionCard>
 
+      <SectionCard title={t('privacy.title')}>
+        <LegalLinks i18nKey="privacy.policies" ns="settings" className="text-xs text-gray-500 dark:text-gray-400" />
+      </SectionCard>
+
       <ResetAccountModal open={resetOpen} onClose={() => setResetOpen(false)} />
+      <DeleteAccountModal open={deleteOpen} onClose={() => setDeleteOpen(false)} />
     </div>
   );
 }

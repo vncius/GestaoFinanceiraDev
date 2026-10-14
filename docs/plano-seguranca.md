@@ -75,7 +75,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S8 | Auditoria de ações destrutivas | S4 | ✅ | 2026-10-14 | ver `git log` |
 | S9 | Logs de requisição sem query string | — | ✅ | 2026-10-14 | ver `git log` |
 | S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ✅ | 2026-10-14 | ver `git log` |
-| S11 | Exclusão completa da conta | S2, S8 | ⬜ | | |
+| S11 | Exclusão completa da conta | S2, S8 | ✅ | 2026-10-14 | ver `git log` |
 | S12 | Criptografia de campos sensíveis | S11 | ⬜ | | |
 | S13 | CI, Dependabot, CodeQL e testes de segurança | S1 | ⬜ | | |
 
@@ -150,3 +150,9 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Usuários existentes não têm `consentVersion`: no primeiro acesso depois do deploy, todos veem a tela de aceite.
 - Texto escrito como modelo razoável para LGPD (controlador, dados, bases legais por finalidade, operadores e transferência internacional, retenção, direitos do art. 18, segurança, cookies). **Não é parecer jurídico.**
 - O texto já cita a criptografia de campos (S12) e a exclusão de conta (S11); as duas foram implementadas nesta mesma leva.
+- Corrigido na S11: a primeira versão recarregava a página ao receber `403 auth.consentRequired`, mas o `AccountContext` (fora da rota protegida) chamava a API antes do aceite → loop de recarga (que, de quebra, esbarrou no limite global de 600/min — o limite funcionou). Agora a API dispara o evento `auth:consent-required`, o `AuthContext` marca o usuário como pendente, e as queries do `AccountContext` só rodam com consentimento.
+
+### S11
+- `AccountDeletionService` apaga nesta ordem: dados do tenant (`BackupService.resetTenant`, que cobre as 11 coleções por tenant) → anonimiza o `audit_log` do usuário → apaga o usuário. Usuário por último: se algo falhar no meio, a pessoa ainda consegue entrar e tentar de novo.
+- A rota fica em `/auth` (antes do `authMiddleware`): quem recusa as políticas também pode apagar o que já existe. Limite de 5/h por IP (sem tenant resolvido nesse ponto).
+- Verificado no navegador com um usuário de teste criado no banco de desenvolvimento (`sec-test-user`, sessão assinada localmente): tela de aceite → aceitar → onboarding → configuração manual (cria conta/categorias) → diálogo de sair (duas opções) → Excluir minha conta. Depois, consulta no banco: 0 documentos do tenant em todas as coleções, usuário removido, `audit_log` só com `consent_accepted`/`account_deleted` sem e-mail/IP/navegador.

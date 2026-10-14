@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { acceptConsentSchema, googleLoginSchema } from './auth.schemas';
+import { acceptConsentSchema, deleteAccountSchema, googleLoginSchema } from './auth.schemas';
+import { AccountDeletionService } from './account-deletion.service';
 import { PublicUser, User } from './auth.types';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { clearSessionCookieOptions, SESSION_COOKIE_NAME as COOKIE_NAME, sessionCookieOptions } from './session-cookie';
@@ -28,6 +29,7 @@ export class AuthController {
   constructor(
     private readonly service: AuthService,
     private readonly auditLog: AuditLogService,
+    private readonly accountDeletion: AccountDeletionService,
   ) {}
 
   private setSessionCookie(res: Response, token: string): void {
@@ -99,6 +101,18 @@ export class AuthController {
       ip: req.clientIp,
       userAgent: req.get('user-agent'),
     });
+    res.status(204).send();
+  }
+
+  // Exclusão completa da conta (LGPD). Não exige o aceite das políticas:
+  // quem recusa os termos também tem direito de apagar o que já existe.
+  async deleteAccount(req: Request, res: Response): Promise<void> {
+    deleteAccountSchema.parse(req.body);
+    const { user } = await this.requireSession(req);
+    await this.accountDeletion.deleteAccount(user.id, user.tenantId);
+    res.clearCookie(COOKIE_NAME, clearSessionCookieOptions());
+    // Sem e-mail/IP: o usuário não existe mais (D7).
+    await this.auditLog.record({ action: 'account_deleted', tenantId: user.tenantId, userId: user.id });
     res.status(204).send();
   }
 

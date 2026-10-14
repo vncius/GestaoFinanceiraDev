@@ -131,5 +131,17 @@
       "limitLabel": "Limite (R$) *",
       "defaultAccountLabel": "Conta que paga a fatura"
     }
+  },
+  "privacy": {
+    "title": "Privacidade e conta",
+    "policies": "Veja como tratamos seus dados na <privacy>Política de Privacidade</privacy> e nos <terms>Termos de Uso</terms>. Para levar seus dados para outro lugar, use o backup completo ou a exportação CSV acima.",
+    "deleteDescription": "Apaga sua conta de vez: todos os dados financeiros, a conversa com o assistente e o seu cadastro. Você sai de todos os dispositivos. Não dá para desfazer — baixe um backup antes, se quiser guardar algo.",
+    "deleteButton": "Excluir minha conta",
+    "deleteConfirmTitle": "Excluir minha conta",
+    "deleteConfirmMessage": "Sua conta e TODOS os dados dela serão apagados agora, sem possibilidade de recuperação. Se entrar de novo com o mesmo Google, você começa uma conta nova, vazia.",
+    "deleteConfirmWord": "EXCLUIR",
+    "deleteConfirmInputLabel": "Digite {{word}} para confirmar",
+    "deleteError": "Não foi possível excluir a conta.",
+    "deleted": "Sua conta foi excluída."
   }
 }

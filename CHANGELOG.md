@@ -18,6 +18,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - S8: auditoria das ações sobre os dados — toda exclusão bem-sucedida (`record_deleted`, com a rota), zerar dados (`data_reset`), restauração de backup (`backup_imported`), exportação de backup/CSV (`backup_exported`/`csv_exported`) e importação de extrato/fatura (`statement_imported`/`invoice_imported`), com usuário, IP real e data. Nunca grava o conteúdo enviado.
 - S9: log de requisições registra só o caminho, sem query string.
 - S10 (LGPD): Política de Privacidade e Termos de Uso em pt/en/es (`/privacy`, `/terms`, públicas, com link na tela de login) e tela de aceite no primeiro acesso — sem o aceite da versão vigente o backend responde `403 auth.consentRequired` em qualquer rota de dados. O aceite (`POST /auth/consent`) guarda versão e data no usuário e vai para a auditoria (`consent_accepted`). Responsável e contato de privacidade vêm de `VITE_LEGAL_CONTROLLER_NAME`/`VITE_LEGAL_CONTACT_EMAIL`.
+- S11 (LGPD): "Excluir minha conta" em Configurações → Seus dados (`DELETE /auth/account`, confirmação digitando EXCLUIR) — apaga todos os dados do tenant e o usuário, encerra as sessões em todos os aparelhos e deixa no log de auditoria só ação e data (sem e-mail, IP e navegador). Aba Seus dados ganhou links para as políticas.
 
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.

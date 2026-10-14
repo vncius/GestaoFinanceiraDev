@@ -34,7 +34,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: AccountsService.findAll,
-    enabled: !!user,
+    enabled: !!user && !user.consentRequired,
     staleTime: 30_000,
   });
 
@@ -43,7 +43,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const { data: settings } = useQuery({
     queryKey: ['settings'],
     queryFn: SettingsService.get,
-    enabled: !!user,
+    enabled: !!user && !user.consentRequired,
     staleTime: Infinity,
   });
 

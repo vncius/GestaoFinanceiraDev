@@ -4,20 +4,21 @@ import { Link } from 'react-router-dom';
 const linkClass = 'underline text-blue-600 dark:text-blue-400 hover:text-blue-700';
 
 interface LegalLinksProps {
-  /** Chave do namespace `legal` com as marcações <privacy> e <terms>. */
+  /** Chave (do namespace `ns`) com as marcações <privacy> e <terms>. */
   i18nKey: string;
+  ns?: string;
   className?: string;
   /** Abre em nova aba (ex.: na tela de aceite, para não perder o estado). */
   newTab?: boolean;
 }
 
 // Texto com links para a Política de Privacidade e os Termos de Uso.
-export function LegalLinks({ i18nKey, className, newTab = false }: LegalLinksProps) {
+export function LegalLinks({ i18nKey, ns = 'legal', className, newTab = false }: LegalLinksProps) {
   const target = newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {};
   return (
     <p className={className}>
       <Trans
-        ns="legal"
+        ns={ns}
         i18nKey={i18nKey}
         components={{
           privacy: <Link to="/privacy" className={linkClass} {...target} />,

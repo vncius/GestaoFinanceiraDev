@@ -24,4 +24,13 @@ export class AuditLogMongoRepository {
   async insert(entry: AuditLogEntry): Promise<void> {
     await this.collection().insertOne({ ...entry } as never);
   }
+
+  // Exclusão de conta: mantém ação/data/tenant para investigação, remove o
+  // que identifica a pessoa.
+  async anonymizeUser(userId: string): Promise<void> {
+    await this.collection().updateMany(
+      { userId } as never,
+      { $set: { email: null, ip: null, userAgent: null } } as never,
+    );
+  }
 }
