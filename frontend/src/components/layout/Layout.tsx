@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, LogOut, Loader2, UserCircle, Plus } from 'lucide-react';
+import { Moon, Sun, LogOut, UserCircle, Plus } from 'lucide-react';
+import { LogoutDialog } from '../auth/LogoutDialog';
 import Sidebar, { BottomNav } from './Sidebar';
 import { MonthNavigator } from '../ui/MonthNavigator';
 import { AccountSelector } from '../ui/AccountSelector';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { QuickAddProvider, useQuickAdd } from '../../contexts/QuickAddContext';
 import { GlobalShortcuts } from '../GlobalShortcuts';
 
@@ -25,10 +25,8 @@ const ROUTE_META: Record<
 function ProfileMenu() {
   const { t } = useTranslation('layout');
   const { theme, toggleTheme } = useTheme();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,16 +36,6 @@ function ProfileMenu() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      await logout();
-      navigate('/login', { replace: true });
-    } finally {
-      setLoggingOut(false);
-    }
-  }
 
   const itemClass =
     'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md disabled:opacity-60';
@@ -72,12 +60,20 @@ function ProfileMenu() {
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             {theme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
           </button>
-          <button role="menuitem" className={itemClass} onClick={handleLogout} disabled={loggingOut}>
-            {loggingOut ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
+          <button
+            role="menuitem"
+            className={itemClass}
+            onClick={() => {
+              setOpen(false);
+              setLogoutOpen(true);
+            }}
+          >
+            <LogOut size={15} />
             {t('header.logout')}
           </button>
         </div>
       )}
+      <LogoutDialog open={logoutOpen} onClose={() => setLogoutOpen(false)} />
     </div>
   );
 }

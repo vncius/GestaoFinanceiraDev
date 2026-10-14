@@ -7,9 +7,21 @@ import { User } from './auth.types';
 
 const googleJWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 
+// Sessão curta (D1 do plano de segurança): um cookie roubado vale no máximo
+// um dia, e "sair de todos os dispositivos" derruba as demais na hora.
+export const SESSION_TTL_SECONDS = 24 * 60 * 60;
+
+// Cache do usuário usado na checagem de sessão, que roda a cada requisição.
+// Processo único: revogações feitas aqui invalidam a entrada na hora; o TTL
+// só limita quanto tempo uma mudança feita por fora (outro processo, script)
+// demora a valer.
+const USER_CACHE_TTL_MS = 60 * 1000;
+
 export interface SessionPayload {
   sub: string;
   tenantId: string;
+  /** Versão de sessão do usuário quando o token foi emitido (ausente em tokens antigos = 0). */
+  sv?: number;
 }
 
 function sessionSecret(): Uint8Array {
@@ -18,7 +30,13 @@ function sessionSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
+function invalidSession(): AppError {
+  return new AppError('Sessão inválida ou expirada', 401, 'auth.invalidSession');
+}
+
 export class AuthService {
+  private readonly userCache = new Map<string, { user: User; expiresAt: number }>();
+
   constructor(private readonly usersRepo: UsersMongoRepository) {}
 
   async loginWithGoogle(idToken: string): Promise<{ user: User; session: string }> {
@@ -49,20 +67,48 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Valida assinatura/expiração do token E que ele ainda pertence a um
+   * usuário existente com a mesma versão de sessão — é isso que torna o
+   * logout global e a exclusão de conta efetivos antes do token expirar.
+   */
   async verifySession(token: string): Promise<SessionPayload> {
+    let payload: SessionPayload;
     try {
-      const { payload } = await jwtVerify(token, sessionSecret());
-      return payload as unknown as SessionPayload;
+      ({ payload } = (await jwtVerify(token, sessionSecret())) as unknown as { payload: SessionPayload });
     } catch {
-      throw new AppError('Sessão inválida ou expirada', 401, 'auth.invalidSession');
+      throw invalidSession();
     }
+    const user = await this.cachedUser(payload.sub);
+    if (!user || (user.sessionVersion ?? 0) !== (payload.sv ?? 0)) throw invalidSession();
+    return payload;
+  }
+
+  /** Invalida todas as sessões do usuário, inclusive a atual. */
+  async revokeAllSessions(userId: string): Promise<void> {
+    await this.usersRepo.incrementSessionVersion(userId, nowISO());
+    this.forgetUser(userId);
+  }
+
+  forgetUser(userId: string): void {
+    this.userCache.delete(userId);
+  }
+
+  private async cachedUser(userId: string): Promise<User | null> {
+    const now = Date.now();
+    const cached = this.userCache.get(userId);
+    if (cached && cached.expiresAt > now) return cached.user;
+    const user = await this.usersRepo.findById(userId);
+    if (user) this.userCache.set(userId, { user, expiresAt: now + USER_CACHE_TTL_MS });
+    else this.userCache.delete(userId);
+    return user;
   }
 
   private async issueSession(user: User): Promise<string> {
-    return new SignJWT({ sub: user.id, tenantId: user.tenantId })
+    return new SignJWT({ sub: user.id, tenantId: user.tenantId, sv: user.sessionVersion ?? 0 })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('30d')
+      .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
       .sign(sessionSecret());
   }
 
@@ -93,6 +139,7 @@ export class AuthService {
       name,
       provider,
       providerId,
+      sessionVersion: 0,
       createdAt: now,
       updatedAt: now,
     };

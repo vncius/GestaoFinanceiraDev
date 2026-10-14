@@ -2,11 +2,13 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useQueryClient } from '@tanstack/react-query';
 import { AuthService, AuthUser } from '../services/auth.service';
 
+export type LogoutScope = 'device' | 'all';
+
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   loginWithGoogle: (idToken: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (scope?: LogoutScope) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,9 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
   }
 
-  async function logout() {
+  async function logout(scope: LogoutScope = 'device') {
     if (user) localStorage.removeItem(`activeAccountId:${user.tenantId}`);
-    await AuthService.logout();
+    if (scope === 'all') await AuthService.logoutAll();
+    else await AuthService.logout();
     queryClient.clear();
     setUser(null);
   }

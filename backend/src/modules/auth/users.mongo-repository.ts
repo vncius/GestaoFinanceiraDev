@@ -12,6 +12,10 @@ export class UsersMongoRepository {
       collection.createIndex({ email: 1 }, { unique: true }).catch((err) => {
         console.error('[mongo] Falha ao criar índice em users:', err);
       });
+      // findById roda a cada requisição autenticada (checagem de sessão).
+      collection.createIndex({ id: 1 }, { unique: true }).catch((err) => {
+        console.error('[mongo] Falha ao criar índice em users:', err);
+      });
     }
     return collection;
   }
@@ -27,5 +31,12 @@ export class UsersMongoRepository {
   async create(user: User): Promise<User> {
     await this.collection().insertOne({ ...user } as never);
     return user;
+  }
+
+  async incrementSessionVersion(id: string, updatedAt: string): Promise<void> {
+    await this.collection().updateOne(
+      { id } as never,
+      { $inc: { sessionVersion: 1 }, $set: { updatedAt } } as never,
+    );
   }
 }

@@ -65,8 +65,8 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 
 | # | Entrega | Depende | Status | Concluída em | Commit |
 |---|---|---|---|---|---|
-| S1 | Dependências vulneráveis (`npm audit fix`) | — | ⬜ | | |
-| S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ⬜ | | |
+| S1 | Dependências vulneráveis (`npm audit fix`) | — | ✅ | 2026-10-14 | 4800e26 |
+| S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ✅ | 2026-10-14 | ver `git log` |
 | S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ⬜ | | |
 | S4 | IP real do cliente | — | ⬜ | | |
 | S5 | Limites de requisição e de corpo | S4 | ⬜ | | |
@@ -95,4 +95,12 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 
 ## Notas de implementação
 
-(preencher ao concluir cada entrega)
+### S1
+- `npm audit fix` do npm 10.9 falha com `Cannot read properties of null (reading 'edgesOut')`; usar `npx -y npm@11 audit fix`.
+- Backend: 0 vulnerabilidades. Frontend: 0 em produção (`--omit=dev`); restam `braces` e `postcss-selector-parser` via Tailwind 3 (só build/dev — corrigir exige Tailwind 4, fora do escopo).
+- `react-router-dom` 6 → 7 (open redirect com barra invertida) e `vite` 5 → 6 (esbuild do dev server). Build e testes passaram sem mudança de código.
+
+### S2
+- Token leva `sv` (versão de sessão); tokens antigos sem `sv` valem como 0 e continuam aceitos até expirar, então o deploy não desloga ninguém.
+- `verifySession` agora também confere se o usuário existe — base da exclusão de conta (S11).
+- `LogoutDialog` (`frontend/src/components/auth/`) é usado no menu de perfil e no botão de sair do onboarding.

@@ -3,9 +3,9 @@ import { AuthService } from './auth.service';
 import { googleLoginSchema } from './auth.schemas';
 import { PublicUser, User } from './auth.types';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { SESSION_TTL_SECONDS } from './auth.service';
 
 const COOKIE_NAME = 'session';
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function toPublicUser(user: User): PublicUser {
   return { id: user.id, email: user.email, name: user.name, tenantId: user.tenantId };
@@ -25,7 +25,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
-      maxAge: THIRTY_DAYS_MS,
+      maxAge: SESSION_TTL_SECONDS * 1000,
     });
   }
 
@@ -75,6 +75,27 @@ export class AuthController {
       action: 'logout',
       tenantId: actor?.tenantId,
       userId: actor?.sub,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+    res.status(204).send();
+  }
+
+  // Sair de todos os dispositivos: invalida todas as sessões do usuário
+  // (inclusive esta) e limpa o cookie desta.
+  async logoutAll(req: Request, res: Response): Promise<void> {
+    const token = req.cookies?.[COOKIE_NAME];
+    if (!token) {
+      res.status(401).json({ error: 'Não autenticado' });
+      return;
+    }
+    const actor = await this.service.verifySession(token);
+    await this.service.revokeAllSessions(actor.sub);
+    res.clearCookie(COOKIE_NAME);
+    await this.auditLog.record({
+      action: 'logout_all',
+      tenantId: actor.tenantId,
+      userId: actor.sub,
       ip: req.ip,
       userAgent: req.get('user-agent'),
     });

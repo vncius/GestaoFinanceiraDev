@@ -13,5 +13,14 @@
     "logout": "Log out",
     "profileMenu": "Profile menu",
     "mainNav": "Main navigation"
+  },
+  "logoutDialog": {
+    "title": "Log out",
+    "description": "Do you want to log out of this device only, or of every device you signed in on?",
+    "thisDevice": "Log out of this device",
+    "thisDeviceHint": "Your other devices stay signed in.",
+    "allDevices": "Log out of all devices",
+    "allDevicesHint": "Use this if you lost a device or signed in on a computer that is not yours.",
+    "cancel": "Cancel"
   }
 }

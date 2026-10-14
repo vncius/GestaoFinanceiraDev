@@ -7,7 +7,7 @@ import { OnboardingService, OPEN_ONBOARDING_STATUSES } from '../../services/onbo
 import { deferOnboarding } from '../../components/onboarding/OnboardingGate';
 import { Button } from '../../components/ui/Button';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
-import { useAuth } from '../../contexts/AuthContext';
+import { LogoutDialog } from '../../components/auth/LogoutDialog';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Language } from '../../i18n';
 import OnboardingChat from './components/OnboardingChat';
@@ -132,32 +132,22 @@ export default function Onboarding() {
 
 function LogoutButton() {
   const { t } = useTranslation('onboarding');
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      await logout();
-      navigate('/login', { replace: true });
-    } finally {
-      setLoggingOut(false);
-    }
-  }
+  const [open, setOpen] = useState(false);
 
   return (
-    <button
-      type="button"
-      onClick={handleLogout}
-      disabled={loggingOut}
-      data-testid="onboarding-logout"
-      title={t('logout')}
-      aria-label={t('logout')}
-      className="absolute top-4 right-4 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-    >
-      {loggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        data-testid="onboarding-logout"
+        title={t('logout')}
+        aria-label={t('logout')}
+        className="absolute top-4 right-4 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      >
+        <LogOut size={16} />
+      </button>
+      <LogoutDialog open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }
 

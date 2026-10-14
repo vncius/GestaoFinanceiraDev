@@ -13,5 +13,14 @@
     "logout": "Sair",
     "profileMenu": "Menu do perfil",
     "mainNav": "Navegação principal"
+  },
+  "logoutDialog": {
+    "title": "Sair da conta",
+    "description": "Você quer sair só deste aparelho ou de todos em que entrou?",
+    "thisDevice": "Sair deste dispositivo",
+    "thisDeviceHint": "Os outros aparelhos continuam conectados.",
+    "allDevices": "Sair de todos os dispositivos",
+    "allDevicesHint": "Use se perdeu um aparelho ou entrou num computador que não é seu.",
+    "cancel": "Cancelar"
   }
 }

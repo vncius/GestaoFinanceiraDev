@@ -29,6 +29,7 @@ vi.mock('../../services/auth.service', async (importOriginal) => {
       me: vi.fn(),
       loginWithGoogle: vi.fn(),
       logout: vi.fn(),
+      logoutAll: vi.fn(),
     },
   };
 });
@@ -37,6 +38,7 @@ const getStatus = vi.mocked(OnboardingService.getStatus);
 const skip = vi.mocked(OnboardingService.skip);
 const authMe = vi.mocked(AuthService.me);
 const authLogout = vi.mocked(AuthService.logout);
+const authLogoutAll = vi.mocked(AuthService.logoutAll);
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -143,8 +145,23 @@ describe('Onboarding (entrada)', () => {
     renderPage();
 
     fireEvent.click(await screen.findByTestId('onboarding-logout'));
+    fireEvent.click(await screen.findByTestId('logout-device'));
 
     await waitFor(() => expect(authLogout).toHaveBeenCalledTimes(1));
+    expect(authLogoutAll).not.toHaveBeenCalled();
+    expect(await screen.findByText('pagina-login')).toBeInTheDocument();
+  });
+
+  it('permite sair de todos os dispositivos', async () => {
+    getStatus.mockResolvedValue(statusResponse('PENDING'));
+    authLogoutAll.mockResolvedValue(undefined);
+    renderPage();
+
+    fireEvent.click(await screen.findByTestId('onboarding-logout'));
+    fireEvent.click(await screen.findByTestId('logout-all'));
+
+    await waitFor(() => expect(authLogoutAll).toHaveBeenCalledTimes(1));
+    expect(authLogout).not.toHaveBeenCalled();
     expect(await screen.findByText('pagina-login')).toBeInTheDocument();
   });
 });

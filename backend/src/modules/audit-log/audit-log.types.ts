@@ -1,4 +1,4 @@
-export type AuditLogAction = 'login' | 'login_failed' | 'logout';
+export type AuditLogAction = 'login' | 'login_failed' | 'logout' | 'logout_all';
 
 export interface AuditLogEntry {
   tenantId: string | null;

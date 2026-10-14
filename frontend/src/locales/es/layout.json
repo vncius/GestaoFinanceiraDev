@@ -13,5 +13,14 @@
     "logout": "Cerrar sesión",
     "profileMenu": "Menú del perfil",
     "mainNav": "Navegación principal"
+  },
+  "logoutDialog": {
+    "title": "Cerrar sesión",
+    "description": "¿Quieres cerrar sesión solo en este dispositivo o en todos en los que entraste?",
+    "thisDevice": "Cerrar sesión en este dispositivo",
+    "thisDeviceHint": "Tus otros dispositivos siguen conectados.",
+    "allDevices": "Cerrar sesión en todos los dispositivos",
+    "allDevicesHint": "Úsalo si perdiste un dispositivo o entraste en una computadora que no es tuya.",
+    "cancel": "Cancelar"
   }
 }

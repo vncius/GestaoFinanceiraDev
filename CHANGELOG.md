@@ -6,6 +6,11 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 
 ## [Unreleased]
 
+### Security
+- **Plano de segurança e LGPD** (`docs/plano-seguranca.md`, entregas S1–S13).
+- S1: dependências com vulnerabilidade conhecida atualizadas — backend `express` 4.22.3 (`proxy-addr`, `body-parser`, `qs`) e `vitest`; frontend `axios`, `react-router-dom` 7 e `vite` 6. Restam só avisos de build (`braces`/`postcss-selector-parser` via Tailwind 3), sem impacto em produção.
+- S2: sessão expira em 24h (antes 30 dias) e passa a ser revogável — cada usuário tem `sessionVersion`, conferida a cada requisição (cache de 60s). "Sair" pergunta se é só deste dispositivo ou de todos (`POST /auth/logout-all`, registrado na auditoria como `logout_all`).
+
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.
 - U1: `CashFlowSummary` ganha `pendingIncome`/`pendingExpenses` (+ contagens) — o que ainda falta receber/pagar **só no mês selecionado**, sem acumular; e `frontend/src/utils/month-summary.ts` (`summarizeMonth`), regra única de leitura do resumo usada por Dashboard, Fluxo de Caixa e Relatório.
