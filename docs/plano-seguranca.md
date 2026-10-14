@@ -66,18 +66,18 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | # | Entrega | Depende | Status | Concluída em | Commit |
 |---|---|---|---|---|---|
 | S1 | Dependências vulneráveis (`npm audit fix`) | — | ✅ | 2026-10-14 | 4800e26 |
-| S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ✅ | 2026-10-14 | ver `git log` |
-| S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ✅ | 2026-10-14 | ver `git log` |
-| S4 | IP real do cliente | — | ✅ | 2026-10-14 | ver `git log` |
-| S5 | Limites de requisição e de corpo | S4 | ✅ | 2026-10-14 | ver `git log` |
-| S6 | Exigir e-mail verificado no login Google | — | ✅ | 2026-10-14 | ver `git log` |
-| S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ✅ | 2026-10-14 | ver `git log` |
-| S8 | Auditoria de ações destrutivas | S4 | ✅ | 2026-10-14 | ver `git log` |
-| S9 | Logs de requisição sem query string | — | ✅ | 2026-10-14 | ver `git log` |
-| S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ✅ | 2026-10-14 | ver `git log` |
-| S11 | Exclusão completa da conta | S2, S8 | ✅ | 2026-10-14 | ver `git log` |
-| S12 | Criptografia de campos sensíveis | S11 | ✅ | 2026-10-14 | ver `git log` |
-| S13 | CI, Dependabot, varredura de segurança e testes | S1 | ✅ | 2026-10-14 | ver `git log` |
+| S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ✅ | 2026-10-14 | 323fc00 |
+| S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ✅ | 2026-10-14 | f64c87a |
+| S4 | IP real do cliente | — | ✅ | 2026-10-14 | 5d60030 |
+| S5 | Limites de requisição e de corpo | S4 | ✅ | 2026-10-14 | f596529 |
+| S6 | Exigir e-mail verificado no login Google | — | ✅ | 2026-10-14 | 57ec769 |
+| S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ✅ | 2026-10-14 | 84f5696 |
+| S8 | Auditoria de ações destrutivas | S4 | ✅ | 2026-10-14 | 356ee38 |
+| S9 | Logs de requisição sem query string | — | ✅ | 2026-10-14 | bc8ecc4 |
+| S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ✅ | 2026-10-14 | 06bc827 |
+| S11 | Exclusão completa da conta | S2, S8 | ✅ | 2026-10-14 | 573f371 |
+| S12 | Criptografia de campos sensíveis | S11 | ✅ | 2026-10-14 | d412e11 |
+| S13 | CI, Dependabot, varredura de segurança e testes | S1 | ✅ | 2026-10-14 | fa37272 |
 
 ---
 
