@@ -9,6 +9,7 @@
   },
   "validation": {
     "generic": "Validation error",
+    "unsafeInput": "The data you sent contains characters that are not allowed.",
     "name": { "required": "Name is required" },
     "bank": { "required": "Bank is required" },
     "description": { "required": "Description is required" },

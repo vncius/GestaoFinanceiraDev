@@ -230,10 +230,10 @@ export class BackupService {
     const lines = [header, ...rows.map((r) => [
       formatDateBR(r.date),
       r.type,
-      r.description,
-      r.category,
-      r.account,
-      r.counterpart,
+      neutralizeFormula(r.description),
+      neutralizeFormula(r.category),
+      neutralizeFormula(r.account),
+      neutralizeFormula(r.counterpart),
       formatAmountBR(r.amount),
       r.status,
     ])];
@@ -297,6 +297,15 @@ export class BackupService {
 }
 
 // ─── CSV helpers ──────────────────────────────────────────────────────────────
+
+// Injeção de fórmula (CSV injection): texto livre começando com = + - @ (ou
+// tab/CR) vira fórmula ao abrir no Excel/Sheets — uma descrição importada de
+// extrato como `=HYPERLINK(...)` executaria. O apóstrofo faz a planilha
+// tratar como texto. Só para colunas de texto livre: a coluna Valor é
+// negativa de propósito e precisa continuar numérica.
+export function neutralizeFormula(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}
 
 function csvEscape(value: string): string {
   if (/[;"\r\n]/.test(value)) {

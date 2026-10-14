@@ -71,7 +71,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S4 | IP real do cliente | — | ✅ | 2026-10-14 | ver `git log` |
 | S5 | Limites de requisição e de corpo | S4 | ✅ | 2026-10-14 | ver `git log` |
 | S6 | Exigir e-mail verificado no login Google | — | ✅ | 2026-10-14 | ver `git log` |
-| S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ⬜ | | |
+| S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ✅ | 2026-10-14 | ver `git log` |
 | S8 | Auditoria de ações destrutivas | S4 | ⬜ | | |
 | S9 | Logs de requisição sem query string | — | ⬜ | | |
 | S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ⬜ | | |
@@ -126,3 +126,9 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Contas Gmail sempre vêm com `email_verified: true`; o caso real bloqueado é conta Google criada com e-mail de outro provedor sem confirmação.
 - E-mail **não** foi normalizado para minúsculas: usuários existentes foram gravados como o Google mandou, e mudar a busca agora poderia criar um segundo tenant para a mesma pessoa.
 - Testes simulam só a verificação do ID-token (`vi.mock('jose')` com passthrough para a sessão própria).
+
+### S7
+- Levantamento: todo acesso ao Mongo filtra por `tenantId` + `id` e o resto é filtrado em memória; nenhum `$where`/`$regex` com entrada do usuário. O risco real era o backup (gravado direto com qualquer campo) e o CSV (fórmula ao abrir no Excel).
+- Campos conhecidos do backup ficaram opcionais (só `id` obrigatório) para aceitar backups antigos; campos desconhecidos só aceitam string/número/booleano/null — os legados que as migrações de boot leem são todos simples.
+- Formulários comuns (`*.schemas.ts`) não têm limite de tamanho em descrição/observações; o limite de 1 MB do corpo (S5) cobre o abuso. Se quiser limites por campo, é ajuste de produto (quanto texto cabe numa descrição).
+- Verificado no backend local: `{"idToken":{"$ne":null}}` em `/auth/google` → 400 `validation.unsafeInput`.

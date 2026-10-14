@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { requireCsrfHeader } from './shared/middlewares/csrf.middleware';
 import { clientIp, trustProxyHops } from './shared/middlewares/client-ip.middleware';
 import { globalIpLimiter } from './shared/middlewares/rate-limits';
+import { rejectUnsafeInput } from './shared/middlewares/sanitize-input.middleware';
 import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
@@ -66,6 +67,7 @@ app.use(
 );
 // Demais rotas: formulários e listas pequenas.
 app.use(express.json({ limit: '1mb' }));
+app.use(rejectUnsafeInput);
 app.use(cookieParser());
 app.use(requestLogger);
 

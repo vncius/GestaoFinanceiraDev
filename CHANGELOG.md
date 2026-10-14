@@ -14,6 +14,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - S4: IP real do cliente (`req.clientIp`) na auditoria — o proxy `/api` envia `X-Client-IP` com um segredo compartilhado (`PROXY_SHARED_SECRET`, configurado no Cloudflare e no Render) e o backend só confia nele quando o segredo confere; sem proxy, usa `trust proxy` (`TRUST_PROXY_HOPS`, default 1).
 - S5: limites de requisição — 600/min por IP em qualquer rota, 20/min por IP no login, 20 a cada 10 min por usuário em restauração de backup e importações, 5/h para zerar os dados. Corpo JSON limitado a 1 MB (20 MB só em restauração e importações; 16 KB no chat do onboarding). Corpo grande demais e JSON malformado agora respondem 413/400 com mensagem traduzida em vez de erro interno.
 - S6: login com Google exige `email_verified` no ID-token (a conta é identificada pelo e-mail).
+- S7: proteção contra injection — toda requisição com chave de operador do MongoDB (`$…`) ou de protótipo (`__proto__`, `constructor`) no corpo ou na query é recusada (`validation.unsafeInput`); restauração de backup valida tipo e tamanho de cada campo das entidades (antes só exigia `id`) e só aceita valores simples em campos desconhecidos; CSV exportado neutraliza fórmulas (`=`, `+`, `-`, `@`) em descrição, categoria e contas.
 
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.

@@ -9,6 +9,7 @@
   },
   "validation": {
     "generic": "Erro de validação",
+    "unsafeInput": "Os dados enviados contêm caracteres não permitidos.",
     "name": { "required": "Nome é obrigatório" },
     "bank": { "required": "Banco é obrigatório" },
     "description": { "required": "Descrição é obrigatória" },
