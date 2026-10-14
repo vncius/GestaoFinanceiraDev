@@ -315,6 +315,13 @@ Fases 0–4 entregam a simplificação completa. Fase 5 é evolução opcional �
 
 > Registrar aqui, por entrega, descobertas, desvios do plano, decisões menores e pendências. Mais recente no topo.
 
+### Revisão geral — 2026-10-13
+- Suíte completa verde (build, 103 testes front, 280 back) e checagem `tsc --noUnusedLocals`.
+- **Bug corrigido (introduzido na U17):** na visão "Todas as contas", editar uma transferência de outra conta abria o `TransferModal` usando a última conta específica do seletor como "esta" conta — salvar regravaria origem/destino errados. Agora usa `item.accountId`. Teste em `TransferModal.test.tsx`.
+- Pagar fatura na visão consolidada sugere a conta que já paga a fatura (`paymentAccountId` ou pagadora padrão do cartão), não a última conta selecionada. Fatura ainda não paga mostra a conta pagadora padrão na lista consolidada.
+- Limpeza: import sem uso em `Settings.tsx`; `seed:demo` deixa "Plano de saúde" (dia 8) como o item atrasado de propósito.
+- Fica pendente para a U21 (amanhã): rodar `seed:demo`, prints e README (o README novo já está escrito e **não commitado**, aguardando as imagens). O Atlas voltou a recusar a conexão desta máquina (TLS alert 80) — liberar o IP de novo antes.
+
 ### U20 — 2026-10-13
 - Onboarding IA: prompt e descrição de `propose_settings` explicam `dashboardScope` como **visão inicial do seletor** (Início, Movimentações, Cartões), trocável a qualquer momento; rótulos da revisão do draft idem ("O app abre mostrando todas as contas / uma conta por vez").
 - `formatMonthYear` agora usa o idioma ativo (Intl), com inicial maiúscula — antes era sempre português (pendência registrada na U3/U7).

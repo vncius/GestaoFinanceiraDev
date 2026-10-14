@@ -18,7 +18,6 @@ import { IconActionButton } from '../../components/ui/IconActionButton';
 import { HelpTip } from '../../components/ui/Tooltip';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { formatCurrency, centsToFloat, floatToCents } from '../../utils/money';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../contexts/ToastContext';

@@ -56,13 +56,16 @@ export function TransferModal({
 
   const init = (): TransferFormState => {
     if (item) {
+      // A conta "desta" perna é a do próprio item — na visão "Todas as
+      // contas" ela pode não ser a conta selecionada por último (U17).
+      const ownAccountId = item.accountId ?? accountId;
       const isOut = item.direction === 'OUT';
       return {
         description: item.description,
         amount: String(centsToFloat(item.amount)),
         date: toInputDate(item.expectedDate),
-        sourceAccountId: isOut ? accountId : item.counterpartAccountId,
-        targetAccountId: isOut ? item.counterpartAccountId : accountId,
+        sourceAccountId: isOut ? ownAccountId : item.counterpartAccountId,
+        targetAccountId: isOut ? item.counterpartAccountId : ownAccountId,
         notes: item.notes ?? '',
       };
     }

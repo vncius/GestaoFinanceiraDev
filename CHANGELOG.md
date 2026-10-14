@@ -58,6 +58,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Cobertura de `aria-label`/`role` ampliada em botões só-ícone (Editar/Excluir/Desativar, toggles de pago/recebido) em CashFlow, Receivables, CreditCards e Settings; item de "próximos vencimentos" do Dashboard agora é focável e acionável via teclado.
 
 ### Fixed
+- Na visão "Todas as contas" de Movimentações, editar uma transferência de outra conta usava a conta errada como origem/destino; pagar fatura sugere a conta que já paga aquela fatura.
 - Migração de boot `migrateResetAutoReserve` zerava, a cada reinício do servidor (deploy ou cold start no Render), toda regra de reserva automática configurada depois da E8. O reset agora só atinge contas no formato pré-E8. **Regras configuradas antes desta correção podem ter sido apagadas em produção e precisam ser reconfiguradas.**
 - U1: "Saídas" não tem mais três valores diferentes. Transferências entre contas deixaram de ser somadas em Entradas/Saídas no Fluxo de Caixa e no Relatório (o Dashboard já não somava) e passaram a aparecer à parte como "Entre contas" (saldo líquido), só quando há alguma no mês.
 - U1: o saldo previsto ignorava o que já tinha sido recebido/pago no próprio mês (ex.: saldo inicial 1.000, recebido 500 e 200 a pagar → previsto 800 em vez de 1.300). A base da projeção agora é o saldo realizado; regressão introduzida em `726fe67`.

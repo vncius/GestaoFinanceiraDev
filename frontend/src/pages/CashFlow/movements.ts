@@ -41,6 +41,9 @@ export interface MovementsInput {
   creditCards: CreditCardInvoice[];
   cardNames: Map<string, string>;
   cardFallbackName: string;
+  // Conta pagadora padrão de cada cartão: fatura ainda não paga não tem
+  // paymentAccountId gravado.
+  cardPayers?: Map<string, string | null>;
 }
 
 function fromTransaction(kind: 'income' | 'payment' | 'extra', t: FinancialTransaction): MovementItem {
@@ -95,7 +98,7 @@ export function toMovements(input: MovementsInput): MovementItem[] {
       isFixed: false,
       isAutoReserve: false,
       counterpartAccountName: null,
-      accountId: inv.paymentAccountId,
+      accountId: inv.paymentAccountId ?? input.cardPayers?.get(inv.creditCardId) ?? null,
       actionId: inv.id,
       source: { kind: 'invoice', item: inv },
     }));

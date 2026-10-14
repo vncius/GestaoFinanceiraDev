@@ -76,6 +76,7 @@ export default function CashFlow() {
   });
 
   const cardNames = useMemo(() => new Map(cards.map((c) => [c.id, c.name])), [cards]);
+  const cardPayers = useMemo(() => new Map(cards.map((c) => [c.id, c.defaultPaymentAccountId])), [cards]);
   const categoryNames = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
   const accountNames = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
 
@@ -448,6 +449,7 @@ export default function CashFlow() {
       creditCards: filteredCreditCards,
       cardNames,
       cardFallbackName: t('creditCardsGrid.cardFallbackName'),
+      cardPayers,
     }), { search, tags: tagFilter, categoryNames }),
   );
   const isFiltering = search.trim() !== '' || tagFilter.size > 0;
@@ -649,7 +651,14 @@ export default function CashFlow() {
         open={!!invoicePayTarget}
         onClose={() => setInvoicePayTarget(null)}
         accounts={accounts as Account[]}
-        defaultAccountId={accountId}
+        // Sugere quem já paga essa fatura (importa na visão "Todas as contas").
+        defaultAccountId={
+          invoicePayTarget
+            ? invoicePayTarget.paymentAccountId ??
+              cards.find((c) => c.id === invoicePayTarget.creditCardId)?.defaultPaymentAccountId ??
+              accountId
+            : accountId
+        }
         isPaying={payInvoice.isPending}
         onConfirm={(accountId) => {
           if (invoicePayTarget) {

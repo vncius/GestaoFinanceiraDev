@@ -162,7 +162,7 @@ async function main() {
 
   // ── Efetiva o passado: tudo até alguns dias atrás, exceto um atraso ───────
   const settleBefore = todayKey;
-  const keepOverdue = new Set(['Internet fibra']); // fica atrasado no mês atual, de propósito
+  const keepOverdue = new Set(['Plano de saúde']); // fica atrasado no mês atual, de propósito (vence dia 8)
   for (const offset of [-2, -1, 0]) {
     const { month, year } = monthAt(offset);
     await cashFlow.loadDataset(tenantId, month, year); // materializa os fixos do mês
