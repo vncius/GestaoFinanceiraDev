@@ -2,7 +2,10 @@
   "common": {
     "unknown": "Ocurrió un error inesperado.",
     "networkError": "No se pudo conectar con el servidor",
-    "internalError": "Error interno del servidor"
+    "internalError": "Error interno del servidor",
+    "rateLimited": "Demasiados intentos en poco tiempo. Espera {{retryAfterSeconds}} segundos e inténtalo de nuevo.",
+    "payloadTooLarge": "El archivo o contenido enviado es demasiado grande.",
+    "invalidJson": "Los datos enviados tienen un formato inválido."
   },
   "validation": {
     "generic": "Error de validación",

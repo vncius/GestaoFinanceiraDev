@@ -69,7 +69,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ✅ | 2026-10-14 | ver `git log` |
 | S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ✅ | 2026-10-14 | ver `git log` |
 | S4 | IP real do cliente | — | ✅ | 2026-10-14 | ver `git log` |
-| S5 | Limites de requisição e de corpo | S4 | ⬜ | | |
+| S5 | Limites de requisição e de corpo | S4 | ✅ | 2026-10-14 | ver `git log` |
 | S6 | Exigir e-mail verificado no login Google | — | ⬜ | | |
 | S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ⬜ | | |
 | S8 | Auditoria de ações destrutivas | S4 | ⬜ | | |
@@ -115,3 +115,9 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Não dá para confiar no `CF-Connecting-IP`/`X-Forwarded-For` que chega ao Render: o backend é público e qualquer um forja esses cabeçalhos chamando-o direto. Por isso o segredo compartilhado.
 - **Sem `PROXY_SHARED_SECRET` configurado nos dois lados, todo tráfego via proxy aparece com IP do Cloudflare** — e o limite por IP da S5 passa a valer para todos juntos. Configurar antes do deploy (ver Ações de deploy).
 - Não verificado em produção (exige deploy). Conferir depois no `audit_log`: o `ip` do `login` deve ser o IP público de quem entrou.
+
+### S5
+- Limitadores configurados em `backend/src/shared/middlewares/rate-limits.ts`. Importações compartilham um contador por tenant (pré-visualizar + confirmar = 2 chamadas), por isso 20 e não 10 como em D5.
+- `globalIpLimiter` fica depois do `cors()`: um 429 sem cabeçalhos CORS apareceria no frontend como erro de rede.
+- A CSP do helmet precisa de `useDefaults: false`, senão ele mistura as diretivas padrão (que liberam `https:` em estilo/fonte) com a nossa.
+- Verificado com o backend local: sem `X-Requested-With` → 403; corpo de 2 MB em `/auth/google` → 413; JSON malformado → 400; 21ª tentativa de login no mesmo minuto → 429 com `retryAfterSeconds`; `/health` com `Content-Security-Policy: default-src 'none';frame-ancestors 'none'` e `X-Frame-Options: DENY`.

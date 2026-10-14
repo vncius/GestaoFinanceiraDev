@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/utils/async-handler';
 import { controllers } from '../../container';
+import { importLimiter } from '../../shared/middlewares/rate-limits';
 
 const router = Router();
 const controller = controllers.creditCards;
@@ -25,7 +26,7 @@ router.post('/:id/invoices/:invoiceId/pay', asyncHandler((req, res) => controlle
 router.post('/:id/invoices/:invoiceId/revert', asyncHandler((req, res) => controller.revertInvoice(req, res)));
 
 // importação de fatura via OFX
-router.post('/:id/invoice-import/parse', asyncHandler((req, res) => invoiceImportController.parse(req, res)));
-router.post('/:id/invoice-import/confirm', asyncHandler((req, res) => invoiceImportController.confirm(req, res)));
+router.post('/:id/invoice-import/parse', importLimiter, asyncHandler((req, res) => invoiceImportController.parse(req, res)));
+router.post('/:id/invoice-import/confirm', importLimiter, asyncHandler((req, res) => invoiceImportController.confirm(req, res)));
 
 export default router;

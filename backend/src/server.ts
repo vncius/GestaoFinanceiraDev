@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { requireCsrfHeader } from './shared/middlewares/csrf.middleware';
 import { clientIp, trustProxyHops } from './shared/middlewares/client-ip.middleware';
+import { globalIpLimiter } from './shared/middlewares/rate-limits';
 import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
@@ -40,19 +41,31 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:3101';
 // demais cabeçalhos padrão do helmet (HSTS, nosniff, sem X-Powered-By…).
 app.use(
   helmet({
-    contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+    },
+    frameguard: { action: 'deny' },
   }),
 );
 app.use(clientIp);
 app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
+// Depois do cors: um 429 sem cabeçalhos CORS chegaria ao frontend como erro de rede.
+app.use(globalIpLimiter);
 app.use(requireCsrfHeader);
-// Limite apertado para a rota de chat do onboarding — precisa rodar ANTES do
-// parser global: body-parser pula a mensagens já parseadas (req._body), então
-// montar esta versão primeiro faz o limite de 16kb prevalecer só nessa rota.
+// Limites de corpo por rota — cada parser específico precisa rodar ANTES do
+// global: body-parser pula mensagens já parseadas (req._body), então o
+// primeiro que casar com a rota é o que vale.
+// Chat do onboarding: apertado.
 app.use('/onboarding/messages', express.json({ limit: '16kb' }));
-// Limite maior que o default (100kb) porque a restauração de backup e a
-// importação de extrato mandam o dataset completo/arquivo no corpo da requisição.
-app.use(express.json({ limit: '20mb' }));
+// Restauração de backup e importação de extrato/fatura mandam o dataset
+// completo ou o arquivo no corpo.
+app.use(
+  ['/backup/import', '/backup/statement', '/credit-cards/:id/invoice-import'],
+  express.json({ limit: '20mb' }),
+);
+// Demais rotas: formulários e listas pequenas.
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(requestLogger);
 

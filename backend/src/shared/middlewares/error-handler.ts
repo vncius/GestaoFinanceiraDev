@@ -29,6 +29,18 @@ export function errorHandler(
     return;
   }
 
+  // Erros do body-parser (express.json): corpo acima do limite da rota ou
+  // JSON malformado. Não são falha do servidor.
+  const parserErrorType = (error as Error & { type?: string }).type;
+  if (parserErrorType === 'entity.too.large') {
+    res.status(413).json({ error: 'Conteúdo grande demais', code: 'common.payloadTooLarge' });
+    return;
+  }
+  if (parserErrorType === 'entity.parse.failed') {
+    res.status(400).json({ error: 'JSON inválido', code: 'common.invalidJson' });
+    return;
+  }
+
   console.error('[Unhandled Error]', error);
   res.status(500).json({ error: 'Erro interno do servidor', code: 'common.internalError' });
 }
