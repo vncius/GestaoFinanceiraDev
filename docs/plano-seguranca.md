@@ -1,0 +1,98 @@
+# Plano: Endurecimento de segurança e LGPD
+
+> Plano de execução incremental. Cada entrega (S1, S2, …) é fechada: compila, passa nos testes, mantém a aplicação funcional e pode ser commitada sozinha.
+> **Este arquivo é a fonte de verdade do andamento.** Qualquer sessão (humana ou IA) deve conseguir continuar o trabalho lendo só este documento + o código.
+
+---
+
+## Como continuar (protocolo para cada sessão)
+
+1. Leia este arquivo inteiro — principalmente **Decisões** e **Status**.
+2. Escolha a **primeira entrega ⬜ cujas dependências estão todas ✅** (ou a que o usuário pedir).
+3. Mude o status dela para 🟡 antes de começar.
+4. Implemente seguindo o **Escopo** (os arquivos citados são ponto de partida, confirme no código).
+5. Valide com a **Definição de pronto**.
+6. Ao concluir: status → ✅ com data e commit; registre descobertas em **Notas de implementação**; entrada no `CHANGELOG.md` (`[Unreleased]`); **um commit por entrega** (`feat(security): S<n> — <título>` ou `fix(security)`/`chore(security)`). Não fazer push sem o usuário pedir.
+7. Decisão de produto nova → perguntar ao usuário e registrar como `D<n>`.
+
+### Definição de pronto
+
+- [ ] `cd backend && npm run typecheck && npm test` verde.
+- [ ] Se tocou no frontend: `cd frontend && npm run build && npm test` verde; textos nos três idiomas (`frontend/src/locales/{pt,en,es}/`).
+- [ ] Variável de ambiente nova documentada em `backend/.env.example`, `README.md` e na seção **Ações de deploy** abaixo.
+- [ ] Nenhum fluxo existente quebrado (login, iPhone via proxy `/api`, backup, importações, onboarding).
+
+---
+
+## Objetivo
+
+Levar a aplicação de "projeto pessoal" para um patamar mínimo aceitável para uso por terceiros: sessão revogável, proteção contra CSRF, cabeçalhos de segurança, limites de requisição, IP real nos logs, validação contra injection, trilha de auditoria, LGPD (consentimento, políticas, exclusão de conta) e criptografia de campos sensíveis. Origem: avaliação de segurança de 2026-10-14 (conversa com o usuário).
+
+---
+
+## Decisões tomadas
+
+### D1 — Sessão de 1 dia, revogável
+JWT de sessão expira em **24h** (absoluto, sem renovação deslizante). Cada usuário tem `sessionVersion`; o token carrega a versão e o `authMiddleware` compara com a do banco (cache em memória de 60s, invalidado na hora em "sair de todos"/exclusão). "Sair" pergunta: **só deste dispositivo** ou **de todos os dispositivos** (incrementa `sessionVersion`).
+
+### D2 — CSRF sem quebrar iPhone
+Produção usa o proxy same-origin do Cloudflare Pages (`/api`), então o cookie é first-party: passa a ser `SameSite=Lax` (configurável por `COOKIE_SAME_SITE` para quem fizer deploy cross-site sem proxy). Toda requisição que altera estado exige o cabeçalho `X-Requested-With: XMLHttpRequest` — um site de terceiro não consegue enviá-lo sem passar pelo preflight CORS, que só libera `CORS_ORIGIN`. Não depende de cookie de terceiro, então funciona no Safari/iOS.
+
+### D3 — Cabeçalhos
+Backend: `helmet` (API só devolve JSON; CSP `default-src 'none'`). Frontend: `frontend/public/_headers` do Cloudflare Pages com CSP que libera apenas o próprio domínio e o Google Identity Services (`accounts.google.com/gsi/*`), HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`.
+
+### D4 — IP real
+Cadeia: navegador → Pages Function (proxy) → load balancer do Render → Express. O proxy envia `X-Client-IP` (de `CF-Connecting-IP`) junto com `X-Proxy-Secret`; o backend só confia no `X-Client-IP` se o segredo bater (`PROXY_SHARED_SECRET`). Sem proxy, usa `req.ip` com `trust proxy` = `TRUST_PROXY_HOPS` (default 1, o LB do Render).
+
+### D5 — Limites
+Em memória (processo único). Por IP: login Google 20/min; geral 600/min. Por tenant (após auth): importações/restauração 10 a cada 10 min; reset/exclusão de conta 5/h. Corpo JSON: 1 MB por padrão; 20 MB só em restauração de backup e importações de extrato/fatura; 16 KB no chat do onboarding.
+
+### D6 — Consentimento LGPD no primeiro acesso
+Usuário guarda `consentVersion`/`consentAcceptedAt`. Sem consentimento da versão vigente, o backend devolve `403 auth.consentRequired` em qualquer rota de dados, e o frontend mostra a tela de aceite (resumo + links para Política de Privacidade e Termos de Uso). Recusar = sair. Mudar o texto das políticas exige incrementar `CONSENT_VERSION` (todos aceitam de novo).
+
+### D7 — Exclusão completa
+"Excluir minha conta" (Configurações → Seus dados) apaga todos os dados do tenant, o usuário e anonimiza o log de auditoria do usuário (fica só ação + data, sem e-mail/IP), invalida as sessões e encerra a atual.
+
+### D8 — Criptografia de campos
+AES-256-GCM na camada de persistência (`MongoStore` e repositórios de usuários/auditoria/onboarding), chave `ENCRYPTION_KEY` (32 bytes base64). Campos: descrição e observações de lançamentos e compras no cartão; mensagens e resumo da conversa do onboarding; e-mail e nome do usuário (e-mail com índice cego HMAC para o login); e-mail e IP do log de auditoria. Valores **não** são criptografados (o Atlas já criptografa em repouso; sem descrição/e-mail eles não identificam ninguém, e manter número preserva consultas futuras no banco). Migração de boot idempotente criptografa o que estiver em texto puro. Produção sem `ENCRYPTION_KEY` não sobe. **Perder a chave = perder os dados criptografados.**
+
+### D9 — Logs de requisição
+Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o ganho é preventivo. Custo é uma linha: logar `req.path` em vez de `originalUrl`. Aplicado.
+
+---
+
+## Status
+
+| # | Entrega | Depende | Status | Concluída em | Commit |
+|---|---|---|---|---|---|
+| S1 | Dependências vulneráveis (`npm audit fix`) | — | ⬜ | | |
+| S2 | Sessão de 1 dia + sair de todos os dispositivos | — | ⬜ | | |
+| S3 | CSRF (SameSite=Lax + cabeçalho) e cabeçalhos de segurança | — | ⬜ | | |
+| S4 | IP real do cliente | — | ⬜ | | |
+| S5 | Limites de requisição e de corpo | S4 | ⬜ | | |
+| S6 | Exigir e-mail verificado no login Google | — | ⬜ | | |
+| S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ⬜ | | |
+| S8 | Auditoria de ações destrutivas | S4 | ⬜ | | |
+| S9 | Logs de requisição sem query string | — | ⬜ | | |
+| S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ⬜ | | |
+| S11 | Exclusão completa da conta | S2, S8 | ⬜ | | |
+| S12 | Criptografia de campos sensíveis | S11 | ⬜ | | |
+| S13 | CI, Dependabot, CodeQL e testes de segurança | S1 | ⬜ | | |
+
+---
+
+## Ações de deploy (fazer no painel, fora do código)
+
+| Onde | O quê | Entrega |
+|---|---|---|
+| Render | `PROXY_SHARED_SECRET` = valor aleatório longo (igual ao do Cloudflare) | S4 |
+| Cloudflare Pages | `PROXY_SHARED_SECRET` = o mesmo valor (Production e Preview) | S4 |
+| Render | `ENCRYPTION_KEY` = `openssl rand -base64 32` — **guardar cópia em local seguro** | S12 |
+| Render | Conferir `NODE_ENV=production` e `CORS_ORIGIN` = URL do Pages | S3 |
+| GitHub | Ativar Dependabot alerts e Code scanning (Settings → Code security) | S13 |
+
+---
+
+## Notas de implementação
+
+(preencher ao concluir cada entrega)
