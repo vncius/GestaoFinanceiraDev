@@ -25,6 +25,11 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     const code = error.response?.data?.code;
+    // Políticas mudaram (ou o aceite ainda não foi feito) com o app aberto:
+    // recarregar faz o /auth/me trazer consentRequired e mostra a tela de aceite.
+    if (error.response?.status === 403 && code === 'auth.consentRequired') {
+      window.location.href = '/';
+    }
     const params = error.response?.data?.params;
     const message = code
       ? translateErrorCode(code, params)

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import { LegalLinks } from '../../components/legal/LegalLinks';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -52,6 +53,11 @@ export default function Login() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('subtitle')}</p>
 
         <div ref={googleButtonRef} />
+
+        <LegalLinks
+          i18nKey="footer.loginNotice"
+          className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2"
+        />
       </div>
     </div>
   );

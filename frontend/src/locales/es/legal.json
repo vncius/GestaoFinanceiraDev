@@ -1,0 +1,152 @@
+{
+  "privacyTitle": "Política de Privacidad",
+  "termsTitle": "Términos de Uso",
+  "lastUpdated": "Última actualización: {{date}} · versión {{version}}",
+  "back": "Volver",
+  "footer": {
+    "loginNotice": "Al entrar, podrás leer y aceptar la <privacy>Política de Privacidad</privacy> y los <terms>Términos de Uso</terms>.",
+    "links": "<privacy>Política de Privacidad</privacy> · <terms>Términos de Uso</terms>"
+  },
+  "consent": {
+    "title": "Antes de empezar",
+    "intro": "Para guardar y organizar tus finanzas, Gestão Financeira necesita tratar algunos de tus datos. En resumen:",
+    "points": [
+      "Usamos tu nombre y correo de Google para identificar tu cuenta.",
+      "Tus movimientos, cuentas y tarjetas quedan solo contigo — no los vendemos ni los compartimos para publicidad.",
+      "Las descripciones, observaciones y tu correo se guardan cifrados en la base de datos.",
+      "Si usas el asistente de configuración, tus mensajes se envían a un proveedor de inteligencia artificial para generar la propuesta.",
+      "Puedes exportar tus datos o eliminar tu cuenta, con todo lo que contiene, cuando quieras, en Configuración → Tus datos."
+    ],
+    "readFull": "Lee la <privacy>Política de Privacidad</privacy> y los <terms>Términos de Uso</terms> completos.",
+    "checkbox": "Leí y acepto la Política de Privacidad y los Términos de Uso.",
+    "accept": "Aceptar y continuar",
+    "decline": "No acepto (salir)"
+  },
+  "privacy": [
+    {
+      "title": "1. Quiénes somos",
+      "paragraphs": [
+        "Esta política explica cómo Gestão Financeira (\"la aplicación\") trata datos personales conforme a la Ley General de Protección de Datos de Brasil (Ley nº 13.709/2018 — LGPD).",
+        "Responsable del tratamiento: {{controller}}. Contacto para asuntos de privacidad, incluido el encargado (DPO): {{email}}."
+      ]
+    },
+    {
+      "title": "2. Qué datos tratamos",
+      "paragraphs": [
+        "Datos de registro: nombre, correo e identificador de tu cuenta de Google, recibidos cuando entras con Google. Nunca recibimos ni guardamos tu contraseña.",
+        "Datos que registras: cuentas, tipos de cuenta, categorías, movimientos (descripciones, importes, fechas, observaciones), tarjetas, facturas, compras en cuotas, transferencias y archivos de extracto o factura que importes.",
+        "Conversación con el asistente de configuración (opcional): los mensajes que escribes y el resumen de la conversación.",
+        "Datos de seguridad: dirección IP, navegador (user-agent), fecha y hora de entradas, salidas y de acciones como eliminaciones, importaciones y exportaciones.",
+        "No tratamos datos sensibles (art. 5, II, de la LGPD) ni pedimos documentos, contraseñas bancarias o números completos de tarjeta."
+      ]
+    },
+    {
+      "title": "3. Para qué los usamos y con qué base legal",
+      "paragraphs": [
+        "Prestar el servicio — guardar tus datos financieros y calcular saldos, previsiones e informes: ejecución del contrato (art. 7, V).",
+        "Seguridad — impedir accesos indebidos, limitar abusos e investigar incidentes con los registros de acceso: interés legítimo (art. 7, IX) y cumplimiento de obligación legal (art. 7, II, y Marco Civil de Internet de Brasil).",
+        "Asistente de configuración con inteligencia artificial — solo cuando eliges usarlo: consentimiento (art. 7, I), que puedes no dar simplemente configurando de forma manual.",
+        "No usamos tus datos para publicidad, no vendemos datos ni creamos perfiles para terceros."
+      ]
+    },
+    {
+      "title": "4. Con quién los compartimos",
+      "paragraphs": [
+        "Solo con proveedores necesarios para que la aplicación funcione, que tratan los datos en nuestro nombre (encargados): alojamiento del sistema (Render y Cloudflare), base de datos (MongoDB Atlas), inicio de sesión (Google) y, si usas el asistente, el proveedor de inteligencia artificial configurado (por ejemplo, Anthropic u OpenAI).",
+        "Algunos de estos proveedores tienen servidores fuera de Brasil. La transferencia internacional se apoya en las garantías contractuales de estos proveedores (art. 33 de la LGPD).",
+        "También podemos entregar datos cuando lo exija la ley o una orden judicial."
+      ]
+    },
+    {
+      "title": "5. Cuánto tiempo los guardamos",
+      "paragraphs": [
+        "Tus datos se guardan mientras exista tu cuenta. Al eliminar la cuenta, borramos al instante tus datos financieros, la conversación con el asistente y tu registro.",
+        "Los registros de acceso y de acciones se guardan hasta 90 días. Tras eliminar la cuenta, los que quedan pierden el correo y la IP; solo conservan la acción y la fecha.",
+        "Las copias de seguridad del proveedor de base de datos pueden tardar algunos días en expirar."
+      ]
+    },
+    {
+      "title": "6. Tus derechos",
+      "paragraphs": [
+        "En cualquier momento puedes: confirmar que tratamos tus datos y acceder a ellos; corregirlos (editándolos directamente en la aplicación); llevarlos a otro servicio (Configuración → Tus datos → exportar copia de seguridad o CSV); pedir su eliminación (Configuración → Tus datos → Eliminar mi cuenta); saber con quién los compartimos; y revocar el consentimiento del asistente.",
+        "Para otras solicitudes o dudas, escribe a {{email}}. También puedes presentar una reclamación ante la Autoridad Nacional de Protección de Datos de Brasil (ANPD)."
+      ]
+    },
+    {
+      "title": "7. Seguridad",
+      "paragraphs": [
+        "Usamos conexión cifrada (HTTPS), sesión que caduca en 24 horas y que se puede cerrar en todos los dispositivos, cifrado en la base de datos de descripciones, observaciones, mensajes del asistente y de tu correo, aislamiento de los datos de cada usuario, límites contra abusos y registro de las acciones sensibles.",
+        "Ningún sistema es 100% seguro. Si ocurre un incidente que pueda causar un riesgo o daño relevante, te avisaremos a ti y a la ANPD, como exige la ley."
+      ]
+    },
+    {
+      "title": "8. Cookies y almacenamiento en el navegador",
+      "paragraphs": [
+        "Usamos una única cookie, esencial, para mantener tu sesión. No usamos cookies de publicidad ni de seguimiento.",
+        "El navegador también guarda tus preferencias (idioma, tema, última cuenta elegida), que no salen de tu dispositivo."
+      ]
+    },
+    {
+      "title": "9. Cambios en esta política",
+      "paragraphs": [
+        "Si esta política cambia, verás la nueva versión y tendrás que aceptarla otra vez antes de seguir usando la aplicación."
+      ]
+    }
+  ],
+  "terms": [
+    {
+      "title": "1. Aceptación",
+      "paragraphs": [
+        "Al usar Gestão Financeira aceptas estos Términos de Uso y la Política de Privacidad. Si no estás de acuerdo, no uses la aplicación."
+      ]
+    },
+    {
+      "title": "2. El servicio",
+      "paragraphs": [
+        "La aplicación es una herramienta para organizar finanzas personales y de pequeños negocios: registras ingresos, gastos, cuentas, tarjetas y transferencias y sigues saldos y previsiones.",
+        "La aplicación no mueve dinero, no se conecta a tu banco y no es una entidad financiera. Las cifras mostradas dependen de lo que registres.",
+        "El asistente de configuración usa inteligencia artificial y puede equivocarse: todo lo que propone pasa por tu revisión antes de guardarse."
+      ]
+    },
+    {
+      "title": "3. Tu cuenta",
+      "paragraphs": [
+        "El acceso se hace con tu cuenta de Google. Eres responsable de mantener esa cuenta segura y de todo lo que se haga con ella. Si sospechas de un acceso indebido, usa \"Cerrar sesión en todos los dispositivos\" y protege tu cuenta de Google.",
+        "Debes tener capacidad legal para aceptar estos términos o contar con la autorización de tu representante legal."
+      ]
+    },
+    {
+      "title": "4. Uso permitido",
+      "paragraphs": [
+        "No está permitido: intentar acceder a datos de otras personas, eludir límites o protecciones, sobrecargar el sistema, enviar archivos maliciosos ni usar la aplicación para actividades ilegales. Las cuentas que lo hagan pueden ser suspendidas."
+      ]
+    },
+    {
+      "title": "5. Tus datos",
+      "paragraphs": [
+        "Los datos que registras son tuyos. Puedes exportarlos o eliminar tu cuenta en cualquier momento, como se describe en la Política de Privacidad.",
+        "Te recomendamos exportar una copia de seguridad de vez en cuando."
+      ]
+    },
+    {
+      "title": "6. Responsabilidad",
+      "paragraphs": [
+        "La aplicación se ofrece tal cual. Hacemos lo posible para mantenerla disponible y correcta, pero no garantizamos un funcionamiento ininterrumpido ni respondemos por decisiones financieras tomadas a partir de la información mostrada, que son tu responsabilidad.",
+        "La aplicación no sustituye el asesoramiento contable, fiscal o de inversiones."
+      ]
+    },
+    {
+      "title": "7. Cambios y cierre",
+      "paragraphs": [
+        "Podemos modificar estos términos; en ese caso verás la nueva versión y tendrás que aceptarla para continuar. Puedes dejar de usar la aplicación y eliminar tu cuenta cuando quieras.",
+        "Si el servicio se cierra, avisaremos con antelación razonable para que exportes tus datos."
+      ]
+    },
+    {
+      "title": "8. Contacto y jurisdicción",
+      "paragraphs": [
+        "Dudas: {{email}}. Estos términos se rigen por las leyes de Brasil, incluido el Código de Defensa del Consumidor cuando corresponda."
+      ]
+    }
+  ]
+}

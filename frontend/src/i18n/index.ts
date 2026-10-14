@@ -12,6 +12,7 @@ import ptCashFlow from '../locales/pt/cashFlow.json';
 import ptAuth from '../locales/pt/auth.json';
 import ptErrors from '../locales/pt/errors.json';
 import ptOnboarding from '../locales/pt/onboarding.json';
+import ptLegal from '../locales/pt/legal.json';
 
 import enCommon from '../locales/en/common.json';
 import enLayout from '../locales/en/layout.json';
@@ -24,6 +25,7 @@ import enCashFlow from '../locales/en/cashFlow.json';
 import enAuth from '../locales/en/auth.json';
 import enErrors from '../locales/en/errors.json';
 import enOnboarding from '../locales/en/onboarding.json';
+import enLegal from '../locales/en/legal.json';
 
 import esCommon from '../locales/es/common.json';
 import esLayout from '../locales/es/layout.json';
@@ -36,6 +38,7 @@ import esCashFlow from '../locales/es/cashFlow.json';
 import esAuth from '../locales/es/auth.json';
 import esErrors from '../locales/es/errors.json';
 import esOnboarding from '../locales/es/onboarding.json';
+import esLegal from '../locales/es/legal.json';
 
 export type Language = 'pt' | 'en' | 'es';
 
@@ -61,6 +64,7 @@ i18n.use(initReactI18next).init({
       auth: ptAuth,
       errors: ptErrors,
       onboarding: ptOnboarding,
+      legal: ptLegal,
     },
     en: {
       common: enCommon,
@@ -74,6 +78,7 @@ i18n.use(initReactI18next).init({
       auth: enAuth,
       errors: enErrors,
       onboarding: enOnboarding,
+      legal: enLegal,
     },
     es: {
       common: esCommon,
@@ -87,6 +92,7 @@ i18n.use(initReactI18next).init({
       auth: esAuth,
       errors: esErrors,
       onboarding: esOnboarding,
+      legal: esLegal,
     },
   },
   lng: getInitialLanguage(),
@@ -103,6 +109,7 @@ i18n.use(initReactI18next).init({
     'auth',
     'errors',
     'onboarding',
+    'legal',
   ],
   defaultNS: 'common',
   interpolation: { escapeValue: false },

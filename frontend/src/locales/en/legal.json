@@ -1,0 +1,152 @@
+{
+  "privacyTitle": "Privacy Policy",
+  "termsTitle": "Terms of Use",
+  "lastUpdated": "Last updated: {{date}} · version {{version}}",
+  "back": "Back",
+  "footer": {
+    "loginNotice": "After signing in, you will be able to read and accept the <privacy>Privacy Policy</privacy> and the <terms>Terms of Use</terms>.",
+    "links": "<privacy>Privacy Policy</privacy> · <terms>Terms of Use</terms>"
+  },
+  "consent": {
+    "title": "Before you start",
+    "intro": "To store and organize your finances, Gestão Financeira needs to process some of your data. In short:",
+    "points": [
+      "We use your Google name and email to identify your account.",
+      "Your entries, accounts and cards stay with you — we do not sell them or share them for advertising.",
+      "Descriptions, notes and your email are encrypted in the database.",
+      "If you use the setup assistant, your messages are sent to an artificial intelligence provider to generate the proposal.",
+      "You can export your data or delete your account, with everything in it, whenever you want, in Settings → Your data."
+    ],
+    "readFull": "Read the full <privacy>Privacy Policy</privacy> and <terms>Terms of Use</terms>.",
+    "checkbox": "I have read and accept the Privacy Policy and the Terms of Use.",
+    "accept": "Accept and continue",
+    "decline": "I do not accept (log out)"
+  },
+  "privacy": [
+    {
+      "title": "1. Who we are",
+      "paragraphs": [
+        "This policy explains how Gestão Financeira (\"the application\") processes personal data under the Brazilian General Data Protection Law (Law No. 13,709/2018 — LGPD).",
+        "Data controller: {{controller}}. Privacy contact, including the data protection officer (DPO): {{email}}."
+      ]
+    },
+    {
+      "title": "2. What data we process",
+      "paragraphs": [
+        "Account data: name, email and Google account identifier, received when you sign in with Google. We never receive or store your password.",
+        "Data you enter: accounts, account types, categories, entries (descriptions, amounts, dates, notes), cards, invoices, installment purchases, transfers and statement or invoice files you import.",
+        "Conversation with the setup assistant (optional): the messages you write and the conversation summary.",
+        "Security data: IP address, browser (user-agent), date and time of sign-ins, sign-outs and actions such as deletions, imports and exports.",
+        "We do not process sensitive data (LGPD art. 5, II) and we never ask for documents, bank passwords or full card numbers."
+      ]
+    },
+    {
+      "title": "3. Why we use it and on what legal basis",
+      "paragraphs": [
+        "Providing the service — storing your financial data and calculating balances, forecasts and reports: performance of a contract (art. 7, V).",
+        "Security — preventing unauthorized access, limiting abuse and investigating incidents using access records: legitimate interest (art. 7, IX) and legal obligation (art. 7, II, and the Brazilian Internet Civil Framework).",
+        "AI setup assistant — only when you choose to use it: consent (art. 7, I), which you can withhold simply by setting things up manually.",
+        "We do not use your data for advertising, we do not sell data and we do not build profiles for third parties."
+      ]
+    },
+    {
+      "title": "4. Who we share it with",
+      "paragraphs": [
+        "Only with providers needed to run the application, who process the data on our behalf (processors): system hosting (Render and Cloudflare), database (MongoDB Atlas), sign-in (Google) and, if you use the assistant, the configured artificial intelligence provider (for example, Anthropic or OpenAI).",
+        "Some of these providers keep servers outside Brazil. The international transfer relies on these providers' contractual safeguards (LGPD art. 33).",
+        "We may also disclose data when required by law or court order."
+      ]
+    },
+    {
+      "title": "5. How long we keep it",
+      "paragraphs": [
+        "Your data is kept while your account exists. When you delete your account, we immediately delete your financial data, the assistant conversation and your account record.",
+        "Access and action records are kept for up to 90 days. After an account is deleted, the remaining records no longer contain email or IP, only the action and the date.",
+        "Backup copies held by the database provider may take a few days to expire."
+      ]
+    },
+    {
+      "title": "6. Your rights",
+      "paragraphs": [
+        "At any time you can: confirm that we process your data and access it; correct it (by editing it directly in the application); take it to another service (Settings → Your data → export backup or CSV); request deletion (Settings → Your data → Delete my account); learn who we share it with; and withdraw consent for the assistant.",
+        "For other requests or questions, write to {{email}}. You may also file a complaint with the Brazilian National Data Protection Authority (ANPD)."
+      ]
+    },
+    {
+      "title": "7. Security",
+      "paragraphs": [
+        "We use encrypted connections (HTTPS), sessions that expire after 24 hours and can be ended on all devices, database encryption of descriptions, notes, assistant messages and your email, isolation of each user's data, abuse limits and logging of sensitive actions.",
+        "No system is 100% secure. If an incident may cause relevant risk or harm, we will notify you and the ANPD as required by law."
+      ]
+    },
+    {
+      "title": "8. Cookies and browser storage",
+      "paragraphs": [
+        "We use a single, essential cookie to keep you signed in. We do not use advertising or tracking cookies.",
+        "Your browser also stores your preferences (language, theme, last selected account), which never leave your device."
+      ]
+    },
+    {
+      "title": "9. Changes to this policy",
+      "paragraphs": [
+        "If this policy changes, you will see the new version and need to accept it again before continuing to use the application."
+      ]
+    }
+  ],
+  "terms": [
+    {
+      "title": "1. Acceptance",
+      "paragraphs": [
+        "By using Gestão Financeira you agree to these Terms of Use and to the Privacy Policy. If you do not agree, do not use the application."
+      ]
+    },
+    {
+      "title": "2. The service",
+      "paragraphs": [
+        "The application is a tool for organizing personal and small-business finances: you record income, expenses, accounts, cards and transfers and follow balances and forecasts.",
+        "The application does not move money, does not connect to your bank and is not a financial institution. The figures shown depend on what you enter.",
+        "The setup assistant uses artificial intelligence and can make mistakes: everything it proposes goes through your review before being saved."
+      ]
+    },
+    {
+      "title": "3. Your account",
+      "paragraphs": [
+        "Access is through your Google account. You are responsible for keeping that account secure and for everything done with it. If you suspect unauthorized access, use \"Log out of all devices\" and secure your Google account.",
+        "You must have legal capacity to accept these terms or be authorized by your legal guardian."
+      ]
+    },
+    {
+      "title": "4. Permitted use",
+      "paragraphs": [
+        "You may not: try to access other people's data, bypass limits or protections, overload the system, upload malicious files or use the application for illegal activities. Accounts that do so may be suspended."
+      ]
+    },
+    {
+      "title": "5. Your data",
+      "paragraphs": [
+        "The data you enter is yours. You can export it or delete your account at any time, as described in the Privacy Policy.",
+        "We recommend exporting a backup from time to time."
+      ]
+    },
+    {
+      "title": "6. Liability",
+      "paragraphs": [
+        "The application is provided as is. We do our best to keep it available and correct, but we do not guarantee uninterrupted operation and are not responsible for financial decisions made based on the information shown, which are your own responsibility.",
+        "The application does not replace accounting, tax or investment advice."
+      ]
+    },
+    {
+      "title": "7. Changes and termination",
+      "paragraphs": [
+        "We may change these terms; if so, you will see the new version and need to accept it to continue. You may stop using the application and delete your account whenever you want.",
+        "If the service is discontinued, we will give reasonable notice so you can export your data."
+      ]
+    },
+    {
+      "title": "8. Contact and governing law",
+      "paragraphs": [
+        "Questions: {{email}}. These terms are governed by Brazilian law, including the Consumer Protection Code where applicable."
+      ]
+    }
+  ]
+}

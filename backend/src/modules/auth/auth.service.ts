@@ -4,6 +4,7 @@ import { generateId } from '../../shared/utils/id.utils';
 import { nowISO } from '../../shared/utils/date.utils';
 import { UsersMongoRepository } from './users.mongo-repository';
 import { User } from './auth.types';
+import { CURRENT_CONSENT_VERSION } from './consent';
 
 const googleJWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 
@@ -79,6 +80,11 @@ export class AuthService {
    * logout global e a exclusão de conta efetivos antes do token expirar.
    */
   async verifySession(token: string): Promise<SessionPayload> {
+    return (await this.sessionUser(token)).payload;
+  }
+
+  /** Como verifySession, devolvendo também o usuário (consentimento, etc.). */
+  async sessionUser(token: string): Promise<{ payload: SessionPayload; user: User }> {
     let payload: SessionPayload;
     try {
       ({ payload } = (await jwtVerify(token, sessionSecret())) as unknown as { payload: SessionPayload });
@@ -87,7 +93,20 @@ export class AuthService {
     }
     const user = await this.cachedUser(payload.sub);
     if (!user || (user.sessionVersion ?? 0) !== (payload.sv ?? 0)) throw invalidSession();
-    return payload;
+    return { payload, user };
+  }
+
+  /**
+   * Registra o aceite da Política de Privacidade/Termos. A versão vem do
+   * frontend para garantir que a pessoa aceitou o texto que estava vendo —
+   * se as políticas mudaram nesse meio-tempo, ela precisa recarregar.
+   */
+  async acceptConsent(userId: string, version: number): Promise<void> {
+    if (version !== CURRENT_CONSENT_VERSION) {
+      throw new AppError('Versão das políticas desatualizada', 409, 'auth.consentOutdated');
+    }
+    await this.usersRepo.updateConsent(userId, version, nowISO());
+    this.forgetUser(userId);
   }
 
   /** Invalida todas as sessões do usuário, inclusive a atual. */

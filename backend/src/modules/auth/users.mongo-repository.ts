@@ -39,4 +39,11 @@ export class UsersMongoRepository {
       { $inc: { sessionVersion: 1 }, $set: { updatedAt } } as never,
     );
   }
+
+  async updateConsent(id: string, consentVersion: number, acceptedAt: string): Promise<void> {
+    await this.collection().updateOne(
+      { id } as never,
+      { $set: { consentVersion, consentAcceptedAt: acceptedAt, updatedAt: acceptedAt } } as never,
+    );
+  }
 }

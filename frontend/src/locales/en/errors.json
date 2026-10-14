@@ -25,6 +25,7 @@
     "incomeCategoryId": { "invalid": "Invalid category" },
     "type": { "invalid": "Invalid category type" },
     "confirm": { "required": "Explicitly confirm the restore (destructive operation)." },
+    "consent": { "required": "You need to accept the Privacy Policy and the Terms of Use." },
     "dateRange": { "required": "Provide a start and end date, or select all entries." },
     "initialBalance": { "min": "Initial balance must be greater than or equal to zero" },
     "message": { "required": "Type a message", "max": "Message is too long (2000 characters max)" },
@@ -110,7 +111,9 @@
     "userNotFound": "User not found",
     "invalidSession": "Invalid or expired session",
     "emailAlreadyRegistered": "This email is already registered via {{provider}}",
-    "csrfHeaderMissing": "Request blocked for security reasons. Reload the page and try again."
+    "csrfHeaderMissing": "Request blocked for security reasons. Reload the page and try again.",
+    "consentRequired": "To continue, accept the Privacy Policy and the Terms of Use.",
+    "consentOutdated": "The policies have been updated. Reload the page to see the new version."
   },
   "category": {
     "notFound": "Category not found",

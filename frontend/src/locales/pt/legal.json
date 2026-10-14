@@ -1,0 +1,152 @@
+{
+  "privacyTitle": "Política de Privacidade",
+  "termsTitle": "Termos de Uso",
+  "lastUpdated": "Última atualização: {{date}} · versão {{version}}",
+  "back": "Voltar",
+  "footer": {
+    "loginNotice": "Ao entrar, você poderá ler e aceitar a <privacy>Política de Privacidade</privacy> e os <terms>Termos de Uso</terms>.",
+    "links": "<privacy>Política de Privacidade</privacy> · <terms>Termos de Uso</terms>"
+  },
+  "consent": {
+    "title": "Antes de começar",
+    "intro": "Para guardar e organizar suas finanças, o Gestão Financeira precisa tratar alguns dados seus. Em resumo:",
+    "points": [
+      "Usamos seu nome e e-mail do Google para identificar sua conta.",
+      "Seus lançamentos, contas e cartões ficam só com você — não vendemos nem compartilhamos para publicidade.",
+      "Descrições, observações e seu e-mail ficam criptografados no banco de dados.",
+      "Se você usar o assistente de configuração, suas mensagens são enviadas a um provedor de inteligência artificial para gerar a proposta.",
+      "Você pode exportar seus dados ou excluir sua conta, com tudo o que há nela, quando quiser, em Configurações → Seus dados."
+    ],
+    "readFull": "Leia a <privacy>Política de Privacidade</privacy> e os <terms>Termos de Uso</terms> completos.",
+    "checkbox": "Li e aceito a Política de Privacidade e os Termos de Uso.",
+    "accept": "Aceitar e continuar",
+    "decline": "Não aceito (sair)"
+  },
+  "privacy": [
+    {
+      "title": "1. Quem somos",
+      "paragraphs": [
+        "Esta política explica como o Gestão Financeira (\"aplicação\") trata dados pessoais, nos termos da Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).",
+        "Controlador dos dados: {{controller}}. Contato para assuntos de privacidade, inclusive com o encarregado (DPO): {{email}}."
+      ]
+    },
+    {
+      "title": "2. Quais dados tratamos",
+      "paragraphs": [
+        "Dados de cadastro: nome, e-mail e identificador da sua conta Google, recebidos quando você entra com o Google. Não recebemos nem guardamos sua senha.",
+        "Dados que você cadastra: contas, tipos de conta, categorias, lançamentos (descrições, valores, datas, observações), cartões, faturas, compras parceladas, transferências e arquivos de extrato ou fatura que você importar.",
+        "Conversa com o assistente de configuração (opcional): as mensagens que você escreve e o resumo da conversa.",
+        "Dados de segurança: endereço IP, navegador (user-agent), data e hora de entradas, saídas e de ações como exclusões, importações e exportações.",
+        "Não tratamos dados sensíveis (art. 5º, II, da LGPD) e não pedimos documentos, senhas de banco ou números completos de cartão."
+      ]
+    },
+    {
+      "title": "3. Para que usamos e com qual base legal",
+      "paragraphs": [
+        "Prestar o serviço — guardar seus dados financeiros, calcular saldos, previsões e relatórios: execução do contrato (art. 7º, V).",
+        "Segurança — impedir acesso indevido, limitar abusos e investigar incidentes com os registros de acesso: legítimo interesse (art. 7º, IX) e cumprimento de obrigação legal (art. 7º, II, e Marco Civil da Internet).",
+        "Assistente de configuração com inteligência artificial — só quando você escolhe usá-lo: consentimento (art. 7º, I), que você pode deixar de dar simplesmente configurando manualmente.",
+        "Não usamos seus dados para publicidade, não vendemos dados e não criamos perfis para terceiros."
+      ]
+    },
+    {
+      "title": "4. Com quem compartilhamos",
+      "paragraphs": [
+        "Somente com fornecedores necessários para a aplicação funcionar, que tratam os dados em nosso nome (operadores): hospedagem do sistema (Render e Cloudflare), banco de dados (MongoDB Atlas), login (Google) e, se você usar o assistente, o provedor de inteligência artificial configurado (por exemplo, Anthropic ou OpenAI).",
+        "Alguns desses fornecedores mantêm servidores fora do Brasil. A transferência internacional se apoia nas garantias contratuais desses fornecedores (art. 33 da LGPD).",
+        "Também podemos fornecer dados quando exigido por lei ou ordem judicial."
+      ]
+    },
+    {
+      "title": "5. Por quanto tempo guardamos",
+      "paragraphs": [
+        "Seus dados ficam guardados enquanto sua conta existir. Ao excluir a conta, apagamos seus dados financeiros, a conversa com o assistente e seu cadastro na hora.",
+        "Registros de acesso e de ações ficam guardados por até 90 dias. Depois da exclusão da conta, os que restam ficam sem e-mail e sem IP, só com a ação e a data.",
+        "Cópias de segurança dos fornecedores de banco de dados podem levar alguns dias para expirar."
+      ]
+    },
+    {
+      "title": "6. Seus direitos",
+      "paragraphs": [
+        "Você pode, a qualquer momento: confirmar que tratamos seus dados e acessá-los; corrigi-los (editando direto na aplicação); levá-los para outro serviço (Configurações → Seus dados → exportar backup ou CSV); pedir a exclusão (Configurações → Seus dados → Excluir minha conta); saber com quem compartilhamos; e revogar o consentimento do assistente.",
+        "Para outros pedidos ou dúvidas, escreva para {{email}}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD)."
+      ]
+    },
+    {
+      "title": "7. Segurança",
+      "paragraphs": [
+        "Usamos conexão criptografada (HTTPS), sessão que expira em 24 horas e pode ser encerrada em todos os dispositivos, criptografia das descrições, observações, mensagens do assistente e do seu e-mail no banco de dados, isolamento dos dados de cada usuário, limites contra abuso e registro das ações sensíveis.",
+        "Nenhum sistema é 100% seguro. Se houver um incidente que possa causar risco ou dano relevante, avisaremos você e a ANPD, como manda a lei."
+      ]
+    },
+    {
+      "title": "8. Cookies e armazenamento no navegador",
+      "paragraphs": [
+        "Usamos um único cookie, essencial, para manter você conectado. Não usamos cookies de publicidade nem de rastreamento.",
+        "O navegador também guarda preferências suas (idioma, tema, última conta escolhida), que não saem do seu aparelho."
+      ]
+    },
+    {
+      "title": "9. Mudanças nesta política",
+      "paragraphs": [
+        "Se esta política mudar, você verá a nova versão e precisará aceitá-la de novo antes de continuar usando a aplicação."
+      ]
+    }
+  ],
+  "terms": [
+    {
+      "title": "1. Aceite",
+      "paragraphs": [
+        "Ao usar o Gestão Financeira você concorda com estes Termos de Uso e com a Política de Privacidade. Se não concordar, não use a aplicação."
+      ]
+    },
+    {
+      "title": "2. O serviço",
+      "paragraphs": [
+        "A aplicação é uma ferramenta de organização financeira pessoal e de pequenos negócios: você registra entradas, saídas, contas, cartões e transferências e acompanha saldos e previsões.",
+        "A aplicação não movimenta dinheiro, não se conecta ao seu banco e não é instituição financeira. Os números mostrados dependem do que você cadastra.",
+        "O assistente de configuração usa inteligência artificial e pode errar: tudo o que ele propõe passa pela sua revisão antes de ser gravado."
+      ]
+    },
+    {
+      "title": "3. Sua conta",
+      "paragraphs": [
+        "O acesso é feito pela sua conta Google. Você é responsável por manter essa conta segura e por tudo o que for feito com ela. Se suspeitar de acesso indevido, use \"Sair de todos os dispositivos\" e proteja sua conta Google.",
+        "Você deve ter capacidade civil para aceitar estes termos ou estar autorizado pelo seu responsável legal."
+      ]
+    },
+    {
+      "title": "4. Uso permitido",
+      "paragraphs": [
+        "Não é permitido: tentar acessar dados de outras pessoas, contornar limites ou proteções, sobrecarregar o sistema, enviar arquivos maliciosos ou usar a aplicação para atividades ilegais. Contas que fizerem isso podem ser suspensas."
+      ]
+    },
+    {
+      "title": "5. Seus dados",
+      "paragraphs": [
+        "Os dados que você cadastra são seus. Você pode exportá-los ou excluir a conta a qualquer momento, como descrito na Política de Privacidade.",
+        "Recomendamos exportar um backup de vez em quando."
+      ]
+    },
+    {
+      "title": "6. Responsabilidade",
+      "paragraphs": [
+        "A aplicação é fornecida como está. Fazemos o possível para mantê-la disponível e correta, mas não garantimos funcionamento ininterrupto nem nos responsabilizamos por decisões financeiras tomadas com base nas informações exibidas, que são de sua responsabilidade.",
+        "A aplicação não substitui orientação contábil, fiscal ou de investimentos."
+      ]
+    },
+    {
+      "title": "7. Mudanças e encerramento",
+      "paragraphs": [
+        "Podemos alterar estes termos; nesse caso você verá a nova versão e precisará aceitá-la para continuar. Você pode parar de usar a aplicação e excluir sua conta quando quiser.",
+        "Se o serviço for encerrado, avisaremos com antecedência razoável para que você exporte seus dados."
+      ]
+    },
+    {
+      "title": "8. Contato e foro",
+      "paragraphs": [
+        "Dúvidas: {{email}}. Estes termos seguem as leis brasileiras, incluindo o Código de Defesa do Consumidor quando aplicável."
+      ]
+    }
+  ]
+}

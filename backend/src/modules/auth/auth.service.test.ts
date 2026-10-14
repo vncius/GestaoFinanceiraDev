@@ -18,6 +18,7 @@ vi.mock('jose', async (importOriginal) => {
 });
 import { UsersMongoRepository } from './users.mongo-repository';
 import { User } from './auth.types';
+import { CURRENT_CONSENT_VERSION, hasCurrentConsent } from './consent';
 
 function makeRepo(initial: User[]) {
   const users = new Map(initial.map((u) => [u.id, { ...u }]));
@@ -31,6 +32,10 @@ function makeRepo(initial: User[]) {
     incrementSessionVersion: async (id: string) => {
       const u = users.get(id);
       if (u) u.sessionVersion = (u.sessionVersion ?? 0) + 1;
+    },
+    updateConsent: async (id: string, version: number, at: string) => {
+      const u = users.get(id);
+      if (u) Object.assign(u, { consentVersion: version, consentAcceptedAt: at });
     },
   };
   return { repo: repo as unknown as UsersMongoRepository, users };
@@ -143,5 +148,38 @@ describe('AuthService — login com Google', () => {
     expect(user).toMatchObject({ email: 'novo@x.com', name: 'Novo', sessionVersion: 0 });
     expect(users.size).toBe(1);
     await expect(service.verifySession(session)).resolves.toMatchObject({ sub: user.id });
+  });
+});
+
+describe('AuthService — consentimento (LGPD)', () => {
+  beforeEach(() => {
+    process.env.JWT_SECRET = 'segredo-de-teste-com-tamanho-suficiente';
+  });
+
+  it('registra o aceite da versão vigente e a sessão já enxerga', async () => {
+    const { repo } = makeRepo([baseUser]);
+    const service = new AuthService(repo);
+    const token = await issue(service, baseUser);
+    await service.sessionUser(token); // popula o cache sem consentimento
+
+    await service.acceptConsent('user-1', CURRENT_CONSENT_VERSION);
+
+    const { user } = await service.sessionUser(token);
+    expect(hasCurrentConsent(user)).toBe(true);
+    expect(user.consentAcceptedAt).toEqual(expect.any(String));
+  });
+
+  it('recusa aceite de versão diferente da vigente', async () => {
+    const { repo, users } = makeRepo([baseUser]);
+    const service = new AuthService(repo);
+    await expect(service.acceptConsent('user-1', CURRENT_CONSENT_VERSION + 1)).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'auth.consentOutdated',
+    });
+    expect(users.get('user-1')!.consentVersion).toBeUndefined();
+  });
+
+  it('usuário antigo, sem aceite, precisa aceitar', () => {
+    expect(hasCurrentConsent(baseUser)).toBe(false);
   });
 });

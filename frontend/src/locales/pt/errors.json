@@ -25,6 +25,7 @@
     "incomeCategoryId": { "invalid": "Categoria inválida" },
     "type": { "invalid": "Tipo de categoria inválido" },
     "confirm": { "required": "Confirme explicitamente a restauração (operação destrutiva)." },
+    "consent": { "required": "É preciso aceitar a Política de Privacidade e os Termos de Uso." },
     "dateRange": { "required": "Informe as datas inicial e final, ou marque todos os lançamentos." },
     "initialBalance": { "min": "Saldo inicial deve ser maior ou igual a zero" },
     "message": { "required": "Digite uma mensagem", "max": "A mensagem é muito longa (máximo de 2000 caracteres)" },
@@ -110,7 +111,9 @@
     "userNotFound": "Usuário não encontrado",
     "invalidSession": "Sessão inválida ou expirada",
     "emailAlreadyRegistered": "Este e-mail já está cadastrado via {{provider}}",
-    "csrfHeaderMissing": "Requisição bloqueada por segurança. Recarregue a página e tente de novo."
+    "csrfHeaderMissing": "Requisição bloqueada por segurança. Recarregue a página e tente de novo.",
+    "consentRequired": "Para continuar, aceite a Política de Privacidade e os Termos de Uso.",
+    "consentOutdated": "As políticas foram atualizadas. Recarregue a página para ver a versão nova."
   },
   "category": {
     "notFound": "Categoria não encontrada",

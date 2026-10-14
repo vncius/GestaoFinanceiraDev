@@ -98,7 +98,7 @@ O script apaga e recria, só nesse banco, três meses de movimentação fictíci
 | `AI_API_KEY` | — | Chave do provedor ativo — nunca exposta ao frontend |
 | `AI_MODEL` | — | Modelo do provedor ativo (obrigatório junto com `AI_API_KEY`) |
 
-**`frontend/.env`**: `VITE_API_URL` (default `http://localhost:3100`; em produção no Cloudflare Pages, `/api`).
+**`frontend/.env`**: `VITE_API_URL` (default `http://localhost:3100`; em produção no Cloudflare Pages, `/api`), `VITE_LEGAL_CONTROLLER_NAME` e `VITE_LEGAL_CONTACT_EMAIL` (responsável pelos dados e contato de privacidade, exibidos na Política de Privacidade e nos Termos de Uso — obrigatórios em produção).
 
 **Cloudflare Pages** (variável do projeto, usada por `frontend/functions/api/[[path]].ts`): `API_ORIGIN` = URL pública do backend e `PROXY_SHARED_SECRET` = o mesmo valor do backend. Detalhes em [`stack-template-and-deploy.md`](docs/architecture/stack-template-and-deploy.md#8-problema-conhecido-cookie-de-sessão-bloqueado-em-navegadores-mobile).
 

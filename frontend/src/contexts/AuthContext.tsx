@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuthService, AuthUser } from '../services/auth.service';
+import { CONSENT_VERSION } from '../config/legal';
 
 export type LogoutScope = 'device' | 'all';
 
@@ -9,6 +10,7 @@ interface AuthContextValue {
   loading: boolean;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: (scope?: LogoutScope) => Promise<void>;
+  acceptConsent: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -34,6 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
   }
 
+  async function acceptConsent() {
+    setUser(await AuthService.acceptConsent(CONSENT_VERSION));
+  }
+
   async function logout(scope: LogoutScope = 'device') {
     if (user) localStorage.removeItem(`activeAccountId:${user.tenantId}`);
     if (scope === 'all') await AuthService.logoutAll();
@@ -43,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, acceptConsent }}>
       {children}
     </AuthContext.Provider>
   );

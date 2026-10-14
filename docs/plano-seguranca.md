@@ -74,7 +74,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ✅ | 2026-10-14 | ver `git log` |
 | S8 | Auditoria de ações destrutivas | S4 | ✅ | 2026-10-14 | ver `git log` |
 | S9 | Logs de requisição sem query string | — | ✅ | 2026-10-14 | ver `git log` |
-| S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ⬜ | | |
+| S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ✅ | 2026-10-14 | ver `git log` |
 | S11 | Exclusão completa da conta | S2, S8 | ⬜ | | |
 | S12 | Criptografia de campos sensíveis | S11 | ⬜ | | |
 | S13 | CI, Dependabot, CodeQL e testes de segurança | S1 | ⬜ | | |
@@ -87,6 +87,8 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 |---|---|---|
 | Render | `PROXY_SHARED_SECRET` = valor aleatório longo (igual ao do Cloudflare) | S4 |
 | Cloudflare Pages | `PROXY_SHARED_SECRET` = o mesmo valor (Production e Preview) | S4 |
+| Cloudflare Pages | `VITE_LEGAL_CONTROLLER_NAME` (nome ou razão social do responsável) e `VITE_LEGAL_CONTACT_EMAIL` (e-mail de privacidade) — sem eles as políticas mostram "não configurado" | S10 |
+| Jurídico | Revisar o texto das políticas (`frontend/src/locales/*/legal.json`) com um advogado antes do uso comercial | S10 |
 | Render | `ENCRYPTION_KEY` = `openssl rand -base64 32` — **guardar cópia em local seguro** | S12 |
 | Render | Conferir `NODE_ENV=production` e `CORS_ORIGIN` = URL do Pages | S3 |
 | GitHub | Ativar Dependabot alerts e Code scanning (Settings → Code security) | S13 |
@@ -141,3 +143,10 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 ### S9
 - Avaliação (D9): ganho pequeno e preventivo — nenhuma query atual leva dado pessoal (só `month`, `year`, `accountId`, `scope`, `upcomingDays`…). Mantido por custar uma linha.
 - Ponto de atenção que fica: o `errorHandler` loga o erro inesperado inteiro (`console.error`). Erros do driver do Mongo (ex.: chave duplicada) podem trazer o valor que causou o erro. Com a S12 os campos pessoais vão criptografados, o que reduz o impacto.
+
+### S10
+- `/auth/me`, `/auth/consent` e `/auth/logout-all` ficam no router de `/auth` (antes do `authMiddleware`) e validam a sessão por conta própria — precisam funcionar antes do aceite.
+- Versão das políticas em dois lugares que precisam andar juntos: `backend/src/modules/auth/consent.ts` e `frontend/src/config/legal.ts`. O frontend manda a versão que exibiu; versão diferente da vigente → 409 `auth.consentOutdated`.
+- Usuários existentes não têm `consentVersion`: no primeiro acesso depois do deploy, todos veem a tela de aceite.
+- Texto escrito como modelo razoável para LGPD (controlador, dados, bases legais por finalidade, operadores e transferência internacional, retenção, direitos do art. 18, segurança, cookies). **Não é parecer jurídico.**
+- O texto já cita a criptografia de campos (S12) e a exclusão de conta (S11); as duas foram implementadas nesta mesma leva.

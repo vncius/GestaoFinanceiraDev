@@ -5,6 +5,8 @@ export interface AuthUser {
   email: string;
   name: string;
   tenantId: string;
+  /** true enquanto não aceitou a versão vigente das políticas (LGPD). */
+  consentRequired: boolean;
 }
 
 export const AuthService = {
@@ -24,6 +26,11 @@ export const AuthService = {
 
   async logout(): Promise<void> {
     await api.post('/auth/logout');
+  },
+
+  async acceptConsent(version: number): Promise<AuthUser> {
+    const { data } = await api.post('/auth/consent', { accept: true, version });
+    return data.user;
   },
 
   async logoutAll(): Promise<void> {

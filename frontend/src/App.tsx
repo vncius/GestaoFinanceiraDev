@@ -14,6 +14,7 @@ import CashFlow from './pages/CashFlow/CashFlow';
 import CreditCards from './pages/CreditCards/CreditCards';
 import Settings from './pages/Settings/Settings';
 import Report from './pages/Report/Report';
+import LegalPage from './pages/Legal/LegalPage';
 
 export default function App() {
   return (
@@ -25,6 +26,9 @@ export default function App() {
               <AccountProvider>
                 <Routes>
                   <Route path="/login" element={<Login />} />
+                  {/* Públicas: legíveis antes do login e da tela de aceite (LGPD). */}
+                  <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+                  <Route path="/terms" element={<LegalPage doc="terms" />} />
                   <Route element={<ProtectedRoute />}>
                     {/* Gate de onboarding: novos tenants são levados para /onboarding. */}
                     <Route element={<OnboardingGate />}>
