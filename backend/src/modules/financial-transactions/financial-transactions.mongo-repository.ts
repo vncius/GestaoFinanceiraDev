@@ -15,7 +15,7 @@ export class FinancialTransactionsMongoRepository
   private store = new MongoStore<FinancialTransaction>('financial_transactions', [
     { tenantId: 1, sourceAccountId: 1 },
     { tenantId: 1, targetAccountId: 1 },
-  ]);
+  ], { encryptedFields: ['description', 'notes'] });
 
   findAll(tenantId: string) {
     return this.store.findAll(tenantId);

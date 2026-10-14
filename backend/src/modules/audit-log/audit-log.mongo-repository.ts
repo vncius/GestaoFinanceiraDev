@@ -1,5 +1,11 @@
 import { getDb } from '../../shared/persistence/mongo-client';
 import { AuditLogEntry } from './audit-log.types';
+import { encryptFields } from '../../shared/crypto/field-crypto';
+
+// E-mail e IP identificam a pessoa: gravados criptografados (D8 do plano de
+// segurança). O app nunca lê o log; consulta é feita direto no banco, com a
+// chave, quando há incidente para investigar.
+const ENCRYPTED = ['email', 'ip'] as const;
 
 // Retenção curta o suficiente para não crescer sem limite no Atlas free tier
 // (M0, 512MB). TTL index expira/apaga os documentos sozinho — não depende de
@@ -22,7 +28,7 @@ export class AuditLogMongoRepository {
   }
 
   async insert(entry: AuditLogEntry): Promise<void> {
-    await this.collection().insertOne({ ...entry } as never);
+    await this.collection().insertOne(encryptFields({ ...entry }, ENCRYPTED) as never);
   }
 
   // Exclusão de conta: mantém ação/data/tenant para investigação, remove o

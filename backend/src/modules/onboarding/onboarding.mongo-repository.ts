@@ -3,7 +3,9 @@ import { OnboardingMessagesRepository, OnboardingStateRepository } from './onboa
 import { OnboardingMessage, OnboardingState } from './onboarding.types';
 
 export class OnboardingStateMongoRepository implements OnboardingStateRepository {
-  private store = new MongoStore<OnboardingState>('onboarding_states');
+  private store = new MongoStore<OnboardingState>('onboarding_states', [], {
+    encryptedFields: ['conversationSummary'],
+  });
 
   async get(tenantId: string): Promise<OnboardingState | null> {
     const all = await this.store.findAll(tenantId);
@@ -24,7 +26,9 @@ export class OnboardingStateMongoRepository implements OnboardingStateRepository
 }
 
 export class OnboardingMessagesMongoRepository implements OnboardingMessagesRepository {
-  private store = new MongoStore<OnboardingMessage>('onboarding_messages');
+  private store = new MongoStore<OnboardingMessage>('onboarding_messages', [], {
+    encryptedFields: ['content'],
+  });
 
   async findAll(tenantId: string): Promise<OnboardingMessage[]> {
     const all = await this.store.findAll(tenantId);

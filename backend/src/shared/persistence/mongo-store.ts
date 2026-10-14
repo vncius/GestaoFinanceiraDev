@@ -1,16 +1,32 @@
 import { Collection } from 'mongodb';
 import { getDb } from './mongo-client';
 import { getActiveSession } from './mongo-transaction';
+import { decryptFields, encryptFields } from '../crypto/field-crypto';
 
 const indexedCollections = new Set<string>();
+
+export interface MongoStoreOptions<T> {
+  /**
+   * Campos de texto livre gravados criptografados (D8 do plano de segurança).
+   * Só campos que nunca entram em filtro/ordenação no banco — o MongoStore
+   * filtra tudo em memória, então hoje isso vale para qualquer campo.
+   */
+  encryptedFields?: readonly (keyof T & string)[];
+}
 
 export class MongoStore<T extends { id: string; tenantId: string }> {
   private readonly collectionName: string;
   private readonly extraIndexes: Record<string, 1 | -1>[];
+  private readonly encrypted: readonly string[];
 
-  constructor(collectionName: string, extraIndexes: Record<string, 1 | -1>[] = []) {
+  constructor(
+    collectionName: string,
+    extraIndexes: Record<string, 1 | -1>[] = [],
+    options: MongoStoreOptions<T> = {},
+  ) {
     this.collectionName = collectionName;
     this.extraIndexes = extraIndexes;
+    this.encrypted = options.encryptedFields ?? [];
   }
 
   private collection(): Collection<T> {
@@ -39,38 +55,48 @@ export class MongoStore<T extends { id: string; tenantId: string }> {
     return getActiveSession();
   }
 
+  private toDb<D extends object>(data: D): D {
+    return encryptFields(data, this.encrypted);
+  }
+
+  private fromDb<D extends object>(doc: D): D {
+    return decryptFields(doc, this.encrypted);
+  }
+
   async findAll(tenantId: string): Promise<T[]> {
-    return this.collection()
+    const docs = (await this.collection()
       .find({ tenantId } as never, { projection: { _id: 0 }, session: this.session })
-      .toArray() as Promise<T[]>;
+      .toArray()) as T[];
+    return this.encrypted.length ? docs.map((d) => this.fromDb(d)) : docs;
   }
 
   async findById(id: string, tenantId: string): Promise<T | null> {
-    return this.collection().findOne(
+    const doc = (await this.collection().findOne(
       { id, tenantId } as never,
       { projection: { _id: 0 }, session: this.session },
-    ) as Promise<T | null>;
+    )) as T | null;
+    return doc ? this.fromDb(doc) : null;
   }
 
   async create(data: T): Promise<T> {
-    await this.collection().insertOne({ ...data } as never, { session: this.session });
+    await this.collection().insertOne(this.toDb({ ...data }) as never, { session: this.session });
     return data;
   }
 
   async createMany(dataList: T[]): Promise<T[]> {
     if (dataList.length === 0) return [];
-    await this.collection().insertMany(dataList.map((d) => ({ ...d })) as never[], { session: this.session });
+    await this.collection().insertMany(dataList.map((d) => this.toDb({ ...d })) as never[], { session: this.session });
     return dataList;
   }
 
   async update(id: string, data: Partial<T>, tenantId: string): Promise<T> {
     const result = await this.collection().findOneAndUpdate(
       { id, tenantId } as never,
-      { $set: data as never },
+      { $set: this.toDb(data) as never },
       { returnDocument: 'after', projection: { _id: 0 }, session: this.session },
     );
     if (!result) throw new Error(`Registro com id ${id} não encontrado`);
-    return result as T;
+    return this.fromDb(result as T);
   }
 
   async delete(id: string, tenantId: string): Promise<void> {
@@ -83,7 +109,7 @@ export class MongoStore<T extends { id: string; tenantId: string }> {
   async replaceAllForTenant(tenantId: string, newItems: T[]): Promise<void> {
     await this.collection().deleteMany({ tenantId } as never, { session: this.session });
     if (newItems.length > 0) {
-      await this.collection().insertMany(newItems.map((d) => ({ ...d })) as never[], { session: this.session });
+      await this.collection().insertMany(newItems.map((d) => this.toDb({ ...d })) as never[], { session: this.session });
     }
   }
 }

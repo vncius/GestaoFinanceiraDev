@@ -12,6 +12,7 @@
     "seed:demo": "tsx src/scripts/seed-demo.ts",
     "migrate:mongo": "tsx src/scripts/migrate-json-to-mongo.ts",
     "migrate:card-payment-account": "tsx src/scripts/migrate-card-payment-account.ts",
+    "audit:read": "tsx src/scripts/read-audit-log.ts",
     "test": "vitest run"
   },
   "dependencies": {

@@ -91,6 +91,7 @@ O script apaga e recria, só nesse banco, três meses de movimentação fictíci
 | `MONGODB_DB_NAME` | `gestao_financeira` | Nome do banco |
 | `JWT_SECRET` | — | Segredo para assinar o cookie de sessão |
 | `GOOGLE_CLIENT_ID` | — | OAuth Client ID do Google |
+| `ENCRYPTION_KEY` | — | Chave (32 bytes base64) da criptografia de campos sensíveis. **Obrigatória em produção**; perder a chave = perder esses dados |
 | `PROXY_SHARED_SECRET` | — | Segredo compartilhado com o proxy `/api` do Cloudflare (mesmo valor nos dois) para o backend confiar no IP real do cliente |
 | `TRUST_PROXY_HOPS` | `1` | Proxies confiáveis à frente do Express (load balancer do Render) |
 | `COOKIE_SAME_SITE` | `lax` | `SameSite` do cookie de sessão. Só use `none` em deploy cross-site sem o proxy `/api` |

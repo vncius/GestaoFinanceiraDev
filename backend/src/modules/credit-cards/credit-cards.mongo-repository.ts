@@ -31,7 +31,9 @@ export class CreditCardsMongoRepository implements CreditCardsRepository {
 export class CreditCardEntriesMongoRepository
   implements CreditCardEntriesRepository
 {
-  private store = new MongoStore<CreditCardEntry>('credit_card_entries');
+  private store = new MongoStore<CreditCardEntry>('credit_card_entries', [], {
+    encryptedFields: ['description', 'notes'],
+  });
 
   findAll(tenantId: string) { return this.store.findAll(tenantId); }
   findById(id: string, tenantId: string) { return this.store.findById(id, tenantId); }

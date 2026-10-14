@@ -18,6 +18,8 @@ import { migrateRemoveLimitsAndNotaFiscal } from './shared/migrations/migrate-re
 import { migrateAccountContext } from './shared/migrations/migrate-account-context';
 import { migrateResetAutoReserve } from './shared/migrations/migrate-reset-auto-reserve';
 import { migrateCardPaymentAccount } from './shared/migrations/migrate-card-payment-account';
+import { migrateEncryptFields } from './shared/migrations/migrate-encrypt-fields';
+import { assertEncryptionConfigured } from './shared/crypto/field-crypto';
 import authRouter from './modules/auth/auth.routes';
 import accountsRouter from './modules/accounts/accounts.routes';
 import accountTypesRouter from './modules/account-types/account-types.routes';
@@ -97,6 +99,8 @@ app.use('/onboarding', onboardingRouter);
 app.use(errorHandler);
 
 async function bootstrap() {
+  // Antes de tudo: produção sem ENCRYPTION_KEY (ou com chave inválida) não sobe.
+  assertEncryptionConfigured();
   await connectMongo();
 
   await migrateLegacyAccountConfig();
@@ -104,6 +108,7 @@ async function bootstrap() {
   await migrateAccountContext();
   await migrateResetAutoReserve();
   await migrateCardPaymentAccount();
+  await migrateEncryptFields();
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[server] Rodando em http://localhost:${PORT}`);

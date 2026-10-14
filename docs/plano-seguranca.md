@@ -76,7 +76,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S9 | Logs de requisição sem query string | — | ✅ | 2026-10-14 | ver `git log` |
 | S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ✅ | 2026-10-14 | ver `git log` |
 | S11 | Exclusão completa da conta | S2, S8 | ✅ | 2026-10-14 | ver `git log` |
-| S12 | Criptografia de campos sensíveis | S11 | ⬜ | | |
+| S12 | Criptografia de campos sensíveis | S11 | ✅ | 2026-10-14 | ver `git log` |
 | S13 | CI, Dependabot, CodeQL e testes de segurança | S1 | ⬜ | | |
 
 ---
@@ -156,3 +156,12 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - `AccountDeletionService` apaga nesta ordem: dados do tenant (`BackupService.resetTenant`, que cobre as 11 coleções por tenant) → anonimiza o `audit_log` do usuário → apaga o usuário. Usuário por último: se algo falhar no meio, a pessoa ainda consegue entrar e tentar de novo.
 - A rota fica em `/auth` (antes do `authMiddleware`): quem recusa as políticas também pode apagar o que já existe. Limite de 5/h por IP (sem tenant resolvido nesse ponto).
 - Verificado no navegador com um usuário de teste criado no banco de desenvolvimento (`sec-test-user`, sessão assinada localmente): tela de aceite → aceitar → onboarding → configuração manual (cria conta/categorias) → diálogo de sair (duas opções) → Excluir minha conta. Depois, consulta no banco: 0 documentos do tenant em todas as coleções, usuário removido, `audit_log` só com `consent_accepted`/`account_deleted` sem e-mail/IP/navegador.
+
+### S12
+- `shared/crypto/field-crypto.ts`: AES-256-GCM com IV aleatório, formato `enc:v1:<base64>`; subchaves de cifra e de índice cego derivadas por HKDF da `ENCRYPTION_KEY`. Valor sem prefixo é lido como texto puro (convivência com dado antigo).
+- `MongoStore` ganhou `encryptedFields` (cifra na escrita, decifra na leitura). Seguro porque todo filtro além de `tenantId`/`id` é feito em memória — **se algum dia um campo criptografado entrar num filtro do Mongo, a consulta deixa de achar nada.**
+- Usuários: `email`/`name` cifrados + `emailHash` (HMAC do e-mail em minúsculas) com índice único parcial. A migração recalcula o `emailHash` de todos a cada boot: se a chave mudar de "sem chave" para "com chave", o HMAC muda e o login criaria outro tenant para a mesma pessoa.
+- Fora da criptografia, de propósito: valores (Atlas já cifra em repouso; sem descrição/e-mail não identificam ninguém), nomes de contas/categorias/cartões, e o payload do draft do onboarding (temporário, apagado ao concluir/zerar).
+- Rotação de chave não implementada (o formato `v1` deixa espaço para `v2`). Para trocar a chave hoje: exportar backup de cada usuário com a chave antiga não resolve usuários e auditoria — exigiria script próprio.
+- Dev: gerada uma chave própria no `backend/.env` local (fora do git). Migração rodou no banco `gestao_financeira_dev`: 4 lançamentos, 44 compras no cartão, 1 usuário, 26 registros de auditoria. Segundo boot não alterou nada (idempotente); leitura pelos repositórios volta legível; login acha o usuário pelo `emailHash` ignorando maiúsculas.
+- Desempenho: decifrar é por campo, em memória (µs cada). O fluxo de caixa lê todos os lançamentos do tenant a cada requisição; para milhares de lançamentos, dezenas de ms. Monitorar se crescer.
