@@ -72,7 +72,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S5 | Limites de requisição e de corpo | S4 | ✅ | 2026-10-14 | ver `git log` |
 | S6 | Exigir e-mail verificado no login Google | — | ✅ | 2026-10-14 | ver `git log` |
 | S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ✅ | 2026-10-14 | ver `git log` |
-| S8 | Auditoria de ações destrutivas | S4 | ⬜ | | |
+| S8 | Auditoria de ações destrutivas | S4 | ✅ | 2026-10-14 | ver `git log` |
 | S9 | Logs de requisição sem query string | — | ⬜ | | |
 | S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ⬜ | | |
 | S11 | Exclusão completa da conta | S2, S8 | ⬜ | | |
@@ -132,3 +132,8 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Campos conhecidos do backup ficaram opcionais (só `id` obrigatório) para aceitar backups antigos; campos desconhecidos só aceitam string/número/booleano/null — os legados que as migrações de boot leem são todos simples.
 - Formulários comuns (`*.schemas.ts`) não têm limite de tamanho em descrição/observações; o limite de 1 MB do corpo (S5) cobre o abuso. Se quiser limites por campo, é ajuste de produto (quanto texto cabe numa descrição).
 - Verificado no backend local: `{"idToken":{"$ne":null}}` em `/auth/google` → 400 `validation.unsafeInput`.
+
+### S8
+- "Limpar mês" no frontend dispara um `DELETE` por lançamento, então aparece como vários `record_deleted` — não há rota de exclusão em massa para auditar à parte.
+- Exportações também entram (saída de dados é o que mais interessa numa investigação de conta invadida).
+- Retenção continua 90 dias (índice TTL do `audit_log`). Para uso comercial, avaliar prazo maior e exportação periódica — é decisão de produto/jurídico.

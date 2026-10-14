@@ -7,6 +7,8 @@ import { requireCsrfHeader } from './shared/middlewares/csrf.middleware';
 import { clientIp, trustProxyHops } from './shared/middlewares/client-ip.middleware';
 import { globalIpLimiter } from './shared/middlewares/rate-limits';
 import { rejectUnsafeInput } from './shared/middlewares/sanitize-input.middleware';
+import { createAuditDeletes } from './shared/middlewares/audit.middleware';
+import { auditLogService } from './container';
 import { connectMongo } from './shared/persistence/mongo-client';
 import { errorHandler } from './shared/middlewares/error-handler';
 import { requestLogger } from './shared/middlewares/request-logger';
@@ -79,6 +81,7 @@ app.get('/health', (_req, res) => {
 // conseguir uma sessão. Tudo montado depois dele exige cookie válido.
 app.use('/auth', authRouter);
 app.use(authMiddleware);
+app.use(createAuditDeletes(auditLogService));
 
 app.use('/accounts', accountsRouter);
 app.use('/account-types', accountTypesRouter);

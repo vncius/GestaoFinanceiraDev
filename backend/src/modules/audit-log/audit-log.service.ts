@@ -8,6 +8,7 @@ export interface RecordAuditParams {
   email?: string | null;
   ip?: string | null;
   userAgent?: string | null;
+  details?: Record<string, string | number> | null;
 }
 
 export class AuditLogService {
@@ -24,6 +25,7 @@ export class AuditLogService {
         action: params.action,
         ip: params.ip ?? null,
         userAgent: params.userAgent ?? null,
+        details: params.details ?? null,
         createdAt: new Date(),
       });
     } catch (err) {
