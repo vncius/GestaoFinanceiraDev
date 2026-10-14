@@ -1,0 +1,45 @@
+# Varreduras de segurança (S13 do plano de segurança). O repositório é
+# privado, então CodeQL exigiria GitHub Advanced Security (pago); no lugar:
+# - Semgrep (análise estática, regras públicas de TypeScript/Node/OWASP);
+# - Gitleaks (segredos commitados por engano, no histórico inteiro).
+# Roda em push/PR para main e toda segunda-feira (regras novas pegam código antigo).
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      # Falha só com achados de severidade ERROR; os demais aparecem no log.
+      - run: >-
+          semgrep scan
+          --config p/typescript
+          --config p/nodejsscan
+          --config p/owasp-top-ten
+          --config p/secrets
+          --exclude node_modules --exclude dist
+          --severity ERROR --error
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

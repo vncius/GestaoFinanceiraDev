@@ -77,7 +77,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ✅ | 2026-10-14 | ver `git log` |
 | S11 | Exclusão completa da conta | S2, S8 | ✅ | 2026-10-14 | ver `git log` |
 | S12 | Criptografia de campos sensíveis | S11 | ✅ | 2026-10-14 | ver `git log` |
-| S13 | CI, Dependabot, CodeQL e testes de segurança | S1 | ⬜ | | |
+| S13 | CI, Dependabot, varredura de segurança e testes | S1 | ✅ | 2026-10-14 | ver `git log` |
 
 ---
 
@@ -91,7 +91,9 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | Jurídico | Revisar o texto das políticas (`frontend/src/locales/*/legal.json`) com um advogado antes do uso comercial | S10 |
 | Render | `ENCRYPTION_KEY` = `openssl rand -base64 32` — **guardar cópia em local seguro** | S12 |
 | Render | Conferir `NODE_ENV=production` e `CORS_ORIGIN` = URL do Pages | S3 |
-| GitHub | Ativar Dependabot alerts e Code scanning (Settings → Code security) | S13 |
+| GitHub | Ativar Dependabot alerts e security updates (Settings → Code security). Code scanning/CodeQL não está disponível em repositório privado sem GitHub Advanced Security — o workflow `Security` (Semgrep + Gitleaks) cobre | S13 |
+| GitHub | Proteger `main` exigindo os checks `CI` e `Security` antes do merge (Settings → Branches) | S13 |
+| Antes de abrir para terceiros | Pentest: no mínimo um OWASP ZAP baseline contra um ambiente de homologação; idealmente avaliação por terceiro | — |
 
 ---
 
@@ -165,3 +167,12 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - Rotação de chave não implementada (o formato `v1` deixa espaço para `v2`). Para trocar a chave hoje: exportar backup de cada usuário com a chave antiga não resolve usuários e auditoria — exigiria script próprio.
 - Dev: gerada uma chave própria no `backend/.env` local (fora do git). Migração rodou no banco `gestao_financeira_dev`: 4 lançamentos, 44 compras no cartão, 1 usuário, 26 registros de auditoria. Segundo boot não alterou nada (idempotente); leitura pelos repositórios volta legível; login acha o usuário pelo `emailHash` ignorando maiúsculas.
 - Desempenho: decifrar é por campo, em memória (µs cada). O fluxo de caixa lê todos os lançamentos do tenant a cada requisição; para milhares de lançamentos, dezenas de ms. Monitorar se crescer.
+
+### S13
+- Repositório é **privado**: CodeQL (code scanning) exige GitHub Advanced Security. Trocado por Semgrep CE (`semgrep/semgrep`, regras `p/typescript`, `p/nodejsscan`, `p/owasp-top-ten`, `p/secrets`; falha só com severidade ERROR) e Gitleaks (histórico inteiro; gratuito para conta pessoal).
+- Semgrep não pôde ser rodado localmente (sem Docker/Python nesta máquina) — **a primeira execução no GitHub pode apontar achados**; tratar como entrega nova se aparecer algo.
+- Varredura manual do histórico (188 commits) atrás de chaves Anthropic/OpenAI/Google, URI do Mongo com senha e chave privada: nada encontrado; nenhum `.env` commitado.
+- CI usa Node 20 (tipos do backend são `@types/node` 20). `npm ci --dry-run` validado nos dois pacotes.
+- `npm audit` no CI: só produção (`--omit=dev`) e só alta/crítica, para avisos de ferramenta de build (Tailwind 3) não travarem merge.
+- A lista `ENCRYPTED_FIELDS` da migração (S12) e os `encryptedFields` dos repositórios precisam andar juntos — não há teste que garanta isso.
+- Pentest não é algo que dá para "aplicar" no código: ficou em Ações de deploy.

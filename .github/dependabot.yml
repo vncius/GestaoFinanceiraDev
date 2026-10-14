@@ -1,0 +1,30 @@
+# Atualizações de dependência (S13 do plano de segurança). PRs semanais,
+# agrupando minor/patch para não virar enxurrada; major vem separado porque
+# costuma exigir ajuste de código. Alertas de vulnerabilidade chegam na hora,
+# independente desta agenda (Settings → Code security → Dependabot alerts).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      backend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
