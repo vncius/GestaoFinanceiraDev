@@ -16,6 +16,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - S6: login com Google exige `email_verified` no ID-token (a conta é identificada pelo e-mail).
 - S7: proteção contra injection — toda requisição com chave de operador do MongoDB (`$…`) ou de protótipo (`__proto__`, `constructor`) no corpo ou na query é recusada (`validation.unsafeInput`); restauração de backup valida tipo e tamanho de cada campo das entidades (antes só exigia `id`) e só aceita valores simples em campos desconhecidos; CSV exportado neutraliza fórmulas (`=`, `+`, `-`, `@`) em descrição, categoria e contas.
 - S8: auditoria das ações sobre os dados — toda exclusão bem-sucedida (`record_deleted`, com a rota), zerar dados (`data_reset`), restauração de backup (`backup_imported`), exportação de backup/CSV (`backup_exported`/`csv_exported`) e importação de extrato/fatura (`statement_imported`/`invoice_imported`), com usuário, IP real e data. Nunca grava o conteúdo enviado.
+- S9: log de requisições registra só o caminho, sem query string.
 
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.

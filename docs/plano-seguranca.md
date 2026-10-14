@@ -73,7 +73,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S6 | Exigir e-mail verificado no login Google | — | ✅ | 2026-10-14 | ver `git log` |
 | S7 | Validação contra injection (operadores Mongo, backup estrito, CSV) | — | ✅ | 2026-10-14 | ver `git log` |
 | S8 | Auditoria de ações destrutivas | S4 | ✅ | 2026-10-14 | ver `git log` |
-| S9 | Logs de requisição sem query string | — | ⬜ | | |
+| S9 | Logs de requisição sem query string | — | ✅ | 2026-10-14 | ver `git log` |
 | S10 | LGPD: políticas + consentimento no primeiro acesso | S2 | ⬜ | | |
 | S11 | Exclusão completa da conta | S2, S8 | ⬜ | | |
 | S12 | Criptografia de campos sensíveis | S11 | ⬜ | | |
@@ -137,3 +137,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - "Limpar mês" no frontend dispara um `DELETE` por lançamento, então aparece como vários `record_deleted` — não há rota de exclusão em massa para auditar à parte.
 - Exportações também entram (saída de dados é o que mais interessa numa investigação de conta invadida).
 - Retenção continua 90 dias (índice TTL do `audit_log`). Para uso comercial, avaliar prazo maior e exportação periódica — é decisão de produto/jurídico.
+
+### S9
+- Avaliação (D9): ganho pequeno e preventivo — nenhuma query atual leva dado pessoal (só `month`, `year`, `accountId`, `scope`, `upcomingDays`…). Mantido por custar uma linha.
+- Ponto de atenção que fica: o `errorHandler` loga o erro inesperado inteiro (`console.error`). Erros do driver do Mongo (ex.: chave duplicada) podem trazer o valor que causou o erro. Com a S12 os campos pessoais vão criptografados, o que reduz o impacto.
