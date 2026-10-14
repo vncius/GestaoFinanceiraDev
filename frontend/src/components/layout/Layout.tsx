@@ -95,9 +95,10 @@ function NewEntryButton({ variant }: { variant: 'header' | 'floating' }) {
         onClick={openQuickAdd}
         className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 mr-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
         title={t('quickAdd.openButtonHint')}
+        aria-label={t('quickAdd.openButton')}
       >
         <Plus size={16} />
-        {t('quickAdd.openButton')}
+        <span className="hidden lg:inline">{t('quickAdd.openButton')}</span>
       </button>
     );
   }
@@ -127,22 +128,22 @@ export default function Layout() {
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 px-3 sm:px-6 shrink-0">
-            <h2 className="hidden md:block text-sm font-semibold text-gray-800 dark:text-gray-100 truncate shrink-0 md:flex-1">
+            <h2 className="hidden xl:block text-sm font-semibold text-gray-800 dark:text-gray-100 truncate shrink-0 xl:flex-1">
               {title}
             </h2>
 
-            <div className="flex-1 flex items-center justify-start md:justify-center gap-3 min-w-0">
+            <div className="flex-1 xl:flex-[2] flex items-center justify-start md:justify-center gap-3 min-w-0">
               {meta?.showAccountSelector && <AccountSelector allowAll={meta.allowAllAccounts} />}
               {meta?.showMonthNav && <MonthNavigator />}
             </div>
 
-            <div className="flex items-center justify-end shrink-0 md:flex-1">
+            <div className="flex items-center justify-end shrink-0 xl:flex-1">
               <NewEntryButton variant="header" />
               <ProfileMenu />
             </div>
           </header>
 
-          <h2 className="md:hidden text-sm font-semibold text-gray-800 dark:text-gray-100 truncate bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0">
+          <h2 className="xl:hidden text-sm font-semibold text-gray-800 dark:text-gray-100 truncate bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0">
             {title}
           </h2>
 

@@ -58,6 +58,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Cobertura de `aria-label`/`role` ampliada em botões só-ícone (Editar/Excluir/Desativar, toggles de pago/recebido) em CashFlow, Receivables, CreditCards e Settings; item de "próximos vencimentos" do Dashboard agora é focável e acionável via teclado.
 
 ### Fixed
+- Cabeçalho: o seletor de conta sobrepunha a seta de mês anterior em telas de notebook/tablet desde a entrada do botão "Novo"; o título da página passa para a linha de baixo abaixo de 1280px, "Novo" vira só ícone abaixo de 1024px e o seletor não encolhe a ponto de invadir o navegador de mês.
 - Barra de rolagem horizontal no celular (iPhone) em Movimentações: os balões de ajuda (?) ficavam montados invisíveis e, perto da borda direita, alargavam a página. Agora só existem quando abertos e se reposicionam para caber na tela.
 - Na visão "Todas as contas" de Movimentações, editar uma transferência de outra conta usava a conta errada como origem/destino; pagar fatura sugere a conta que já paga aquela fatura.
 - Migração de boot `migrateResetAutoReserve` zerava, a cada reinício do servidor (deploy ou cold start no Render), toda regra de reserva automática configurada depois da E8. O reset agora só atinge contas no formato pré-E8. **Regras configuradas antes desta correção podem ter sido apagadas em produção e precisam ser reconfiguradas.**
