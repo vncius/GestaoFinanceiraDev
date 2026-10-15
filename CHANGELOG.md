@@ -64,6 +64,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Notificações toast para falhas de mutation em todo o frontend (antes, erros de API não davam nenhum feedback visual).
 - Logging mínimo de requisições no backend (método, path, status, duração).
 - `VITE_API_URL` (frontend) e `CORS_ORIGIN` (backend) como variáveis de ambiente configuráveis.
+- Logo do projeto na aba do navegador (`frontend/public/favicon.svg`: barras crescentes sobre o azul do tema) e `theme-color` no `index.html`.
 
 ### Changed
 - U2: conta pagadora do cartão (`defaultPaymentAccountId`) passa a ser obrigatória e validada (ativa) na criação/edição; não é mais possível desativar uma conta que paga a fatura de um cartão ativo (`account.paysCreditCard`). Onboarding usa a conta principal quando o draft não indica pagadora; restauração de backup preenche a pagadora de cartões antigos. Rótulo no formulário: "Conta que paga a fatura".
