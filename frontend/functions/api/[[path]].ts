@@ -14,39 +14,28 @@
  * (Settings → Environment variables), com a URL pública do backend no
  * Render (ex.: https://gestao-financeira-backend.onrender.com).
  */
+import { upstreamHeaders, upstreamUrl } from '../../proxy/api-proxy';
+
 interface Env {
   API_ORIGIN: string;
   /** Segredo compartilhado com o backend (mesma env var no Render). */
   PROXY_SHARED_SECRET?: string;
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
+export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (!env.API_ORIGIN) {
     return new Response('API_ORIGIN não configurada no ambiente do Cloudflare Pages', {
       status: 500,
     });
   }
 
-  const incomingUrl = new URL(request.url);
-  const segments = params.path;
-  const path = Array.isArray(segments) ? segments.join('/') : (segments ?? '');
-  const targetUrl = new URL(`/${path}`, env.API_ORIGIN);
-  targetUrl.search = incomingUrl.search;
-
-  const headers = new Headers(request.headers);
-  headers.delete('host');
-
-  // IP real do cliente para o backend (rate limit e auditoria). Visto do
-  // Render, quem conecta é o Cloudflare; o segredo prova que o X-Client-IP
-  // veio deste proxy e não de alguém chamando o backend direto. Valores
-  // enviados pelo próprio navegador nesses cabeçalhos são descartados.
-  headers.delete('x-client-ip');
-  headers.delete('x-proxy-secret');
-  const clientIp = request.headers.get('cf-connecting-ip');
-  if (env.PROXY_SHARED_SECRET && clientIp) {
-    headers.set('x-client-ip', clientIp);
-    headers.set('x-proxy-secret', env.PROXY_SHARED_SECRET);
+  let targetUrl: URL;
+  try {
+    targetUrl = upstreamUrl(request.url, env.API_ORIGIN);
+  } catch {
+    return new Response('Caminho inválido', { status: 400 });
   }
+  const headers = upstreamHeaders(request.headers, env.PROXY_SHARED_SECRET);
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   const upstreamRequest = new Request(targetUrl.toString(), {
