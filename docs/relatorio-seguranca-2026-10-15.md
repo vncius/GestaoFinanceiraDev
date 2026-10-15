@@ -147,3 +147,40 @@ Do plano: `PROXY_SHARED_SECRET` (Render + Cloudflare), `ENCRYPTION_KEY`, `NODE_E
 3. **M2** (reautenticação para ações críticas).
 4. **M4** (teto global da IA + limites persistidos) e **B1** (lista de e-mails, se for abrir para terceiros antes do pentest).
 5. Baixas e informativas conforme couber.
+
+---
+
+## Testes de pentest executados (2026-10-15)
+
+Os ataques que um pentest roda contra a camada de aplicação foram escritos como testes de regressão em `backend/src/security.http.test.ts` — disparam a tentativa contra o app Express real (porta efêmera, `127.0.0.1`) e afirmam que a defesa segura. Resolvem na cadeia de middlewares, antes do banco, então rodam offline no CI junto do resto. **14 casos, todos verdes.**
+
+| Vetor testado | Esperado | Resultado |
+|---|---|---|
+| Cabeçalhos em `/health` (CSP `default-src 'none'`, `nosniff`, `X-Frame-Options: DENY`, sem `X-Powered-By`) | presentes | ✅ |
+| Rota protegida sem cookie | 401 | ✅ |
+| Cookie de sessão assinado com outra chave (token forjado) | 401 | ✅ |
+| Cookie de sessão com lixo (não-JWT) | 401 | ✅ |
+| `POST`/`DELETE` sem `X-Requested-With` (CSRF) | 403 `auth.csrfHeaderMissing` | ✅ |
+| `GET` (método seguro) sem o cabeçalho | passa | ✅ |
+| Operador `$` no corpo e na query (NoSQL injection) | 400 `validation.unsafeInput` | ✅ |
+| Chave `__proto__` no corpo (prototype pollution) | 400 e `Object.prototype` intacto | ✅ |
+| Corpo acima de 1 MB | 413 `common.payloadTooLarge` | ✅ |
+| JSON malformado | 400 `common.invalidJson` | ✅ |
+| CORS com origem arbitrária | não reflete a origem nem `*` | ✅ |
+| Rate limit de login por IP | 429 com `Retry-After` | ✅ |
+
+Isolamento por tenant (IDOR) e ida/volta da criptografia já têm cobertura própria em `mongo-store.test.ts` e `field-crypto.test.ts`; o proxy `/api` (A1) em `frontend/proxy/api-proxy.test.ts`.
+
+Para a refatoração, a montagem do app saiu de `server.ts` para `backend/src/app.ts` (sem o `bootstrap()`/Mongo), que é o que o teste importa.
+
+### O que estes testes **não** substituem
+
+Um pentest de verdade ainda precisa, contra um ambiente de homologação de pé (fora do alcance de um teste de unidade offline):
+
+- **DAST/scanner** (OWASP ZAP baseline no mínimo) contra a URL real, com o proxy `/api` e o TLS de produção no caminho — inclusive revalidar A1 no runtime do Cloudflare.
+- **IDOR autenticado de ponta a ponta**: logar como tenant A e tentar ler/alterar recursos de B via HTTP (aqui só o nível de repositório está coberto, por falta de login real nos testes).
+- **Atributos do cookie em produção** (`HttpOnly`, `Secure`, `SameSite`) observados no navegador, e comportamento no Safari/iOS.
+- **Rate limit sob múltiplas instâncias** e após restart (hoje em memória — ver M4): o teste cobre uma instância só.
+- **Fluxo OAuth do Google** com tokens reais (replay, `aud`/`iss`, `nonce` — ver B2).
+- **TLS/HTTP** (versões, ciphers, redirect 80→443, HSTS preload) — responsabilidade do Cloudflare/Render, conferir no painel.
+- **Cadeia de dependências e segredos**: já contínuo no CI (Semgrep, Gitleaks, `npm audit`).
