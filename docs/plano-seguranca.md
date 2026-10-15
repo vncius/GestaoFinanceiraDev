@@ -26,7 +26,7 @@
 
 ## Objetivo
 
-Levar a aplicação de "projeto pessoal" para um patamar mínimo aceitável para uso por terceiros: sessão revogável, proteção contra CSRF, cabeçalhos de segurança, limites de requisição, IP real nos logs, validação contra injection, trilha de auditoria, LGPD (consentimento, políticas, exclusão de conta) e criptografia de campos sensíveis. Origem: avaliação de segurança de 2026-10-14 (conversa com o usuário).
+Levar a aplicação de "projeto pessoal" para um patamar mínimo aceitável para uso por terceiros: sessão revogável, proteção contra CSRF, cabeçalhos de segurança, limites de requisição, IP real nos logs, validação contra injection, trilha de auditoria, LGPD (consentimento, políticas, exclusão de conta) e criptografia de campos sensíveis. Origem: avaliação de segurança de 2026-10-14 (conversa com o usuário). S14 e S15 vêm do [relatório de 2026-10-15](relatorio-seguranca-2026-10-15.md).
 
 ---
 
@@ -78,6 +78,8 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | S11 | Exclusão completa da conta | S2, S8 | ✅ | 2026-10-14 | 573f371 |
 | S12 | Criptografia de campos sensíveis | S11 | ✅ | 2026-10-14 | d412e11 |
 | S13 | CI, Dependabot, varredura de segurança e testes | S1 | ✅ | 2026-10-14 | fa37272 |
+| S14 | Proxy `/api` preso à origem do backend (achado A1) | S4 | ✅ | 2026-10-15 | 53c8266 |
+| S15 | `JWT_SECRET` validada no boot (achado M1) | — | ✅ | 2026-10-15 | decb244 |
 
 ---
 
@@ -91,6 +93,7 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 | Jurídico | Revisar o texto das políticas (`frontend/src/locales/*/legal.json`) com um advogado antes do uso comercial | S10 |
 | Render | `ENCRYPTION_KEY` = `openssl rand -base64 32` — **guardar cópia em local seguro** | S12 |
 | Render | Conferir `NODE_ENV=production` e `CORS_ORIGIN` = URL do Pages | S3 |
+| Render | `JWT_SECRET` = `openssl rand -base64 48` (≥ 32 bytes, diferente do exemplo e do valor de dev). Trocar derruba as sessões abertas (todos entram de novo) | S15 |
 | GitHub | Ativar Dependabot alerts e security updates (Settings → Code security). Code scanning/CodeQL não está disponível em repositório privado sem GitHub Advanced Security — o workflow `Security` (Semgrep + Gitleaks) cobre | S13 |
 | GitHub | Proteger `main` exigindo os checks `CI` e `Security` antes do merge (Settings → Branches) | S13 |
 | Antes de abrir para terceiros | Pentest: no mínimo um OWASP ZAP baseline contra um ambiente de homologação; idealmente avaliação por terceiro | — |
@@ -176,3 +179,15 @@ Avaliado: hoje a query string só leva mês/ano/ids (sem dado pessoal), então o
 - `npm audit` no CI: só produção (`--omit=dev`) e só alta/crítica, para avisos de ferramenta de build (Tailwind 3) não travarem merge.
 - A lista `ENCRYPTED_FIELDS` da migração (S12) e os `encryptedFields` dos repositórios precisam andar juntos — não há teste que garanta isso.
 - Pentest não é algo que dá para "aplicar" no código: ficou em Ações de deploy.
+
+### S14
+- Achado A1 do [relatório de 2026-10-15](relatorio-seguranca-2026-10-15.md): `new URL('/' + caminho, API_ORIGIN)` com caminho começando em barra (`/api//outro-site.com`, ou barra invertida/tab, que o parser trata como barra) virava URL relativa ao protocolo — o proxy mandaria cookie de sessão e `X-Proxy-Secret` para outro host. Não foi confirmado se o runtime do Pages entrega o segmento vazio em `params.path`; corrigido de qualquer forma.
+- Agora o caminho vem do `pathname` da requisição (sem o prefixo `/api`) e é aplicado com o setter `pathname`, que nunca troca o host; a origem final é conferida (400 se divergir). `params.path` deixou de ser usado — o caminho repassado continua codificado como o navegador mandou.
+- Lógica pura em `frontend/proxy/api-proxy.ts` (fora de `functions/`, onde todo arquivo vira rota), com testes em `api-proxy.test.ts` (`//`, `\`, `%09`, `%5C`, `%2F`, `%2e%2e`, `@`, cabeçalhos de IP/segredo).
+- `npm run build` do frontend passou a checar tipos também de `functions/` (`tsc -p functions`) — antes o proxy não era compilado em lugar nenhum do CI.
+- Não verificado no Cloudflare (exige deploy): conferir depois do deploy que login, iPhone e importações seguem funcionando pelo `/api`.
+
+### S15
+- Achado M1: `assertSessionSecretConfigured()` (`auth.service.ts`) roda no boot junto de `assertEncryptionConfigured()`. Sem `JWT_SECRET` o servidor não sobe em nenhum ambiente (antes subia e quebrava no primeiro login). Em produção também recusa menos de 32 bytes e o valor do `.env.example`; fora de produção só avisa.
+- O `JWT_SECRET` atual de produção não foi verificado (fica no Render). Se tiver menos de 32 bytes, o próximo deploy não sobe — ver Ações de deploy.
+

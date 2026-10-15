@@ -7,7 +7,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 ## [Unreleased]
 
 ### Security
-- **Plano de segurança e LGPD** (`docs/plano-seguranca.md`, entregas S1–S13).
+- **Plano de segurança e LGPD** (`docs/plano-seguranca.md`, entregas S1–S15) e relatório de segurança de 2026-10-15 (`docs/relatorio-seguranca-2026-10-15.md`).
 - S1: dependências com vulnerabilidade conhecida atualizadas — backend `express` 4.22.3 (`proxy-addr`, `body-parser`, `qs`) e `vitest`; frontend `axios`, `react-router-dom` 7 e `vite` 6. Restam só avisos de build (`braces`/`postcss-selector-parser` via Tailwind 3), sem impacto em produção.
 - S2: sessão expira em 24h (antes 30 dias) e passa a ser revogável — cada usuário tem `sessionVersion`, conferida a cada requisição (cache de 60s). "Sair" pergunta se é só deste dispositivo ou de todos (`POST /auth/logout-all`, registrado na auditoria como `logout_all`).
 - S3: proteção CSRF — cookie de sessão `SameSite=Lax` (o proxy `/api` o torna first-party, então segue funcionando no Safari/iOS; `COOKIE_SAME_SITE` para outros cenários) e cabeçalho `X-Requested-With: XMLHttpRequest` obrigatório em toda requisição que altera dados. Cabeçalhos de segurança: `helmet` no backend e `frontend/public/_headers` (CSP liberando só o próprio domínio e o login do Google, HSTS, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`); `vite preview` aplica os mesmos cabeçalhos para testar localmente.
@@ -21,6 +21,8 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - S11 (LGPD): "Excluir minha conta" em Configurações → Seus dados (`DELETE /auth/account`, confirmação digitando EXCLUIR) — apaga todos os dados do tenant e o usuário, encerra as sessões em todos os aparelhos e deixa no log de auditoria só ação e data (sem e-mail, IP e navegador). Aba Seus dados ganhou links para as políticas.
 - S12: criptografia de campos sensíveis em repouso (AES-256-GCM, chave `ENCRYPTION_KEY`, obrigatória em produção) — descrição e observações de lançamentos e compras no cartão, mensagens e resumo da conversa do onboarding, e-mail e nome do usuário (login pelo índice cego `emailHash`) e e-mail/IP da auditoria. Migração de boot idempotente criptografa o que já existe; `npm run audit:read` lê a auditoria com os campos legíveis.
 - S13: GitHub Actions — `CI` (typecheck, testes, build e `npm audit` de produção nos dois pacotes) e `Security` (Semgrep com regras de TypeScript/Node/OWASP e Gitleaks no histórico inteiro, também toda segunda-feira); Dependabot semanal para backend, frontend e actions. Testes novos de segurança: sessão/revogação, consentimento, CSRF, IP real, injeção de operadores, schema do backup, CSV injection, auditoria, exclusão de conta, criptografia e isolamento por tenant no `MongoStore`.
+- S14: proxy `/api` do Cloudflare Pages preso à origem do backend — um caminho como `/api//outro-site.com` podia virar URL relativa ao protocolo e levar o cookie de sessão e o `X-Proxy-Secret` para outro host (achado A1 do relatório de segurança de 2026-10-15). Lógica do proxy em `frontend/proxy/api-proxy.ts`, com testes; `npm run build` do frontend passa a checar os tipos de `functions/`.
+- S15: `JWT_SECRET` validada no boot — sem ela o servidor não sobe; em produção também recusa menos de 32 bytes e o valor de exemplo do `.env.example` (achado M1).
 
 ### Added
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.

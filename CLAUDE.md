@@ -2,7 +2,7 @@
 
 ## Planos
 
-- **Segurança e LGPD** — [`docs/plano-seguranca.md`](docs/plano-seguranca.md) (S1–S13 concluídas; restam as **Ações de deploy**, feitas fora do código).
+- **Segurança e LGPD** — [`docs/plano-seguranca.md`](docs/plano-seguranca.md) (S1–S15 concluídas; relatório de 2026-10-15 em [`docs/relatorio-seguranca-2026-10-15.md`](docs/relatorio-seguranca-2026-10-15.md); restam as **Ações de deploy**, feitas fora do código).
 - **Simplificação da UX** — [`docs/plano-simplificacao-ux.md`](docs/plano-simplificacao-ux.md) (U1–U21 concluídas).
 
 Ao pedir para "continuar o plano", "seguir para a próxima etapa" ou citar uma entrega (S1…, U1…): leia o plano inteiro e siga a seção **Como continuar**. O plano é a fonte de verdade do andamento: atualize a tabela **Status** e as **Notas de implementação** ao concluir cada entrega.
