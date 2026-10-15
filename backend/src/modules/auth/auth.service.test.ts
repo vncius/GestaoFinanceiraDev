@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from './auth.service';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { assertSessionSecretConfigured, AuthService } from './auth.service';
 
 // O ID-token do Google é validado contra as chaves públicas do Google (rede);
 // aqui só a verificação dele (a que passa `audience`) é simulada — a sessão
@@ -181,5 +181,50 @@ describe('AuthService — consentimento (LGPD)', () => {
 
   it('usuário antigo, sem aceite, precisa aceitar', () => {
     expect(hasCurrentConsent(baseUser)).toBe(false);
+  });
+});
+
+describe('assertSessionSecretConfigured', () => {
+  const original = { secret: process.env.JWT_SECRET, nodeEnv: process.env.NODE_ENV };
+  const strong = 'k7Q2vX9pL4mN8rT1wY6zB3cF5hJ0aD2gS9uE4iO7qW1xV3nM';
+
+  function setEnv(nodeEnv: string, secret: string | undefined) {
+    process.env.NODE_ENV = nodeEnv;
+    if (secret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = secret;
+  }
+
+  afterEach(() => {
+    setEnv(original.nodeEnv ?? 'test', original.secret);
+    vi.restoreAllMocks();
+  });
+
+  it('sem segredo não sobe, em qualquer ambiente', () => {
+    setEnv('production', undefined);
+    expect(() => assertSessionSecretConfigured()).toThrow(/JWT_SECRET não configurada/);
+    setEnv('development', undefined);
+    expect(() => assertSessionSecretConfigured()).toThrow(/JWT_SECRET não configurada/);
+  });
+
+  it('produção recusa segredo curto', () => {
+    setEnv('production', 'curto-demais');
+    expect(() => assertSessionSecretConfigured()).toThrow(/JWT_SECRET fraca/);
+  });
+
+  it('produção recusa o valor de exemplo do .env.example', () => {
+    setEnv('production', 'troque-por-um-segredo-aleatorio-longo');
+    expect(() => assertSessionSecretConfigured()).toThrow(/JWT_SECRET fraca/);
+  });
+
+  it('produção aceita segredo longo', () => {
+    setEnv('production', strong);
+    expect(() => assertSessionSecretConfigured()).not.toThrow();
+  });
+
+  it('fora de produção, segredo fraco só avisa', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    setEnv('development', 'curto-demais');
+    expect(() => assertSessionSecretConfigured()).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('JWT_SECRET fraca'));
   });
 });

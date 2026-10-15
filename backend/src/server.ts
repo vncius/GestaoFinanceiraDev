@@ -20,6 +20,7 @@ import { migrateResetAutoReserve } from './shared/migrations/migrate-reset-auto-
 import { migrateCardPaymentAccount } from './shared/migrations/migrate-card-payment-account';
 import { migrateEncryptFields } from './shared/migrations/migrate-encrypt-fields';
 import { assertEncryptionConfigured } from './shared/crypto/field-crypto';
+import { assertSessionSecretConfigured } from './modules/auth/auth.service';
 import authRouter from './modules/auth/auth.routes';
 import accountsRouter from './modules/accounts/accounts.routes';
 import accountTypesRouter from './modules/account-types/account-types.routes';
@@ -99,8 +100,10 @@ app.use('/onboarding', onboardingRouter);
 app.use(errorHandler);
 
 async function bootstrap() {
-  // Antes de tudo: produção sem ENCRYPTION_KEY (ou com chave inválida) não sobe.
+  // Antes de tudo: produção sem ENCRYPTION_KEY (ou com chave inválida) ou com
+  // JWT_SECRET fraca não sobe.
   assertEncryptionConfigured();
+  assertSessionSecretConfigured();
   await connectMongo();
 
   await migrateLegacyAccountConfig();

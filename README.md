@@ -89,7 +89,7 @@ O script apaga e recria, só nesse banco, três meses de movimentação fictíci
 | `CORS_ORIGIN` | `http://localhost:3101` | Origem permitida para CORS |
 | `MONGODB_URI` | — | String de conexão do MongoDB |
 | `MONGODB_DB_NAME` | `gestao_financeira` | Nome do banco |
-| `JWT_SECRET` | — | Segredo para assinar o cookie de sessão |
+| `JWT_SECRET` | — | Segredo para assinar o cookie de sessão. Obrigatório; em produção, ≥ 32 bytes (`openssl rand -base64 48`) e diferente do exemplo, senão o servidor não sobe |
 | `GOOGLE_CLIENT_ID` | — | OAuth Client ID do Google |
 | `ENCRYPTION_KEY` | — | Chave (32 bytes base64) da criptografia de campos sensíveis. **Obrigatória em produção**; perder a chave = perder esses dados |
 | `PROXY_SHARED_SECRET` | — | Segredo compartilhado com o proxy `/api` do Cloudflare (mesmo valor nos dois) para o backend confiar no IP real do cliente |

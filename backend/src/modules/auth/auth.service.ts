@@ -25,6 +25,24 @@ export interface SessionPayload {
   sv?: number;
 }
 
+// Valor do backend/.env.example: público, então não pode assinar sessão de verdade.
+const EXAMPLE_JWT_SECRET = 'troque-por-um-segredo-aleatorio-longo';
+const MIN_JWT_SECRET_BYTES = 32;
+
+/**
+ * Falha cedo (no boot). Sem JWT_SECRET o servidor subia e só quebrava no
+ * primeiro login; em produção, segredo curto ou o de exemplo deixaria
+ * qualquer um assinar uma sessão válida (achado M1 do relatório de segurança).
+ */
+export function assertSessionSecretConfigured(): void {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET não configurada. Defina-a no arquivo .env (openssl rand -base64 48).');
+  if (Buffer.byteLength(secret, 'utf8') >= MIN_JWT_SECRET_BYTES && secret !== EXAMPLE_JWT_SECRET) return;
+  const message = `JWT_SECRET fraca: use ao menos ${MIN_JWT_SECRET_BYTES} bytes aleatórios (openssl rand -base64 48), nunca o valor de exemplo.`;
+  if (process.env.NODE_ENV === 'production') throw new Error(message);
+  console.warn(`[auth] ${message}`);
+}
+
 function sessionSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET não configurada. Defina-a no arquivo .env.');
