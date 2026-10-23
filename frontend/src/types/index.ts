@@ -16,6 +16,9 @@ export interface Account {
   autoReserveEnabled: boolean;
   autoReservePercentage: number;
   autoReserveTargetAccountId: string | null;
+  invoiceTaxEnabled?: boolean;
+  invoiceTaxDefaultRateBps?: number | null;
+  invoiceTaxDueDay?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +77,8 @@ export interface FinancialTransaction {
   targetAccountId: string | null;
   originType: string | null;
   originId: string | null;
+  taxRateBps?: number | null;
+  issueDate?: string | null;
   notes: string | null;
   recurrence: RecurrenceType;
   recurringGroupId: string | null;

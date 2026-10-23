@@ -59,6 +59,20 @@ describe('importBackupSchema', () => {
     expect(parsed.bundle.data.accounts[0]).toMatchObject({ id: 'a1', type: 'MAIN', isDefault: true });
   });
 
+  it('aceita os campos de imposto sobre NF e recusa alíquota fora da faixa', () => {
+    const parsed = importBackupSchema.parse(
+      bundle({
+        accounts: [{ id: 'a1', invoiceTaxEnabled: true, invoiceTaxDefaultRateBps: 600, invoiceTaxDueDay: 20 }],
+        financialTransactions: [{ ...transaction, type: 'INCOME', taxRateBps: 600, issueDate: '2026-10-03' }],
+      }),
+    );
+    expect(parsed.bundle.data.accounts[0]).toMatchObject({ invoiceTaxDefaultRateBps: 600 });
+    expect(parsed.bundle.data.financialTransactions[0]).toMatchObject({ taxRateBps: 600, issueDate: '2026-10-03' });
+    expect(() =>
+      importBackupSchema.parse(bundle({ financialTransactions: [{ ...transaction, taxRateBps: 20000 }] })),
+    ).toThrow();
+  });
+
   it('descarta _id vindo do arquivo', () => {
     const parsed = importBackupSchema.parse(bundle({ categories: [{ id: 'c1', name: 'X', _id: 'abc' }] }));
     expect(parsed.bundle.data.categories[0]).not.toHaveProperty('_id');

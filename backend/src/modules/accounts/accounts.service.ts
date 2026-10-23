@@ -44,6 +44,9 @@ export class AccountsService {
       autoReserveEnabled: input.autoReserveEnabled ?? false,
       autoReservePercentage: input.autoReservePercentage ?? 0,
       autoReserveTargetAccountId: input.autoReserveTargetAccountId ?? null,
+      invoiceTaxEnabled: input.invoiceTaxEnabled ?? false,
+      invoiceTaxDefaultRateBps: input.invoiceTaxDefaultRateBps ?? null,
+      invoiceTaxDueDay: input.invoiceTaxDueDay ?? 20,
       createdAt: now,
       updatedAt: now,
     });

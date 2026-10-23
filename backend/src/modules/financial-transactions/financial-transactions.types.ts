@@ -27,6 +27,8 @@ export enum OriginType {
   CREDIT_CARD_INVOICE = 'CREDIT_CARD_INVOICE',
   TRANSFER = 'TRANSFER',
   AUTO_RESERVE = 'AUTO_RESERVE',
+  // Despesa "Imposto a pagar" derivada das NFs do mês (originId = "<accountId>:<AAAA-MM>").
+  INVOICE_TAX = 'INVOICE_TAX',
 }
 
 export interface FinancialTransaction {
@@ -47,6 +49,11 @@ export interface FinancialTransaction {
   // os demais tipos. Estável independente do originType (TRANSFER manual,
   // AUTO_RESERVE automática — E8), diferente de originId.
   transferGroupId: string | null;
+  // Só entradas: alíquota da NF em centésimos de ponto percentual (600 = 6,00%).
+  // Não nulo = a entrada é NF. Ausente em registros anteriores ao plano do imposto.
+  taxRateBps?: number | null;
+  // Só entradas NF: data de emissão (ISO); define o mês de competência do imposto.
+  issueDate?: string | null;
   notes: string | null;
   recurrence: RecurrenceType;
   // id do registro raiz da série (== o próprio id quando é o primeiro); null quando UNIQUE

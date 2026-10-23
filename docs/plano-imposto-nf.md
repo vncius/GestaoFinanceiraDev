@@ -31,7 +31,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | # | Entrega | Depende de | Status | Concluída em | Commit |
 |---|---|---|---|---|---|
 | I0 | Decisão registrada (plano, link, domain-logic, revisão da D2) | — | ✅ | 2026-10-23 | ver git log |
-| I1 | Modelo, sem comportamento | I0 | ⬜ | | |
+| I1 | Modelo, sem comportamento | I0 | ✅ | 2026-10-23 | ver git log |
 | I2 | Funções puras `invoice-tax.utils.ts` | I1 | ⬜ | | |
 | I3 | `syncInvoiceTax` e ganchos | I2 | ⬜ | | |
 | I4 | Bloqueios e valor real na baixa | I3 | ⬜ | | |
@@ -46,6 +46,10 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 ### I0 — 2026-10-23
 - A proposta virou este plano; `docs/proposta-imposto-nf.md` foi apagada. Padrões 8–12 confirmados pelo usuário.
 - D2 revisada em `docs/refactor-contas-pf-pj.md`; regra de domínio em `docs/domain-logic.md` §4.
+
+### I1 — 2026-10-23
+- Campos todos **opcionais** nos tipos (`taxRateBps?`, `issueDate?`, `invoiceTax*?`): registros antigos não os têm e não há migração. `OriginType.INVOICE_TAX` só no backend (no frontend `originType` é `string`).
+- Zod: contas ganham `invoiceTaxEnabled`, `invoiceTaxDefaultRateBps` (0–10000), `invoiceTaxDueDay` (1–28, padrão 20 aplicado em `AccountsService.create`). Backup declara os campos novos (conta e transação). **Ainda não** aceitos nos schemas de criação/edição de transação: entram na I3.
 
 ---
 

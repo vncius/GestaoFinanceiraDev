@@ -13,6 +13,10 @@ export interface Account {
   // conta via transferência (originType AUTO_RESERVE). Null quando
   // autoReserveEnabled é false.
   autoReserveTargetAccountId: string | null;
+  // Imposto sobre NF (docs/plano-imposto-nf.md); ausentes em contas anteriores.
+  invoiceTaxEnabled?: boolean;
+  invoiceTaxDefaultRateBps?: number | null; // 600 = 6,00%
+  invoiceTaxDueDay?: number;                // 1-28, padrão 20
   createdAt: string;
   updatedAt: string;
 }
