@@ -76,6 +76,10 @@
       "autoReservePercentageLabel": "Percentage automatically transferred (%)",
       "autoReserveTargetLabel": "Reserve target account",
       "autoReserveTargetPlaceholder": "Select the target account...",
+      "invoiceTaxLabel": "This account issues invoices",
+      "invoiceTaxTooltip": "Income marked as an invoice generates a single \"Tax payable\" expense per month, due in the month after the invoice is issued.",
+      "invoiceTaxRateLabel": "Default tax rate (%)",
+      "invoiceTaxDueDayLabel": "Due day (1–28)",
       "newTypeOption": "+ New type…",
       "newTypePlaceholder": "New type name",
       "newTypeCreate": "Create"

@@ -305,6 +305,9 @@ interface AccountFormState {
   autoReserveEnabled: boolean;
   autoReservePercentage: string;
   autoReserveTargetAccountId: string;
+  invoiceTaxEnabled: boolean;
+  invoiceTaxRate: string; // em %, ex.: "6" ou "6.5"
+  invoiceTaxDueDay: string;
 }
 
 function AccountModal({
@@ -338,6 +341,9 @@ function AccountModal({
     autoReserveEnabled: item?.autoReserveEnabled ?? false,
     autoReservePercentage: String(item?.autoReservePercentage ?? 0),
     autoReserveTargetAccountId: item?.autoReserveTargetAccountId ?? '',
+    invoiceTaxEnabled: item?.invoiceTaxEnabled ?? false,
+    invoiceTaxRate: item?.invoiceTaxDefaultRateBps != null ? String(item.invoiceTaxDefaultRateBps / 100) : '',
+    invoiceTaxDueDay: String(item?.invoiceTaxDueDay ?? 20),
   });
 
   const [form, setForm] = useState<AccountFormState>(init);
@@ -371,10 +377,15 @@ function AccountModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const dueDay = parseInt(form.invoiceTaxDueDay, 10);
+    const rate = parseFloat(form.invoiceTaxRate);
     const missing = getMissingFields([
       { label: t('validation.nameLabel'), valid: !!form.name },
       ...(form.autoReserveEnabled
         ? [{ label: t('accounts.modal.autoReserveTargetLabel'), valid: !!form.autoReserveTargetAccountId }]
+        : []),
+      ...(form.invoiceTaxEnabled
+        ? [{ label: t('accounts.modal.invoiceTaxDueDayLabel'), valid: dueDay >= 1 && dueDay <= 28 }]
         : []),
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
@@ -385,6 +396,9 @@ function AccountModal({
       autoReserveEnabled: form.autoReserveEnabled,
       autoReservePercentage: form.autoReserveEnabled ? parseFloat(form.autoReservePercentage) || 0 : 0,
       autoReserveTargetAccountId: form.autoReserveEnabled ? form.autoReserveTargetAccountId || null : null,
+      invoiceTaxEnabled: form.invoiceTaxEnabled,
+      invoiceTaxDefaultRateBps: Number.isFinite(rate) ? Math.min(10000, Math.max(0, Math.round(rate * 100))) : null,
+      ...(form.invoiceTaxEnabled ? { invoiceTaxDueDay: dueDay } : {}),
     });
   }
 
@@ -502,6 +516,45 @@ function AccountModal({
           </>
         )}
         </>
+        )}
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.invoiceTaxEnabled}
+            onChange={(e) => setForm((f) => ({ ...f, invoiceTaxEnabled: e.target.checked }))}
+            className="rounded"
+          />
+          {t('accounts.modal.invoiceTaxLabel')}
+          <HelpTip text={t('accounts.modal.invoiceTaxTooltip')} />
+        </label>
+        {form.invoiceTaxEnabled && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('accounts.modal.invoiceTaxRateLabel')}>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                inputMode="decimal"
+                className={INPUT}
+                value={form.invoiceTaxRate}
+                onChange={set('invoiceTaxRate')}
+                placeholder="6"
+              />
+            </Field>
+            <Field label={t('accounts.modal.invoiceTaxDueDayLabel')}>
+              <input
+                type="number"
+                min="1"
+                max="28"
+                step="1"
+                inputMode="numeric"
+                className={INPUT}
+                value={form.invoiceTaxDueDay}
+                onChange={set('invoiceTaxDueDay')}
+              />
+            </Field>
+          </div>
         )}
       </form>
     </Modal>

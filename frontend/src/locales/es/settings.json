@@ -76,6 +76,10 @@
       "autoReservePercentageLabel": "Porcentaje transferido automáticamente (%)",
       "autoReserveTargetLabel": "Cuenta de destino de la reserva",
       "autoReserveTargetPlaceholder": "Seleccione la cuenta de destino...",
+      "invoiceTaxLabel": "Esta cuenta emite facturas",
+      "invoiceTaxTooltip": "Los ingresos marcados como factura generan un único gasto \"Impuesto a pagar\" por mes, con vencimiento en el mes siguiente a la emisión.",
+      "invoiceTaxRateLabel": "Alícuota predeterminada (%)",
+      "invoiceTaxDueDayLabel": "Día de vencimiento (1–28)",
       "newTypeOption": "+ Nuevo tipo…",
       "newTypePlaceholder": "Nombre del nuevo tipo",
       "newTypeCreate": "Crear"

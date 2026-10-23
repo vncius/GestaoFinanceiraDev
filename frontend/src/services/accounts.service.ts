@@ -8,6 +8,9 @@ export interface CreateAccountPayload {
   autoReserveEnabled: boolean;
   autoReservePercentage: number;
   autoReserveTargetAccountId?: string | null;
+  invoiceTaxEnabled?: boolean;
+  invoiceTaxDefaultRateBps?: number | null;
+  invoiceTaxDueDay?: number;
 }
 
 export const AccountsService = {

@@ -36,7 +36,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I3 | `syncInvoiceTax` e ganchos | I2 | ✅ | 2026-10-23 | ver git log |
 | I4 | Bloqueios e valor real na baixa | I3 | ✅ | 2026-10-23 | ver git log |
 | I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ✅ | 2026-10-23 | dac963d |
-| I6 | Tela: configuração na conta | I5 | ⬜ | | |
+| I6 | Tela: configuração na conta | I5 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
 | I7 | Tela: NF e alíquota na nova entrada | I6 | ⬜ | | |
 | I8 | Tela: marcadores, modal, bloqueios, Limpar mês | I7 | ⬜ | | |
 | I9 | Acabamento | I8 | ⬜ | | |
@@ -78,7 +78,12 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 - `syncInvoiceTax` captura erro `code 11000` e roda de novo uma vez. Dentro de transação Mongo o erro de escrita pode abortar a transação inteira; o retry cobre o caso fora dela.
 - `GET /cash-flow/invoice-tax/:id` → `{ expense, invoices[{id, description, amount, taxRateBps, issueDate, expectedDate, status, tax}], calculatedTotal }`; 404 `invoiceTax.notFound` (errors.json nos 3 idiomas). Documentado em `docs/api.md`.
 - Testes no describe "leitura e duplicidade (I5)". Backend: typecheck e 408 testes verdes.
-- **I6 ainda não iniciada** (parei por limite de uso do usuário). Próximo chat: I6 (tela de configuração na conta) e depois I7/I8 conforme a seção 7.
+
+### I6 — 2026-10-23
+- `AccountModal` (`Settings.tsx`) ganhou o checkbox "Esta conta emite nota fiscal"; marcado, mostra alíquota padrão (%, 0–100, passo 0,01; enviada em bps = `round(% × 100)`, vazio → `null`) e dia de vencimento (1–28, padrão 20, validado antes de salvar). O checkbox aparece sempre (não depende de haver 2+ contas). `CreateAccountPayload` ganhou os três campos; textos nos 3 idiomas em `settings.json` (`accounts.modal.invoiceTax*`).
+- Build e 126 testes do frontend verdes; typecheck do backend verde.
+- **Pendente:** verificação no navegador (desktop e 375px, claro e escuro). O login é só Google OAuth e não há bypass de dev, então não consegui entrar na sessão. Fazer manualmente: Configurações → Contas → editar conta → marcar a opção.
+- Próximo: I7 (Chat 4, Opus · medium).
 
 ---
 
