@@ -55,6 +55,19 @@ type TransactionMutationInput = {
 
 const INVOICE_TAX_DESCRIPTION = 'Imposto a pagar';
 const INVOICE_TAX_CATEGORY = 'Impostos';
+// Campos que continuam livres numa NF com o imposto do mês já pago (decisão 3/4).
+const INVOICE_FREE_FIELDS = new Set(['description', 'categoryId', 'notes']);
+// Únicos campos editáveis na despesa de imposto (decisão 5).
+const INVOICE_TAX_EXPENSE_EDITABLE_FIELDS = new Set(['expectedDate', 'sourceAccountId', 'notes']);
+
+// Campos do patch que mudariam o lançamento fora do conjunto permitido;
+// comparar valores (e não só presença) aceita a tela que reenvia o formulário inteiro.
+function changedFieldsOutside(t: FinancialTransaction, patch: object, allowed: Set<string>): string[] {
+  const current = t as unknown as Record<string, unknown>;
+  return Object.entries(patch)
+    .filter(([k, v]) => v !== undefined && !allowed.has(k) && (current[k] ?? null) !== v)
+    .map(([k]) => k);
+}
 
 // Chave do "Imposto a pagar" afetado por um lançamento: a da competência de
 // uma entrada NF, ou a da própria despesa de imposto; null para o resto.
@@ -446,6 +459,11 @@ export class CashFlowService {
   async createIncome(tenantId: string, accountId: string, input: CreateIncomeInput): Promise<FinancialTransaction> {
     const targetAccountId = input.targetAccountId ?? accountId;
     const invoice = this.invoiceFields(input.taxRateBps ?? null, input.issueDate ?? null);
+    if (invoice.taxRateBps != null && invoice.issueDate) {
+      await this.assertInvoiceTaxNotPaid(tenantId, [
+        invoiceTaxOriginId(targetAccountId, competenceOf(invoice.issueDate)),
+      ]);
+    }
 
     const now = nowISO();
     const id = generateId();
@@ -693,6 +711,17 @@ export class CashFlowService {
     if (tx.status === TransactionStatus.REVERSED) {
       throw new AppError('Lançamentos revertidos não podem ser editados.', 400, 'transaction.reversedCannotEdit');
     }
+    if (tx.originType === OriginType.INVOICE_TAX) {
+      const locked = changedFieldsOutside(tx, input, INVOICE_TAX_EXPENSE_EDITABLE_FIELDS);
+      if (locked.length > 0) {
+        throw new AppError(
+          'No imposto a pagar só o vencimento, a conta e as observações podem ser alterados.',
+          400,
+          'invoiceTax.expenseLocked',
+        );
+      }
+    }
+    await this.assertInvoiceEditable(tenantId, tx, input);
 
     let recurrencePatch: Partial<FinancialTransaction> = {};
     if (input.recurrence !== undefined && input.recurrence !== tx.recurrence) {
@@ -746,6 +775,27 @@ export class CashFlowService {
 
     const invoicePatch = this.invoicePatch(existing, input);
 
+    // As datas de cada ocorrência (recebimento e emissão) são individuais —
+    // apenas os demais campos (valor, descrição, categoria, conta, notas,
+    // alíquota) se propagam para as futuras.
+    const { expectedDate: _expectedDate, issueDate: _issueDate, ...seriesPatch } = input;
+    const source = { ...existing, ...input, ...invoicePatch } as FinancialTransaction;
+    let futures: { tx: FinancialTransaction; patch: TransactionMutationInput }[] = [];
+    if (scope === 'CURRENT_AND_FUTURE') {
+      const all = await this.transactionsRepo.findAll(tenantId);
+      futures = all
+        .filter((t) => {
+          if (t.id === existing.id || t.recurringGroupId !== groupId) return false;
+          if (t.status !== TransactionStatus.PENDING) return false;
+          const my = monthYearOf(t.expectedDate);
+          return monthKey(my.month, my.year) > refKey;
+        })
+        .map((t) => ({ tx: t, patch: { ...seriesPatch, ...this.seriesInvoicePatch(t, seriesPatch.taxRateBps, source) } }));
+      for (const { tx: t, patch } of futures) {
+        await this.assertInvoiceEditable(tenantId, t, patch);
+      }
+    }
+
     return runInTransaction(async () => {
       const updated = await this.transactionsRepo.update(
         existing.id,
@@ -754,26 +804,9 @@ export class CashFlowService {
       );
       const touched: FinancialTransaction[] = [existing, updated];
 
-      if (scope === 'CURRENT_AND_FUTURE') {
-        // As datas de cada ocorrência (recebimento e emissão) são individuais —
-        // apenas os demais campos (valor, descrição, categoria, conta, notas,
-        // alíquota) se propagam para as futuras.
-        const { expectedDate: _expectedDate, issueDate: _issueDate, ...seriesPatch } = input;
-        const all = await this.transactionsRepo.findAll(tenantId);
-        const futureOccurrences = all.filter((t) => {
-          if (t.id === existing.id || t.recurringGroupId !== groupId) return false;
-          if (t.status !== TransactionStatus.PENDING) return false;
-          const my = monthYearOf(t.expectedDate);
-          return monthKey(my.month, my.year) > refKey;
-        });
-        for (const t of futureOccurrences) {
-          const future = await this.transactionsRepo.update(
-            t.id,
-            { ...seriesPatch, ...this.seriesInvoicePatch(t, seriesPatch.taxRateBps, updated), updatedAt: now },
-            tenantId,
-          );
-          touched.push(t, future);
-        }
+      for (const { tx: t, patch } of futures) {
+        const future = await this.transactionsRepo.update(t.id, { ...patch, updatedAt: now }, tenantId);
+        touched.push(t, future);
       }
 
       await this.syncInvoiceTaxFor(tenantId, touched);
@@ -790,6 +823,15 @@ export class CashFlowService {
     referenceYear?: number,
   ): Promise<void> {
     const tx = await this.getTransactionChecked(id, type, tenantId);
+
+    // Some sozinha quando sai a última NF do mês (I3); excluir à mão nunca.
+    if (tx.originType === OriginType.INVOICE_TAX) {
+      throw new AppError(
+        'O imposto a pagar não pode ser excluído: ele some sozinho quando não há mais notas fiscais no mês.',
+        400,
+        'invoiceTax.expenseCannotDelete',
+      );
+    }
 
     if (tx.status === this.settledStatus(type)) {
       throw new AppError(
@@ -811,6 +853,8 @@ export class CashFlowService {
       }
       return this.deleteFixedTransaction(tx, tenantId, scope, referenceMonth, referenceYear);
     }
+
+    await this.assertInvoiceTaxNotPaid(tenantId, [this.invoiceKeyOfNf(tx)]);
 
     await runInTransaction(async () => {
       await this.transactionsRepo.update(id, {
@@ -840,6 +884,7 @@ export class CashFlowService {
       const key = monthKey(my.month, my.year);
       return scope === 'CURRENT' ? key === refKey : key >= refKey;
     });
+    await this.assertInvoiceTaxNotPaid(tenantId, toCancel.map((t) => this.invoiceKeyOfNf(t)));
 
     await runInTransaction(async () => {
       for (const t of toCancel) {
@@ -960,6 +1005,8 @@ export class CashFlowService {
     const now = nowISO();
     const effectiveDate = actualDate ?? tx.expectedDate;
     const amount = settledAmount ?? tx.amount;
+    // Receber uma NF por outro valor muda o imposto; a data, não.
+    if (amount !== tx.amount) await this.assertInvoiceTaxNotPaid(tenantId, [this.invoiceKeyOfNf(tx)]);
 
     // A baixa move expectedDate, nunca issueDate: o mês do imposto não muda.
     return runInTransaction(async () => {
@@ -1039,10 +1086,46 @@ export class CashFlowService {
     future: FinancialTransaction,
     taxRateBps: number | null | undefined,
     source: FinancialTransaction,
-  ): Partial<FinancialTransaction> {
+  ): Pick<TransactionMutationInput, 'taxRateBps' | 'issueDate'> {
     if (taxRateBps === undefined) return {};
     if (taxRateBps === null) return { taxRateBps: null, issueDate: null };
     return { taxRateBps, issueDate: future.issueDate ?? shiftedIssueDate(source, future.expectedDate) };
+  }
+
+  // Chave do imposto quando o lançamento é uma NF (nunca a da própria despesa).
+  private invoiceKeyOfNf(t: FinancialTransaction): string | null {
+    return t.originType === OriginType.INVOICE_TAX ? null : invoiceTaxKeyOf(t);
+  }
+
+  // Com o imposto do mês pago, a NF fica travada (A4): só descrição, categoria
+  // e observações mudam. Vale para o mês de antes e o de depois da edição —
+  // mover uma NF para um mês já pago também falsificaria o valor pago.
+  private async assertInvoiceEditable(
+    tenantId: string,
+    tx: FinancialTransaction,
+    input: TransactionMutationInput,
+  ): Promise<void> {
+    if (tx.type !== TransactionType.INCOME) return;
+    if (changedFieldsOutside(tx, input, INVOICE_FREE_FIELDS).length === 0) return;
+    const after = { ...tx, ...input, ...this.invoicePatch(tx, input) } as FinancialTransaction;
+    await this.assertInvoiceTaxNotPaid(tenantId, [this.invoiceKeyOfNf(tx), this.invoiceKeyOfNf(after)]);
+  }
+
+  private async assertInvoiceTaxNotPaid(tenantId: string, keys: (string | null)[]): Promise<void> {
+    for (const key of new Set(keys)) {
+      if (!key) continue;
+      const expenses = await this.transactionsRepo.findByOrigin(tenantId, OriginType.INVOICE_TAX, key);
+      if (!expenses.some((t) => t.status === TransactionStatus.PAID)) continue;
+      const parsed = parseInvoiceTaxOriginId(key);
+      throw new AppError(
+        'O imposto deste mês já foi pago: a nota fiscal não pode ser alterada nem excluída. Desmarque o pagamento do imposto primeiro.',
+        400,
+        'invoiceTax.paidLocksInvoice',
+        parsed
+          ? { month: String(parsed.competence.month).padStart(2, '0'), year: parsed.competence.year }
+          : undefined,
+      );
+    }
   }
 
   private async syncInvoiceTaxFor(tenantId: string, txs: FinancialTransaction[]): Promise<void> {

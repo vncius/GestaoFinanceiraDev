@@ -34,7 +34,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I1 | Modelo, sem comportamento | I0 | ✅ | 2026-10-23 | ver git log |
 | I2 | Funções puras `invoice-tax.utils.ts` | I1 | ✅ | 2026-10-23 | ver git log |
 | I3 | `syncInvoiceTax` e ganchos | I2 | ✅ | 2026-10-23 | ver git log |
-| I4 | Bloqueios e valor real na baixa | I3 | ⬜ | | |
+| I4 | Bloqueios e valor real na baixa | I3 | ✅ | 2026-10-23 | ver git log |
 | I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ⬜ | | |
 | I6 | Tela: configuração na conta | I5 | ⬜ | | |
 | I7 | Tela: NF e alíquota na nova entrada | I6 | ⬜ | | |
@@ -63,6 +63,15 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 - Alíquota e emissão andam juntas (`invoiceFields`): sem alíquota, `issueDate` vira null; com alíquota e sem emissão → 400 `invoiceTax.issueDateRequired`. Zod: `taxRateBps` 0–10000, `issueDate` começa por `AAAA-MM-DD` (`validation.issueDate.invalid`). Só os schemas de **entrada** aceitam os campos.
 - NF fixa: `ensureFixedTransactions` desloca `issueDate` (`shiftedIssueDate`: mesma distância em meses até o recebimento, dia da emissão da âncora com clamp). "Esta e as futuras" não propaga `issueDate`; propaga `taxRateBps`, e a futura que vira NF ganha emissão deslocada.
 - Testes no fim de `cash-flow.service.test.ts` (describe "Imposto a pagar (I3)").
+
+### I4 — 2026-10-23
+- Despesa de imposto: `DELETE` → 400 `invoiceTax.expenseCannotDelete`; `PUT` só muda `expectedDate`, `sourceAccountId` e `notes` (o resto → 400 `invoiceTax.expenseLocked`). A comparação é por valor (`changedFieldsOutside`), então a tela pode reenviar o formulário inteiro.
+- **Valor real na baixa**: já existia (`amountPaid` em `payActionSchema`). A I3 garante que o recálculo não sobrescreve a despesa paga e que desmarcar volta ao valor calculado.
+- NF com o imposto do mês pago (`assertInvoiceEditable`/`assertInvoiceTaxNotPaid`): só descrição, categoria e observações mudam; o resto → 400 `invoiceTax.paidLocksInvoice` com `{ month: "MM", year }`. Checa o mês de antes **e o de depois** da edição.
+- **Desvio a confirmar com o usuário:** também é recusado **criar** uma NF (ou mover uma) para um mês com imposto já pago — mesma lógica do A4 (não falsificar o valor pago). O usuário desmarca o pagamento, lança e paga de novo. Se preferir aceitar e só avisar, mudar `createIncome`.
+- Receber a NF: com outro valor é bloqueado; com outra data, não (o mês do imposto não muda). Reverter o recebimento não é bloqueado. "Esta e as futuras" e excluir "esta e as futuras" checam cada ocorrência futura.
+- `ensureFixedTransactions` não é bloqueado (roda em leitura); se gerar NF num mês pago, a despesa paga fica como está.
+- Testes no describe "Imposto a pagar: bloqueios (I4)" de `cash-flow.service.test.ts`.
 
 ---
 

@@ -1153,3 +1153,219 @@ describe('CashFlowService — Imposto a pagar (I3)', () => {
     });
   });
 });
+
+describe('CashFlowService — Imposto a pagar: bloqueios (I4)', () => {
+  let ctx: ReturnType<typeof buildServiceWithCategories>;
+  let account: Account;
+
+  beforeEach(async () => {
+    ctx = buildServiceWithCategories();
+    account = await seedAccount(ctx.accountsRepo, { invoiceTaxEnabled: true });
+  });
+
+  const taxOf = (repo: FakeTransactionsRepo, month: string) =>
+    taxExpenses(repo).find((t) => t.originId === `${account.id}:${month}`) as FinancialTransaction;
+
+  async function nfWithPaidTax() {
+    const { service, transactionsRepo } = ctx;
+    const invoice = await service.createIncome(TENANT_ID, account.id, nf());
+    const tax = taxOf(transactionsRepo, '2026-10');
+    await service.payPayment(tax.id, TENANT_ID, { amountPaid: 6123 });
+    return { invoice, tax };
+  }
+
+  describe('despesa de imposto', () => {
+    it('o DELETE é recusado', async () => {
+      const { service, transactionsRepo } = ctx;
+      await service.createIncome(TENANT_ID, account.id, nf());
+      const tax = taxOf(transactionsRepo, '2026-10');
+
+      await expect(service.deletePayment(tax.id, TENANT_ID)).rejects.toMatchObject({
+        code: 'invoiceTax.expenseCannotDelete',
+      });
+      expect(taxOf(transactionsRepo, '2026-10').status).toBe(TransactionStatus.PENDING);
+    });
+
+    it('o PUT aceita vencimento, conta e observações', async () => {
+      const { service, transactionsRepo, accountsRepo } = ctx;
+      const reserve = await seedAccount(accountsRepo, { name: 'Reserva de impostos' });
+      await service.createIncome(TENANT_ID, account.id, nf());
+      const tax = taxOf(transactionsRepo, '2026-10');
+
+      const updated = await service.updatePayment(
+        tax.id,
+        { expectedDate: '2026-11-25T00:00:00.000Z', sourceAccountId: reserve.id, notes: 'DAS' },
+        TENANT_ID,
+      );
+
+      expect(updated).toMatchObject({ expectedDate: '2026-11-25T00:00:00.000Z', sourceAccountId: reserve.id, notes: 'DAS' });
+      // Trocar a conta pagadora não muda a chave: a despesa continua a da conta da NF.
+      await service.createIncome(TENANT_ID, account.id, nf());
+      expect(taxExpenses(transactionsRepo)).toHaveLength(1);
+      expect(taxOf(transactionsRepo, '2026-10')).toMatchObject({ amount: 12000, sourceAccountId: reserve.id });
+    });
+
+    it('o PUT recusa valor, descrição, categoria e recorrência', async () => {
+      const { service, transactionsRepo } = ctx;
+      await service.createIncome(TENANT_ID, account.id, nf());
+      const tax = taxOf(transactionsRepo, '2026-10');
+
+      for (const patch of [
+        { amount: 1 },
+        { description: 'Outro' },
+        { categoryId: randomUUID() },
+        { recurrence: RecurrenceType.FIXED },
+      ]) {
+        await expect(service.updatePayment(tax.id, patch, TENANT_ID)).rejects.toMatchObject({
+          code: 'invoiceTax.expenseLocked',
+        });
+      }
+      expect(taxOf(transactionsRepo, '2026-10').amount).toBe(6000);
+    });
+
+    it('o PUT aceita o formulário inteiro quando só os campos livres mudam', async () => {
+      const { service, transactionsRepo } = ctx;
+      await service.createIncome(TENANT_ID, account.id, nf());
+      const tax = taxOf(transactionsRepo, '2026-10');
+
+      const updated = await service.updatePayment(
+        tax.id,
+        {
+          description: tax.description,
+          categoryId: tax.categoryId as string,
+          amount: tax.amount,
+          expectedDate: '2026-11-22T00:00:00.000Z',
+          recurrence: RecurrenceType.UNIQUE,
+        },
+        TENANT_ID,
+      );
+
+      expect(updated.expectedDate).toBe('2026-11-22T00:00:00.000Z');
+    });
+
+    it('a baixa aceita o valor real do DAS', async () => {
+      const { tax } = await nfWithPaidTax();
+      expect(taxOf(ctx.transactionsRepo, '2026-10')).toMatchObject({
+        id: tax.id,
+        status: TransactionStatus.PAID,
+        amount: 6123,
+      });
+    });
+  });
+
+  describe('NF com o imposto do mês pago', () => {
+    it('recusa mudar valor, alíquota, emissão, conta ou data, com o mês no erro', async () => {
+      const { service, accountsRepo } = ctx;
+      const other = await seedAccount(accountsRepo, { name: 'PJ 2' });
+      const { invoice } = await nfWithPaidTax();
+
+      for (const patch of [
+        { amount: 1 },
+        { taxRateBps: 500 },
+        { taxRateBps: null },
+        { issueDate: '2026-11-01T00:00:00.000Z' },
+        { targetAccountId: other.id },
+        { expectedDate: '2026-10-20T00:00:00.000Z' },
+      ]) {
+        await expect(service.updateIncome(invoice.id, patch, TENANT_ID)).rejects.toMatchObject({
+          code: 'invoiceTax.paidLocksInvoice',
+          params: { month: '10', year: 2026 },
+        });
+      }
+    });
+
+    it('descrição, categoria e observações continuam livres', async () => {
+      const { service } = ctx;
+      const { invoice } = await nfWithPaidTax();
+
+      const updated = await service.updateIncome(
+        invoice.id,
+        { description: 'NF 123', categoryId: invoice.categoryId as string, notes: 'cliente X', amount: invoice.amount },
+        TENANT_ID,
+      );
+
+      expect(updated).toMatchObject({ description: 'NF 123', notes: 'cliente X' });
+    });
+
+    it('recusa a exclusão', async () => {
+      const { service, transactionsRepo } = ctx;
+      const { invoice } = await nfWithPaidTax();
+
+      await expect(service.deleteIncome(invoice.id, TENANT_ID)).rejects.toMatchObject({
+        code: 'invoiceTax.paidLocksInvoice',
+      });
+      expect(transactionsRepo.items.find((t) => t.id === invoice.id)?.status).toBe(TransactionStatus.PENDING);
+    });
+
+    it('receber pelo mesmo valor passa; por outro valor, não', async () => {
+      const { service } = ctx;
+      const { invoice } = await nfWithPaidTax();
+
+      await expect(
+        service.receiveIncome(invoice.id, TENANT_ID, { amountReceived: invoice.amount + 1 }),
+      ).rejects.toMatchObject({ code: 'invoiceTax.paidLocksInvoice' });
+
+      const received = await service.receiveIncome(invoice.id, TENANT_ID, {
+        actualDate: '2026-10-12T00:00:00.000Z',
+        amountReceived: invoice.amount,
+      });
+      expect(received.status).toBe(TransactionStatus.RECEIVED);
+      await service.revertIncome(invoice.id, TENANT_ID);
+    });
+
+    it('recusa criar ou mover uma NF para o mês já pago', async () => {
+      const { service } = ctx;
+      await nfWithPaidTax();
+      const november = await service.createIncome(TENANT_ID, account.id, nf({ issueDate: '2026-11-03T00:00:00.000Z' }));
+
+      await expect(service.createIncome(TENANT_ID, account.id, nf())).rejects.toMatchObject({
+        code: 'invoiceTax.paidLocksInvoice',
+      });
+      await expect(
+        service.updateIncome(november.id, { issueDate: '2026-10-28T00:00:00.000Z' }, TENANT_ID),
+      ).rejects.toMatchObject({ code: 'invoiceTax.paidLocksInvoice' });
+    });
+
+    it('desmarcar o pagamento do imposto destrava a NF', async () => {
+      const { service, transactionsRepo } = ctx;
+      const { invoice, tax } = await nfWithPaidTax();
+
+      await service.revertPayment(tax.id, TENANT_ID);
+      await service.updateIncome(invoice.id, { amount: 200000 }, TENANT_ID);
+
+      expect(taxOf(transactionsRepo, '2026-10')).toMatchObject({ status: TransactionStatus.PENDING, amount: 12000 });
+    });
+
+    it('NF fixa: "esta e as futuras" não passa por cima de um mês futuro já pago', async () => {
+      const { service, transactionsRepo } = ctx;
+      const first = await service.createIncome(
+        TENANT_ID,
+        account.id,
+        nf({ recurrence: RecurrenceType.FIXED, expectedDate: '2026-10-05T00:00:00.000Z', issueDate: '2026-10-01T00:00:00.000Z' }),
+      );
+      await service.loadDataset(TENANT_ID, 11, 2026);
+      await service.payPayment(taxOf(transactionsRepo, '2026-11').id, TENANT_ID, {});
+
+      await expect(
+        service.updateIncome(first.id, { amount: 300000 }, TENANT_ID, 'CURRENT_AND_FUTURE', 10, 2026),
+      ).rejects.toMatchObject({ code: 'invoiceTax.paidLocksInvoice', params: { month: '11', year: 2026 } });
+      await expect(
+        service.deleteIncome(first.id, TENANT_ID, 'CURRENT_AND_FUTURE', 10, 2026),
+      ).rejects.toMatchObject({ code: 'invoiceTax.paidLocksInvoice' });
+      expect(transactionsRepo.items.find((t) => t.id === first.id)?.amount).toBe(100000);
+
+      // "Só esta" no mês ainda aberto continua livre.
+      await service.updateIncome(first.id, { amount: 300000 }, TENANT_ID, 'CURRENT', 10, 2026);
+      expect(taxOf(transactionsRepo, '2026-10').amount).toBe(18000);
+    });
+
+    it('entrada comum não é afetada pelos bloqueios', async () => {
+      const { service } = ctx;
+      await nfWithPaidTax();
+      const plain = await service.createIncome(TENANT_ID, account.id, nf({ taxRateBps: null }));
+
+      await service.updateIncome(plain.id, { amount: 1 }, TENANT_ID);
+      await service.deleteIncome(plain.id, TENANT_ID);
+    });
+  });
+});

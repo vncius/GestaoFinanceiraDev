@@ -106,7 +106,10 @@
     "wrongType": "Entry is not of type {{type}}."
   },
   "invoiceTax": {
-    "issueDateRequired": "Enter the invoice issue date."
+    "issueDateRequired": "Enter the invoice issue date.",
+    "expenseLocked": "Only the due date, account and notes of the tax payable can be changed.",
+    "expenseCannotDelete": "The tax payable cannot be deleted: it goes away on its own when the month has no more invoices.",
+    "paidLocksInvoice": "The tax for {{month}}/{{year}} has already been paid, so this invoice cannot be changed or deleted. Mark the tax as unpaid first."
   },
   "auth": {
     "invalidGoogleToken": "Invalid Google token",

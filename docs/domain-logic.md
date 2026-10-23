@@ -81,7 +81,7 @@ Regra única em `frontend/src/utils/month-summary.ts` (`summarizeMonth`), sobre 
 
 ## 4. Imposto sobre nota fiscal ("Imposto a pagar")
 
-Plano e decisões em `docs/plano-imposto-nf.md` (revisa a D2 de `docs/refactor-contas-pf-pj.md`). Recálculo implementado no backend (`CashFlowService.syncInvoiceTax`, I3); bloqueios na I4 e telas a partir da I6. Esta seção é atualizada a cada entrega.
+Plano e decisões em `docs/plano-imposto-nf.md` (revisa a D2 de `docs/refactor-contas-pf-pj.md`). Recálculo implementado no backend (`CashFlowService.syncInvoiceTax`, I3); bloqueios na I4; telas a partir da I6. Esta seção é atualizada a cada entrega.
 
 - Uma entrada é **NF** quando tem `taxRateBps` (alíquota em centésimos de ponto percentual, 600 = 6,00%) e `issueDate` (data de emissão). A data de recebimento continua sendo `expectedDate` e define o fluxo de caixa.
 - Competência = **mês de emissão**. O imposto vence no mês seguinte (dia `invoiceTaxDueDay` da conta, padrão 20).
