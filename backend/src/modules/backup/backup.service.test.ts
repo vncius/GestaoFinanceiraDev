@@ -15,6 +15,7 @@ import {
   RecurrenceType,
   TransactionStatus,
   TransactionType,
+  OriginType,
 } from '../financial-transactions/financial-transactions.types';
 import {
   CreditCardsRepository,
@@ -405,7 +406,7 @@ describe('BackupService — CSV export', () => {
     const csv = await ctx.service.exportTransactionsCsv(TENANT_ID, { all: true } as never);
     const lines = csv.split('\r\n');
 
-    expect(lines[0]).toBe('Data;Tipo;Descrição;Categoria;Conta;Contraparte;Valor;Status');
+    expect(lines[0]).toBe('Data;Tipo;Descrição;Categoria;Conta;Contraparte;NF (%);Valor;Status');
     expect(lines).toHaveLength(3);
     // Saída sai negativa, entrada positiva — a coluna Valor é somável.
     expect(lines.some((l) => l.includes('Aluguel') && l.includes('Principal') && l.includes('-1500,00'))).toBe(true);
@@ -439,13 +440,33 @@ describe('BackupService — CSV export', () => {
     const saida = rows.find((r) => r[4] === 'PJ')!;
     const entrada = rows.find((r) => r[4] === 'Principal')!;
     expect(saida[5]).toBe('Principal');
-    expect(saida[6]).toBe('-1000,00');
+    expect(saida[7]).toBe('-1000,00');
     expect(entrada[5]).toBe('PJ');
-    expect(entrada[6]).toBe('1000,00');
+    expect(entrada[7]).toBe('1000,00');
 
     // As duas pernas se anulam: somar a coluna Valor não infla mais o total.
-    const total = rows.reduce((s, r) => s + Number(r[6].replace(',', '.')), 0);
+    const total = rows.reduce((s, r) => s + Number(r[7].replace(',', '.')), 0);
     expect(total).toBe(0);
+  });
+
+  it('marca a alíquota da NF e rotula o imposto a pagar', async () => {
+    const conta = await ctx.accountsRepo.create(makeAccount(TENANT_ID, { name: 'PJ' }));
+    await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
+      type: TransactionType.INCOME, description: 'NF Cliente', amount: 100000, expectedDate: '2026-03-12',
+      targetAccountId: conta.id, taxRateBps: 650, issueDate: '2026-03-10',
+    }));
+    await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
+      type: TransactionType.PAYMENT, description: 'Imposto a pagar', amount: 6500, expectedDate: '2026-04-20',
+      sourceAccountId: conta.id, originType: OriginType.INVOICE_TAX, originId: `${conta.id}:2026-03`,
+    }));
+
+    const csv = await ctx.service.exportTransactionsCsv(TENANT_ID, { all: true } as never);
+    const rows = csv.split('\r\n').slice(1).map((l) => l.split(';'));
+
+    expect(rows.find((r) => r[2] === 'NF Cliente')![6]).toBe('6,5');
+    const tax = rows.find((r) => r[2] === 'Imposto a pagar')!;
+    expect(tax[1]).toBe('Imposto a pagar');
+    expect(tax[6]).toBe('');
   });
 
   it('excludes entries outside the requested date range', async () => {

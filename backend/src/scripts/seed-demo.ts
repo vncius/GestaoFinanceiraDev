@@ -105,6 +105,8 @@ async function main() {
   const reserva = await accounts.create(tenantId, { name: 'Reserva de emergência', initialBalance: reais(15000), ...noReserve });
   const pj = await accounts.create(tenantId, { name: 'Conta PJ', initialBalance: reais(6500), ...noReserve });
   // 10% de toda entrada recebida na PJ vai sozinho para a reserva.
+  // A PJ emite NF (6%): o "Imposto a pagar" do mês seguinte é gerado sozinho.
+  await accounts.update(pj.id, { invoiceTaxEnabled: true, invoiceTaxDefaultRateBps: 600, invoiceTaxDueDay: 20 }, tenantId);
   await accounts.update(pj.id, { autoReserveEnabled: true, autoReservePercentage: 10, autoReserveTargetAccountId: reserva.id }, tenantId);
 
   // ── Datas: dois meses atrás, mês passado e mês atual ──────────────────────
@@ -122,12 +124,11 @@ async function main() {
   // Fixos (criados no primeiro mês; a recorrência gera os seguintes).
   const fixed = RecurrenceType.FIXED;
   const unique = RecurrenceType.UNIQUE;
-  await cashFlow.createIncome(tenantId, pj.id, { description: 'Projeto — Cliente Alfa', categoryId: c('Projeto PJ'), amount: reais(9800), expectedDate: day(-2, 5), recurrence: fixed });
+  await cashFlow.createIncome(tenantId, pj.id, { description: 'Projeto — Cliente Alfa', categoryId: c('Projeto PJ'), amount: reais(9800), expectedDate: day(-2, 5), issueDate: day(-2, 3), taxRateBps: 600, recurrence: fixed });
   await cashFlow.createPayment(tenantId, pessoal.id, { description: 'Aluguel', categoryId: c('Moradia'), amount: reais(2300), expectedDate: day(-2, 10), recurrence: fixed });
   await cashFlow.createPayment(tenantId, pessoal.id, { description: 'Internet fibra', categoryId: c('Moradia'), amount: reais(129.9), expectedDate: day(-2, 15), recurrence: fixed });
   await cashFlow.createPayment(tenantId, pessoal.id, { description: 'Plano de saúde', categoryId: c('Saúde'), amount: reais(489), expectedDate: day(-2, 8), recurrence: fixed });
   await cashFlow.createPayment(tenantId, pessoal.id, { description: 'Academia', categoryId: c('Saúde'), amount: reais(119.9), expectedDate: day(-2, 12), recurrence: fixed });
-  await cashFlow.createPayment(tenantId, pj.id, { description: 'DAS — Simples Nacional', categoryId: c('Impostos'), amount: reais(588), expectedDate: day(-2, 20), recurrence: fixed });
 
   // Variáveis, mês a mês.
   const variable: [number, string, string, number, number][] = [

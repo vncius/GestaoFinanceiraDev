@@ -39,7 +39,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I6 | Tela: configuração na conta | I5 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
 | I7 | Tela: NF e alíquota na nova entrada | I6 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
 | I8 | Tela: marcadores, modal, bloqueios, Limpar mês | I7 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
-| I9 | Acabamento | I8 | ⬜ | | |
+| I9 | Acabamento | I8 | ✅ (falta verificação visual de I6–I9) | 2026-10-23 | ver git log |
 
 ## Notas de implementação
 
@@ -102,6 +102,12 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 - Textos em `cashFlow.json` (`movements.badges.invoice*`, `invoiceTax.*`) nos 3 idiomas. Frontend: build e 133 testes verdes; backend: typecheck e 409 testes verdes.
 - **Pendente:** verificação visual (desktop/375px, claro/escuro), junto com I6 e I7 — o login é só Google e não há bypass de dev. Roteiro: conta com NF → lançar 2 NFs em out → nov mostra "Imposto · 2 NFs"; abrir, mudar vencimento, marcar pago com outro valor; voltar a out e abrir uma NF (aviso e campos travados); "Limpar mês" em nov/out.
 - Excluir "esta e as futuras" de uma NF fixa cujo imposto **futuro** está pago ainda cai no erro do backend (a tela só conhece o mês mostrado); a mensagem traduzida explica o que fazer.
+
+### I9 — 2026-10-23
+- CSV (`backup.service.ts`): nova coluna **"NF (%)"** entre Contraparte e Valor (alíquota da entrada NF, ex.: `6`, `6,5`; vazia nas demais) e tipo "Imposto a pagar" para a despesa derivada. **Atenção:** a coluna Valor passou do índice 6 para o 7. Teste novo e testes de transferência ajustados.
+- `seed-demo`: conta PJ com `invoiceTaxEnabled` (6%, vence dia 20); "Projeto — Cliente Alfa" (fixo) vira NF com emissão 2 dias antes do recebimento; o DAS fixo manual foi removido (o imposto nasce sozinho). Só typecheck: o seed não foi executado (precisa de Mongo).
+- Backend: 410 testes verdes. Frontend não mudou nesta entrega.
+- **Pendente (manual):** verificação visual de I6–I9 em desktop e 375px, claro e escuro (roteiro na I8), e rodar o seed para ver o imposto gerado. Decisão em aberto da I4: bloquear criar/mover NF para mês com imposto já pago.
 
 ---
 

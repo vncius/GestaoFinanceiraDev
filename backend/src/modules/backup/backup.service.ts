@@ -197,6 +197,7 @@ export class BackupService {
       category: string;
       account: string;
       counterpart: string;
+      invoiceRate: string;
       amount: number;
       status: string;
     };
@@ -215,18 +216,22 @@ export class BackupService {
           // transferências manuais do usuário.
           type: t.type === TransactionType.TRANSFER && t.originType === OriginType.AUTO_RESERVE
             ? 'Reserva Automática'
+            : t.originType === OriginType.INVOICE_TAX
+            ? 'Imposto a pagar'
             : TX_TYPE_LABELS[t.type] ?? t.type,
           description: t.description,
           category: t.categoryId ? categoryName.get(t.categoryId) ?? '' : '',
           account: nameOf(t.targetAccountId ?? t.sourceAccountId),
           counterpart: counterpartOf(t),
+          // Entrada marcada como nota fiscal: alíquota em % (ex.: "6" ou "6,5").
+          invoiceRate: t.type === TransactionType.INCOME && t.taxRateBps != null ? formatAmountBR(t.taxRateBps).replace(/,?0+$/, '') : '',
           amount: isInflow ? t.amount : -t.amount,
           status: t.status,
         };
       })
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    const header = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta', 'Contraparte', 'Valor', 'Status'];
+    const header = ['Data', 'Tipo', 'Descrição', 'Categoria', 'Conta', 'Contraparte', 'NF (%)', 'Valor', 'Status'];
     const lines = [header, ...rows.map((r) => [
       formatDateBR(r.date),
       r.type,
@@ -234,6 +239,7 @@ export class BackupService {
       neutralizeFormula(r.category),
       neutralizeFormula(r.account),
       neutralizeFormula(r.counterpart),
+      r.invoiceRate,
       formatAmountBR(r.amount),
       r.status,
     ])];
