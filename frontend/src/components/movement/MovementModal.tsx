@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeftRight, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, ChevronDown, ChevronUp, Lock, Trash2 } from 'lucide-react';
 import { Account, Category, CreditCard, FinancialTransaction, RecurrenceType } from '../../types';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -15,6 +15,7 @@ import i18n from '../../i18n';
 import { useDialog } from '../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 import { sortByName } from '../../utils/sort';
+import { competenceOfIssueDate } from '../../utils/invoice-tax';
 
 // Formulário único de lançamento (U12 do plano de UX): Entrada ou Saída com
 // os campos essenciais à vista; repetição, "fora do comum", conta e
@@ -260,7 +261,13 @@ export function MovementModal({
     : t('movementForm.title.editExpense');
 
   const canSettle = isEdit && item!.tx.status === 'PENDING' && !!onSettle;
-  const canDelete = isEdit && (item!.tx.status === 'PENDING' || item!.tx.status === 'PAID' || item!.tx.status === 'RECEIVED') && !!onDelete;
+  // NF com o imposto do mês já pago (decisão 4): só descrição, categoria e
+  // observações mudam até desmarcar o pagamento do imposto.
+  const invoiceLocked = isEdit && item!.kind === 'income' && !!item!.tx.invoiceTaxPaid;
+  const lockedMonth = invoiceLocked && item!.tx.issueDate ? competenceOfIssueDate(item!.tx.issueDate) : '';
+  const lockable = (node: React.ReactNode) =>
+    invoiceLocked ? <fieldset disabled className="min-w-0 border-0 p-0 m-0 space-y-4 opacity-60">{node}</fieldset> : node;
+  const canDelete = !invoiceLocked && isEdit && (item!.tx.status === 'PENDING' || item!.tx.status === 'PAID' || item!.tx.status === 'RECEIVED') && !!onDelete;
   const isIn = form.direction === 'in';
 
   const accountField = (
@@ -354,7 +361,14 @@ export function MovementModal({
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
+        {invoiceLocked && (
+          <p className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+            <Lock size={14} className="mt-0.5 shrink-0" aria-hidden />
+            {t('invoiceTax.invoiceLocked', { month: lockedMonth })}
+          </p>
+        )}
+
+        {lockable(<div className="grid grid-cols-2 gap-3">
           <Field label={t('movementForm.fields.amount')}>
             <CurrencyInput className={INPUT} value={form.amount} onChange={(v) => setForm((f) => ({ ...f, amount: v }))} />
           </Field>
@@ -377,9 +391,9 @@ export function MovementModal({
               <DateInput className={INPUT} value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
             </Field>
           )}
-        </div>
+        </div>)}
 
-        {invoiceOn && (
+        {invoiceOn && lockable(
           <>
             <div className="grid grid-cols-2 gap-3">
               <Field label={t('movementForm.fields.issueDate')}>
@@ -434,7 +448,7 @@ export function MovementModal({
           <p className="text-xs text-gray-500 dark:text-gray-400">{t('movementForm.cardHint')}</p>
         )}
 
-        {activeAccounts.length > 1 && accountProminent && !payingWithCard && accountField}
+        {activeAccounts.length > 1 && accountProminent && !payingWithCard && lockable(accountField)}
 
         {!isEdit && !payingWithCard && (
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
@@ -448,7 +462,7 @@ export function MovementModal({
           </label>
         )}
 
-        {isIn && accountEmitsInvoice && invoiceToggle}
+        {isIn && accountEmitsInvoice && lockable(invoiceToggle)}
 
         <button
           type="button"
@@ -464,7 +478,7 @@ export function MovementModal({
           <div className="space-y-4 rounded-lg bg-gray-50 dark:bg-gray-900/40 p-3">
             {isEdit && item!.tx.recurrence === 'FIXED' ? (
               <p className="text-xs text-gray-600 dark:text-gray-300">{t('movementForm.fixedLocked')}</p>
-            ) : (
+            ) : lockable(
               <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
                 <input
                   type="checkbox"
@@ -492,9 +506,9 @@ export function MovementModal({
               </div>
             )}
 
-            {isIn && !accountEmitsInvoice && invoiceToggle}
+            {isIn && !accountEmitsInvoice && lockable(invoiceToggle)}
 
-            {activeAccounts.length > 1 && !accountProminent && !payingWithCard && accountField}
+            {activeAccounts.length > 1 && !accountProminent && !payingWithCard && lockable(accountField)}
 
             <Field label={t('movementForm.fields.notes')}>
               <textarea className={INPUT} rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />

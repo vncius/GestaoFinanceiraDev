@@ -153,7 +153,11 @@
     "badges": {
       "fixed": "Fixed",
       "extra": "Unusual",
-      "card": "Card"
+      "card": "Card",
+      "invoice": "Invoice {{rate}}%",
+      "invoiceTax_one": "Tax · {{count}} invoice",
+      "invoiceTax_other": "Tax · {{count}} invoices",
+      "invoiceLocked": "Month's tax already paid"
     },
     "invoiceOf": "{{card}} invoice",
     "noResults": "No entries match these filters"
@@ -221,5 +225,25 @@
       "preview": "Tax {{tax}} → \"Tax payable\" for {{month}}, due {{due}}",
       "issueAfterReceipt": "The issue date is after the receipt date. Fine if payment was made in advance."
     }
+  },
+  "invoiceTax": {
+    "title": "Tax payable",
+    "competence": "Invoices issued in {{month}}",
+    "calculated": "Amount calculated from the invoices: {{amount}}",
+    "paidOn": "Paid on {{date}}",
+    "amountHint": "The amount is the sum of each invoice's tax and is recalculated automatically. Only the due date, account and notes can be changed.",
+    "invoicesTitle_one": "{{count}} invoice",
+    "invoicesTitle_other": "{{count}} invoices",
+    "loading": "Loading invoices...",
+    "invoiceLine": "Issued on {{date}} · {{amount}} · {{rate}}%",
+    "noInvoices": "No invoices linked to this tax.",
+    "dueDate": "Due date",
+    "amountPaid": "Amount paid",
+    "amountPaidHint": "When marking as paid, enter the actual amount of the tax slip, if different.",
+    "revert": "Unmark payment",
+    "cannotDelete": "The tax payable can't be deleted: it disappears on its own when the month has no more invoices.",
+    "invoiceLocked": "The tax for {{month}} has already been paid, so this invoice can't be changed or deleted (only description, category and notes). Unmark the tax payment first.",
+    "clearAllSkipped_one": "{{count}} item linked to invoice tax stays (the tax payable or an invoice whose tax is already paid).",
+    "clearAllSkipped_other": "{{count}} items linked to invoice tax stay (the tax payable or invoices whose tax is already paid)."
   }
 }

@@ -26,6 +26,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Suíte de testes de segurança de nível HTTP (`backend/src/security.http.test.ts`, 14 casos): cabeçalhos, exigência de autenticação, token de sessão forjado, CSRF, injeção de operador Mongo, poluição de protótipo, limite de corpo, JSON malformado, CORS e rate limit de login. A montagem do app saiu de `server.ts` para `backend/src/app.ts` para o teste exercitar os middlewares reais sem subir o banco.
 
 ### Added
+- Imposto sobre NF (I8): na lista, marcador "NF 6%" nas entradas e "Imposto · N NFs" com cadeado (sem excluir) na despesa de imposto. A despesa abre um modal próprio: valor só de leitura, NFs com o imposto de cada uma, vencimento, conta e observações editáveis e baixa com o valor real do DAS. NF com o imposto do mês pago mostra o aviso e fica travada (só descrição, categoria e observações); "Limpar mês" e as exclusões pulam a despesa de imposto e as NFs travadas, avisando.
 - Imposto sobre NF (I7): na nova entrada, opção "Nota fiscal" com alíquota (padrão da conta), datas de emissão e de recebimento e prévia do imposto e do vencimento.
 - Imposto sobre NF (I6): no cadastro da conta, "Esta conta emite nota fiscal" com alíquota padrão (%) e dia de vencimento (1–28, padrão 20).
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.

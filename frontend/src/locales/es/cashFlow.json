@@ -153,7 +153,11 @@
     "badges": {
       "fixed": "Fijo",
       "extra": "Fuera de lo común",
-      "card": "Tarjeta"
+      "card": "Tarjeta",
+      "invoice": "Factura {{rate}}%",
+      "invoiceTax_one": "Impuesto · {{count}} factura",
+      "invoiceTax_other": "Impuesto · {{count}} facturas",
+      "invoiceLocked": "Impuesto del mes ya pagado"
     },
     "invoiceOf": "Factura {{card}}",
     "noResults": "Ningún movimiento coincide con estos filtros"
@@ -221,5 +225,25 @@
       "preview": "Impuesto {{tax}} → \"Impuesto a pagar\" de {{month}}, vence {{due}}",
       "issueAfterReceipt": "La emisión es posterior al cobro. Está bien si el pago fue adelantado."
     }
+  },
+  "invoiceTax": {
+    "title": "Impuesto a pagar",
+    "competence": "Facturas emitidas en {{month}}",
+    "calculated": "Valor calculado por las facturas: {{amount}}",
+    "paidOn": "Pagado el {{date}}",
+    "amountHint": "El valor es la suma del impuesto de cada factura y se recalcula solo. Solo se pueden cambiar el vencimiento, la cuenta y las observaciones.",
+    "invoicesTitle_one": "{{count}} factura",
+    "invoicesTitle_other": "{{count}} facturas",
+    "loading": "Cargando facturas...",
+    "invoiceLine": "Emitida el {{date}} · {{amount}} · {{rate}}%",
+    "noInvoices": "Ninguna factura vinculada a este impuesto.",
+    "dueDate": "Vencimiento",
+    "amountPaid": "Valor pagado",
+    "amountPaidHint": "Al marcar como pagado, indica el valor real del comprobante, si es diferente.",
+    "revert": "Desmarcar pago",
+    "cannotDelete": "El impuesto a pagar no se puede eliminar: desaparece solo cuando el mes ya no tiene facturas.",
+    "invoiceLocked": "El impuesto de {{month}} ya fue pagado, así que esta factura no se puede modificar ni eliminar (solo descripción, categoría y observaciones). Desmarca primero el pago del impuesto.",
+    "clearAllSkipped_one": "{{count}} movimiento vinculado al impuesto sobre facturas se mantiene (el impuesto a pagar o una factura con el impuesto ya pagado).",
+    "clearAllSkipped_other": "{{count}} movimientos vinculados al impuesto sobre facturas se mantienen (el impuesto a pagar o facturas con el impuesto ya pagado)."
   }
 }

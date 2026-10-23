@@ -153,7 +153,11 @@
     "badges": {
       "fixed": "Fixo",
       "extra": "Fora do comum",
-      "card": "Cartão"
+      "card": "Cartão",
+      "invoice": "NF {{rate}}%",
+      "invoiceTax_one": "Imposto · {{count}} NF",
+      "invoiceTax_other": "Imposto · {{count}} NFs",
+      "invoiceLocked": "Imposto do mês já pago"
     },
     "invoiceOf": "Fatura {{card}}",
     "noResults": "Nenhum lançamento encontrado com esses filtros"
@@ -221,5 +225,25 @@
       "preview": "Imposto {{tax}} → \"Imposto a pagar\" de {{month}}, vence {{due}}",
       "issueAfterReceipt": "A emissão é depois do recebimento. Tudo bem se o pagamento foi adiantado."
     }
+  },
+  "invoiceTax": {
+    "title": "Imposto a pagar",
+    "competence": "Notas fiscais emitidas em {{month}}",
+    "calculated": "Valor calculado pelas notas: {{amount}}",
+    "paidOn": "Pago em {{date}}",
+    "amountHint": "O valor é a soma do imposto de cada nota fiscal e é recalculado sozinho. Só o vencimento, a conta e as observações podem ser alterados.",
+    "invoicesTitle_one": "{{count}} nota fiscal",
+    "invoicesTitle_other": "{{count}} notas fiscais",
+    "loading": "Carregando notas fiscais...",
+    "invoiceLine": "Emitida em {{date}} · {{amount}} · {{rate}}%",
+    "noInvoices": "Nenhuma nota fiscal ligada a este imposto.",
+    "dueDate": "Vencimento",
+    "amountPaid": "Valor pago",
+    "amountPaidHint": "Ao marcar como pago, informe o valor real da guia (DAS), se for diferente.",
+    "revert": "Desmarcar pagamento",
+    "cannotDelete": "O imposto a pagar não pode ser excluído: ele some sozinho quando não há mais notas fiscais no mês.",
+    "invoiceLocked": "O imposto de {{month}} já foi pago, então esta nota fiscal não pode ser alterada nem excluída (só descrição, categoria e observações). Desmarque o pagamento do imposto primeiro.",
+    "clearAllSkipped_one": "{{count}} lançamento ligado ao imposto sobre nota fiscal fica (o imposto a pagar ou uma nota fiscal com o imposto já pago).",
+    "clearAllSkipped_other": "{{count}} lançamentos ligados ao imposto sobre nota fiscal ficam (o imposto a pagar ou notas fiscais com o imposto já pago)."
   }
 }

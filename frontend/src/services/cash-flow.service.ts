@@ -1,5 +1,5 @@
 import { api } from './api';
-import { CashFlowResponse, FinancialTransaction, RecurrenceType } from '../types';
+import { CashFlowResponse, FinancialTransaction, InvoiceTaxDetail, RecurrenceType } from '../types';
 
 export interface CreateTransactionPayload {
   description: string;
@@ -44,6 +44,10 @@ export const CashFlowService = {
   // Sem accountId: todas as contas ativas (U17).
   get: (month: number, year: number, accountId?: string | null): Promise<CashFlowResponse> =>
     api.get<CashFlowResponse>('/cash-flow', { params: { month, year, accountId: accountId ?? undefined } }).then((r) => r.data),
+
+  // Despesa "Imposto a pagar" com as NFs que ela soma.
+  getInvoiceTax: (id: string): Promise<InvoiceTaxDetail> =>
+    api.get<InvoiceTaxDetail>(`/cash-flow/invoice-tax/${id}`).then((r) => r.data),
 
   // Income
   createIncome: (accountId: string, payload: CreateIncomePayload): Promise<FinancialTransaction> =>

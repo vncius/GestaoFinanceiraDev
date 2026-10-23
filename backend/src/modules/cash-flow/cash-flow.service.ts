@@ -445,11 +445,19 @@ export class CashFlowService {
     const expectedExtraExpenses = rangeExtraExpenses.reduce((s, t) => s + t.amount, 0);
     const creditCardInvoicesTotal = rangeInvoices.reduce((s, inv) => s + inv.totalAmount, 0);
 
+    const taxInfo = this.invoiceTaxInfo(allTransactions, [...entries, ...payments]);
     return {
       month,
       year,
-      entries,
-      payments,
+      entries: entries.map((t) => {
+        const key = invoiceTaxKeyOf(t);
+        return key ? { ...t, invoiceTaxPaid: taxInfo.paid.has(key) } : t;
+      }),
+      payments: payments.map((t) =>
+        t.originType === OriginType.INVOICE_TAX && t.originId
+          ? { ...t, invoiceTaxCount: taxInfo.counts.get(t.originId) ?? 0 }
+          : t,
+      ),
       extraExpenses,
       transfers,
       creditCards: monthInvoices,
@@ -1273,6 +1281,29 @@ export class CashFlowService {
   }
 
   // ─── Balance calculation ──────────────────────────────────────────────────────
+
+  // Para a lista (I8): quantas NFs cada despesa de imposto soma e quais
+  // competências já têm o imposto pago (NF travada). Só varre o tenant quando
+  // o mês mostra NF ou despesa de imposto.
+  private invoiceTaxInfo(
+    all: FinancialTransaction[],
+    shown: FinancialTransaction[],
+  ): { counts: Map<string, number>; paid: Set<string> } {
+    const counts = new Map<string, number>();
+    const paid = new Set<string>();
+    if (!shown.some((t) => invoiceTaxKeyOf(t) !== null)) return { counts, paid };
+    for (const t of all) {
+      if (t.originType === OriginType.INVOICE_TAX) {
+        if (t.originId && t.status === TransactionStatus.PAID) paid.add(t.originId);
+        continue;
+      }
+      const key = invoiceTaxKeyOf(t);
+      if (key && (t.status === TransactionStatus.PENDING || t.status === TransactionStatus.RECEIVED)) {
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    return { counts, paid };
+  }
 
   private isExcludedFromFlow(t: FinancialTransaction): boolean {
     return (

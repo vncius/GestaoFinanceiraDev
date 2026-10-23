@@ -128,6 +128,33 @@ describe('MovementModal — nota fiscal (I7)', () => {
   });
 });
 
+describe('MovementModal — NF com imposto pago (I8)', () => {
+  const nfAccounts = [
+    { id: 'a1', name: 'PJ', active: true, invoiceTaxEnabled: true, invoiceTaxDefaultRateBps: 600, invoiceTaxDueDay: 20 },
+  ] as never;
+  const nfTx = {
+    id: 'nf1', type: 'INCOME', description: 'Cliente', categoryId: 'salario', amount: 1000000,
+    expectedDate: '2026-10-10T00:00:00.000Z', actualDate: null, status: 'PENDING', sourceAccountId: null,
+    targetAccountId: 'a1', originType: null, originId: null, taxRateBps: 600, issueDate: '2026-10-05T00:00:00.000Z',
+    notes: null, recurrence: 'UNIQUE', recurringGroupId: null, recurringActive: true, createdAt: '', updatedAt: '',
+  } as FinancialTransaction;
+
+  it('mostra o aviso, trava valor e datas e esconde o excluir', () => {
+    renderForm({ accounts: nfAccounts, item: { kind: 'income', tx: { ...nfTx, invoiceTaxPaid: true } }, onDelete: vi.fn() });
+    expect(screen.getByText(/O imposto de out\/26 já foi pago/)).toBeTruthy();
+    expect(screen.getByPlaceholderText('R$ 0,00').matches(':disabled')).toBe(true);
+    expect(screen.getByPlaceholderText('6').matches(':disabled')).toBe(true);
+    expect(screen.getByPlaceholderText(/Ex\.:/).matches(':disabled')).toBe(false);
+    expect(screen.queryByLabelText('Excluir')).toBeNull();
+  });
+
+  it('sem imposto pago, a NF segue editável', () => {
+    renderForm({ accounts: nfAccounts, item: { kind: 'income', tx: nfTx }, onDelete: vi.fn() });
+    expect(screen.queryByText(/já foi pago/)).toBeNull();
+    expect((screen.getByPlaceholderText('R$ 0,00') as HTMLInputElement).disabled).toBe(false);
+  });
+});
+
 describe('MovementModal — compra no cartão (U18)', () => {
   const cards = [{ id: 'nu', name: 'Nubank', active: true }] as never;
 

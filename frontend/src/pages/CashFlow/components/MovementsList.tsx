@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   ChevronRight,
   CreditCard,
+  Lock,
   Pencil,
   Plus,
   Repeat,
@@ -18,14 +19,16 @@ import { PaidToggle } from '../../../components/ui/PaidToggle';
 import { formatCurrency } from '../../../utils/money';
 import { formatDate } from '../../../utils/date';
 import { MovementGroups, MovementItem } from '../movements';
+import { formatRateBps } from '../../../utils/invoice-tax';
 
 export type NewMovementKind = 'income' | 'payment' | 'extra' | 'transfer';
 export type RowBusy = 'toggle' | 'delete' | null;
 
 const CARD = 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700';
 
-function Badge({ children, tone = 'gray' }: { children: React.ReactNode; tone?: 'gray' | 'teal' | 'orange' | 'purple' }) {
+function Badge({ children, tone = 'gray' }: { children: React.ReactNode; tone?: 'gray' | 'teal' | 'orange' | 'purple' | 'amber' }) {
   const TONES = {
+    amber: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
     gray: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
     teal: 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400',
     orange: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
@@ -128,6 +131,18 @@ function MovementRow({
             </Badge>
           )}
           {item.isAutoReserve && <Badge tone="teal">{t('transferGrid.autoReserveBadge')}</Badge>}
+          {item.taxRateBps != null && (
+            <Badge tone="amber">
+              {item.locked && <Lock size={10} aria-label={t('movements.badges.invoiceLocked')} />}
+              {t('movements.badges.invoice', { rate: formatRateBps(item.taxRateBps) })}
+            </Badge>
+          )}
+          {item.invoiceTaxCount != null && (
+            <Badge tone="amber">
+              <Lock size={10} aria-hidden />
+              {t('movements.badges.invoiceTax', { count: item.invoiceTaxCount })}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -149,7 +164,7 @@ function MovementRow({
         >
           <Pencil size={14} />
         </IconActionButton>
-        {!isInvoice && (
+        {!isInvoice && !item.locked && (
           <IconActionButton
             title={t('grid.actions.delete')}
             onClick={onDelete}

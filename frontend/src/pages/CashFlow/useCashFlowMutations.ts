@@ -49,6 +49,7 @@ export function useCashFlowMutations({
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['cashFlow'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
+    qc.invalidateQueries({ queryKey: ['invoiceTax'] });
   };
 
   // Uma transferência toca duas contas — mesmo alcance do invalidate acima,
@@ -91,6 +92,12 @@ export function useCashFlowMutations({
   });
   const payPayment = useMutation({
     mutationFn: (id: string) => CashFlowService.payPayment(id),
+    onSuccess: invalidate,
+  });
+  // Baixa do "Imposto a pagar" com o valor real do DAS (A5).
+  const payInvoiceTax = useMutation({
+    mutationFn: ({ id, amountPaid }: { id: string; amountPaid: number }) =>
+      CashFlowService.payPayment(id, { amountPaid }),
     onSuccess: invalidate,
   });
   const revertPayment = useMutation({
@@ -175,6 +182,7 @@ export function useCashFlowMutations({
     createPayment,
     updatePayment,
     payPayment,
+    payInvoiceTax,
     revertPayment,
     deletePayment,
     createExtra,

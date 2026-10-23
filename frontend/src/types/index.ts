@@ -79,6 +79,10 @@ export interface FinancialTransaction {
   originId: string | null;
   taxRateBps?: number | null;
   issueDate?: string | null;
+  // Só no GET /cash-flow: na despesa de imposto, quantas NFs ela soma; na NF,
+  // se o imposto da competência já foi pago (NF travada).
+  invoiceTaxCount?: number;
+  invoiceTaxPaid?: boolean;
   notes: string | null;
   recurrence: RecurrenceType;
   recurringGroupId: string | null;
@@ -240,6 +244,29 @@ export interface TransferFlowItem {
   counterpartAccountId: string;
   counterpartAccountName: string;
   isAutoReserve: boolean;
+}
+
+// Despesa "Imposto a pagar" (originType INVOICE_TAX), derivada das NFs.
+export const INVOICE_TAX_ORIGIN = 'INVOICE_TAX';
+export const isInvoiceTaxExpense = (t: Pick<FinancialTransaction, 'originType'>): boolean =>
+  t.originType === INVOICE_TAX_ORIGIN;
+
+// GET /cash-flow/invoice-tax/:id
+export interface InvoiceTaxInvoice {
+  id: string;
+  description: string;
+  amount: number;
+  taxRateBps: number;
+  issueDate: string;
+  expectedDate: string;
+  status: TransactionStatus;
+  tax: number;
+}
+
+export interface InvoiceTaxDetail {
+  expense: FinancialTransaction;
+  invoices: InvoiceTaxInvoice[];
+  calculatedTotal: number;
 }
 
 export interface CashFlowResponse {

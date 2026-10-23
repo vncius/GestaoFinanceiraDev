@@ -66,7 +66,7 @@ Desde a E7, `GET /cash-flow` também retorna `transfers` — a(s) perna(s) de tr
 
 | Método | Rota                               | Body / Query |
 |--------|-------------------------------------|--------------|
-| GET    | `/cash-flow`                          | `?month=&year=&accountId=` (todos obrigatórios) — dispara a geração sob demanda de ocorrências fixas antes de responder; `404 account.notFound` se a conta não existir |
+| GET    | `/cash-flow`                          | `?month=&year=&accountId=` (todos obrigatórios) — dispara a geração sob demanda de ocorrências fixas antes de responder; `404 account.notFound` se a conta não existir. Imposto sobre NF: a despesa "Imposto a pagar" em `payments` traz `invoiceTaxCount` (NFs que ela soma) e cada NF em `entries` traz `invoiceTaxPaid` (imposto da competência já pago → NF travada) |
 | GET    | `/cash-flow/invoice-tax/:id`          | `:id` = id da despesa "Imposto a pagar" (`originType: INVOICE_TAX`). Resposta: `{ expense, invoices: [{ id, description, amount, taxRateBps, issueDate, expectedDate, status, tax }], calculatedTotal }` — NFs pendentes/recebidas da conta + competência, ordenadas por emissão; `calculatedTotal` é a soma dos `tax` (difere de `expense.amount` quando o valor real do DAS foi informado na baixa). `404 invoiceTax.notFound` se o id não for de uma despesa de imposto |
 | POST   | `/cash-flow/income`                   | `?accountId=` (obrigatório — default de `targetAccountId` quando o corpo não informa) — corpo: `{ description, categoryId, amount, expectedDate, targetAccountId?, recurrence?, notes? }` |
 | PUT    | `/cash-flow/income/:id`               | campos opcionais |

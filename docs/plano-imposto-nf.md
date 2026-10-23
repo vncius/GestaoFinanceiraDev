@@ -38,7 +38,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ✅ | 2026-10-23 | dac963d |
 | I6 | Tela: configuração na conta | I5 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
 | I7 | Tela: NF e alíquota na nova entrada | I6 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
-| I8 | Tela: marcadores, modal, bloqueios, Limpar mês | I7 | ⬜ | | |
+| I8 | Tela: marcadores, modal, bloqueios, Limpar mês | I7 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
 | I9 | Acabamento | I8 | ⬜ | | |
 
 ## Notas de implementação
@@ -92,6 +92,16 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 - A prévia usa o dia de vencimento da conta (padrão 20) e o mês seguinte à emissão; saída e cartão ignoram NF.
 - Testes novos no describe "nota fiscal (I7)". Frontend: build e 129 testes verdes. **Pendente:** verificação visual manual (desktop/375px, claro/escuro), junto com a I6.
 - Edição de NF com imposto pago: o backend recusa (`invoiceTax.paidLocksInvoice`); o aviso/bloqueio na tela é da I8.
+
+### I8 — 2026-10-23
+- **Backend (pequeno acréscimo):** `GET /cash-flow` marca a despesa de imposto com `invoiceTaxCount` e cada NF com `invoiceTaxPaid` (`invoiceTaxInfo` em `cash-flow.service.ts`, só varre o tenant quando o mês mostra NF ou despesa de imposto). Tipo `CashFlowTransaction`; teste no describe "marcas na lista (I8)"; `docs/api.md` atualizado. Assim a lista não precisa de uma chamada por linha.
+- `movements.ts`: `MovementItem` ganhou `taxRateBps`, `invoiceTaxCount` e `locked` (despesa de imposto ou NF com imposto pago). `MovementsList`: marcador âmbar "NF 6%" (cadeado quando travada) e "Imposto · N NFs" com cadeado; linha `locked` não mostra o botão de excluir.
+- `InvoiceTaxModal.tsx` (novo): abre ao clicar na despesa **e** ao marcá-la como paga na lista (para informar o valor real). Valor só de leitura (+ "valor calculado" quando difere), lista de `GET /cash-flow/invoice-tax/:id` (query `['invoiceTax', id]`, invalidada junto com `cashFlow`), vencimento, conta (com 2+ contas) e observações; "Marcar como pago" com o valor pago (mutation `payInvoiceTax`); paga → "Desmarcar pagamento". Salvar manda só `expectedDate`/`sourceAccountId`/`notes`.
+- `MovementModal`: NF com `invoiceTaxPaid` mostra o aviso (`invoiceTax.invoiceLocked`, mês da emissão) e desabilita valor, alíquota, datas, conta, opção NF e fixo via `<fieldset disabled>`; sem botão de excluir.
+- `CashFlow.tsx`: `blockedByInvoiceTax` avisa (alert) em vez de excluir a despesa de imposto ou a NF travada (antes do escopo de fixo). "Limpar mês" ignora os dois e acrescenta `invoiceTax.clearAllSkipped` na confirmação. A despesa some sozinha quando as NFs são excluídas (backend).
+- Textos em `cashFlow.json` (`movements.badges.invoice*`, `invoiceTax.*`) nos 3 idiomas. Frontend: build e 133 testes verdes; backend: typecheck e 409 testes verdes.
+- **Pendente:** verificação visual (desktop/375px, claro/escuro), junto com I6 e I7 — o login é só Google e não há bypass de dev. Roteiro: conta com NF → lançar 2 NFs em out → nov mostra "Imposto · 2 NFs"; abrir, mudar vencimento, marcar pago com outro valor; voltar a out e abrir uma NF (aviso e campos travados); "Limpar mês" em nov/out.
+- Excluir "esta e as futuras" de uma NF fixa cujo imposto **futuro** está pago ainda cai no erro do backend (a tela só conhece o mês mostrado); a mensagem traduzida explica o que fazer.
 
 ---
 

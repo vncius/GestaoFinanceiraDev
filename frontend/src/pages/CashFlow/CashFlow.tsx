@@ -10,7 +10,7 @@ import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { CategoriesService } from '../../services/categories.service';
 import { AccountsService } from '../../services/accounts.service';
 import { CreateTransferPayload } from '../../services/transfers.service';
-import { Account, CreditCardInvoice, FinancialTransaction, TransferFlowItem } from '../../types';
+import { Account, CreditCardInvoice, FinancialTransaction, isInvoiceTaxExpense, TransferFlowItem } from '../../types';
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
@@ -30,6 +30,8 @@ import { getAdvancedDetails } from '../../hooks/useAdvancedDetails';
 import { MovementFormKind, MovementModal, MovementSubmit } from '../../components/movement/MovementModal';
 import { TransferModal } from './components/TransferModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
+import { InvoiceTaxModal, InvoiceTaxSave } from './components/InvoiceTaxModal';
+import { competenceOfIssueDate } from '../../utils/invoice-tax';
 
 export default function CashFlow() {
   const { t } = useTranslation('cashFlow');
@@ -41,7 +43,7 @@ export default function CashFlow() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const { confirm } = useDialog();
+  const { confirm, alert } = useDialog();
   const { showError } = useToast();
 
   const { data, isLoading } = useQuery({
@@ -121,6 +123,8 @@ export default function CashFlow() {
     | { kind: 'payment' | 'extra-expense'; item: FinancialTransaction; payload: CreateTransactionPayload }
     | null
   >(null);
+  // Despesa "Imposto a pagar" aberta no modal próprio (I8).
+  const [taxTarget, setTaxTarget] = useState<FinancialTransaction | null>(null);
   const [clearingAll, setClearingAll] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -135,6 +139,7 @@ export default function CashFlow() {
     createPayment,
     updatePayment,
     payPayment,
+    payInvoiceTax,
     revertPayment,
     deletePayment,
     createExtra,
@@ -257,7 +262,19 @@ export default function CashFlow() {
     deleteTransfer.mutate(item.transferGroupId);
   }
 
+  // NF com o imposto do mês pago fica travada (decisão 4); a despesa de imposto
+  // nunca é excluída à mão (A3). Avisa em vez de tentar e cair no erro do backend.
+  async function blockedByInvoiceTax(item: FinancialTransaction): Promise<boolean> {
+    if (isInvoiceTaxExpense(item)) { await alert(t('invoiceTax.cannotDelete')); return true; }
+    if (item.invoiceTaxPaid && item.issueDate) {
+      await alert(t('invoiceTax.invoiceLocked', { month: competenceOfIssueDate(item.issueDate) }));
+      return true;
+    }
+    return false;
+  }
+
   async function handleDeleteIncome(item: FinancialTransaction) {
+    if (await blockedByInvoiceTax(item)) return;
     if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind: 'income', item }); return; }
     const isReceived = item.status === 'RECEIVED';
     if (!(await confirm(isReceived ? EFFECTED_DELETE_CONFIRM : t('page.confirmDelete')))) return;
@@ -266,6 +283,7 @@ export default function CashFlow() {
   }
 
   async function handleDeleteTransaction(kind: 'payment' | 'extra-expense', item: FinancialTransaction) {
+    if (await blockedByInvoiceTax(item)) return;
     if (item.recurrence === 'FIXED') { setFixedDeleteTarget({ kind, item }); return; }
     const isPaid = item.status === 'PAID';
     if (!(await confirm(isPaid ? EFFECTED_DELETE_CONFIRM : t('page.confirmDelete')))) return;
@@ -315,10 +333,13 @@ export default function CashFlow() {
   // ── Limpar referência (entradas, pagamentos, gastos extras e transferências) ─
   // Cartões de crédito têm seu próprio botão de limpeza (fatura), por isso
   // ficam de fora aqui.
-  const allEntries = data.entries;
-  const allPayments = data.payments;
+  // A despesa de imposto e as NFs com imposto pago ficam (I8): a despesa some
+  // sozinha quando as NFs saem, e a NF travada exige desmarcar o imposto antes.
+  const allEntries = data.entries.filter((i) => !i.invoiceTaxPaid);
+  const allPayments = data.payments.filter((i) => !isInvoiceTaxExpense(i));
   const allExtraExpenses = data.extraExpenses;
   const allTransfers = data.transfers;
+  const skippedByInvoiceTax = data.entries.length - allEntries.length + data.payments.length - allPayments.length;
   const clearAllCount =
     allEntries.length + allPayments.length + allExtraExpenses.length + allTransfers.length;
   const hasFixedToClear =
@@ -378,7 +399,11 @@ export default function CashFlow() {
   async function handleClearAll() {
     if (clearAllCount === 0) return;
     try {
-      if (!(await confirm(t('page.confirmClearAll', { count: clearAllCount })))) return;
+      const message = t('page.confirmClearAll', { count: clearAllCount });
+      const skipped = skippedByInvoiceTax > 0 ? `
+
+${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
+      if (!(await confirm(message + skipped))) return;
     } catch (err) {
       showError(err instanceof Error ? err.message : t('page.clearAllError'));
       return;
@@ -410,6 +435,7 @@ export default function CashFlow() {
 
   const paymentsPendingToggleId =
     (payPayment.isPending && (payPayment.variables as string)) ||
+    (payInvoiceTax.isPending && (payInvoiceTax.variables?.id as string)) ||
     (revertPayment.isPending && (revertPayment.variables as string)) ||
     null;
   const paymentsPendingDeleteId =
@@ -471,7 +497,10 @@ export default function CashFlow() {
   function handleToggle({ source, settled }: MovementItem) {
     switch (source.kind) {
       case 'income': return settled ? revertIncome.mutate(source.item.id) : receiveItem.mutate(source.item.id);
-      case 'payment': return settled ? revertPayment.mutate(source.item.id) : payPayment.mutate(source.item.id);
+      case 'payment':
+        if (settled) return revertPayment.mutate(source.item.id);
+        // Imposto: abre o modal para informar o valor real do DAS.
+        return isInvoiceTaxExpense(source.item) ? setTaxTarget(source.item) : payPayment.mutate(source.item.id);
       case 'extra': return settled ? revertExtra.mutate(source.item.id) : payExtra.mutate(source.item.id);
       case 'transfer':
         return settled
@@ -487,7 +516,9 @@ export default function CashFlow() {
   function handleEdit({ source }: MovementItem) {
     switch (source.kind) {
       case 'income': return setModal({ type: 'income', mode: 'edit', item: source.item });
-      case 'payment': return setModal({ type: 'payment', mode: 'edit', item: source.item });
+      case 'payment':
+        if (isInvoiceTaxExpense(source.item)) return setTaxTarget(source.item);
+        return setModal({ type: 'payment', mode: 'edit', item: source.item });
       case 'extra': return setModal({ type: 'extra-expense', mode: 'edit', item: source.item });
       case 'transfer': return setModal({ type: 'transfer', mode: 'edit', item: source.item });
       case 'invoice': return handleOpenInvoice(source.item);
@@ -501,6 +532,37 @@ export default function CashFlow() {
       case 'extra': return handleDeleteTransaction('extra-expense', source.item);
       case 'transfer': return handleDeleteTransfer(source.item);
       case 'invoice': return undefined;
+    }
+  }
+
+  async function saveInvoiceTax(save: InvoiceTaxSave) {
+    if (!taxTarget) return;
+    if (taxTarget.status === 'PAID' && !(await confirm(EFFECTED_CONFIRM))) return;
+    try {
+      await updatePayment.mutateAsync({ id: taxTarget.id, data: save });
+      setTaxTarget(null);
+    } catch {
+      /* já notificado */
+    }
+  }
+
+  async function payTaxTarget(amountPaid: number) {
+    if (!taxTarget) return;
+    try {
+      await payInvoiceTax.mutateAsync({ id: taxTarget.id, amountPaid });
+      setTaxTarget(null);
+    } catch {
+      /* já notificado */
+    }
+  }
+
+  async function revertTaxTarget() {
+    if (!taxTarget) return;
+    try {
+      await revertPayment.mutateAsync(taxTarget.id);
+      setTaxTarget(null);
+    } catch {
+      /* já notificado */
     }
   }
 
@@ -587,6 +649,19 @@ export default function CashFlow() {
         onTransfer={() => setModal({ type: 'transfer', mode: 'create' })}
         accountProminent={consolidated}
         cards={cards}
+      />
+
+      {/* Despesa "Imposto a pagar" (I8) */}
+      <InvoiceTaxModal
+        open={!!taxTarget}
+        onClose={() => setTaxTarget(null)}
+        expense={taxTarget}
+        accounts={accounts as Account[]}
+        saving={updatePayment.isPending}
+        paying={payInvoiceTax.isPending || revertPayment.isPending}
+        onSave={saveInvoiceTax}
+        onPay={payTaxTarget}
+        onRevert={revertTaxTarget}
       />
 
       {/* Transfer Modal */}

@@ -1,4 +1,4 @@
-import { CreditCardInvoice, FinancialTransaction, TransferFlowItem } from '../../types';
+import { CreditCardInvoice, FinancialTransaction, isInvoiceTaxExpense, TransferFlowItem } from '../../types';
 
 // Lista única de Movimentações (U10 do plano de UX, D8): entradas, pagamentos,
 // gastos fora do comum, transferências e faturas viram um único tipo de linha,
@@ -26,6 +26,13 @@ export interface MovementItem {
   isFixed: boolean;
   isAutoReserve: boolean;
   counterpartAccountName: string | null;
+  // Imposto sobre NF (I8): alíquota da entrada NF (marcador "NF 6%"); na
+  // despesa "Imposto a pagar", quantas NFs ela soma (null nas demais).
+  taxRateBps: number | null;
+  invoiceTaxCount: number | null;
+  // Não pode ser excluído pela lista: despesa de imposto, ou NF cujo imposto
+  // do mês já foi pago.
+  locked: boolean;
   // Conta do lançamento (exibida na visão "Todas as contas").
   accountId: string | null;
   // Id usado pelas mutations (transferência usa o transferGroupId).
@@ -59,6 +66,9 @@ function fromTransaction(kind: 'income' | 'payment' | 'extra', t: FinancialTrans
     isFixed: t.recurrence === 'FIXED',
     isAutoReserve: false,
     counterpartAccountName: null,
+    taxRateBps: kind === 'income' ? t.taxRateBps ?? null : null,
+    invoiceTaxCount: isInvoiceTaxExpense(t) ? t.invoiceTaxCount ?? 0 : null,
+    locked: isInvoiceTaxExpense(t) || (kind === 'income' && !!t.invoiceTaxPaid),
     accountId: kind === 'income' ? t.targetAccountId : t.sourceAccountId,
     actionId: t.id,
     source: { kind, item: t },
@@ -78,6 +88,9 @@ export function toMovements(input: MovementsInput): MovementItem[] {
     isFixed: false,
     isAutoReserve: t.isAutoReserve,
     counterpartAccountName: t.counterpartAccountName,
+    taxRateBps: null,
+    invoiceTaxCount: null,
+    locked: false,
     accountId: t.accountId,
     actionId: t.transferGroupId,
     source: { kind: 'transfer', item: t },
@@ -98,6 +111,9 @@ export function toMovements(input: MovementsInput): MovementItem[] {
       isFixed: false,
       isAutoReserve: false,
       counterpartAccountName: null,
+      taxRateBps: null,
+      invoiceTaxCount: null,
+      locked: false,
       accountId: inv.paymentAccountId ?? input.cardPayers?.get(inv.creditCardId) ?? null,
       actionId: inv.id,
       source: { kind: 'invoice', item: inv },

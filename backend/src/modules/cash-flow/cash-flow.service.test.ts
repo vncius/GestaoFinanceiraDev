@@ -1423,3 +1423,30 @@ describe('CashFlowService — Imposto a pagar: leitura e duplicidade (I5)', () =
     expect(expenses[0].amount).toBe(18000);
   });
 });
+
+describe('CashFlowService — Imposto a pagar: marcas na lista (I8)', () => {
+  let ctx: ReturnType<typeof buildServiceWithCategories>;
+  let account: Account;
+
+  beforeEach(async () => {
+    ctx = buildServiceWithCategories();
+    account = await seedAccount(ctx.accountsRepo, { invoiceTaxEnabled: true });
+  });
+
+  it('a despesa traz quantas NFs soma e a NF diz se o imposto do mês foi pago', async () => {
+    const { service, transactionsRepo } = ctx;
+    await service.createIncome(TENANT_ID, account.id, nf());
+    await service.createIncome(TENANT_ID, account.id, nf({ amount: 50000 }));
+
+    const nov = await service.getCashFlow(TENANT_ID, { month: 11, year: 2026, accountId: account.id });
+    const tax = nov.payments.find((t) => t.originType === OriginType.INVOICE_TAX);
+    expect(tax?.invoiceTaxCount).toBe(2);
+
+    let oct = await service.getCashFlow(TENANT_ID, { month: 10, year: 2026, accountId: account.id });
+    expect(oct.entries.map((t) => t.invoiceTaxPaid)).toEqual([false, false]);
+
+    await service.payPayment(taxExpenses(transactionsRepo)[0].id, TENANT_ID, {});
+    oct = await service.getCashFlow(TENANT_ID, { month: 10, year: 2026, accountId: account.id });
+    expect(oct.entries.map((t) => t.invoiceTaxPaid)).toEqual([true, true]);
+  });
+});

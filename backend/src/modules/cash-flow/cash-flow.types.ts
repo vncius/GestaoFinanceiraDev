@@ -87,11 +87,18 @@ export interface CashFlowSummary {
   realizedBalance: number;
 }
 
+// Lançamento do fluxo com as marcas do imposto sobre NF (I8): na despesa de
+// imposto, quantas NFs ela soma; na NF, se o imposto da competência já foi pago.
+export type CashFlowTransaction = FinancialTransaction & {
+  invoiceTaxCount?: number;
+  invoiceTaxPaid?: boolean;
+};
+
 export interface CashFlowResponse {
   month: number;
   year: number;
-  entries: FinancialTransaction[];
-  payments: FinancialTransaction[];
+  entries: CashFlowTransaction[];
+  payments: CashFlowTransaction[];
   extraExpenses: FinancialTransaction[];
   transfers: TransferFlowItem[];
   creditCards: CreditCardInvoice[];

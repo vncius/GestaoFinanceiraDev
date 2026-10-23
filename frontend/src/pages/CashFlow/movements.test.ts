@@ -118,3 +118,32 @@ describe('toMovements — conta de cada lançamento (U17)', () => {
     expect(items.map((i) => i.accountId)).toEqual(['pj', 'pf', 'pj']);
   });
 });
+
+describe('toMovements — imposto sobre NF (I8)', () => {
+  const items = toMovements({
+    entries: [
+      tx('NF', '2026-10-05', 'PENDING', { type: 'INCOME', taxRateBps: 600 }),
+      tx('NF paga', '2026-10-06', 'RECEIVED', { type: 'INCOME', taxRateBps: 600, invoiceTaxPaid: true }),
+    ],
+    payments: [
+      tx('Imposto a pagar', '2026-10-20', 'PENDING', { originType: 'INVOICE_TAX', originId: 'a:2026-09', invoiceTaxCount: 3 }),
+      tx('Aluguel', '2026-10-10', 'PENDING'),
+    ],
+    extraExpenses: [],
+    transfers: [],
+    creditCards: [],
+    cardNames: new Map(),
+    cardFallbackName: 'Cartão',
+  });
+  const byKey = Object.fromEntries(items.map((i) => [i.key, i]));
+
+  it('NF leva a alíquota; com imposto pago fica travada', () => {
+    expect(byKey['income:NF']).toMatchObject({ taxRateBps: 600, locked: false, invoiceTaxCount: null });
+    expect(byKey['income:NF paga']).toMatchObject({ taxRateBps: 600, locked: true });
+  });
+
+  it('despesa de imposto leva a contagem de NFs e fica travada', () => {
+    expect(byKey['payment:Imposto a pagar']).toMatchObject({ invoiceTaxCount: 3, locked: true, taxRateBps: null });
+    expect(byKey['payment:Aluguel']).toMatchObject({ invoiceTaxCount: null, locked: false });
+  });
+});
