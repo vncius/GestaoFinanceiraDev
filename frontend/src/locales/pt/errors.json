@@ -107,6 +107,7 @@
   },
   "invoiceTax": {
     "issueDateRequired": "Informe a data de emissão da nota fiscal.",
+    "notFound": "Imposto a pagar não encontrado.",
     "expenseLocked": "No imposto a pagar só o vencimento, a conta e as observações podem ser alterados.",
     "expenseCannotDelete": "O imposto a pagar não pode ser excluído: ele some sozinho quando não há mais notas fiscais no mês.",
     "paidLocksInvoice": "O imposto de {{month}}/{{year}} já foi pago, então esta nota fiscal não pode ser alterada nem excluída. Desmarque o pagamento do imposto primeiro."

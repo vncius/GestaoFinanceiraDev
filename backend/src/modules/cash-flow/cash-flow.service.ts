@@ -15,7 +15,7 @@ import { AccountsRepository } from '../accounts/accounts.repository';
 import { CreditCardsRepository, CreditCardInvoicesRepository } from '../credit-cards/credit-cards.repository';
 import { CreditCardInvoice, InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { TransfersService } from '../transfers/transfers.service';
-import { CashFlowDataset, CashFlowResponse, TransferFlowItem } from './cash-flow.types';
+import { CashFlowDataset, CashFlowResponse, InvoiceTaxDetail, TransferFlowItem } from './cash-flow.types';
 import { sumSummaries, ZERO_SUMMARY } from './cash-flow-summary.utils';
 import {
   CashFlowQuery,
@@ -100,6 +100,37 @@ export class CashFlowService {
     private readonly transfersService?: TransfersService,
     private readonly categoriesRepo?: CategoriesRepository,
   ) {}
+
+  // ─── GET /cash-flow/invoice-tax/:id ──────────────────────────────────────────
+
+  // Despesa "Imposto a pagar" + as NFs da competência, cada uma com o seu imposto
+  // (a soma dos `tax` é o valor calculado da despesa).
+  async getInvoiceTax(id: string, tenantId: string): Promise<InvoiceTaxDetail> {
+    const expense = await this.transactionsRepo.findById(id, tenantId);
+    if (!expense || expense.originType !== OriginType.INVOICE_TAX || !expense.originId) {
+      throw new AppError('Imposto a pagar não encontrado.', 404, 'invoiceTax.notFound');
+    }
+    const all = await this.transactionsRepo.findAll(tenantId);
+    const invoices = all
+      .filter(
+        (t) =>
+          t.originType !== OriginType.INVOICE_TAX &&
+          invoiceTaxKeyOf(t) === expense.originId &&
+          (t.status === TransactionStatus.PENDING || t.status === TransactionStatus.RECEIVED),
+      )
+      .sort((a, b) => (a.issueDate as string).localeCompare(b.issueDate as string))
+      .map((t) => ({
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        taxRateBps: t.taxRateBps as number,
+        issueDate: t.issueDate as string,
+        expectedDate: t.expectedDate,
+        status: t.status,
+        tax: calcInvoiceTax(t.amount, t.taxRateBps as number),
+      }));
+    return { expense, invoices, calculatedTotal: invoices.reduce((s, i) => s + i.tax, 0) };
+  }
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
 
@@ -1140,6 +1171,17 @@ export class CashFlowService {
   // Sem NFs, cancela a despesa; uma NF nova reativa a mesma. Nunca mexe no
   // vencimento escolhido nem numa despesa já paga (que guarda o valor real do DAS).
   private async syncInvoiceTax(tenantId: string, originId: string): Promise<void> {
+    try {
+      await this.syncInvoiceTaxOnce(tenantId, originId);
+    } catch (err) {
+      // Duas requisições criaram a despesa ao mesmo tempo: o índice único
+      // recusou a segunda. Na nova tentativa a despesa já existe e só é atualizada.
+      if ((err as { code?: number } | null)?.code !== 11000) throw err;
+      await this.syncInvoiceTaxOnce(tenantId, originId);
+    }
+  }
+
+  private async syncInvoiceTaxOnce(tenantId: string, originId: string): Promise<void> {
     const parsed = parseInvoiceTaxOriginId(originId);
     if (!parsed) return;
 

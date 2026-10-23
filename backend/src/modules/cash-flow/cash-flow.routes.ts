@@ -8,6 +8,9 @@ const controller = controllers.cashFlow;
 // resumo mensal
 router.get('/', asyncHandler((req, res) => controller.getCashFlow(req, res)));
 
+// imposto sobre NF: despesa + NFs ligadas
+router.get('/invoice-tax/:id', asyncHandler((req, res) => controller.getInvoiceTax(req, res)));
+
 // entradas
 router.post('/income', asyncHandler((req, res) => controller.createIncome(req, res)));
 router.put('/income/:id', asyncHandler((req, res) => controller.updateIncome(req, res)));

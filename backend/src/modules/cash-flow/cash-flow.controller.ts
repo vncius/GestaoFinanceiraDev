@@ -24,6 +24,10 @@ export class CashFlowController {
     res.json(data);
   }
 
+  async getInvoiceTax(req: Request, res: Response): Promise<void> {
+    res.json(await this.service.getInvoiceTax(req.params.id, req.tenantId));
+  }
+
   // ─── Income ────────────────────────────────────────────────────────────────
 
   async createIncome(req: Request, res: Response): Promise<void> {

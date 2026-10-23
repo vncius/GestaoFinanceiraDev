@@ -1,4 +1,4 @@
-import { Collection } from 'mongodb';
+import { Collection, CreateIndexesOptions } from 'mongodb';
 import { getDb } from './mongo-client';
 import { getActiveSession } from './mongo-transaction';
 import { decryptFields, encryptFields } from '../crypto/field-crypto';
@@ -14,14 +14,22 @@ export interface MongoStoreOptions<T> {
   encryptedFields?: readonly (keyof T & string)[];
 }
 
+type IndexKey = Record<string, 1 | -1>;
+// Índice simples (só as chaves) ou com opções (unique, partialFilterExpression…).
+export type StoreIndex = IndexKey | { key: IndexKey; options: CreateIndexesOptions };
+
+function isIndexWithOptions(index: StoreIndex): index is { key: IndexKey; options: CreateIndexesOptions } {
+  return typeof (index as { key?: unknown }).key === 'object' && 'options' in index;
+}
+
 export class MongoStore<T extends { id: string; tenantId: string }> {
   private readonly collectionName: string;
-  private readonly extraIndexes: Record<string, 1 | -1>[];
+  private readonly extraIndexes: StoreIndex[];
   private readonly encrypted: readonly string[];
 
   constructor(
     collectionName: string,
-    extraIndexes: Record<string, 1 | -1>[] = [],
+    extraIndexes: StoreIndex[] = [],
     options: MongoStoreOptions<T> = {},
   ) {
     this.collectionName = collectionName;
@@ -41,7 +49,10 @@ export class MongoStore<T extends { id: string; tenantId: string }> {
         console.error(`[mongo] Falha ao criar índice em ${this.collectionName}:`, err);
       });
       for (const index of this.extraIndexes) {
-        collection.createIndex(index as never).catch((err) => {
+        const create = isIndexWithOptions(index)
+          ? collection.createIndex(index.key as never, index.options)
+          : collection.createIndex(index as never);
+        create.catch((err) => {
           console.error(`[mongo] Falha ao criar índice extra em ${this.collectionName}:`, err);
         });
       }

@@ -107,6 +107,7 @@
   },
   "invoiceTax": {
     "issueDateRequired": "Indica la fecha de emisión de la factura.",
+    "notFound": "Impuesto a pagar no encontrado.",
     "expenseLocked": "En el impuesto a pagar solo se pueden cambiar el vencimiento, la cuenta y las notas.",
     "expenseCannotDelete": "El impuesto a pagar no puede eliminarse: desaparece solo cuando el mes ya no tiene facturas.",
     "paidLocksInvoice": "El impuesto de {{month}}/{{year}} ya fue pagado, así que esta factura no puede modificarse ni eliminarse. Desmarca primero el pago del impuesto."

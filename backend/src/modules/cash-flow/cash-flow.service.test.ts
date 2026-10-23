@@ -1369,3 +1369,57 @@ describe('CashFlowService — Imposto a pagar: bloqueios (I4)', () => {
     });
   });
 });
+
+describe('CashFlowService — Imposto a pagar: leitura e duplicidade (I5)', () => {
+  let ctx: ReturnType<typeof buildServiceWithCategories>;
+  let account: Account;
+
+  beforeEach(async () => {
+    ctx = buildServiceWithCategories();
+    account = await seedAccount(ctx.accountsRepo, { invoiceTaxEnabled: true });
+  });
+
+  it('getInvoiceTax devolve a despesa e as NFs com o imposto de cada uma', async () => {
+    const { service, transactionsRepo } = ctx;
+    await service.createIncome(TENANT_ID, account.id, nf({ amount: 100000 }));
+    await service.createIncome(TENANT_ID, account.id, nf({ amount: 50000, taxRateBps: 400, issueDate: '2026-10-02T00:00:00.000Z' }));
+    const [expense] = taxExpenses(transactionsRepo);
+
+    const detail = await service.getInvoiceTax(expense.id, TENANT_ID);
+
+    expect(detail.expense.id).toBe(expense.id);
+    expect(detail.invoices.map((i) => i.tax)).toEqual([2000, 6000]);
+    expect(detail.calculatedTotal).toBe(8000);
+    expect(detail.expense.amount).toBe(8000);
+  });
+
+  it('getInvoiceTax recusa id que não é despesa de imposto', async () => {
+    const { service } = ctx;
+    const income = await service.createIncome(TENANT_ID, account.id, nf());
+    await expect(service.getInvoiceTax(income.id, TENANT_ID)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.getInvoiceTax('nao-existe', TENANT_ID)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('duplicidade na criação da despesa: tenta de novo e atualiza a existente', async () => {
+    const { service, transactionsRepo } = ctx;
+    await service.createIncome(TENANT_ID, account.id, nf());
+    const realCreate = transactionsRepo.create.bind(transactionsRepo);
+    let failed = false;
+    transactionsRepo.create = async (data: FinancialTransaction) => {
+      if (data.originType === OriginType.INVOICE_TAX && !failed) {
+        failed = true;
+        // outra requisição criou a despesa antes
+        await realCreate({ ...data, id: randomUUID(), amount: 1 });
+        throw Object.assign(new Error('E11000 duplicate key'), { code: 11000 });
+      }
+      return realCreate(data);
+    };
+    transactionsRepo.items.splice(0, transactionsRepo.items.length, ...transactionsRepo.items.filter((t) => t.originType !== OriginType.INVOICE_TAX));
+
+    await service.createIncome(TENANT_ID, account.id, nf({ amount: 200000 }));
+
+    const expenses = taxExpenses(transactionsRepo);
+    expect(expenses).toHaveLength(1);
+    expect(expenses[0].amount).toBe(18000);
+  });
+});

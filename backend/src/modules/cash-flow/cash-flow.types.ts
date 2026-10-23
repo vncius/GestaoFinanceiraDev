@@ -12,6 +12,25 @@ export interface CashFlowDataset {
   cards: CreditCard[];
 }
 
+// Resposta de GET /cash-flow/invoice-tax/:id.
+export interface InvoiceTaxInvoice {
+  id: string;
+  description: string;
+  amount: number;
+  taxRateBps: number;
+  issueDate: string;
+  expectedDate: string;
+  status: TransactionStatus;
+  tax: number;
+}
+
+export interface InvoiceTaxDetail {
+  expense: FinancialTransaction;
+  invoices: InvoiceTaxInvoice[];
+  // Soma do imposto de cada NF; difere de expense.amount quando o valor real do DAS foi informado.
+  calculatedTotal: number;
+}
+
 // Perna de transferência (D5) sob a ótica da conta selecionada — não é o
 // FinancialTransaction cru porque o frontend precisa da contraparte (a outra
 // perna pertence a outra conta, fora do escopo desta resposta) para exibir

@@ -15,6 +15,16 @@ export class FinancialTransactionsMongoRepository
   private store = new MongoStore<FinancialTransaction>('financial_transactions', [
     { tenantId: 1, sourceAccountId: 1 },
     { tenantId: 1, targetAccountId: 1 },
+    // Uma única despesa "Imposto a pagar" por conta + competência (plano do
+    // imposto sobre NF, I5). Parcial: os outros origins repetem originId.
+    {
+      key: { tenantId: 1, originType: 1, originId: 1 },
+      options: {
+        unique: true,
+        partialFilterExpression: { originType: OriginType.INVOICE_TAX },
+        name: 'invoice_tax_origin_unique',
+      },
+    },
   ], { encryptedFields: ['description', 'notes'] });
 
   findAll(tenantId: string) {
