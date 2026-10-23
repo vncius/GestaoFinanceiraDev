@@ -78,3 +78,13 @@ Regra única em `frontend/src/utils/month-summary.ts` (`summarizeMonth`), sobre 
 - **Saldo** = saldo inicial + entrou − saiu ± entre suas contas (= `realizedBalance`).
 - **Falta receber / Falta pagar** = pendentes **só do mês selecionado** (`pendingIncome`/`pendingExpenses`; faturas com total 0 não contam).
 - **Previsto** = `projectedBalance` = saldo realizado + tudo que ainda está pendente no intervalo. Em mês futuro o intervalo vai do mês atual até o selecionado, e a interface diz isso explicitamente ("Previstos acumulados de out/26 a dez/26").
+
+## 4. Imposto sobre nota fiscal ("Imposto a pagar")
+
+Plano e decisões em `docs/plano-imposto-nf.md` (revisa a D2 de `docs/refactor-contas-pf-pj.md`). **Ainda não implementado**; esta seção descreve a regra-alvo e é atualizada a cada entrega.
+
+- Uma entrada é **NF** quando tem `taxRateBps` (alíquota em centésimos de ponto percentual, 600 = 6,00%) e `issueDate` (data de emissão). A data de recebimento continua sendo `expectedDate` e define o fluxo de caixa.
+- Competência = **mês de emissão**. O imposto vence no mês seguinte (dia `invoiceTaxDueDay` da conta, padrão 20).
+- Gera-se **uma despesa por conta da NF + mês de competência** (`PAYMENT`, `originType = INVOICE_TAX`, `originId = "<accountId>:<AAAA-MM>"`), como a fatura de cartão: criada sob demanda e recalculada do zero, nunca incrementada.
+- Valor = soma de `round(valor × alíquota)` por NF, só NFs pendentes ou recebidas (canceladas e revertidas ficam de fora). Sem NFs, a despesa é cancelada; NF nova a reativa.
+- A despesa não pode ser excluída nem ter o valor editado; o vencimento, a conta pagadora e as observações sim. Com o imposto pago, as NFs do mês ficam travadas até desmarcar o pagamento.

@@ -57,6 +57,8 @@ Auditoria de todos os usos confirma que **nenhum sobrevive ao refactor**:
 
 ### D2 — Campos de NF são descartados
 
+> **Revisada em 2026-10-23:** a NF volta ao sistema em versão mínima (só `taxRateBps` e `issueDate` na entrada, para gerar a despesa "Imposto a pagar"). Número da NF, cliente, horas e demais campos continuam descartados. Ver `docs/plano-imposto-nf.md`.
+
 Nota Fiscal deixa de ser um conceito do sistema. Isso vai além dos 8 campos do `Receivable`:
 
 - `customerName`, `invoiceNumber`, `invoiceCode`, `invoiceLink`, `invoiceIssueDate`, `competence`, `workedHours`, `hourlyRate` **não** migram para `FinancialTransaction`.
@@ -103,7 +105,7 @@ Cria o suporte a entradas direto no fluxo, **sem ainda remover Recebimentos** (c
 
 - `cash-flow.service.ts`: `createIncome`, `updateIncome`, `receiveIncome`, `revertIncome`, `deleteIncome`, `deleteFixedIncome` — espelhando os métodos de `PAYMENT`, com `targetAccountId` no lugar de `sourceAccountId`.
 - `ensureFixedTransactions` passa a materializar recorrência fixa de `TransactionType.INCOME`.
-- Sem novos campos em `FinancialTransaction` (D2): entrada = descrição, categoria, valor, data, conta, notas, recorrência.
+- Sem novos campos em `FinancialTransaction` (D2, revisada em 2026-10-23: ver `docs/plano-imposto-nf.md`): entrada = descrição, categoria, valor, data, conta, notas, recorrência.
 - `cash-flow.schemas.ts` / `.controller.ts` / `.routes.ts`: novos endpoints.
 - `docs/api.md`: seção Cash Flow atualizada.
 - Testes de `createIncome` + recorrência fixa de entrada.
