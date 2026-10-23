@@ -35,7 +35,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I2 | Funções puras `invoice-tax.utils.ts` | I1 | ✅ | 2026-10-23 | ver git log |
 | I3 | `syncInvoiceTax` e ganchos | I2 | ✅ | 2026-10-23 | ver git log |
 | I4 | Bloqueios e valor real na baixa | I3 | ✅ | 2026-10-23 | ver git log |
-| I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ⬜ | | |
+| I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ✅ | 2026-10-23 | dac963d |
 | I6 | Tela: configuração na conta | I5 | ⬜ | | |
 | I7 | Tela: NF e alíquota na nova entrada | I6 | ⬜ | | |
 | I8 | Tela: marcadores, modal, bloqueios, Limpar mês | I7 | ⬜ | | |
@@ -72,6 +72,13 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 - Receber a NF: com outro valor é bloqueado; com outra data, não (o mês do imposto não muda). Reverter o recebimento não é bloqueado. "Esta e as futuras" e excluir "esta e as futuras" checam cada ocorrência futura.
 - `ensureFixedTransactions` não é bloqueado (roda em leitura); se gerar NF num mês pago, a despesa paga fica como está.
 - Testes no describe "Imposto a pagar: bloqueios (I4)" de `cash-flow.service.test.ts`.
+
+### I5 — 2026-10-23
+- `MongoStore` aceita índice extra como `{ key, options }` (tipo `StoreIndex`). O repositório de transações declara `invoice_tax_origin_unique`: `{tenantId, originType, originId}`, unique, parcial (`originType = INVOICE_TAX`). Falha ao criar (duplicidade antiga) só é logada.
+- `syncInvoiceTax` captura erro `code 11000` e roda de novo uma vez. Dentro de transação Mongo o erro de escrita pode abortar a transação inteira; o retry cobre o caso fora dela.
+- `GET /cash-flow/invoice-tax/:id` → `{ expense, invoices[{id, description, amount, taxRateBps, issueDate, expectedDate, status, tax}], calculatedTotal }`; 404 `invoiceTax.notFound` (errors.json nos 3 idiomas). Documentado em `docs/api.md`.
+- Testes no describe "leitura e duplicidade (I5)". Backend: typecheck e 408 testes verdes.
+- **I6 ainda não iniciada** (parei por limite de uso do usuário). Próximo chat: I6 (tela de configuração na conta) e depois I7/I8 conforme a seção 7.
 
 ---
 
