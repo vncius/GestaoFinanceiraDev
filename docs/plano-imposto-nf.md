@@ -33,7 +33,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I0 | Decisão registrada (plano, link, domain-logic, revisão da D2) | — | ✅ | 2026-10-23 | ver git log |
 | I1 | Modelo, sem comportamento | I0 | ✅ | 2026-10-23 | ver git log |
 | I2 | Funções puras `invoice-tax.utils.ts` | I1 | ✅ | 2026-10-23 | ver git log |
-| I3 | `syncInvoiceTax` e ganchos | I2 | ⬜ | | |
+| I3 | `syncInvoiceTax` e ganchos | I2 | ✅ | 2026-10-23 | ver git log |
 | I4 | Bloqueios e valor real na baixa | I3 | ⬜ | | |
 | I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ⬜ | | |
 | I6 | Tela: configuração na conta | I5 | ⬜ | | |
@@ -54,6 +54,15 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 ### I2 — 2026-10-23
 - `cash-flow/invoice-tax.utils.ts`: `competenceOf`, `calcInvoiceTax`, `invoiceTaxOriginId`/`parseInvoiceTaxOriginId`, `invoiceTaxDueDate` (ISO à meia-noite UTC, clamp em meses curtos), `DEFAULT_INVOICE_TAX_DUE_DAY`. Testes em `invoice-tax.utils.test.ts`.
 - O total da despesa é a **soma dos impostos por NF** (arredondados individualmente), não o imposto da soma; há teste cobrindo a diferença de 1 centavo. O `syncInvoiceTax` (I3) deve somar com `calcInvoiceTax` por NF.
+
+### I3 — 2026-10-23
+- `CashFlowService` ganhou `categoriesRepo` (6º parâmetro, opcional; passado no `container.ts` e no `seed-demo.ts`). Sem ele, a despesa sai sem categoria.
+- `syncInvoiceTax(originId)` recalcula do zero; `syncInvoiceTaxFor(txs)` deriva as chaves (`invoiceTaxKeyOf`: NF → chave da competência; despesa de imposto → o próprio `originId`) e sincroniza cada uma uma vez. Ganchos em criar, editar (único e fixo, chave antiga e nova), excluir (único e fixo), receber/pagar, reverter e `ensureFixedTransactions`. Cada mutação roda em `runInTransaction`.
+- **Despesa paga não é recalculada** (guarda o valor real do DAS). Reverter o pagamento dispara o recálculo e volta ao valor calculado. Total 0 cancela a despesa (inclui NF com alíquota 0).
+- Despesa: `PAYMENT` "Imposto a pagar", categoria "Impostos" (criada se faltar), `sourceAccountId` = conta da NF, vencimento `invoiceTaxDueDay` da conta (padrão 20). Reativação mantém o vencimento.
+- Alíquota e emissão andam juntas (`invoiceFields`): sem alíquota, `issueDate` vira null; com alíquota e sem emissão → 400 `invoiceTax.issueDateRequired`. Zod: `taxRateBps` 0–10000, `issueDate` começa por `AAAA-MM-DD` (`validation.issueDate.invalid`). Só os schemas de **entrada** aceitam os campos.
+- NF fixa: `ensureFixedTransactions` desloca `issueDate` (`shiftedIssueDate`: mesma distância em meses até o recebimento, dia da emissão da âncora com clamp). "Esta e as futuras" não propaga `issueDate`; propaga `taxRateBps`, e a futura que vira NF ganha emissão deslocada.
+- Testes no fim de `cash-flow.service.test.ts` (describe "Imposto a pagar (I3)").
 
 ---
 

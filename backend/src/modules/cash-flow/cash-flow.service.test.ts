@@ -12,6 +12,8 @@ import {
 } from '../financial-transactions/financial-transactions.types';
 import { AccountsRepository } from '../accounts/accounts.repository';
 import { Account } from '../accounts/accounts.types';
+import { CategoriesRepository } from '../categories/categories.repository';
+import { Category, CategoryType } from '../categories/categories.types';
 
 const TENANT_ID = 'test-tenant-1';
 
@@ -852,5 +854,302 @@ describe('CashFlowService — visão consolidada (U17)', () => {
     ]);
     expect(all.summary.realizedBalance).toBe(pfFlow.summary.realizedBalance + pjFlow.summary.realizedBalance);
     expect(pfFlow.transfers[0].accountId).toBe(pf.id);
+  });
+});
+
+// ─── Imposto sobre NF (docs/plano-imposto-nf.md) ──────────────────────────────
+
+class FakeCategoriesRepo extends InMemoryRepo<Category> implements CategoriesRepository {
+  async findActive(tenantId: string) {
+    return this.items.filter((c) => c.tenantId === tenantId && c.active);
+  }
+  async findByType(tenantId: string, type: CategoryType) {
+    return this.items.filter((c) => c.tenantId === tenantId && c.type === type && c.active);
+  }
+}
+
+function buildServiceWithCategories() {
+  const transactionsRepo = new FakeTransactionsRepo();
+  const accountsRepo = new FakeAccountsRepo();
+  const categoriesRepo = new FakeCategoriesRepo();
+  const service = new CashFlowService(transactionsRepo, accountsRepo, undefined, undefined, undefined, categoriesRepo);
+  return { service, transactionsRepo, accountsRepo, categoriesRepo };
+}
+
+const taxExpenses = (repo: FakeTransactionsRepo) => repo.items.filter((t) => t.originType === OriginType.INVOICE_TAX);
+
+const nf = (overrides: Record<string, unknown> = {}) => ({
+  description: 'NF',
+  categoryId: randomUUID(),
+  amount: 100000,
+  expectedDate: '2026-10-10T00:00:00.000Z',
+  issueDate: '2026-10-05T00:00:00.000Z',
+  taxRateBps: 600,
+  recurrence: RecurrenceType.UNIQUE,
+  ...overrides,
+});
+
+describe('CashFlowService — Imposto a pagar (I3)', () => {
+  let ctx: ReturnType<typeof buildServiceWithCategories>;
+  let account: Account;
+
+  beforeEach(async () => {
+    ctx = buildServiceWithCategories();
+    account = await seedAccount(ctx.accountsRepo, { invoiceTaxEnabled: true, invoiceTaxDueDay: 15 });
+  });
+
+  it('10 NFs do mês geram uma única despesa com a soma dos impostos', async () => {
+    const { service, transactionsRepo, categoriesRepo } = ctx;
+    for (let i = 0; i < 10; i++) {
+      await service.createIncome(TENANT_ID, account.id, nf({ amount: 100001 + i, targetAccountId: account.id }));
+    }
+
+    const expenses = taxExpenses(transactionsRepo);
+    expect(expenses).toHaveLength(1);
+    const [tax] = expenses;
+    const expected = Array.from({ length: 10 }, (_, i) => Math.round(((100001 + i) * 600) / 10000)).reduce((a, b) => a + b);
+    expect(tax).toMatchObject({
+      type: TransactionType.PAYMENT,
+      status: TransactionStatus.PENDING,
+      description: 'Imposto a pagar',
+      amount: expected,
+      sourceAccountId: account.id,
+      originId: `${account.id}:2026-10`,
+      expectedDate: '2026-11-15T00:00:00.000Z',
+      recurrence: RecurrenceType.UNIQUE,
+    });
+    const category = categoriesRepo.items.find((c) => c.id === tax.categoryId);
+    expect(category).toMatchObject({ name: 'Impostos', type: CategoryType.EXPENSE });
+  });
+
+  it('reaproveita a categoria "Impostos" já existente', async () => {
+    const { service, transactionsRepo, categoriesRepo } = ctx;
+    const now = new Date().toISOString();
+    await categoriesRepo.create({
+      id: 'cat-impostos',
+      tenantId: TENANT_ID,
+      name: 'Impostos',
+      type: CategoryType.EXPENSE,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await service.createIncome(TENANT_ID, account.id, nf());
+
+    expect(taxExpenses(transactionsRepo)[0].categoryId).toBe('cat-impostos');
+    expect(categoriesRepo.items).toHaveLength(1);
+  });
+
+  it('entrada sem alíquota não é NF e não gera despesa; alíquota sem emissão é recusada', async () => {
+    const { service, transactionsRepo } = ctx;
+    const plain = await service.createIncome(TENANT_ID, account.id, nf({ taxRateBps: null }));
+    expect(plain.issueDate).toBeNull();
+    expect(taxExpenses(transactionsRepo)).toHaveLength(0);
+
+    await expect(service.createIncome(TENANT_ID, account.id, nf({ issueDate: null }))).rejects.toMatchObject({
+      code: 'invoiceTax.issueDateRequired',
+    });
+  });
+
+  it('mudar o mês de emissão recalcula o mês antigo e o novo', async () => {
+    const { service, transactionsRepo } = ctx;
+    const a = await service.createIncome(TENANT_ID, account.id, nf());
+    await service.createIncome(TENANT_ID, account.id, nf({ amount: 50000 }));
+
+    await service.updateIncome(a.id, { issueDate: '2026-11-02T00:00:00.000Z' }, TENANT_ID);
+
+    const oct = taxExpenses(transactionsRepo).find((t) => t.originId === `${account.id}:2026-10`);
+    const nov = taxExpenses(transactionsRepo).find((t) => t.originId === `${account.id}:2026-11`);
+    expect(oct?.amount).toBe(3000);
+    expect(nov?.amount).toBe(6000);
+    expect(nov?.expectedDate).toBe('2026-12-15T00:00:00.000Z');
+  });
+
+  it('mudar a conta da NF move o imposto para a despesa da outra conta', async () => {
+    const { service, transactionsRepo, accountsRepo } = ctx;
+    const other = await seedAccount(accountsRepo, { name: 'PJ 2' });
+    const a = await service.createIncome(TENANT_ID, account.id, nf());
+
+    await service.updateIncome(a.id, { targetAccountId: other.id }, TENANT_ID);
+
+    const own = taxExpenses(transactionsRepo).find((t) => t.originId === `${account.id}:2026-10`);
+    const moved = taxExpenses(transactionsRepo).find((t) => t.originId === `${other.id}:2026-10`);
+    expect(own?.status).toBe(TransactionStatus.CANCELED);
+    expect(moved).toMatchObject({ amount: 6000, sourceAccountId: other.id, expectedDate: '2026-11-20T00:00:00.000Z' });
+  });
+
+  it('tirar a alíquota descarta a emissão e cancela a despesa', async () => {
+    const { service, transactionsRepo } = ctx;
+    const a = await service.createIncome(TENANT_ID, account.id, nf());
+
+    const updated = await service.updateIncome(a.id, { taxRateBps: null }, TENANT_ID);
+
+    expect(updated).toMatchObject({ taxRateBps: null, issueDate: null });
+    expect(taxExpenses(transactionsRepo)[0].status).toBe(TransactionStatus.CANCELED);
+  });
+
+  it('excluir a última NF cancela a despesa e uma NF nova reativa a mesma, sem mexer no vencimento', async () => {
+    const { service, transactionsRepo } = ctx;
+    const a = await service.createIncome(TENANT_ID, account.id, nf());
+    const [tax] = taxExpenses(transactionsRepo);
+    await service.updatePayment(tax.id, { expectedDate: '2026-11-18T00:00:00.000Z' }, TENANT_ID);
+
+    await service.deleteIncome(a.id, TENANT_ID);
+    expect(taxExpenses(transactionsRepo)[0].status).toBe(TransactionStatus.CANCELED);
+
+    await service.createIncome(TENANT_ID, account.id, nf({ amount: 200000 }));
+    const after = taxExpenses(transactionsRepo);
+    expect(after).toHaveLength(1);
+    expect(after[0]).toMatchObject({
+      id: tax.id,
+      status: TransactionStatus.PENDING,
+      amount: 12000,
+      expectedDate: '2026-11-18T00:00:00.000Z',
+    });
+  });
+
+  it('receber com outro valor e outra data recalcula pelo valor e mantém o mês de emissão', async () => {
+    const { service, transactionsRepo } = ctx;
+    const a = await service.createIncome(TENANT_ID, account.id, nf());
+
+    const received = await service.receiveIncome(a.id, TENANT_ID, {
+      actualDate: '2026-12-03T00:00:00.000Z',
+      amountReceived: 150000,
+    });
+
+    expect(received.issueDate).toBe('2026-10-05T00:00:00.000Z');
+    expect(taxExpenses(transactionsRepo)).toHaveLength(1);
+    expect(taxExpenses(transactionsRepo)[0]).toMatchObject({ originId: `${account.id}:2026-10`, amount: 9000 });
+
+    await service.revertIncome(a.id, TENANT_ID);
+    expect(taxExpenses(transactionsRepo)[0]).toMatchObject({ status: TransactionStatus.PENDING, amount: 9000 });
+  });
+
+  it('despesa paga guarda o valor real; desmarcar o pagamento volta ao calculado', async () => {
+    const { service, transactionsRepo } = ctx;
+    await service.createIncome(TENANT_ID, account.id, nf());
+    const [tax] = taxExpenses(transactionsRepo);
+
+    await service.payPayment(tax.id, TENANT_ID, { amountPaid: 6123 });
+    expect(taxExpenses(transactionsRepo)[0]).toMatchObject({ status: TransactionStatus.PAID, amount: 6123 });
+
+    await service.revertPayment(tax.id, TENANT_ID);
+    expect(taxExpenses(transactionsRepo)[0]).toMatchObject({ status: TransactionStatus.PENDING, amount: 6000 });
+  });
+
+  it('NF fixa gera os meses seguintes com a emissão deslocada e um imposto por mês', async () => {
+    const { service, transactionsRepo } = ctx;
+    await service.createIncome(
+      TENANT_ID,
+      account.id,
+      nf({ recurrence: RecurrenceType.FIXED, expectedDate: '2026-10-05T00:00:00.000Z', issueDate: '2026-09-30T00:00:00.000Z' }),
+    );
+
+    // Duas vezes: o recálculo é idempotente e não duplica nada.
+    await service.loadDataset(TENANT_ID, 1, 2027);
+    await service.loadDataset(TENANT_ID, 1, 2027);
+
+    const issueDates = transactionsRepo.items
+      .filter((t) => t.type === TransactionType.INCOME)
+      .map((t) => t.issueDate)
+      .sort();
+    expect(issueDates).toEqual([
+      '2026-09-30T00:00:00.000Z',
+      '2026-10-30T00:00:00.000Z',
+      '2026-11-30T00:00:00.000Z',
+      '2026-12-30T00:00:00.000Z',
+    ]);
+    const keys = taxExpenses(transactionsRepo).map((t) => t.originId).sort();
+    expect(keys).toEqual(['2026-09', '2026-10', '2026-11', '2026-12'].map((m) => `${account.id}:${m}`));
+    expect(taxExpenses(transactionsRepo).every((t) => t.amount === 6000)).toBe(true);
+  });
+
+  it('NF fixa com emissão no dia 31 não encurta a emissão depois de um mês curto', async () => {
+    const { service, transactionsRepo } = ctx;
+    await service.createIncome(
+      TENANT_ID,
+      account.id,
+      nf({ recurrence: RecurrenceType.FIXED, expectedDate: '2027-01-10T00:00:00.000Z', issueDate: '2027-01-31T00:00:00.000Z' }),
+    );
+
+    await service.loadDataset(TENANT_ID, 3, 2027);
+
+    const issueDates = transactionsRepo.items
+      .filter((t) => t.type === TransactionType.INCOME)
+      .map((t) => t.issueDate)
+      .sort();
+    expect(issueDates).toEqual(['2027-01-31T00:00:00.000Z', '2027-02-28T00:00:00.000Z', '2027-03-31T00:00:00.000Z']);
+  });
+
+  it('"esta e as futuras" propaga a alíquota mas não a data de emissão', async () => {
+    const { service, transactionsRepo } = ctx;
+    const first = await service.createIncome(
+      TENANT_ID,
+      account.id,
+      nf({ recurrence: RecurrenceType.FIXED, expectedDate: '2026-10-05T00:00:00.000Z', issueDate: '2026-10-01T00:00:00.000Z' }),
+    );
+    await service.loadDataset(TENANT_ID, 12, 2026);
+
+    await service.updateIncome(
+      first.id,
+      { taxRateBps: 1000, issueDate: '2026-10-03T00:00:00.000Z' },
+      TENANT_ID,
+      'CURRENT_AND_FUTURE',
+      10,
+      2026,
+    );
+
+    const incomes = transactionsRepo.items
+      .filter((t) => t.type === TransactionType.INCOME)
+      .sort((x, y) => x.expectedDate.localeCompare(y.expectedDate));
+    expect(incomes.map((t) => t.taxRateBps)).toEqual([1000, 1000, 1000]);
+    expect(incomes.map((t) => t.issueDate)).toEqual([
+      '2026-10-03T00:00:00.000Z',
+      '2026-11-01T00:00:00.000Z',
+      '2026-12-01T00:00:00.000Z',
+    ]);
+    expect(taxExpenses(transactionsRepo).every((t) => t.amount === 10000)).toBe(true);
+  });
+
+  it('"esta e as futuras" que liga a NF numa série comum dá emissão às futuras', async () => {
+    const { service, transactionsRepo } = ctx;
+    const first = await service.createIncome(
+      TENANT_ID,
+      account.id,
+      nf({ recurrence: RecurrenceType.FIXED, taxRateBps: null, issueDate: null, expectedDate: '2026-10-05T00:00:00.000Z' }),
+    );
+    await service.loadDataset(TENANT_ID, 11, 2026);
+
+    await service.updateIncome(
+      first.id,
+      { taxRateBps: 600, issueDate: '2026-10-05T00:00:00.000Z' },
+      TENANT_ID,
+      'CURRENT_AND_FUTURE',
+      10,
+      2026,
+    );
+
+    const keys = taxExpenses(transactionsRepo).map((t) => t.originId).sort();
+    expect(keys).toEqual([`${account.id}:2026-10`, `${account.id}:2026-11`]);
+  });
+
+  it('excluir "esta e as futuras" de uma NF fixa cancela os impostos dos meses atingidos', async () => {
+    const { service, transactionsRepo } = ctx;
+    const first = await service.createIncome(
+      TENANT_ID,
+      account.id,
+      nf({ recurrence: RecurrenceType.FIXED, expectedDate: '2026-10-05T00:00:00.000Z', issueDate: '2026-10-01T00:00:00.000Z' }),
+    );
+    await service.loadDataset(TENANT_ID, 12, 2026);
+
+    await service.deleteIncome(first.id, TENANT_ID, 'CURRENT_AND_FUTURE', 11, 2026);
+
+    const statusByKey = Object.fromEntries(taxExpenses(transactionsRepo).map((t) => [t.originId, t.status]));
+    expect(statusByKey).toEqual({
+      [`${account.id}:2026-10`]: TransactionStatus.PENDING,
+      [`${account.id}:2026-11`]: TransactionStatus.CANCELED,
+      [`${account.id}:2026-12`]: TransactionStatus.CANCELED,
+    });
   });
 });

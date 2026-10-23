@@ -20,6 +20,7 @@
     "categoryId": { "invalid": "Categoria inválida" },
     "amount": { "positive": "Valor deve ser positivo" },
     "expectedDate": { "required": "Data prevista é obrigatória" },
+    "issueDate": { "invalid": "Data de emissão inválida" },
     "expectedPaymentDate": { "required": "Data prevista é obrigatória" },
     "grossAmount": { "positive": "Valor bruto deve ser positivo" },
     "incomeCategoryId": { "invalid": "Categoria inválida" },
@@ -103,6 +104,9 @@
     "notSettledCannotRevert": "Só lançamentos já pagos ou recebidos podem ser desmarcados.",
     "notFound": "Lançamento não encontrado.",
     "wrongType": "Lançamento não é do tipo {{type}}."
+  },
+  "invoiceTax": {
+    "issueDateRequired": "Informe a data de emissão da nota fiscal."
   },
   "auth": {
     "invalidGoogleToken": "Token do Google inválido",

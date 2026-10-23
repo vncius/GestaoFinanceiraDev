@@ -27,6 +27,16 @@ import {
   ReceiveActionInput,
 } from './cash-flow.schemas';
 import { DeleteScope } from '../../shared/types/recurrence.types';
+import { CategoriesRepository } from '../categories/categories.repository';
+import { CategoryType } from '../categories/categories.types';
+import {
+  calcInvoiceTax,
+  competenceOf,
+  DEFAULT_INVOICE_TAX_DUE_DAY,
+  invoiceTaxDueDate,
+  invoiceTaxOriginId,
+  parseInvoiceTaxOriginId,
+} from './invoice-tax.utils';
 
 // Shape comum aceito pelas mutações internas (update/recorrência), coberto tanto
 // por CreateTransactionInput (sourceAccountId) quanto por CreateIncomeInput (targetAccountId).
@@ -39,7 +49,34 @@ type TransactionMutationInput = {
   targetAccountId?: string | null;
   notes?: string | null;
   recurrence?: RecurrenceType;
+  taxRateBps?: number | null;
+  issueDate?: string | null;
 };
+
+const INVOICE_TAX_DESCRIPTION = 'Imposto a pagar';
+const INVOICE_TAX_CATEGORY = 'Impostos';
+
+// Chave do "Imposto a pagar" afetado por um lançamento: a da competência de
+// uma entrada NF, ou a da própria despesa de imposto; null para o resto.
+function invoiceTaxKeyOf(t: FinancialTransaction): string | null {
+  if (t.originType === OriginType.INVOICE_TAX) return t.originId;
+  if (t.type !== TransactionType.INCOME || t.taxRateBps == null || !t.issueDate || !t.targetAccountId) return null;
+  return invoiceTaxOriginId(t.targetAccountId, competenceOf(t.issueDate));
+}
+
+// Data de emissão de outra ocorrência de uma NF fixa: mantém a distância em
+// meses entre emissão e recebimento da ocorrência de origem e o dia da emissão
+// (com clamp em meses curtos). Sem isso, todas cairiam no mesmo mês de imposto.
+function shiftedIssueDate(source: FinancialTransaction, expectedDate: string, issueDay?: number): string | null {
+  if (!source.issueDate) return null;
+  const issue = monthYearOf(source.issueDate);
+  const from = monthYearOf(source.expectedDate);
+  const to = monthYearOf(expectedDate);
+  const delta = monthKey(to.month, to.year) - monthKey(from.month, from.year);
+  const next = addMonths(issue.month, issue.year, delta, issueDay ?? issue.day);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${next.year}-${pad(next.month)}-${pad(next.day)}T00:00:00.000Z`;
+}
 
 export class CashFlowService {
   constructor(
@@ -48,6 +85,7 @@ export class CashFlowService {
     private readonly creditCardInvoicesRepo?: CreditCardInvoicesRepository,
     private readonly creditCardsRepo?: CreditCardsRepository,
     private readonly transfersService?: TransfersService,
+    private readonly categoriesRepo?: CategoriesRepository,
   ) {}
 
   // ─── GET /cash-flow ──────────────────────────────────────────────────────────
@@ -407,31 +445,37 @@ export class CashFlowService {
 
   async createIncome(tenantId: string, accountId: string, input: CreateIncomeInput): Promise<FinancialTransaction> {
     const targetAccountId = input.targetAccountId ?? accountId;
+    const invoice = this.invoiceFields(input.taxRateBps ?? null, input.issueDate ?? null);
 
     const now = nowISO();
     const id = generateId();
     const recurrence = input.recurrence ?? RecurrenceType.UNIQUE;
-    return this.transactionsRepo.create({
-      id,
-      tenantId,
-      type: TransactionType.INCOME,
-      description: input.description,
-      categoryId: input.categoryId,
-      amount: input.amount,
-      expectedDate: input.expectedDate,
-      actualDate: null,
-      status: TransactionStatus.PENDING,
-      sourceAccountId: null,
-      targetAccountId,
-      originType: null,
-      originId: null,
-      transferGroupId: null,
-      notes: input.notes ?? null,
-      recurrence,
-      recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,
-      recurringActive: true,
-      createdAt: now,
-      updatedAt: now,
+    return runInTransaction(async () => {
+      const created = await this.transactionsRepo.create({
+        id,
+        tenantId,
+        type: TransactionType.INCOME,
+        description: input.description,
+        categoryId: input.categoryId,
+        amount: input.amount,
+        expectedDate: input.expectedDate,
+        actualDate: null,
+        status: TransactionStatus.PENDING,
+        sourceAccountId: null,
+        targetAccountId,
+        originType: null,
+        originId: null,
+        transferGroupId: null,
+        ...invoice,
+        notes: input.notes ?? null,
+        recurrence,
+        recurringGroupId: recurrence === RecurrenceType.FIXED ? id : null,
+        recurringActive: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await this.syncInvoiceTaxFor(tenantId, [created]);
+      return created;
     });
   }
 
@@ -675,7 +719,17 @@ export class CashFlowService {
 
     // Para transações já pagas, a própria transação é o impacto financeiro.
     // Atualizar seus campos (amount, sourceAccountId, etc.) recalcula saldos automaticamente.
-    return this.transactionsRepo.update(id, { ...input, ...recurrencePatch, updatedAt: nowISO() }, tenantId);
+    const invoicePatch = this.invoicePatch(tx, input);
+    return runInTransaction(async () => {
+      const updated = await this.transactionsRepo.update(
+        id,
+        { ...input, ...recurrencePatch, ...invoicePatch, updatedAt: nowISO() },
+        tenantId,
+      );
+      // Chave antiga e nova: a NF pode ter mudado de mês ou de conta.
+      await this.syncInvoiceTaxFor(tenantId, [tx, updated]);
+      return updated;
+    });
   }
 
   private async updateFixedTransaction(
@@ -690,25 +744,41 @@ export class CashFlowService {
     const refKey = monthKey(referenceMonth, referenceYear);
     const groupId = existing.recurringGroupId ?? existing.id;
 
-    const updated = await this.transactionsRepo.update(existing.id, { ...input, updatedAt: now }, tenantId);
+    const invoicePatch = this.invoicePatch(existing, input);
 
-    if (scope === 'CURRENT_AND_FUTURE') {
-      // A data de cada ocorrência é individual — apenas os demais campos
-      // (valor, descrição, categoria, conta, notas) se propagam para as futuras.
-      const { expectedDate: _expectedDate, ...seriesPatch } = input;
-      const all = await this.transactionsRepo.findAll(tenantId);
-      const futureOccurrences = all.filter((t) => {
-        if (t.id === existing.id || t.recurringGroupId !== groupId) return false;
-        if (t.status !== TransactionStatus.PENDING) return false;
-        const my = monthYearOf(t.expectedDate);
-        return monthKey(my.month, my.year) > refKey;
-      });
-      for (const t of futureOccurrences) {
-        await this.transactionsRepo.update(t.id, { ...seriesPatch, updatedAt: now }, tenantId);
+    return runInTransaction(async () => {
+      const updated = await this.transactionsRepo.update(
+        existing.id,
+        { ...input, ...invoicePatch, updatedAt: now },
+        tenantId,
+      );
+      const touched: FinancialTransaction[] = [existing, updated];
+
+      if (scope === 'CURRENT_AND_FUTURE') {
+        // As datas de cada ocorrência (recebimento e emissão) são individuais —
+        // apenas os demais campos (valor, descrição, categoria, conta, notas,
+        // alíquota) se propagam para as futuras.
+        const { expectedDate: _expectedDate, issueDate: _issueDate, ...seriesPatch } = input;
+        const all = await this.transactionsRepo.findAll(tenantId);
+        const futureOccurrences = all.filter((t) => {
+          if (t.id === existing.id || t.recurringGroupId !== groupId) return false;
+          if (t.status !== TransactionStatus.PENDING) return false;
+          const my = monthYearOf(t.expectedDate);
+          return monthKey(my.month, my.year) > refKey;
+        });
+        for (const t of futureOccurrences) {
+          const future = await this.transactionsRepo.update(
+            t.id,
+            { ...seriesPatch, ...this.seriesInvoicePatch(t, seriesPatch.taxRateBps, updated), updatedAt: now },
+            tenantId,
+          );
+          touched.push(t, future);
+        }
       }
-    }
 
-    return updated;
+      await this.syncInvoiceTaxFor(tenantId, touched);
+      return updated;
+    });
   }
 
   private async deleteTransactionChecked(
@@ -742,10 +812,13 @@ export class CashFlowService {
       return this.deleteFixedTransaction(tx, tenantId, scope, referenceMonth, referenceYear);
     }
 
-    await this.transactionsRepo.update(id, {
-      status: TransactionStatus.CANCELED,
-      updatedAt: nowISO(),
-    }, tenantId);
+    await runInTransaction(async () => {
+      await this.transactionsRepo.update(id, {
+        status: TransactionStatus.CANCELED,
+        updatedAt: nowISO(),
+      }, tenantId);
+      await this.syncInvoiceTaxFor(tenantId, [tx]);
+    });
   }
 
   private async deleteFixedTransaction(
@@ -768,17 +841,21 @@ export class CashFlowService {
       return scope === 'CURRENT' ? key === refKey : key >= refKey;
     });
 
-    for (const t of toCancel) {
-      await this.transactionsRepo.update(t.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
-    }
+    await runInTransaction(async () => {
+      for (const t of toCancel) {
+        await this.transactionsRepo.update(t.id, { status: TransactionStatus.CANCELED, updatedAt: now }, tenantId);
+      }
 
-    if (scope === 'CURRENT_AND_FUTURE') {
-      for (const t of group) {
-        if (t.recurringActive) {
-          await this.transactionsRepo.update(t.id, { recurringActive: false, updatedAt: now }, tenantId);
+      if (scope === 'CURRENT_AND_FUTURE') {
+        for (const t of group) {
+          if (t.recurringActive) {
+            await this.transactionsRepo.update(t.id, { recurringActive: false, updatedAt: now }, tenantId);
+          }
         }
       }
-    }
+
+      await this.syncInvoiceTaxFor(tenantId, toCancel);
+    });
   }
 
   // ─── Recorrência (lançamentos fixos) ──────────────────────────────────────────
@@ -800,6 +877,7 @@ export class CashFlowService {
 
     const targetKey = monthKey(targetMonth, targetYear);
     const now = nowISO();
+    const created: FinancialTransaction[] = [];
 
     for (const group of groups.values()) {
       let latest = group[0];
@@ -815,6 +893,9 @@ export class CashFlowService {
       if (monthKey(latestMY.month, latestMY.year) >= targetKey) continue;
 
       const anchorDay = monthYearOf(anchor.expectedDate).day;
+      // Dia de emissão da âncora, pelo mesmo motivo do anchorDay: o clamp de
+      // um mês curto não pode encurtar a emissão dos meses seguintes.
+      const anchorIssueDay = anchor.issueDate ? monthYearOf(anchor.issueDate).day : undefined;
       let cursorMonth = latestMY.month;
       let cursorYear = latestMY.year;
 
@@ -826,7 +907,7 @@ export class CashFlowService {
         const newDate = new Date(next.year, next.month - 1, next.day).toISOString();
         const groupId = latest.recurringGroupId ?? latest.id;
 
-        await this.transactionsRepo.create({
+        const occurrence = await this.transactionsRepo.create({
           ...latest,
           id: generateId(),
           expectedDate: newDate,
@@ -834,11 +915,15 @@ export class CashFlowService {
           status: TransactionStatus.PENDING,
           recurringGroupId: groupId,
           recurringActive: true,
+          ...(latest.issueDate ? { issueDate: shiftedIssueDate(latest, newDate, anchorIssueDay) } : {}),
           createdAt: now,
           updatedAt: now,
         });
+        created.push(occurrence);
       }
     }
+
+    await this.syncInvoiceTaxFor(tenantId, created);
   }
 
   // Status "concluído" varia por tipo: INCOME vira RECEIVED (espelha Receivable),
@@ -876,13 +961,18 @@ export class CashFlowService {
     const effectiveDate = actualDate ?? tx.expectedDate;
     const amount = settledAmount ?? tx.amount;
 
-    return this.transactionsRepo.update(id, {
-      status: this.settledStatus(type),
-      expectedDate: effectiveDate,
-      actualDate: now,
-      amount,
-      updatedAt: now,
-    }, tenantId);
+    // A baixa move expectedDate, nunca issueDate: o mês do imposto não muda.
+    return runInTransaction(async () => {
+      const updated = await this.transactionsRepo.update(id, {
+        status: this.settledStatus(type),
+        expectedDate: effectiveDate,
+        actualDate: now,
+        amount,
+        updatedAt: now,
+      }, tenantId);
+      await this.syncInvoiceTaxFor(tenantId, [updated]);
+      return updated;
+    });
   }
 
   private async revertTransactionChecked(
@@ -902,11 +992,141 @@ export class CashFlowService {
       );
     }
 
-    return this.transactionsRepo.update(id, {
-      status: TransactionStatus.PENDING,
+    return runInTransaction(async () => {
+      const updated = await this.transactionsRepo.update(id, {
+        status: TransactionStatus.PENDING,
+        actualDate: null,
+        updatedAt: nowISO(),
+      }, tenantId);
+      // Desmarcar o pagamento do imposto volta o valor ao calculado.
+      await this.syncInvoiceTaxFor(tenantId, [updated]);
+      return updated;
+    });
+  }
+
+  // ─── Imposto sobre NF (docs/plano-imposto-nf.md) ────────────────────────────
+
+  // Alíquota e data de emissão andam juntas: sem alíquota a entrada não é NF
+  // e a emissão é descartada; com alíquota, a emissão é obrigatória.
+  private invoiceFields(
+    taxRateBps: number | null,
+    issueDate: string | null,
+  ): { taxRateBps: number | null; issueDate: string | null } {
+    if (taxRateBps == null) return { taxRateBps: null, issueDate: null };
+    if (!issueDate) {
+      throw new AppError('Informe a data de emissão da nota fiscal.', 400, 'invoiceTax.issueDateRequired');
+    }
+    return { taxRateBps, issueDate };
+  }
+
+  // Patch de NF de uma edição: só existe se a edição tocou em alíquota ou
+  // emissão, e é validado contra o estado resultante, não só contra o input.
+  private invoicePatch(
+    tx: FinancialTransaction,
+    input: TransactionMutationInput,
+  ): Partial<FinancialTransaction> {
+    if (input.taxRateBps === undefined && input.issueDate === undefined) return {};
+    return this.invoiceFields(
+      input.taxRateBps !== undefined ? input.taxRateBps : tx.taxRateBps ?? null,
+      input.issueDate !== undefined ? input.issueDate : tx.issueDate ?? null,
+    );
+  }
+
+  // Alíquota propagada para uma ocorrência futura ("esta e as futuras"): a
+  // emissão não se propaga; a futura que vira NF ganha a sua, deslocada a
+  // partir da ocorrência editada.
+  private seriesInvoicePatch(
+    future: FinancialTransaction,
+    taxRateBps: number | null | undefined,
+    source: FinancialTransaction,
+  ): Partial<FinancialTransaction> {
+    if (taxRateBps === undefined) return {};
+    if (taxRateBps === null) return { taxRateBps: null, issueDate: null };
+    return { taxRateBps, issueDate: future.issueDate ?? shiftedIssueDate(source, future.expectedDate) };
+  }
+
+  private async syncInvoiceTaxFor(tenantId: string, txs: FinancialTransaction[]): Promise<void> {
+    const keys = new Set(txs.map(invoiceTaxKeyOf).filter((k): k is string => k !== null));
+    for (const key of keys) {
+      await this.syncInvoiceTax(tenantId, key);
+    }
+  }
+
+  // Recalcula do zero a despesa "Imposto a pagar" de uma conta + competência,
+  // como a fatura de cartão: soma o imposto de cada NF pendente ou recebida.
+  // Sem NFs, cancela a despesa; uma NF nova reativa a mesma. Nunca mexe no
+  // vencimento escolhido nem numa despesa já paga (que guarda o valor real do DAS).
+  private async syncInvoiceTax(tenantId: string, originId: string): Promise<void> {
+    const parsed = parseInvoiceTaxOriginId(originId);
+    if (!parsed) return;
+
+    const all = await this.transactionsRepo.findAll(tenantId);
+    const expense = all.find((t) => t.originType === OriginType.INVOICE_TAX && t.originId === originId);
+    if (expense?.status === TransactionStatus.PAID) return;
+
+    const total = all
+      .filter(
+        (t) =>
+          t.originType !== OriginType.INVOICE_TAX &&
+          invoiceTaxKeyOf(t) === originId &&
+          (t.status === TransactionStatus.PENDING || t.status === TransactionStatus.RECEIVED),
+      )
+      .reduce((s, t) => s + calcInvoiceTax(t.amount, t.taxRateBps as number), 0);
+    const now = nowISO();
+
+    if (expense) {
+      const status = total > 0 ? TransactionStatus.PENDING : TransactionStatus.CANCELED;
+      const amount = total > 0 ? total : expense.amount;
+      if (expense.status !== status || expense.amount !== amount) {
+        await this.transactionsRepo.update(expense.id, { status, amount, updatedAt: now }, tenantId);
+      }
+      return;
+    }
+    if (total <= 0) return;
+
+    const account = await this.accountsRepo.findById(parsed.accountId, tenantId);
+    await this.transactionsRepo.create({
+      id: generateId(),
+      tenantId,
+      type: TransactionType.PAYMENT,
+      description: INVOICE_TAX_DESCRIPTION,
+      categoryId: await this.invoiceTaxCategoryId(tenantId),
+      amount: total,
+      expectedDate: invoiceTaxDueDate(parsed.competence, account?.invoiceTaxDueDay ?? DEFAULT_INVOICE_TAX_DUE_DAY),
       actualDate: null,
-      updatedAt: nowISO(),
-    }, tenantId);
+      status: TransactionStatus.PENDING,
+      // O imposto sai da própria conta da NF (padrão 8); o usuário pode trocar.
+      sourceAccountId: parsed.accountId,
+      targetAccountId: null,
+      originType: OriginType.INVOICE_TAX,
+      originId,
+      transferGroupId: null,
+      notes: null,
+      recurrence: RecurrenceType.UNIQUE,
+      recurringGroupId: null,
+      recurringActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // Categoria "Impostos" de despesa (padrão 11), criada se o tenant não tiver.
+  private async invoiceTaxCategoryId(tenantId: string): Promise<string | null> {
+    if (!this.categoriesRepo) return null;
+    const categories = await this.categoriesRepo.findByType(tenantId, CategoryType.EXPENSE);
+    const found = categories.find((c) => c.name.trim().toLowerCase() === INVOICE_TAX_CATEGORY.toLowerCase());
+    if (found) return found.id;
+    const now = nowISO();
+    const category = await this.categoriesRepo.create({
+      id: generateId(),
+      tenantId,
+      name: INVOICE_TAX_CATEGORY,
+      type: CategoryType.EXPENSE,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return category.id;
   }
 
   private async getTransactionChecked(

@@ -20,6 +20,7 @@
     "categoryId": { "invalid": "Invalid category" },
     "amount": { "positive": "Amount must be positive" },
     "expectedDate": { "required": "Expected date is required" },
+    "issueDate": { "invalid": "Invalid issue date" },
     "expectedPaymentDate": { "required": "Expected date is required" },
     "grossAmount": { "positive": "Gross amount must be positive" },
     "incomeCategoryId": { "invalid": "Invalid category" },
@@ -103,6 +104,9 @@
     "notSettledCannotRevert": "Only paid or received entries can be marked as unpaid.",
     "notFound": "Entry not found.",
     "wrongType": "Entry is not of type {{type}}."
+  },
+  "invoiceTax": {
+    "issueDateRequired": "Enter the invoice issue date."
   },
   "auth": {
     "invalidGoogleToken": "Invalid Google token",

@@ -50,8 +50,9 @@ export const deleteTransactionQuerySchema = z.object({
 
 export const updateTransactionQuerySchema = deleteTransactionQuerySchema;
 
-// Entrada nativa do fluxo de caixa (D2: sem campos de NF, sem split de reserva —
-// apenas descrição, categoria, valor, data, conta, notas, recorrência).
+// Entrada nativa do fluxo de caixa (sem split de reserva). A NF volta em versão
+// mínima (docs/plano-imposto-nf.md, revisão da D2): alíquota + data de emissão,
+// que o serviço exige juntas.
 export const createIncomeSchema = z.object({
   description: z.string().min(1, 'validation.description.required'),
   categoryId: z.string().uuid('validation.categoryId.invalid'),
@@ -60,6 +61,13 @@ export const createIncomeSchema = z.object({
   targetAccountId: z.string().uuid().nullable().optional(),
   notes: z.string().nullable().optional(),
   recurrence: z.nativeEnum(RecurrenceType).default(RecurrenceType.UNIQUE),
+  taxRateBps: z.number().int().min(0).max(10000).nullable().optional(),
+  // Define a chave do imposto (mês de competência): precisa começar por AAAA-MM-DD.
+  issueDate: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])/, 'validation.issueDate.invalid')
+    .nullable()
+    .optional(),
 });
 
 export const updateIncomeSchema = createIncomeSchema.partial();

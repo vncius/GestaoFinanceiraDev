@@ -79,7 +79,7 @@ async function main() {
   const categories = new CategoriesService(categoriesRepo);
   const bootstrap = new TenantBootstrapService(new AccountTypesService(accountTypesRepo), accounts, categories);
   const transfers = new TransfersService(transactionsRepo, accountsRepo);
-  const cashFlow = new CashFlowService(transactionsRepo, accountsRepo, invoicesRepo, cardsRepo, transfers);
+  const cashFlow = new CashFlowService(transactionsRepo, accountsRepo, invoicesRepo, cardsRepo, transfers, categoriesRepo);
   const cards = new CreditCardsService(cardsRepo, entriesRepo, installmentsRepo, invoicesRepo, transactionsRepo, categoriesRepo, accountsRepo);
 
   // Onboarding concluído: o app abre direto no Início.

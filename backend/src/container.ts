@@ -116,6 +116,7 @@ const cashFlowService = new CashFlowService(
   creditCardInvoicesRepo,
   creditCardsRepo,
   transfersService,
+  categoriesRepo,
 );
 const dashboardService = new DashboardService(
   cashFlowService,
