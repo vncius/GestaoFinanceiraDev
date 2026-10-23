@@ -32,7 +32,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 |---|---|---|---|---|---|
 | I0 | Decisão registrada (plano, link, domain-logic, revisão da D2) | — | ✅ | 2026-10-23 | ver git log |
 | I1 | Modelo, sem comportamento | I0 | ✅ | 2026-10-23 | ver git log |
-| I2 | Funções puras `invoice-tax.utils.ts` | I1 | ⬜ | | |
+| I2 | Funções puras `invoice-tax.utils.ts` | I1 | ✅ | 2026-10-23 | ver git log |
 | I3 | `syncInvoiceTax` e ganchos | I2 | ⬜ | | |
 | I4 | Bloqueios e valor real na baixa | I3 | ⬜ | | |
 | I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ⬜ | | |
@@ -50,6 +50,10 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 ### I1 — 2026-10-23
 - Campos todos **opcionais** nos tipos (`taxRateBps?`, `issueDate?`, `invoiceTax*?`): registros antigos não os têm e não há migração. `OriginType.INVOICE_TAX` só no backend (no frontend `originType` é `string`).
 - Zod: contas ganham `invoiceTaxEnabled`, `invoiceTaxDefaultRateBps` (0–10000), `invoiceTaxDueDay` (1–28, padrão 20 aplicado em `AccountsService.create`). Backup declara os campos novos (conta e transação). **Ainda não** aceitos nos schemas de criação/edição de transação: entram na I3.
+
+### I2 — 2026-10-23
+- `cash-flow/invoice-tax.utils.ts`: `competenceOf`, `calcInvoiceTax`, `invoiceTaxOriginId`/`parseInvoiceTaxOriginId`, `invoiceTaxDueDate` (ISO à meia-noite UTC, clamp em meses curtos), `DEFAULT_INVOICE_TAX_DUE_DAY`. Testes em `invoice-tax.utils.test.ts`.
+- O total da despesa é a **soma dos impostos por NF** (arredondados individualmente), não o imposto da soma; há teste cobrindo a diferença de 1 centavo. O `syncInvoiceTax` (I3) deve somar com `calcInvoiceTax` por NF.
 
 ---
 
