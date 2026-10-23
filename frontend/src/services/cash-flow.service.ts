@@ -19,6 +19,9 @@ export interface CreateIncomePayload {
   targetAccountId?: string | null;
   notes?: string | null;
   recurrence?: RecurrenceType;
+  // Nota fiscal (imposto sobre NF): alíquota e emissão andam juntas.
+  taxRateBps?: number | null;
+  issueDate?: string | null;
 }
 
 export interface PayTransactionPayload {

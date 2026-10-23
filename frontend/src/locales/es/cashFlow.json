@@ -194,7 +194,11 @@
       "payWithCard": "Tarjeta {{card}}",
       "installments": "Cuotas",
       "cash": "Al contado",
-      "installmentsN": "{{count}}x"
+      "installmentsN": "{{count}}x",
+      "invoice": "Factura",
+      "taxRate": "Alícuota (%)",
+      "issueDate": "Fecha de emisión",
+      "receiveDate": "Fecha de cobro"
     },
     "moreOptions": "Más opciones",
     "lessOptions": "Menos opciones",
@@ -208,8 +212,14 @@
     "validation": {
       "description": "Descripción",
       "category": "Categoría",
-      "amount": "Valor"
+      "amount": "Valor",
+      "taxRate": "Alícuota",
+      "issueDate": "Fecha de emisión"
     },
-    "cardHint": "Va a la factura de la tarjeta; se paga cuando se paga la factura."
+    "cardHint": "Va a la factura de la tarjeta; se paga cuando se paga la factura.",
+    "invoice": {
+      "preview": "Impuesto {{tax}} → \"Impuesto a pagar\" de {{month}}, vence {{due}}",
+      "issueAfterReceipt": "La emisión es posterior al cobro. Está bien si el pago fue adelantado."
+    }
   }
 }

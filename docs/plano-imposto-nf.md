@@ -37,7 +37,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | I4 | Bloqueios e valor real na baixa | I3 | ✅ | 2026-10-23 | ver git log |
 | I5 | Índice único, endpoint de leitura, `docs/api.md` | I4 | ✅ | 2026-10-23 | dac963d |
 | I6 | Tela: configuração na conta | I5 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
-| I7 | Tela: NF e alíquota na nova entrada | I6 | ⬜ | | |
+| I7 | Tela: NF e alíquota na nova entrada | I6 | ✅ (falta verificação visual) | 2026-10-23 | ver git log |
 | I8 | Tela: marcadores, modal, bloqueios, Limpar mês | I7 | ⬜ | | |
 | I9 | Acabamento | I8 | ⬜ | | |
 
@@ -84,6 +84,14 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 - Build e 126 testes do frontend verdes; typecheck do backend verde.
 - **Pendente:** verificação no navegador (desktop e 375px, claro e escuro). O login é só Google OAuth e não há bypass de dev, então não consegui entrar na sessão. Fazer manualmente: Configurações → Contas → editar conta → marcar a opção.
 - Próximo: I7 (Chat 4, Opus · medium).
+
+### I7 — 2026-10-23
+- `MovementModal.tsx`: em entradas, checkbox "Nota fiscal" (à vista quando a conta escolhida tem `invoiceTaxEnabled`; em "Mais opções" nas outras). Com NF: alíquota (%) ao lado do valor, depois **Data de emissão** e **Data de recebimento** lado a lado, aviso âmbar se emissão > recebimento, e prévia "Imposto R$ … → "Imposto a pagar" de mmm/aa, vence dd/mm/aaaa".
+- Estado `invoice`/`taxRate`/`issueDate` = `null` significa "acompanha o padrão" (conta e data de recebimento); depois de editado, deixa de acompanhar. Trocar a conta no formulário reaplica o padrão da nova conta enquanto não houve edição.
+- Validação: alíquota (0–100) e emissão obrigatórias com NF. Payload só leva `taxRateBps`/`issueDate` quando é NF; ao desmarcar uma entrada que era NF, manda `null` nos dois (limpa).
+- A prévia usa o dia de vencimento da conta (padrão 20) e o mês seguinte à emissão; saída e cartão ignoram NF.
+- Testes novos no describe "nota fiscal (I7)". Frontend: build e 129 testes verdes. **Pendente:** verificação visual manual (desktop/375px, claro/escuro), junto com a I6.
+- Edição de NF com imposto pago: o backend recusa (`invoiceTax.paidLocksInvoice`); o aviso/bloqueio na tela é da I8.
 
 ---
 

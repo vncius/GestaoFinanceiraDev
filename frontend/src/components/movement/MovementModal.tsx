@@ -9,8 +9,9 @@ import { DateInput } from '../ui/DateInput';
 import { CategorySelect } from '../ui/CategorySelect';
 import { CreateIncomePayload, CreateTransactionPayload } from '../../services/cash-flow.service';
 import { CreateCardEntryPayload } from '../../services/credit-cards.service';
-import { floatToCents, centsToFloat } from '../../utils/money';
-import { toInputDate, defaultEntryDateISO } from '../../utils/date';
+import { floatToCents, centsToFloat, formatCurrency } from '../../utils/money';
+import { toInputDate, defaultEntryDateISO, monthYearFromDate, formatMonthYearShort } from '../../utils/date';
+import i18n from '../../i18n';
 import { useDialog } from '../../contexts/DialogContext';
 import { getMissingFields, missingFieldsMessage } from '../../utils/validation';
 import { sortByName } from '../../utils/sort';
@@ -29,6 +30,7 @@ export type MovementSubmit =
   | { kind: 'card'; cardId: string; payload: CreateCardEntryPayload };
 
 const PAY_WITH_ACCOUNT = 'account';
+const INTL_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US', es: 'es-ES' };
 
 const INPUT =
   'w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60';
@@ -57,6 +59,10 @@ interface FormState {
   // 'account' ou id do cartão
   payWith: string;
   installments: string;
+  // Nota fiscal (só entradas). null = acompanha o padrão da conta / a data de recebimento.
+  invoice: boolean | null;
+  taxRate: string | null; // em %
+  issueDate: string | null;
 }
 
 export function MovementModal({
@@ -125,6 +131,9 @@ export function MovementModal({
       notes: tx?.notes ?? '',
       payWith: PAY_WITH_ACCOUNT,
       installments: '1',
+      invoice: tx ? tx.taxRateBps != null : null,
+      taxRate: tx?.taxRateBps != null ? String(tx.taxRateBps / 100) : null,
+      issueDate: tx?.taxRateBps != null && tx.issueDate ? toInputDate(tx.issueDate) : null,
     };
   };
 
@@ -143,6 +152,32 @@ export function MovementModal({
     setLastOpen(true);
   }
   if (!open && lastOpen) setLastOpen(false);
+
+  // Nota fiscal: a conta escolhida define o padrão (marcada, alíquota); depois de
+  // editados, os campos param de acompanhá-la.
+  const account = activeAccounts.find((a) => a.id === form.accountId);
+  const accountEmitsInvoice = !!account?.invoiceTaxEnabled;
+  const invoiceOn = form.direction === 'in' && (form.invoice ?? accountEmitsInvoice);
+  const defaultRate = account?.invoiceTaxDefaultRateBps != null ? String(account.invoiceTaxDefaultRateBps / 100) : '';
+  const taxRate = form.taxRate ?? defaultRate;
+  const issueDate = form.issueDate ?? form.date;
+  const rateNum = parseFloat(taxRate);
+  const rateValid = taxRate.trim() !== '' && Number.isFinite(rateNum) && rateNum >= 0 && rateNum <= 100;
+  const rateBps = rateValid ? Math.round(rateNum * 100) : 0;
+  const amountCents = floatToCents(parseFloat(form.amount) || 0);
+  const taxCents = Math.round((amountCents * rateBps) / 10_000);
+  const dueDay = account?.invoiceTaxDueDay ?? 20;
+  const issueAfterReceipt = invoiceOn && !!issueDate && !!form.date && issueDate > form.date;
+  const duePreview = (() => {
+    if (!issueDate) return null;
+    const { month: m, year: y } = monthYearFromDate(issueDate);
+    const next = m === 12 ? { month: 1, year: y + 1 } : { month: m + 1, year: y };
+    const day = String(dueDay).padStart(2, '0');
+    return {
+      month: formatMonthYearShort(next.month, next.year, INTL_LOCALE[i18n.language] ?? 'pt-BR'),
+      date: `${day}/${String(next.month).padStart(2, '0')}/${next.year}`,
+    };
+  })();
 
   const kind: MovementFormKind = form.direction === 'in' ? 'income' : form.extra ? 'extra' : 'payment';
   const activeCards = sortByName(cards.filter((c) => c.active));
@@ -166,6 +201,12 @@ export function MovementModal({
       { label: t('movementForm.validation.description'), valid: !!form.description.trim() },
       { label: t('movementForm.validation.category'), valid: !!form.categoryId },
       { label: t('movementForm.validation.amount'), valid: !!amount },
+      ...(invoiceOn
+        ? [
+            { label: t('movementForm.validation.taxRate'), valid: rateValid },
+            { label: t('movementForm.validation.issueDate'), valid: !!issueDate },
+          ]
+        : []),
     ]);
     if (missing.length > 0) { await alert(missingFieldsMessage(missing)); return; }
 
@@ -195,11 +236,18 @@ export function MovementModal({
       notes: form.notes || null,
       recurrence: form.recurrence,
     };
-    const account = form.accountId || null;
+    const accountId = form.accountId || null;
     if (kind === 'income') {
-      onSubmit({ kind, payload: { ...base, targetAccountId: account }, settleNow: form.settleNow });
+      // Só manda os campos de NF quando é NF ou quando a entrada editada era NF (para limpar).
+      const hadInvoice = item?.tx.taxRateBps != null;
+      const invoiceFields = invoiceOn
+        ? { taxRateBps: rateBps, issueDate: new Date(issueDate).toISOString() }
+        : hadInvoice
+        ? { taxRateBps: null, issueDate: null }
+        : {};
+      onSubmit({ kind, payload: { ...base, targetAccountId: accountId, ...invoiceFields }, settleNow: form.settleNow });
     } else {
-      onSubmit({ kind, payload: { ...base, sourceAccountId: account }, settleNow: form.settleNow });
+      onSubmit({ kind, payload: { ...base, sourceAccountId: accountId }, settleNow: form.settleNow });
     }
   }
 
@@ -223,7 +271,19 @@ export function MovementModal({
     </Field>
   );
 
-  const directionButton = (direction: 'in' | 'out') => {
+  const invoiceToggle = (
+    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
+      <input
+        type="checkbox"
+        className="rounded"
+        checked={invoiceOn}
+        onChange={(e) => setForm((f) => ({ ...f, invoice: e.target.checked }))}
+      />
+      {t('movementForm.fields.invoice')}
+    </label>
+  );
+
+  const directionButton =(direction: 'in' | 'out') => {
     const active = form.direction === direction;
     const tone = direction === 'in'
       ? 'bg-green-600 text-white'
@@ -298,10 +358,47 @@ export function MovementModal({
           <Field label={t('movementForm.fields.amount')}>
             <CurrencyInput className={INPUT} value={form.amount} onChange={(v) => setForm((f) => ({ ...f, amount: v }))} />
           </Field>
-          <Field label={t('movementForm.fields.date')}>
-            <DateInput className={INPUT} value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
-          </Field>
+          {invoiceOn ? (
+            <Field label={t('movementForm.fields.taxRate')}>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                inputMode="decimal"
+                className={INPUT}
+                value={taxRate}
+                onChange={(e) => setForm((f) => ({ ...f, taxRate: e.target.value }))}
+                placeholder="6"
+              />
+            </Field>
+          ) : (
+            <Field label={t('movementForm.fields.date')}>
+              <DateInput className={INPUT} value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
+            </Field>
+          )}
         </div>
+
+        {invoiceOn && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t('movementForm.fields.issueDate')}>
+                <DateInput className={INPUT} value={issueDate} onChange={(v) => setForm((f) => ({ ...f, issueDate: v }))} />
+              </Field>
+              <Field label={t('movementForm.fields.receiveDate')}>
+                <DateInput className={INPUT} value={form.date} onChange={(v) => setForm((f) => ({ ...f, date: v }))} />
+              </Field>
+            </div>
+            {issueAfterReceipt && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">{t('movementForm.invoice.issueAfterReceipt')}</p>
+            )}
+            {rateValid && amountCents > 0 && duePreview && (
+              <p className="text-xs text-gray-600 dark:text-gray-300 rounded-lg bg-gray-50 dark:bg-gray-900/40 px-3 py-2">
+                {t('movementForm.invoice.preview', { tax: formatCurrency(taxCents), month: duePreview.month, due: duePreview.date })}
+              </p>
+            )}
+          </>
+        )}
 
         <Field label={t('movementForm.fields.category')}>
           <CategorySelect
@@ -351,6 +448,8 @@ export function MovementModal({
           </label>
         )}
 
+        {isIn && accountEmitsInvoice && invoiceToggle}
+
         <button
           type="button"
           onClick={() => setMoreOpen((o) => !o)}
@@ -392,6 +491,8 @@ export function MovementModal({
                 <p className="ml-6 text-xs text-gray-500 dark:text-gray-400">{t('movementForm.fields.extraHint')}</p>
               </div>
             )}
+
+            {isIn && !accountEmitsInvoice && invoiceToggle}
 
             {activeAccounts.length > 1 && !accountProminent && !payingWithCard && accountField}
 

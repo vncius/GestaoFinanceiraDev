@@ -91,6 +91,43 @@ describe('MovementModal', () => {
   });
 });
 
+describe('MovementModal — nota fiscal (I7)', () => {
+  const nfAccounts = [
+    { id: 'a1', name: 'PJ', active: true, invoiceTaxEnabled: true, invoiceTaxDefaultRateBps: 600, invoiceTaxDueDay: 20 },
+  ] as never;
+
+  it('conta que emite NF: marcada, alíquota padrão, prévia e payload com alíquota e emissão', () => {
+    const { onSubmit } = renderForm({ accounts: nfAccounts });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrada' }));
+    fill('Cliente', '1000000');
+    expect((screen.getByLabelText('Nota fiscal') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByPlaceholderText('6') as HTMLInputElement).value).toBe('6');
+    expect(screen.getByText(/Imposto R\$\s600,00/)).toBeTruthy();
+    fireEvent.click(screen.getByText('Salvar'));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'income', payload: expect.objectContaining({ taxRateBps: 600, issueDate: expect.any(String) }) }),
+    );
+  });
+
+  it('alíquota vazia bloqueia o salvamento', () => {
+    const { onSubmit } = renderForm({ accounts: nfAccounts });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrada' }));
+    fill('Cliente', '1000000');
+    fireEvent.change(screen.getByPlaceholderText('6'), { target: { value: '' } });
+    fireEvent.click(screen.getByText('Salvar'));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('conta sem NF: entrada comum não manda alíquota', () => {
+    const { onSubmit } = renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Entrada' }));
+    fill('Salário', '500000');
+    fireEvent.click(screen.getByText('Salvar'));
+    const payload = (onSubmit.mock.calls[0][0] as unknown as { payload: Record<string, unknown> }).payload;
+    expect('taxRateBps' in payload).toBe(false);
+  });
+});
+
 describe('MovementModal — compra no cartão (U18)', () => {
   const cards = [{ id: 'nu', name: 'Nubank', active: true }] as never;
 

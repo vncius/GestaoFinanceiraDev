@@ -194,7 +194,11 @@
       "payWithCard": "{{card}} card",
       "installments": "Installments",
       "cash": "Single payment",
-      "installmentsN": "{{count}}x"
+      "installmentsN": "{{count}}x",
+      "invoice": "Invoice",
+      "taxRate": "Tax rate (%)",
+      "issueDate": "Issue date",
+      "receiveDate": "Receipt date"
     },
     "moreOptions": "More options",
     "lessOptions": "Fewer options",
@@ -208,8 +212,14 @@
     "validation": {
       "description": "Description",
       "category": "Category",
-      "amount": "Amount"
+      "amount": "Amount",
+      "taxRate": "Tax rate",
+      "issueDate": "Issue date"
     },
-    "cardHint": "Goes to the card invoice; it's paid when the invoice is paid."
+    "cardHint": "Goes to the card invoice; it's paid when the invoice is paid.",
+    "invoice": {
+      "preview": "Tax {{tax}} → \"Tax payable\" for {{month}}, due {{due}}",
+      "issueAfterReceipt": "The issue date is after the receipt date. Fine if payment was made in advance."
+    }
   }
 }

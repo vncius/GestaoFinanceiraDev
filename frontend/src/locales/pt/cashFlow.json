@@ -194,7 +194,11 @@
       "payWithCard": "Cartão {{card}}",
       "installments": "Parcelas",
       "cash": "À vista",
-      "installmentsN": "{{count}}x"
+      "installmentsN": "{{count}}x",
+      "invoice": "Nota fiscal",
+      "taxRate": "Alíquota (%)",
+      "issueDate": "Data de emissão",
+      "receiveDate": "Data de recebimento"
     },
     "moreOptions": "Mais opções",
     "lessOptions": "Menos opções",
@@ -208,8 +212,14 @@
     "validation": {
       "description": "Descrição",
       "category": "Categoria",
-      "amount": "Valor"
+      "amount": "Valor",
+      "taxRate": "Alíquota",
+      "issueDate": "Data de emissão"
     },
-    "cardHint": "Vai para a fatura do cartão; o pagamento acontece quando a fatura for paga."
+    "cardHint": "Vai para a fatura do cartão; o pagamento acontece quando a fatura for paga.",
+    "invoice": {
+      "preview": "Imposto {{tax}} → \"Imposto a pagar\" de {{month}}, vence {{due}}",
+      "issueAfterReceipt": "A emissão é depois do recebimento. Tudo bem se o pagamento foi adiantado."
+    }
   }
 }

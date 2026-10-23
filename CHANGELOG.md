@@ -26,6 +26,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Suíte de testes de segurança de nível HTTP (`backend/src/security.http.test.ts`, 14 casos): cabeçalhos, exigência de autenticação, token de sessão forjado, CSRF, injeção de operador Mongo, poluição de protótipo, limite de corpo, JSON malformado, CORS e rate limit de login. A montagem do app saiu de `server.ts` para `backend/src/app.ts` para o teste exercitar os middlewares reais sem subir o banco.
 
 ### Added
+- Imposto sobre NF (I7): na nova entrada, opção "Nota fiscal" com alíquota (padrão da conta), datas de emissão e de recebimento e prévia do imposto e do vencimento.
 - Imposto sobre NF (I6): no cadastro da conta, "Esta conta emite nota fiscal" com alíquota padrão (%) e dia de vencimento (1–28, padrão 20).
 - **Plano de simplificação da UX** (`docs/plano-simplificacao-ux.md`, entregas U1–U21) e `CLAUDE.md` apontando para ele.
 - U1: `CashFlowSummary` ganha `pendingIncome`/`pendingExpenses` (+ contagens) — o que ainda falta receber/pagar **só no mês selecionado**, sem acumular; e `frontend/src/utils/month-summary.ts` (`summarizeMonth`), regra única de leitura do resumo usada por Dashboard, Fluxo de Caixa e Relatório.
