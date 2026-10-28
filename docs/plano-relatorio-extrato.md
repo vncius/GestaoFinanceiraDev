@@ -84,6 +84,7 @@ R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar,
 - Página do relatório: "Voltar" volta para a tela de origem (`navigate(-1)` quando há histórico; aberta direto, vai ao Dashboard). Link do Dashboard sem mudança.
 - `CHANGELOG.md` com a entrada do relatório (Added) e a mudança do CSV (Changed). Seed-demo já tinha NF, imposto, transferência, reserva automática e fatura com parcelas/estorno (I9), sem mudança.
 - **Verificação manual que ficou pendente** (o app só entra com login Google, que não dá para fazer daqui): (1) abrir o XLSX, com gráficos, no Excel, no LibreOffice e no Google Sheets, sem aviso de reparo; (2) `/report` em desktop e 375px, tema claro e escuro, e prévia de impressão A4; (3) os totais conferidos contra a tela, num mês do seed-demo. Se o XLSX pedir reparo, seguir o plano B da R3.
+- **2026-10-28:** item (1) feito — o usuário abriu os XLSX de exemplo (pt e en, com os dois gráficos, gerados após a revisão da R3) sem aviso de reparo. Seguem pendentes os itens (2) e (3).
 
 ## 1. Pedido
 
