@@ -132,6 +132,7 @@ Relatório do extrato do mês (ver [`docs/plano-relatorio-extrato.md`](plano-rel
 | Método | Rota                 | Query |
 |--------|----------------------|-------|
 | GET    | `/reports/statement` | `?month=&year=` (obrigatórios) `&accountId=` (opcional; sem ele = todas as contas ativas). Retorna `{ month, year, scope: { accountId, accountName }, generatedAt, summary, accounts, categories: { income, expenses }, evolution, incomes, expenses, invoices, transfers }`. `summary` é o mesmo do `GET /cash-flow` no mesmo escopo; `categories` e `evolution` (12 meses, só realizado) vêm do Dashboard; `accounts` traz saldo inicial e final (realizado) do mês por conta; `invoices` lista as faturas da referência com as compras (sem o crédito do pagamento nem parcelas canceladas; estorno com valor negativo e `refund: true`). No consolidado, transferências entre contas ativas não aparecem. Auditado como `statement_exported` (`format: 'json'`, mês, ano e escopo). |
+| GET    | `/reports/statement/xlsx` | Mesma query de `/reports/statement` + `&lang=pt\|en\|es` (padrão `pt`; rótulos das abas e colunas). Retorna o `.xlsx` como anexo (`extrato-AAAA-MM-todas-as-contas.xlsx` ou `extrato-AAAA-MM-<conta-slug>.xlsx`) com as abas Resumo, Entradas, Saídas, Cartões, Transferências, Categorias e Evolução. Auditado como `statement_exported` (`format: 'xlsx'`). |
 
 ## Backup
 

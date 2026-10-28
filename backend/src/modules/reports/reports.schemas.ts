@@ -8,3 +8,7 @@ export const statementQuerySchema = z.object({
 });
 
 export type StatementQuery = z.infer<typeof statementQuerySchema>;
+
+export const statementXlsxQuerySchema = statementQuerySchema.extend({
+  lang: z.enum(['pt', 'en', 'es']).default('pt'),
+});

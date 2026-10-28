@@ -23,4 +23,11 @@ router.get(
   asyncHandler((req, res) => controller.getStatement(req, res)),
 );
 
+// Planilha Excel do mesmo conjunto de dados; `lang` escolhe os rótulos.
+router.get(
+  '/statement/xlsx',
+  audit('statement_exported', statementDetails('xlsx')),
+  asyncHandler((req, res) => controller.getStatementXlsx(req, res)),
+);
+
 export default router;

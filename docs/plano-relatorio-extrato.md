@@ -34,7 +34,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 |---|---|---|---|---|---|
 | R0 | Plano registrado (este arquivo, link no `CLAUDE.md`) | — | ✅ | 2026-10-28 | ver git log |
 | R1 | Conjunto de dados do relatório (`GET /reports/statement`) | R0 | ✅ | 2026-10-28 | ver git log |
-| R2 | XLSX com abas e formatação | R1 | ⬜ | | |
+| R2 | XLSX com abas e formatação | R1 | ✅ | 2026-10-28 | ver git log |
 | R3 | Gráficos nativos no XLSX | R2 | ⬜ | | |
 | R4 | PDF pela página de relatório, com gráficos em SVG | R1 | ⬜ | | |
 | R5 | Menu "Exportar", escopo, CSV só no Backup, acabamento | R2, R4 | ⬜ | | |
@@ -55,6 +55,13 @@ R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar,
 - `categoryName: null` = sem categoria (R2/R4 traduzem). `categories` vem do Dashboard e ainda traz o rótulo "Sem categoria" em PT com `categoryId: null` — traduzir pelo `categoryId`.
 - Auditoria: `createAuditAction(action, extraDetails?)` aceita detalhes extras; `GET /reports/statement` grava `statement_exported` com `{ format: 'json', month, year, scope: 'account'|'all' }`. R2 usa o mesmo com `format: 'xlsx'`.
 - Sem CHANGELOG nesta entrega (nada visível ainda; entra na R5).
+
+### R2 — 2026-10-28
+- `exceljs@4.4` no backend. Arquivos: `reports.labels.ts` (rótulos pt/en/es), `reports.xlsx.ts` (`buildStatementXlsx(report, lang)`), rota `GET /reports/statement/xlsx?…&lang=` (controller gera o slug ASCII do nome do arquivo; auditoria `statement_exported` com `format: 'xlsx'`).
+- Abas conforme a 4.2. Entradas e Saídas são tabelas do Excel (filtro, total por `totalsRowFunction: 'sum'` = SUBTOTAL); Saídas traz as faturas como uma linha cada (vencimento, tipo "Fatura do cartão", situação Paga/A pagar). Cartões: bloco por fatura, subtotal por cartão e total geral. Transferências: valor com sinal pela `direction`. Categorias com barra de dados (conditional formatting). Evolução em texto "MM/AAAA".
+- Valor em reais com formato `"R$" #,##0.00` fixo (sem moeda configurável). Aba sem dados mostra "Sem lançamentos no período" em vez de tabela vazia.
+- `npm audit`: exceljs traz `uuid` antigo como dependência transitiva (+2 moderadas, sem uso de `v4(buffer)` pelo nosso código).
+- **Pendente:** abrir o arquivo no Excel, LibreOffice e Google Sheets (conferência manual, não feita aqui) — testes só leem de volta com ExcelJS. Gráficos ficam para R3 (a aba Resumo deixa espaço abaixo da tabela de contas).
 
 ## 1. Pedido
 
