@@ -33,7 +33,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | # | Entrega | Depende de | Status | Concluída em | Commit |
 |---|---|---|---|---|---|
 | R0 | Plano registrado (este arquivo, link no `CLAUDE.md`) | — | ✅ | 2026-10-28 | ver git log |
-| R1 | Conjunto de dados do relatório (`GET /reports/statement`) | R0 | ⬜ | | |
+| R1 | Conjunto de dados do relatório (`GET /reports/statement`) | R0 | ✅ | 2026-10-28 | ver git log |
 | R2 | XLSX com abas e formatação | R1 | ⬜ | | |
 | R3 | Gráficos nativos no XLSX | R2 | ⬜ | | |
 | R4 | PDF pela página de relatório, com gráficos em SVG | R1 | ⬜ | | |
@@ -45,6 +45,16 @@ R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar,
 
 ### R0 — 2026-10-28
 - Avaliação feita sobre `backup.service.ts:155` (CSV atual). Recomendação aceita pelo usuário: XLSX primeiro, PDF pela página `/report`, mesma base de dados.
+
+### R1 — 2026-10-28
+- Módulo `backend/src/modules/reports/` (types, schemas, service, controller, routes), montado em `/reports` no `app.ts`; `docs/api.md` com a seção Reports. Tipos finais em `reports.types.ts` (fonte de verdade para R2 e R4).
+- Um só `loadDataset` por requisição: `DashboardService.getDashboard` ganhou um 3º parâmetro opcional `dataset` (mesmo padrão do `getCashFlow`). Categorias, compras e parcelas são lidas de novo pelo relatório (só leitura, sem efeito colateral).
+- Desvios/acréscimos ao formato da 4.1: `id` em `StatementLine`, `StatementInvoice` e `StatementTransfer`; `accounts` traz `initialBalance` e `balance` = **saldo realizado no fim do mês** (não o saldo atual do Dashboard), para somar `summary.initialBalance`/`realizedBalance`; com conta, `accounts` tem só ela. `StatementTransfer` = `{ id, date, description, direction: 'in'|'out', fromAccountName, toAccountName, amount, settled, autoReserve }`.
+- Compras: `amount` **com sinal** (estorno negativo, como na fatura), então a soma das compras = `total`. Fatura sem compra e com total 0 sai da lista.
+- `date` das linhas: `actualDate` quando realizada, senão `expectedDate` (pode cair fora do mês quando a baixa foi em outro mês — o agrupamento por mês continua o da tela, pela prevista).
+- `categoryName: null` = sem categoria (R2/R4 traduzem). `categories` vem do Dashboard e ainda traz o rótulo "Sem categoria" em PT com `categoryId: null` — traduzir pelo `categoryId`.
+- Auditoria: `createAuditAction(action, extraDetails?)` aceita detalhes extras; `GET /reports/statement` grava `statement_exported` com `{ format: 'json', month, year, scope: 'account'|'all' }`. R2 usa o mesmo com `format: 'xlsx'`.
+- Sem CHANGELOG nesta entrega (nada visível ainda; entra na R5).
 
 ## 1. Pedido
 

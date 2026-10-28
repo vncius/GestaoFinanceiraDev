@@ -17,6 +17,7 @@ Valores monetários são sempre inteiros em centavos, tanto no corpo das requisi
 - [Transfers](#transfers)
 - [Credit Cards](#credit-cards)
 - [Dashboard](#dashboard)
+- [Reports](#reports)
 - [Backup](#backup)
 
 ---
@@ -123,6 +124,14 @@ Agregações para a tela inicial (saldos, resumo do mês, alertas, vencimentos p
 | Método | Rota         | Query |
 |--------|--------------|-------|
 | GET    | `/dashboard`   | `?month=&year=&upcomingDays=` (default 15) `&evolutionMonths=` (default 6) `&accountId=` — todos opcionais, exceto `accountId` quando `settings.dashboardScope === 'ACCOUNT'` (`400 dashboard.accountRequired` se faltar). Em `CONSOLIDATED` (default), `monthSummary`/`upcomingDues`/`alerts`/`monthlyEvolution`/`categoryBreakdown` somam todas as contas ativas; em `ACCOUNT`, são só da conta informada. `accounts.list`/`totalBalance` sempre listam todas as contas, nos dois modos. |
+
+## Reports
+
+Relatório do extrato do mês (ver [`docs/plano-relatorio-extrato.md`](plano-relatorio-extrato.md)). Base única do XLSX e da página de impressão. Valores em centavos.
+
+| Método | Rota                 | Query |
+|--------|----------------------|-------|
+| GET    | `/reports/statement` | `?month=&year=` (obrigatórios) `&accountId=` (opcional; sem ele = todas as contas ativas). Retorna `{ month, year, scope: { accountId, accountName }, generatedAt, summary, accounts, categories: { income, expenses }, evolution, incomes, expenses, invoices, transfers }`. `summary` é o mesmo do `GET /cash-flow` no mesmo escopo; `categories` e `evolution` (12 meses, só realizado) vêm do Dashboard; `accounts` traz saldo inicial e final (realizado) do mês por conta; `invoices` lista as faturas da referência com as compras (sem o crédito do pagamento nem parcelas canceladas; estorno com valor negativo e `refund: true`). No consolidado, transferências entre contas ativas não aparecem. Auditado como `statement_exported` (`format: 'json'`, mês, ano e escopo). |
 
 ## Backup
 

@@ -35,6 +35,7 @@ import { CashFlowService } from './modules/cash-flow/cash-flow.service';
 import { TransfersService } from './modules/transfers/transfers.service';
 import { DashboardService } from './modules/dashboard/dashboard.service';
 import { BackupService } from './modules/backup/backup.service';
+import { ReportsService } from './modules/reports/reports.service';
 import { OnboardingService } from './modules/onboarding/onboarding.service';
 import { OnboardingDraftService } from './modules/onboarding/onboarding-draft.service';
 import { createOnboardingToolRegistry } from './modules/onboarding/onboarding-tools';
@@ -55,6 +56,7 @@ import { CashFlowController } from './modules/cash-flow/cash-flow.controller';
 import { TransfersController } from './modules/transfers/transfers.controller';
 import { DashboardController } from './modules/dashboard/dashboard.controller';
 import { BackupController } from './modules/backup/backup.controller';
+import { ReportsController } from './modules/reports/reports.controller';
 import { OnboardingController } from './modules/onboarding/onboarding.controller';
 
 // ─── Repositórios (uma instância por coleção do MongoDB) ────────────────────────
@@ -120,6 +122,13 @@ const cashFlowService = new CashFlowService(
 );
 const dashboardService = new DashboardService(
   cashFlowService,
+  categoriesRepo,
+  creditCardEntriesRepo,
+  creditCardInstallmentsRepo,
+);
+const reportsService = new ReportsService(
+  cashFlowService,
+  dashboardService,
   categoriesRepo,
   creditCardEntriesRepo,
   creditCardInstallmentsRepo,
@@ -192,6 +201,7 @@ export const controllers = {
   transfers: new TransfersController(transfersService),
   dashboard: new DashboardController(dashboardService),
   backup: new BackupController(backupService),
+  reports: new ReportsController(reportsService),
   onboarding: new OnboardingController(
     onboardingService,
     onboardingDraftService,

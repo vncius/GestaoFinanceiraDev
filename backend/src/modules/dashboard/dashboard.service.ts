@@ -34,7 +34,13 @@ export class DashboardService {
     private readonly installmentsRepo: CreditCardInstallmentsRepository,
   ) {}
 
-  async getDashboard(tenantId: string, query: DashboardQuery): Promise<DashboardResponse> {
+  // `dataset`: retrato já lido pelo chamador (o relatório do extrato), para não
+  // materializar os fixos nem reler as coleções duas vezes na mesma requisição.
+  async getDashboard(
+    tenantId: string,
+    query: DashboardQuery,
+    dataset?: CashFlowDataset,
+  ): Promise<DashboardResponse> {
     const now = new Date();
     const month = query.month ?? now.getMonth() + 1;
     const year = query.year ?? now.getFullYear();
@@ -50,7 +56,8 @@ export class DashboardService {
     // cálculos daqui e os resumos por conta lá embaixo. Vem primeiro porque
     // materializa a recorrência fixa da referência: ler as transações antes
     // disso deixaria o dashboard com um retrato sem as ocorrências recém-criadas.
-    const cashFlowData: CashFlowDataset = await this.cashFlowService.loadDataset(tenantId, month, year);
+    const cashFlowData: CashFlowDataset =
+      dataset ?? (await this.cashFlowService.loadDataset(tenantId, month, year));
     const {
       transactions: allTransactions,
       accounts: allAccounts,

@@ -12,6 +12,8 @@ export type AuditLogAction =
   | 'backup_imported'
   | 'backup_exported'
   | 'csv_exported'
+  // Relatório do extrato (plano do relatório): details traz formato, mês e escopo.
+  | 'statement_exported'
   | 'statement_imported'
   | 'invoice_imported';
 

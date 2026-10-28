@@ -11,11 +11,14 @@ function pathOf(req: Request): string {
   return req.originalUrl.split('?')[0];
 }
 
+type AuditDetails = (req: Request) => Record<string, string | number>;
+
 function recordOnSuccess(
   auditLog: AuditLogService,
   req: Request,
   res: Response,
   action: AuditLogAction,
+  extraDetails?: AuditDetails,
 ): void {
   res.on('finish', () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
@@ -25,16 +28,20 @@ function recordOnSuccess(
       userId: req.userId,
       ip: req.clientIp,
       userAgent: req.get('user-agent'),
-      details: { method: req.method, path: pathOf(req) },
+      details: { method: req.method, path: pathOf(req), ...extraDetails?.(req) },
     });
   });
 }
 
-/** Middleware de rota: audita a ação quando a rota responder com sucesso. */
+/**
+ * Middleware de rota: audita a ação quando a rota responder com sucesso.
+ * `extraDetails` acrescenta contexto (ex.: formato e mês de um relatório) —
+ * nunca dados financeiros nem pessoais.
+ */
 export function createAuditAction(auditLog: AuditLogService) {
-  return (action: AuditLogAction): RequestHandler =>
+  return (action: AuditLogAction, extraDetails?: AuditDetails): RequestHandler =>
     (req, res, next) => {
-      recordOnSuccess(auditLog, req, res, action);
+      recordOnSuccess(auditLog, req, res, action, extraDetails);
       next();
     };
 }

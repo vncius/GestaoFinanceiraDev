@@ -22,6 +22,7 @@ import transfersRouter from './modules/transfers/transfers.routes';
 import creditCardsRouter from './modules/credit-cards/credit-cards.routes';
 import dashboardRouter from './modules/dashboard/dashboard.routes';
 import backupRouter from './modules/backup/backup.routes';
+import reportsRouter from './modules/reports/reports.routes';
 import onboardingRouter from './modules/onboarding/onboarding.routes';
 
 // Montagem do app Express (middlewares + rotas), separada de server.ts para
@@ -90,6 +91,7 @@ app.use('/transfers', transfersRouter);
 app.use('/credit-cards', creditCardsRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/backup', backupRouter);
+app.use('/reports', reportsRouter);
 app.use('/onboarding', onboardingRouter);
 
 app.use(errorHandler);

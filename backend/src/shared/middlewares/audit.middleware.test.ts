@@ -56,4 +56,16 @@ describe('auditoria de ações sobre os dados', () => {
     (res as unknown as EventEmitter).emit('finish');
     expect(auditLog.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'data_reset' }));
   });
+
+  it('ação nomeada acrescenta os detalhes extras da rota', () => {
+    const { auditLog, req, res } = setup('GET', 200);
+    createAuditAction(auditLog)('statement_exported', () => ({ format: 'json', month: 10 }))(req, res, vi.fn());
+    (res as unknown as EventEmitter).emit('finish');
+    expect(auditLog.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'statement_exported',
+        details: { method: 'GET', path: '/cash-flow/payments/abc', format: 'json', month: 10 },
+      }),
+    );
+  });
 });
