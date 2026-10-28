@@ -36,7 +36,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | R1 | Conjunto de dados do relatório (`GET /reports/statement`) | R0 | ✅ | 2026-10-28 | ver git log |
 | R2 | XLSX com abas e formatação | R1 | ✅ | 2026-10-28 | ver git log |
 | R3 | Gráficos nativos no XLSX | R2 | ✅ | 2026-10-28 | ver git log |
-| R4 | PDF pela página de relatório, com gráficos em SVG | R1 | ⬜ | | |
+| R4 | PDF pela página de relatório, com gráficos em SVG | R1 | ✅ | 2026-10-28 | ver git log |
 | R5 | Menu "Exportar", escopo, CSV só no Backup, acabamento | R2, R4 | ⬜ | | |
 
 R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar, o XLSX sai com as barras de dados de R2 e R3 fica ⏸.
@@ -68,6 +68,14 @@ R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar,
 - Rosca: top 8 + "Outras" (rótulo novo `others` nos 3 idiomas) gravado na aba Categorias, colunas E:F; o gráfico aponta para esse intervalo. Sem despesas por categoria ou sem evolução, o gráfico correspondente não é criado (nenhum gráfico = buffer intocado).
 - Todo texto entra escapado para XML. Testes: partes e content types presentes, XML bem formado (`saxes`, devDependency), intervalos corretos, escape, top 8 + Outras, arquivo reabre no ExcelJS.
 - **Pendente:** conferência manual no Excel, LibreOffice e Google Sheets (nenhum instalado aqui). Se algum rejeitar/reparar o arquivo, plano B da seção 4.2: remover `addSummaryCharts` do `buildStatementXlsx` e marcar R3 como ⏸ (barras de dados da R2 ficam).
+
+### R4 — 2026-10-28
+- `Report.tsx` lê `GET /reports/statement` (`ReportsService.getStatement`, novo `services/reports.service.ts`; tipos `Statement*` em `types/index.ts`). Ordem: cabeçalho (mês · escopo), indicadores previsto × realizado + pendentes do mês (via `summarizeMonth`, mesmos números da tela), saldo por conta (inicial/final), gráficos; nova página: Entradas, Saídas, Cartões (por fatura, com compras e total), Transferências, Categorias, Evolução.
+- Gráficos em `components/charts/` (`BarChart` com valor compacto sobre cada barra; `DonutChart` com legenda trazendo valor e %, top 8 + "Outras"), SVG puro sem biblioteca.
+- Saídas na página **não** repetem as faturas como linhas (ficam só em Cartões, com total); no XLSX elas aparecem nas duas abas. Desvio consciente: na tela a seção Cartões vem logo abaixo.
+- Impressão: `@page { size: A4 }`, `print-color-adjust: exact`, `thead` como `table-header-group`, linhas `break-inside-avoid`, `break-before-page` antes de Entradas. Barra de ações (Voltar, Baixar Excel, Imprimir/Salvar PDF) com `no-print`. "Baixar Excel" chama `/reports/statement/xlsx` com `lang` de `i18n.language`; `triggerDownload`/`extractFilename` agora exportados de `backup.service.ts`.
+- Textos novos em `report.json` (pt/en/es); título passou a "Relatório do extrato". Teste `Report.test.tsx` (seções, 2 SVGs, download com escopo e idioma).
+- **Pendente:** verificação visual (desktop/375px/claro-escuro) e prévia de impressão A4 — o app exige login com Google, que não dá para fazer daqui. Fazer junto com a R5.
 
 ## 1. Pedido
 

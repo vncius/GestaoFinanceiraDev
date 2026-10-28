@@ -1,10 +1,12 @@
 {
   "backLink": "Voltar",
   "printButton": "Imprimir / Salvar PDF",
-  "title": "Relatório Financeiro",
+  "title": "Relatório do extrato",
   "balances": {
-    "sectionTitle": "Saldos Atuais",
-    "total": "Total Geral"
+    "sectionTitle": "Saldo por conta",
+    "total": "Total Geral",
+    "initial": "Saldo inicial",
+    "final": "Saldo final"
   },
   "summary": {
     "sectionTitle": "Resumo de {{monthYear}}",
@@ -15,7 +17,12 @@
     "creditCardInvoices": "Faturas de cartão",
     "betweenAccounts": "Entre suas contas (líquido)",
     "totalExpenses": "Total de saídas",
-    "finalBalance": "Saldo final"
+    "finalBalance": "Saldo final",
+    "expected": "Previsto",
+    "realized": "Realizado",
+    "income": "Entradas",
+    "pendingIncome": "Entradas a receber no mês ({{count}})",
+    "pendingExpenses": "Saídas a pagar no mês ({{count}})"
   },
   "category": {
     "incomeByCategory": "Receitas por Categoria",
@@ -27,9 +34,60 @@
     "month": "Mês",
     "income": "Entradas",
     "expenses": "Saídas",
-    "result": "Resultado"
+    "result": "Resultado",
+    "chartTitle": "Entradas × saídas (12 meses)"
   },
   "footer": {
     "generatedAt": "Gerado em {{date}}"
+  },
+  "empty": "Sem lançamentos no período.",
+  "uncategorized": "Sem categoria",
+  "others": "Outras",
+  "allAccounts": "Todas as contas",
+  "downloadExcel": "Baixar Excel",
+  "total": "Total",
+  "col": {
+    "date": "Data",
+    "description": "Descrição",
+    "category": "Categoria",
+    "account": "Conta",
+    "status": "Situação",
+    "amount": "Valor"
+  },
+  "kind": {
+    "extra": "Gasto extra",
+    "invoiceTax": "Imposto a pagar"
+  },
+  "status": {
+    "received": "Recebido",
+    "paid": "Pago",
+    "toReceive": "A receber",
+    "toPay": "A pagar",
+    "done": "Efetivada",
+    "scheduled": "Prevista"
+  },
+  "sections": {
+    "incomes": "Entradas",
+    "expenses": "Saídas",
+    "cards": "Cartões de crédito",
+    "transfers": "Transferências"
+  },
+  "cards": {
+    "due": "venc.",
+    "installment": "Parcela",
+    "refund": "estorno",
+    "grandTotal": "Total das faturas"
+  },
+  "invoiceStatus": {
+    "OPEN": "Aberta",
+    "CLOSED": "Fechada",
+    "PAID": "Paga",
+    "OVERDUE": "Vencida",
+    "CANCELED": "Cancelada"
+  },
+  "transfers": {
+    "from": "De",
+    "to": "Para",
+    "autoReserve": "reserva automática"
   }
 }

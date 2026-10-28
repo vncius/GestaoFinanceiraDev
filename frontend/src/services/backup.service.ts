@@ -10,7 +10,7 @@ export interface StatementEntry {
 
 export type CsvExportRange = { all: true } | { from: string; to: string };
 
-function triggerDownload(blob: Blob, filename: string): void {
+export function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -21,7 +21,7 @@ function triggerDownload(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-function extractFilename(contentDisposition: string | undefined, fallback: string): string {
+export function extractFilename(contentDisposition: string | undefined, fallback: string): string {
   const match = contentDisposition?.match(/filename="?([^";]+)"?/);
   return match?.[1] ?? fallback;
 }

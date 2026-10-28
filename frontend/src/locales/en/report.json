@@ -1,10 +1,12 @@
 {
   "backLink": "Back",
   "printButton": "Print / Save PDF",
-  "title": "Financial Report",
+  "title": "Statement report",
   "balances": {
-    "sectionTitle": "Current Balances",
-    "total": "Grand Total"
+    "sectionTitle": "Balance by account",
+    "total": "Grand Total",
+    "initial": "Opening balance",
+    "final": "Closing balance"
   },
   "summary": {
     "sectionTitle": "Summary for {{monthYear}}",
@@ -15,7 +17,12 @@
     "creditCardInvoices": "Credit card invoices",
     "betweenAccounts": "Between your accounts (net)",
     "totalExpenses": "Total expenses",
-    "finalBalance": "Final balance"
+    "finalBalance": "Final balance",
+    "expected": "Expected",
+    "realized": "Actual",
+    "income": "Income",
+    "pendingIncome": "Income to receive this month ({{count}})",
+    "pendingExpenses": "Expenses to pay this month ({{count}})"
   },
   "category": {
     "incomeByCategory": "Income by Category",
@@ -27,9 +34,60 @@
     "month": "Month",
     "income": "Income",
     "expenses": "Expenses",
-    "result": "Result"
+    "result": "Result",
+    "chartTitle": "Income × expenses (12 months)"
   },
   "footer": {
     "generatedAt": "Generated on {{date}}"
+  },
+  "empty": "No entries in the period.",
+  "uncategorized": "Uncategorized",
+  "others": "Others",
+  "allAccounts": "All accounts",
+  "downloadExcel": "Download Excel",
+  "total": "Total",
+  "col": {
+    "date": "Date",
+    "description": "Description",
+    "category": "Category",
+    "account": "Account",
+    "status": "Status",
+    "amount": "Amount"
+  },
+  "kind": {
+    "extra": "Extra expense",
+    "invoiceTax": "Tax due"
+  },
+  "status": {
+    "received": "Received",
+    "paid": "Paid",
+    "toReceive": "To receive",
+    "toPay": "To pay",
+    "done": "Completed",
+    "scheduled": "Scheduled"
+  },
+  "sections": {
+    "incomes": "Income",
+    "expenses": "Expenses",
+    "cards": "Credit cards",
+    "transfers": "Transfers"
+  },
+  "cards": {
+    "due": "due",
+    "installment": "Installment",
+    "refund": "refund",
+    "grandTotal": "Statements total"
+  },
+  "invoiceStatus": {
+    "OPEN": "Open",
+    "CLOSED": "Closed",
+    "PAID": "Paid",
+    "OVERDUE": "Overdue",
+    "CANCELED": "Canceled"
+  },
+  "transfers": {
+    "from": "From",
+    "to": "To",
+    "autoReserve": "auto reserve"
   }
 }

@@ -344,3 +344,72 @@ export interface DashboardResponse {
     expenses: CategoryBreakdownItem[];
   };
 }
+
+// Relatório do extrato (GET /reports/statement) — espelha reports.types.ts do backend.
+export type StatementLineKind = 'income' | 'payment' | 'extra' | 'invoiceTax';
+
+export interface StatementLine {
+  id: string;
+  date: string;
+  kind: StatementLineKind;
+  description: string;
+  categoryName: string | null;
+  accountName: string;
+  invoiceRatePct: number | null;
+  amount: number;
+  settled: boolean;
+  fixed: boolean;
+}
+
+export interface StatementPurchase {
+  purchaseDate: string;
+  description: string;
+  categoryName: string | null;
+  installment: string | null;
+  amount: number;
+  refund: boolean;
+}
+
+export interface StatementInvoice {
+  id: string;
+  cardName: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  paymentAccountName: string | null;
+  total: number;
+  purchases: StatementPurchase[];
+}
+
+export interface StatementTransfer {
+  id: string;
+  date: string;
+  description: string;
+  direction: 'in' | 'out';
+  fromAccountName: string;
+  toAccountName: string;
+  amount: number;
+  settled: boolean;
+  autoReserve: boolean;
+}
+
+export interface StatementAccount {
+  id: string;
+  name: string;
+  initialBalance: number;
+  balance: number;
+}
+
+export interface StatementReport {
+  month: number;
+  year: number;
+  scope: { accountId: string | null; accountName: string | null };
+  generatedAt: string;
+  summary: CashFlowSummary;
+  accounts: StatementAccount[];
+  categories: { income: CategoryBreakdownItem[]; expenses: CategoryBreakdownItem[] };
+  evolution: MonthlyEvolutionItem[];
+  incomes: StatementLine[];
+  expenses: StatementLine[];
+  invoices: StatementInvoice[];
+  transfers: StatementTransfer[];
+}
