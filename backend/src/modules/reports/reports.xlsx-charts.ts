@@ -104,6 +104,28 @@ const anchorXml = (rid: string, id: number, name: string, fromRow: number, toRow
   `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>` +
   `<a:graphic><a:graphicData uri="${NS_C}"><c:chart xmlns:c="${NS_C}" xmlns:r="${NS_R}" r:id="${rid}"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor>`;
 
+// Filhos de <worksheet> que, pela ordem do CT_Worksheet, vêm depois de <drawing>.
+const AFTER_DRAWING = new Set(['legacyDrawing', 'legacyDrawingHF', 'drawingHF', 'picture', 'oleObjects', 'controls', 'webPublishItems', 'tableParts', 'extLst']);
+
+// Posição do <drawing>: antes do primeiro filho DIRETO de <worksheet> da lista
+// acima, senão antes de </worksheet>. Só o nível 1 conta: o ExcelJS grava
+// <extLst> também dentro de <cfRule> (barra de dados), que não pode servir de marco.
+export function drawingInsertIndex(sheetXml: string): number {
+  const tag = /<(\/?)([A-Za-z_][\w.:-]*)[^>]*?(\/?)>/g;
+  let depth = 0;
+  for (let m = tag.exec(sheetXml); m; m = tag.exec(sheetXml)) {
+    const [, closing, name, selfClosing] = m;
+    if (closing) {
+      if (depth === 1 && name === 'worksheet') return m.index;
+      depth -= 1;
+      continue;
+    }
+    if (depth === 1 && AFTER_DRAWING.has(name)) return m.index;
+    if (!selfClosing) depth += 1;
+  }
+  return -1;
+}
+
 export async function addSummaryCharts(buffer: Buffer, input: SummaryChartsInput): Promise<Buffer> {
   const charts: { xml: string; name: string }[] = [];
   if (input.evolution) charts.push({ xml: columnChartXml(input.evolution, input.titles), name: input.titles.evolution });
@@ -144,11 +166,9 @@ export async function addSummaryCharts(buffer: Buffer, input: SummaryChartsInput
     );
   }
 
-  // <drawing> vem depois de pageSetup e antes de legacyDrawing/tableParts.
-  const drawingTag = `<drawing r:id="${drawingRid}"/>`;
-  const marker = /<legacyDrawing[ />]|<tableParts[ >]|<\/worksheet>/.exec(sheetXml);
-  if (!marker || !sheetXml.includes('xmlns:r=')) return buffer;
-  zip.file(sheetPath, sheetXml.slice(0, marker.index) + drawingTag + sheetXml.slice(marker.index));
+  const at = drawingInsertIndex(sheetXml);
+  if (at < 0 || !sheetXml.includes('xmlns:r=')) return buffer;
+  zip.file(sheetPath, `${sheetXml.slice(0, at)}<drawing r:id="${drawingRid}"/>${sheetXml.slice(at)}`);
 
   const overrides =
     `<Override PartName="/xl/drawings/drawing1.xml" ContentType="${CT_DRAWING}"/>` +

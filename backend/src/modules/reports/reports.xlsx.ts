@@ -256,6 +256,8 @@ function buildTransfers(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabel
 function buildCategories(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabels): PieChartData | null {
   const ws = wb.addWorksheet(sheetName(L.sheets.categories));
   setWidths(ws, [32, 18, 10]);
+  // Prioridade da regra condicional tem de ser única na aba (uma barra por bloco).
+  let priority = 0;
   const block = (title: string, items: StatementReport['categories']['income']): void => {
     blockRow(ws, title, 3);
     styleHeader(ws.addRow([L.category, L.amount, L.percentage]));
@@ -273,7 +275,7 @@ function buildCategories(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabe
     ws.addConditionalFormatting({
       ref: `B${start}:B${start + items.length - 1}`,
       rules: [{
-        type: 'dataBar', priority: 1, gradient: false,
+        type: 'dataBar', priority: ++priority, gradient: false,
         cfvo: [{ type: 'min' }, { type: 'max' }], color: { argb: 'FF5B9BD5' },
       } as unknown as ExcelJS.ConditionalFormattingRule],
     });

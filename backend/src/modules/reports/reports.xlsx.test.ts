@@ -3,6 +3,7 @@ import { SaxesParser } from 'saxes';
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
 import { buildStatementXlsx } from './reports.xlsx';
+import { addSummaryCharts } from './reports.xlsx-charts';
 import { StatementReport } from './reports.types';
 import { InvoiceStatus } from '../credit-cards/credit-cards.types';
 import { CashFlowSummary } from '../cash-flow/cash-flow.types';
@@ -180,5 +181,35 @@ describe('gráficos nativos (R3)', () => {
 
   it('o arquivo com gráficos ainda abre no ExcelJS', async () => {
     expect((await load(report())).worksheets).toHaveLength(7);
+  });
+});
+
+describe('ordem das partes (revisão da R3)', () => {
+  it('<drawing> entra antes do <extLst> quando a aba tem barra de dados', async () => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Resumo');
+    ws.addRow([1]); ws.addRow([2]);
+    ws.addConditionalFormatting({
+      ref: 'A1:A2',
+      rules: [{ type: 'dataBar', priority: 1, cfvo: [{ type: 'min' }, { type: 'max' }], color: { argb: 'FF5B9BD5' } } as unknown as ExcelJS.ConditionalFormattingRule],
+    });
+    const base = Buffer.from(await wb.xlsx.writeBuffer());
+    const out = await addSummaryCharts(base, {
+      summarySheetFile: 'sheet1.xml',
+      evolution: { sheet: 'Resumo', firstRow: 1, lastRow: 2, points: [{ label: 'a', income: 1, expenses: 1 }, { label: 'b', income: 2, expenses: 2 }] },
+      pie: null,
+      titles: { evolution: 'E', pie: 'P', income: 'I', expenses: 'S' },
+    });
+    const sheet = await (await JSZip.loadAsync(out)).file('xl/worksheets/sheet1.xml')!.async('string');
+    expect(sheet).toContain('<extLst>');
+    expect(sheet.indexOf('<drawing ')).toBeGreaterThan(sheet.indexOf('<pageSetup'));
+    expect(sheet.indexOf('<drawing ')).toBeLessThan(sheet.lastIndexOf('<extLst>'));
+  });
+
+  it('as barras de dados da aba Categorias têm prioridades distintas', async () => {
+    const zip = await JSZip.loadAsync(await buildStatementXlsx(report(), 'pt'));
+    const sheet = await zip.file('xl/worksheets/sheet6.xml')!.async('string');
+    const priorities = [...sheet.matchAll(/<cfRule type="dataBar" priority="(\d+)"/g)].map((m) => m[1]);
+    expect(priorities).toEqual(['1', '2']);
   });
 });
