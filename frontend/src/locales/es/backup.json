@@ -12,8 +12,8 @@
     "downloadError": "Error al descargar la copia de seguridad."
   },
   "csvExport": {
-    "title": "Exportar movimientos",
-    "description": "Genera una hoja de cálculo CSV con ingresos, pagos y gastos extra del período seleccionado.",
+    "title": "Exportar datos brutos (CSV)",
+    "description": "Genera un CSV con los movimientos en bruto (entradas, pagos y gastos extra) del período, para importar en otro sistema. Para leer, imprimir o enviar al contador, usa \"Exportar informe\" en Flujo de caja.",
     "periodLabel": "Período",
     "periodMonth": "Mes actual",
     "periodCustom": "Personalizado",

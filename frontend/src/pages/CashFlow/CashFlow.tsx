@@ -14,8 +14,8 @@ import { Account, CreditCardInvoice, FinancialTransaction, isInvoiceTaxExpense, 
 import { ScopedDeleteModal } from '../../components/ui/ScopedDeleteModal';
 import { PageLoading } from '../../components/ui/LoadingSpinner';
 import { PayInvoiceAccountModal } from '../../components/ui/PayInvoiceAccountModal';
-import { firstDayOfMonthISO, lastDayOfMonthISO, monthYearFromDate } from '../../utils/date';
-import { BackupService } from '../../services/backup.service';
+import { monthYearFromDate } from '../../utils/date';
+import { ReportsService } from '../../services/reports.service';
 import { Modal } from '../../components/ui/Modal';
 import { StatementImportSection } from '../Backup/Backup';
 import { useDialog } from '../../contexts/DialogContext';
@@ -34,7 +34,7 @@ import { InvoiceTaxModal, InvoiceTaxSave } from './components/InvoiceTaxModal';
 import { competenceOfIssueDate } from '../../utils/invoice-tax';
 
 export default function CashFlow() {
-  const { t } = useTranslation('cashFlow');
+  const { t, i18n } = useTranslation('cashFlow');
   const { month, year } = useMonth();
   // accountId = última conta específica (padrão para criar lançamentos);
   // scopeAccountId = o que a tela mostra (null = todas as contas, U17).
@@ -385,10 +385,14 @@ export default function CashFlow() {
     }
   }
 
-  async function handleExportMonth() {
+  // Relatório do extrato (plano do relatório, R5): conta e mês da tela; os
+  // filtros da lista não entram (decisão 3).
+  const reportScope = { month, year, accountId: scopeAccountId ?? undefined };
+
+  async function handleExportExcel() {
     setExporting(true);
     try {
-      await BackupService.downloadCsv({ from: firstDayOfMonthISO(month, year), to: lastDayOfMonthISO(month, year) });
+      await ReportsService.downloadXlsx(reportScope, i18n.language.slice(0, 2));
     } catch (err) {
       showError(err instanceof Error ? err.message : t('page.exportError'));
     } finally {
@@ -594,7 +598,8 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
           onClearCategories={() => setExcludedCategoryIds(new Set(categories.map((c) => c.id)))}
           onClearAll={handleClearAll}
           onImportStatement={() => setImportOpen(true)}
-          onExportMonth={handleExportMonth}
+          onExportExcel={handleExportExcel}
+          onExportPdf={() => navigate(`/report?month=${month}&year=${year}${scopeAccountId ? `&accountId=${scopeAccountId}` : ''}`)}
           exporting={exporting}
           clearingAll={clearingAll}
           // Limpar o mês de todas as contas de uma vez é arriscado demais.

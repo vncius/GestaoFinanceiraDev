@@ -12,8 +12,8 @@
     "downloadError": "Erro ao baixar backup."
   },
   "csvExport": {
-    "title": "Exportar lançamentos",
-    "description": "Gera uma planilha CSV com entradas, pagamentos e gastos extras do período escolhido.",
+    "title": "Exportar dados brutos (CSV)",
+    "description": "Gera um CSV com os lançamentos crus (entradas, pagamentos e gastos extras) do período, para importar em outro sistema. Para ler, imprimir ou mandar ao contador, use \"Exportar relatório\" no Fluxo de caixa.",
     "periodLabel": "Período",
     "periodMonth": "Mês atual",
     "periodCustom": "Personalizado",

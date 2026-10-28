@@ -28,7 +28,8 @@
     },
     "monthActions": "Month actions",
     "importStatement": "Import bank statement",
-    "exportMonth": "Export this month's entries (CSV)"
+    "exportExcel": "Export report (Excel)",
+    "exportPdf": "Export report (PDF)"
   },
   "summaryBar": {
     "income": "In",
@@ -133,7 +134,7 @@
       "title": "Clear fixed entries",
       "description": "This month includes fixed/recurring entries. Delete them only from this month, or from the next months too? All other (non-fixed) entries are always deleted entirely."
     },
-    "exportError": "Could not export this month's entries."
+    "exportError": "Could not export the monthly report."
   },
   "movements": {
     "title": "This month's entries",

@@ -8,7 +8,7 @@
 Ao pedir para "continuar o plano", "seguir para a próxima etapa" ou citar uma entrega (S1…, U1…): leia o plano inteiro e siga a seção **Como continuar**. O plano é a fonte de verdade do andamento: atualize a tabela **Status** e as **Notas de implementação** ao concluir cada entrega.
 
 - **Imposto sobre NF ("Imposto a pagar")** — [`docs/plano-imposto-nf.md`](docs/plano-imposto-nf.md) (I0–I9; execução em chats separados, ver seção 7 do plano).
-- **Relatório do extrato (Excel e PDF)** — [`docs/plano-relatorio-extrato.md`](docs/plano-relatorio-extrato.md) (R0–R5; execução em chats separados, ver seção 7 do plano).
+- **Relatório do extrato (Excel e PDF)** — [`docs/plano-relatorio-extrato.md`](docs/plano-relatorio-extrato.md) (R0–R5 concluídas; falta a verificação manual anotada nas Notas da R5).
 
 ## Backlog
 

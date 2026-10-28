@@ -37,7 +37,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | R2 | XLSX com abas e formatação | R1 | ✅ | 2026-10-28 | ver git log |
 | R3 | Gráficos nativos no XLSX | R2 | ✅ | 2026-10-28 | ver git log |
 | R4 | PDF pela página de relatório, com gráficos em SVG | R1 | ✅ | 2026-10-28 | ver git log |
-| R5 | Menu "Exportar", escopo, CSV só no Backup, acabamento | R2, R4 | ⬜ | | |
+| R5 | Menu "Exportar", escopo, CSV só no Backup, acabamento | R2, R4 | ✅ | 2026-10-28 | ver git log |
 
 R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar, o XLSX sai com as barras de dados de R2 e R3 fica ⏸.
 
@@ -76,6 +76,13 @@ R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar,
 - Impressão: `@page { size: A4 }`, `print-color-adjust: exact`, `thead` como `table-header-group`, linhas `break-inside-avoid`, `break-before-page` antes de Entradas. Barra de ações (Voltar, Baixar Excel, Imprimir/Salvar PDF) com `no-print`. "Baixar Excel" chama `/reports/statement/xlsx` com `lang` de `i18n.language`; `triggerDownload`/`extractFilename` agora exportados de `backup.service.ts`.
 - Textos novos em `report.json` (pt/en/es); título passou a "Relatório do extrato". Teste `Report.test.tsx` (seções, 2 SVGs, download com escopo e idioma).
 - **Pendente:** verificação visual (desktop/375px/claro-escuro) e prévia de impressão A4 — o app exige login com Google, que não dá para fazer daqui. Fazer junto com a R5.
+
+### R5 — 2026-10-28
+- Fluxo de caixa: no menu "Ações do mês", "Exportar lançamentos do mês (CSV)" virou "Exportar relatório (Excel)" (`ReportsService.downloadXlsx` com `scopeAccountId` e `lang`) e "Exportar relatório (PDF)" (navega para `/report?month&year[&accountId]`). Props `onExportExcel`/`onExportPdf` no `CashFlowFilterBar`; teste `CashFlowFilterBar.test.tsx`.
+- Backup: o CSV continua lá, renomeado "Exportar dados brutos (CSV)", com descrição apontando para o relatório. Backend do CSV intocado.
+- Página do relatório: "Voltar" volta para a tela de origem (`navigate(-1)` quando há histórico; aberta direto, vai ao Dashboard). Link do Dashboard sem mudança.
+- `CHANGELOG.md` com a entrada do relatório (Added) e a mudança do CSV (Changed). Seed-demo já tinha NF, imposto, transferência, reserva automática e fatura com parcelas/estorno (I9), sem mudança.
+- **Verificação manual que ficou pendente** (o app só entra com login Google, que não dá para fazer daqui): (1) abrir o XLSX, com gráficos, no Excel, no LibreOffice e no Google Sheets, sem aviso de reparo; (2) `/report` em desktop e 375px, tema claro e escuro, e prévia de impressão A4; (3) os totais conferidos contra a tela, num mês do seed-demo. Se o XLSX pedir reparo, seguir o plano B da R3.
 
 ## 1. Pedido
 

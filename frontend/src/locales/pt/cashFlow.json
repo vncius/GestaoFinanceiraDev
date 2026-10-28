@@ -28,7 +28,8 @@
     },
     "monthActions": "Ações do mês",
     "importStatement": "Importar extrato bancário",
-    "exportMonth": "Exportar lançamentos do mês (CSV)"
+    "exportExcel": "Exportar relatório (Excel)",
+    "exportPdf": "Exportar relatório (PDF)"
   },
   "summaryBar": {
     "income": "Entrou",
@@ -133,7 +134,7 @@
       "title": "Limpar lançamentos fixos",
       "description": "Este mês inclui lançamentos fixos/recorrentes. Deseja excluí-los só deste mês, ou também dos próximos? Os demais lançamentos (não fixos) são sempre excluídos por completo."
     },
-    "exportError": "Não foi possível exportar os lançamentos do mês."
+    "exportError": "Não foi possível exportar o relatório do mês."
   },
   "movements": {
     "title": "Lançamentos do mês",

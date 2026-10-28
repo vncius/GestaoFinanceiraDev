@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Filter, Eraser, Search, Tags, X, MoreHorizontal, Upload, Download, Loader2 } from 'lucide-react';
+import { Filter, Eraser, Search, Tags, X, MoreHorizontal, Upload, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Category } from '../../../types';
 import { CashFlowTypeFilter } from '../types';
@@ -204,14 +204,16 @@ function TagFilterPopover({
 // disputar atenção — e "Limpar mês", destrutiva, vai por último e em vermelho.
 function MonthActionsMenu({
   onImportStatement,
-  onExportMonth,
+  onExportExcel,
+  onExportPdf,
   exporting,
   onClearAll,
   clearingAll,
   clearAllDisabled,
 }: {
   onImportStatement: () => void;
-  onExportMonth: () => void;
+  onExportExcel: () => void;
+  onExportPdf: () => void;
   exporting: boolean;
   onClearAll: () => void;
   clearingAll: boolean;
@@ -250,8 +252,11 @@ function MonthActionsMenu({
           <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={run(onImportStatement)}>
             <Upload size={15} /> {t('filterBar.importStatement')}
           </button>
-          <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={run(onExportMonth)} disabled={exporting}>
-            <Download size={15} /> {t('filterBar.exportMonth')}
+          <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={run(onExportExcel)} disabled={exporting}>
+            <FileSpreadsheet size={15} /> {t('filterBar.exportExcel')}
+          </button>
+          <button role="menuitem" className={`${item} text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700`} onClick={run(onExportPdf)}>
+            <FileText size={15} /> {t('filterBar.exportPdf')}
           </button>
           <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
           <button
@@ -278,7 +283,8 @@ export function CashFlowFilterBar({
   onClearCategories,
   onClearAll,
   onImportStatement,
-  onExportMonth,
+  onExportExcel,
+  onExportPdf,
   exporting = false,
   clearingAll = false,
   clearAllDisabled = false,
@@ -297,7 +303,8 @@ export function CashFlowFilterBar({
   onClearCategories: () => void;
   onClearAll: () => void;
   onImportStatement: () => void;
-  onExportMonth: () => void;
+  onExportExcel: () => void;
+  onExportPdf: () => void;
   exporting?: boolean;
   clearingAll?: boolean;
   clearAllDisabled?: boolean;
@@ -343,7 +350,8 @@ export function CashFlowFilterBar({
       <TagFilterPopover selected={tags} onToggle={onToggleTag} onClear={onClearTags} />
       <MonthActionsMenu
         onImportStatement={onImportStatement}
-        onExportMonth={onExportMonth}
+        onExportExcel={onExportExcel}
+        onExportPdf={onExportPdf}
         exporting={exporting}
         onClearAll={onClearAll}
         clearingAll={clearingAll}

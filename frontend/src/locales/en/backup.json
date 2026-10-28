@@ -12,8 +12,8 @@
     "downloadError": "Error downloading backup."
   },
   "csvExport": {
-    "title": "Export entries",
-    "description": "Generates a CSV spreadsheet with income, payments, and extra expenses for the selected period.",
+    "title": "Export raw data (CSV)",
+    "description": "Creates a CSV with the raw entries (income, payments and extra expenses) for the period, for importing into another system. To read, print or send to your accountant, use \"Export report\" in Cash flow.",
     "periodLabel": "Period",
     "periodMonth": "Current month",
     "periodCustom": "Custom",

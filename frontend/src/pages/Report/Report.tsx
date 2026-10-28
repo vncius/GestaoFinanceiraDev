@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Printer, ArrowLeft, FileSpreadsheet } from 'lucide-react';
@@ -113,6 +113,7 @@ export default function Report() {
   const { t, i18n } = useTranslation('report');
   const { month: currentMonth, year: currentYear } = useMonth();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const month = Number(params.get('month')) || currentMonth;
   const year = Number(params.get('year')) || currentYear;
   // O link do Dashboard só leva accountId quando o seletor está numa conta;
@@ -154,9 +155,14 @@ export default function Report() {
     <div className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-6 py-8 print:px-0 print:py-0">
         <div className="no-print flex flex-wrap items-center justify-between gap-2 mb-6">
-          <a href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800">
+          {/* Volta para a tela de origem (Dashboard ou Fluxo de caixa); aberto direto, vai ao Dashboard. */}
+          <button
+            type="button"
+            onClick={() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/dashboard'))}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800"
+          >
             <ArrowLeft size={14} /> {t('backLink')}
-          </a>
+          </button>
           <div className="flex gap-2">
             <button onClick={download} disabled={downloading} className={`${actionBtn} border border-gray-300 text-gray-700 hover:bg-gray-50`}>
               <FileSpreadsheet size={16} /> {t('downloadExcel')}
