@@ -35,7 +35,7 @@ Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluída · ⏸ adiada
 | R0 | Plano registrado (este arquivo, link no `CLAUDE.md`) | — | ✅ | 2026-10-28 | ver git log |
 | R1 | Conjunto de dados do relatório (`GET /reports/statement`) | R0 | ✅ | 2026-10-28 | ver git log |
 | R2 | XLSX com abas e formatação | R1 | ✅ | 2026-10-28 | ver git log |
-| R3 | Gráficos nativos no XLSX | R2 | ⬜ | | |
+| R3 | Gráficos nativos no XLSX | R2 | ✅ | 2026-10-28 | ver git log |
 | R4 | PDF pela página de relatório, com gráficos em SVG | R1 | ⬜ | | |
 | R5 | Menu "Exportar", escopo, CSV só no Backup, acabamento | R2, R4 | ⬜ | | |
 
@@ -62,6 +62,12 @@ R2 e R4 dependem só de R1 e podem andar em paralelo. R3 é opcional: se travar,
 - Valor em reais com formato `"R$" #,##0.00` fixo (sem moeda configurável). Aba sem dados mostra "Sem lançamentos no período" em vez de tabela vazia.
 - `npm audit`: exceljs traz `uuid` antigo como dependência transitiva (+2 moderadas, sem uso de `v4(buffer)` pelo nosso código).
 - **Pendente:** abrir o arquivo no Excel, LibreOffice e Google Sheets (conferência manual, não feita aqui) — testes só leem de volta com ExcelJS. Gráficos ficam para R3 (a aba Resumo deixa espaço abaixo da tabela de contas).
+
+### R3 — 2026-10-28
+- `reports.xlsx-charts.ts` (`addSummaryCharts`) abre o buffer com `jszip` (agora dependência direta, 3.10.2, a mesma do ExcelJS) e acrescenta `xl/charts/chart1.xml` (colunas: entradas × saídas dos 12 meses, aba Evolução) e `chart2.xml` (rosca: saídas por categoria), `xl/drawings/drawing1.xml` + `_rels`, `xl/worksheets/_rels/sheet1.xml.rels`, a tag `<drawing r:id>` no fim de `sheet1.xml` (antes de `legacyDrawing`/`tableParts` se existirem) e os `Override` do `[Content_Types].xml`. Os gráficos ficam à direita das tabelas da aba Resumo (colunas E–L), com caches (`strCache`/`numCache`) para leitores que não recalculam.
+- Rosca: top 8 + "Outras" (rótulo novo `others` nos 3 idiomas) gravado na aba Categorias, colunas E:F; o gráfico aponta para esse intervalo. Sem despesas por categoria ou sem evolução, o gráfico correspondente não é criado (nenhum gráfico = buffer intocado).
+- Todo texto entra escapado para XML. Testes: partes e content types presentes, XML bem formado (`saxes`, devDependency), intervalos corretos, escape, top 8 + Outras, arquivo reabre no ExcelJS.
+- **Pendente:** conferência manual no Excel, LibreOffice e Google Sheets (nenhum instalado aqui). Se algum rejeitar/reparar o arquivo, plano B da seção 4.2: remover `addSummaryCharts` do `buildStatementXlsx` e marcar R3 como ⏸ (barras de dados da R2 ficam).
 
 ## 1. Pedido
 

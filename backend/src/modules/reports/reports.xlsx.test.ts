@@ -1,3 +1,5 @@
+import JSZip from 'jszip';
+import { SaxesParser } from 'saxes';
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
 import { buildStatementXlsx } from './reports.xlsx';
@@ -110,5 +112,73 @@ describe('total das tabelas', () => {
     const table = wb.getWorksheet('Entradas')!.getTable('TabEntradas');
     const col = (table as unknown as { table: { columns: { totalsRowFunction?: string }[] } }).table.columns[5];
     expect(col.totalsRowFunction).toBe('sum');
+  });
+});
+
+describe('gráficos nativos (R3)', () => {
+  const wellFormed = (xml: string): void => {
+    const parser = new SaxesParser({ xmlns: true });
+    let error: Error | null = null;
+    parser.on('error', (e) => { error = e; });
+    parser.write(xml).close();
+    expect(error).toBeNull();
+  };
+
+  it('acrescenta desenho, dois gráficos, relações e content types', async () => {
+    const zip = await JSZip.loadAsync(await buildStatementXlsx(report(), 'pt'));
+    const names = Object.keys(zip.files);
+    expect(names).toEqual(expect.arrayContaining([
+      'xl/charts/chart1.xml', 'xl/charts/chart2.xml', 'xl/drawings/drawing1.xml',
+      'xl/drawings/_rels/drawing1.xml.rels', 'xl/worksheets/_rels/sheet1.xml.rels',
+    ]));
+    const types = await zip.file('[Content_Types].xml')!.async('string');
+    expect(types).toContain('/xl/drawings/drawing1.xml');
+    expect(types).toContain('/xl/charts/chart1.xml');
+    expect(types).toContain('/xl/charts/chart2.xml');
+    const sheet = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
+    expect(sheet).toMatch(/<drawing r:id="rIdDrawing1"\/><\/worksheet>$/);
+    for (const n of ['xl/charts/chart1.xml', 'xl/charts/chart2.xml', 'xl/drawings/drawing1.xml',
+      'xl/drawings/_rels/drawing1.xml.rels', 'xl/worksheets/_rels/sheet1.xml.rels', 'xl/worksheets/sheet1.xml', '[Content_Types].xml']) {
+      wellFormed(await zip.file(n)!.async('string'));
+    }
+  });
+
+  it('os gráficos apontam para os intervalos das abas Evolução e Categorias', async () => {
+    const zip = await JSZip.loadAsync(await buildStatementXlsx(report(), 'pt'));
+    const bars = await zip.file('xl/charts/chart1.xml')!.async('string');
+    expect(bars).toContain('<c:f>&apos;Evolução&apos;!$B$2:$B$2</c:f>');
+    expect(bars).toContain('<c:barChart>');
+    const ring = await zip.file('xl/charts/chart2.xml')!.async('string');
+    expect(ring).toContain('<c:doughnutChart>');
+    expect(ring).toContain('<c:f>&apos;Categorias&apos;!$F$2:$F$2</c:f>');
+  });
+
+  it('nome de categoria com caracteres de XML sai escapado', async () => {
+    const r = report();
+    r.categories.expenses = [{ categoryId: 'x', categoryName: 'A & <B> "C"', amount: 1000, percentage: 100 }];
+    const zip = await JSZip.loadAsync(await buildStatementXlsx(r, 'pt'));
+    const ring = await zip.file('xl/charts/chart2.xml')!.async('string');
+    expect(ring).toContain('A &amp; &lt;B&gt; &quot;C&quot;');
+    wellFormed(ring);
+  });
+
+  it('top 8 + Outras na rosca', async () => {
+    const r = report();
+    r.categories.expenses = Array.from({ length: 11 }, (_, i) => ({ categoryId: `c${i}`, categoryName: `Cat ${i}`, amount: 1000 - i, percentage: 9 }));
+    const wb = await load(r);
+    const ws = wb.getWorksheet('Categorias')!;
+    expect(ws.getCell('E10').value).toBe('Outras');
+    expect(ws.getCell('F10').value).toBeCloseTo((1000 - 8 + 1000 - 9 + 1000 - 10) / 100);
+  });
+
+  it('sem despesas por categoria nem evolução, não há gráficos', async () => {
+    const r = { ...report(), evolution: [], categories: { income: [], expenses: [] } };
+    const zip = await JSZip.loadAsync(await buildStatementXlsx(r, 'pt'));
+    expect(zip.file('xl/charts/chart1.xml')).toBeNull();
+    expect(zip.file('xl/drawings/drawing1.xml')).toBeNull();
+  });
+
+  it('o arquivo com gráficos ainda abre no ExcelJS', async () => {
+    expect((await load(report())).worksheets).toHaveLength(7);
   });
 });

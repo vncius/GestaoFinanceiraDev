@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { StatementReport } from './reports.types';
 import { getReportLabels, ReportLabels, ReportLang } from './reports.labels';
+import { addSummaryCharts, EvolutionChartData, PieChartData } from './reports.xlsx-charts';
 
 // Gera o XLSX do relatório do extrato (docs/plano-relatorio-extrato.md, 4.2).
 // Valores em centavos até aqui; viram reais só na célula. Texto vai sempre como
@@ -31,10 +32,11 @@ export async function buildStatementXlsx(report: StatementReport, lang: ReportLa
   buildLineSheet(wb, report, L, 'expenses');
   buildCards(wb, report, L);
   buildTransfers(wb, report, L);
-  buildCategories(wb, report, L);
-  buildEvolution(wb, report, L);
+  const pie = buildCategories(wb, report, L);
+  const evolution = buildEvolution(wb, report, L);
 
-  return Buffer.from(await wb.xlsx.writeBuffer());
+  const buffer = Buffer.from(await wb.xlsx.writeBuffer());
+  return addSummaryCharts(buffer, { summarySheetFile: 'sheet1.xml', evolution, pie, titles: { evolution: L.chartEvolution, pie: L.expenseByCategory, income: L.income, expenses: L.expenses } });
 }
 
 function styleHeader(row: ExcelJS.Row): void {
@@ -251,7 +253,7 @@ function buildTransfers(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabel
   ws.views = [{ state: 'frozen', ySplit: 1 }];
 }
 
-function buildCategories(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabels): void {
+function buildCategories(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabels): PieChartData | null {
   const ws = wb.addWorksheet(sheetName(L.sheets.categories));
   setWidths(ws, [32, 18, 10]);
   const block = (title: string, items: StatementReport['categories']['income']): void => {
@@ -279,9 +281,30 @@ function buildCategories(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabe
   };
   block(L.incomeByCategory, r.categories.income);
   block(L.expenseByCategory, r.categories.expenses);
+
+  // Dados da rosca (top 8 + "Outras") ao lado das tabelas, em E:F, para o gráfico do Resumo apontar.
+  const expenses = r.categories.expenses.filter((c) => c.amount > 0);
+  if (expenses.length === 0) return null;
+  const top = expenses.slice(0, 8).map((c) => ({ name: c.categoryId === null ? L.uncategorized : c.categoryName, value: reais(c.amount) }));
+  const rest = expenses.slice(8).reduce((sum, c) => sum + c.amount, 0);
+  if (rest > 0) top.push({ name: L.others, value: reais(rest) });
+  setWidths(ws, [32, 18, 10, 4, 28, 16]);
+  [[5, L.expenseByCategory], [6, L.amount]].forEach(([col, text]) => {
+    const cell = ws.getRow(1).getCell(col as number);
+    cell.value = text as string;
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = solid(HEADER_FILL);
+  });
+  top.forEach((p, i) => {
+    const row = ws.getRow(2 + i);
+    row.getCell(5).value = p.name;
+    row.getCell(6).value = p.value;
+    row.getCell(6).numFmt = MONEY_FMT;
+  });
+  return { sheet: ws.name, firstRow: 2, points: top };
 }
 
-function buildEvolution(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabels): void {
+function buildEvolution(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabels): EvolutionChartData | null {
   const ws = wb.addWorksheet(sheetName(L.sheets.evolution));
   setWidths(ws, [12, 18, 18, 18]);
   styleHeader(ws.addRow([L.month, L.income, L.expenses, L.result]));
@@ -289,4 +312,6 @@ function buildEvolution(wb: ExcelJS.Workbook, r: StatementReport, L: ReportLabel
     money(ws.addRow([`${String(e.month).padStart(2, '0')}/${e.year}`, reais(e.income), reais(e.expenses), reais(e.net)]), 2, 3, 4);
   });
   ws.views = [{ state: 'frozen', ySplit: 1 }];
+  if (r.evolution.length === 0) return null;
+  return { sheet: ws.name, firstRow: 2, lastRow: 1 + r.evolution.length, points: r.evolution.map((e) => ({ label: `${String(e.month).padStart(2, '0')}/${e.year}`, income: reais(e.income), expenses: reais(e.expenses) })) };
 }

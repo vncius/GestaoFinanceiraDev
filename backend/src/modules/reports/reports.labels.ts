@@ -64,6 +64,8 @@ export interface ReportLabels {
   expenses: string;
   result: string;
   noData: string;
+  others: string;
+  chartEvolution: string;
 }
 
 const pt: ReportLabels = {
@@ -79,7 +81,7 @@ const pt: ReportLabels = {
   invoiceStatus: { OPEN: 'Aberta', CLOSED: 'Fechada', PAID: 'Paga', OVERDUE: 'Vencida', CANCELED: 'Cancelada' },
   purchaseDate: 'Data da compra', installment: 'Parcela', refund: 'Estorno', cardSubtotal: 'Subtotal do cartão', grandTotal: 'Total geral',
   from: 'De', to: 'Para', autoReserve: 'Reserva automática', incomeByCategory: 'Entradas por categoria', expenseByCategory: 'Saídas por categoria',
-  percentage: '%', month: 'Mês', income: 'Entradas', expenses: 'Saídas', result: 'Resultado', noData: 'Sem lançamentos no período',
+  percentage: '%', month: 'Mês', income: 'Entradas', expenses: 'Saídas', result: 'Resultado', noData: 'Sem lançamentos no período', others: 'Outras', chartEvolution: 'Entradas × saídas (12 meses)',
 };
 
 const en: ReportLabels = {
@@ -95,7 +97,7 @@ const en: ReportLabels = {
   invoiceStatus: { OPEN: 'Open', CLOSED: 'Closed', PAID: 'Paid', OVERDUE: 'Overdue', CANCELED: 'Canceled' },
   purchaseDate: 'Purchase date', installment: 'Installment', refund: 'Refund', cardSubtotal: 'Card subtotal', grandTotal: 'Grand total',
   from: 'From', to: 'To', autoReserve: 'Auto reserve', incomeByCategory: 'Income by category', expenseByCategory: 'Expenses by category',
-  percentage: '%', month: 'Month', income: 'Income', expenses: 'Expenses', result: 'Net', noData: 'No entries in the period',
+  percentage: '%', month: 'Month', income: 'Income', expenses: 'Expenses', result: 'Net', noData: 'No entries in the period', others: 'Others', chartEvolution: 'Income × expenses (12 months)',
 };
 
 const es: ReportLabels = {
@@ -111,7 +113,7 @@ const es: ReportLabels = {
   invoiceStatus: { OPEN: 'Abierta', CLOSED: 'Cerrada', PAID: 'Pagada', OVERDUE: 'Vencida', CANCELED: 'Cancelada' },
   purchaseDate: 'Fecha de compra', installment: 'Cuota', refund: 'Reembolso', cardSubtotal: 'Subtotal de la tarjeta', grandTotal: 'Total general',
   from: 'De', to: 'Para', autoReserve: 'Reserva automática', incomeByCategory: 'Entradas por categoría', expenseByCategory: 'Salidas por categoría',
-  percentage: '%', month: 'Mes', income: 'Entradas', expenses: 'Salidas', result: 'Resultado', noData: 'Sin movimientos en el período',
+  percentage: '%', month: 'Mes', income: 'Entradas', expenses: 'Salidas', result: 'Resultado', noData: 'Sin movimientos en el período', others: 'Otras', chartEvolution: 'Entradas × salidas (12 meses)',
 };
 
 const BY_LANG: Record<ReportLang, ReportLabels> = { pt, en, es };
