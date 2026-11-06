@@ -38,7 +38,8 @@
   "whereMoneyWent": {
     "title": "Where the money went",
     "empty": "No entries in the period",
-    "others": "Other"
+    "others": "Other",
+    "seeItems": "See {{category}} entries"
   },
   "analysis": {
     "show": "See full analysis",

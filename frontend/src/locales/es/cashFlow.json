@@ -161,7 +161,12 @@
       "invoiceLocked": "Impuesto del mes ya pagado"
     },
     "invoiceOf": "Factura {{card}}",
-    "noResults": "Ningún movimiento coincide con estos filtros"
+    "noResults": "Ningún movimiento coincide con estos filtros",
+    "focus": {
+      "total": "Total efectuado:",
+      "clear": "Quitar filtro",
+      "noCategory": "Sin categoría"
+    }
   },
   "movementForm": {
     "title": {

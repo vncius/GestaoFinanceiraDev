@@ -74,6 +74,21 @@ export interface CreditCardInstallment {
   updatedAt: string;
 }
 
+// Compra de uma fatura do mês, para listar por categoria em Movimentações.
+export interface CardMonthItem {
+  id: string; // id da parcela
+  creditCardId: string;
+  invoiceId: string;
+  description: string;
+  amount: number; // centavos; negativo em estorno
+  categoryId: string | null;
+  purchaseDate: string;
+  dueDate: string; // vencimento da fatura
+  installmentNumber: number;
+  totalInstallments: number;
+  invoicePaid: boolean;
+}
+
 export interface CreditCardInvoice {
   id: string;
   tenantId: string;

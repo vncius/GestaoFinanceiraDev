@@ -37,6 +37,8 @@
     "tableAmount": "Amount",
     "tableType": "Type",
     "possibleDuplicate": "possible duplicate",
+    "possibleInvoicePayment": "looks like a card invoice",
+    "possibleInvoicePaymentHint": "The invoice already comes in through the card. Importing this line would count the spending twice; mark the invoice as paid in the list.",
     "toggleTypeTitle": "Click to toggle income/expense",
     "typeIncome": "Income",
     "typeExpense": "Expense",

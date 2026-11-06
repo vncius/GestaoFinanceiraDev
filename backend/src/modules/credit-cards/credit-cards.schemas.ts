@@ -84,6 +84,10 @@ export const cardFlowQuerySchema = z.object({
   year: z.coerce.number().int().min(2000),
 });
 
+export const cardMonthItemsQuerySchema = cardFlowQuerySchema.extend({
+  accountId: z.string().uuid().optional(),
+});
+
 export const findCardsQuerySchema = z.object({
   month: z.coerce.number().int().min(1).max(12).optional(),
   year: z.coerce.number().int().min(2000).optional(),

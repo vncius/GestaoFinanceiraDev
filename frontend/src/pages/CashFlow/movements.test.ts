@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { filterMovements, groupBySituation, toMovements } from './movements';
-import { CreditCardInvoice, FinancialTransaction, TransferFlowItem } from '../../types';
+import {
+  categoryFocusHref,
+  filterMovements,
+  groupBySituation,
+  matchesCategoryFocus,
+  parseCategoryFocus,
+  settledTotal,
+  toMovements,
+} from './movements';
+import { CardMonthItem, CreditCardInvoice, FinancialTransaction, TransferFlowItem } from '../../types';
 
 function tx(id: string, date: string, status: FinancialTransaction['status'], extra: Partial<FinancialTransaction> = {}): FinancialTransaction {
   return {
@@ -44,6 +52,59 @@ describe('toMovements', () => {
 
   it('ignora fatura vazia ainda não paga', () => {
     expect(items.some((i) => i.key === 'invoice:vazia')).toBe(false);
+  });
+});
+
+describe('compras no cartão', () => {
+  const cardItem = (id: string, extra: Partial<CardMonthItem> = {}): CardMonthItem => ({
+    id, creditCardId: 'card', invoiceId: 'i1', description: id, amount: 5000, categoryId: 'cat',
+    purchaseDate: '2026-09-20T12:00:00.000Z', dueDate: '2026-10-15T12:00:00.000Z',
+    installmentNumber: 1, totalInstallments: 1, invoicePaid: false, ...extra,
+  });
+  const build = (cardItems: CardMonthItem[]) => toMovements({
+    entries: [], payments: [], extraExpenses: [], transfers: [], creditCards: [], cardItems,
+    cardNames: new Map([['card', 'Nubank']]), cardFallbackName: 'Cartão',
+  });
+
+  it('mostra a parcela, a data da compra e o cartão', () => {
+    const [item] = build([cardItem('TV', { installmentNumber: 3, totalInstallments: 10 })]);
+    expect(item).toMatchObject({ kind: 'cardItem', description: 'TV 3/10', cardName: 'Nubank', displayDate: '2026-09-20T12:00:00.000Z' });
+  });
+
+  it('estorno vira crédito com valor positivo', () => {
+    const [item] = build([cardItem('Estorno', { amount: -2000 })]);
+    expect(item).toMatchObject({ direction: 'in', amount: 2000 });
+  });
+
+  it('agrupa pelo vencimento da fatura, não pela data da compra', () => {
+    const groups = groupBySituation(build([cardItem('Compra antiga')]), '2026-10-01');
+    expect(groups.upcoming).toHaveLength(1);
+    expect(groups.overdue).toHaveLength(0);
+  });
+
+  it('soma no total do filtro só o efetivado, descontando estornos', () => {
+    const groups = groupBySituation(build([
+      cardItem('Paga', { amount: 10000, invoicePaid: true }),
+      cardItem('Estorno', { amount: -2000, invoicePaid: true }),
+      cardItem('Aberta', { amount: 7000 }),
+    ]), '2026-10-01');
+    expect(settledTotal(groups)).toBe(8000);
+  });
+});
+
+describe('filtro por categoria vindo do Início', () => {
+  it('leva "Sem categoria" e várias categorias pela URL', () => {
+    const href = categoryFocusHref(['a', null], 'EXPENSE');
+    const focus = parseCategoryFocus(new URL(href, 'http://x').searchParams.get('categories'));
+    expect(href).toContain('type=EXPENSE');
+    expect(focus && matchesCategoryFocus('a', focus)).toBe(true);
+    expect(focus && matchesCategoryFocus(null, focus)).toBe(true);
+    expect(focus && matchesCategoryFocus('b', focus)).toBe(false);
+  });
+
+  it('sem parâmetro não há filtro', () => {
+    expect(parseCategoryFocus(null)).toBeNull();
+    expect(parseCategoryFocus('')).toBeNull();
   });
 });
 

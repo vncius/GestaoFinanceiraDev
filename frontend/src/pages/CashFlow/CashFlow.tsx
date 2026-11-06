@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useMonth } from '../../contexts/MonthContext';
@@ -24,12 +24,24 @@ import { ModalKind, CashFlowTypeFilter } from './types';
 import { useCashFlowMutations } from './useCashFlowMutations';
 import { SummaryBar } from './components/SummaryBar';
 import { MovementsList, NewMovementKind, RowBusy } from './components/MovementsList';
-import { filterMovements, groupBySituation, MovementItem, MovementKind, MovementTag, toMovements } from './movements';
+import {
+  filterMovements,
+  groupBySituation,
+  isNoCategory,
+  matchesCategoryFocus,
+  MovementItem,
+  MovementKind,
+  MovementTag,
+  parseCategoryFocus,
+  settledTotal,
+  toMovements,
+} from './movements';
 import { useCollapsibleSections } from './useCollapsibleSections';
 import { getAdvancedDetails } from '../../hooks/useAdvancedDetails';
 import { MovementFormKind, MovementModal, MovementSubmit } from '../../components/movement/MovementModal';
 import { TransferModal } from './components/TransferModal';
 import { CashFlowFilterBar } from './components/CashFlowFilterBar';
+import { CategoryFocusBar } from './components/CategoryFocusBar';
 import { InvoiceTaxModal, InvoiceTaxSave } from './components/InvoiceTaxModal';
 import { competenceOfIssueDate } from '../../utils/invoice-tax';
 
@@ -43,6 +55,13 @@ export default function CashFlow() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  // Filtro por categoria aberto pelo Início. A fatura vira as próprias compras,
+  // porque o card soma cada compra na categoria dela, não a fatura inteira.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoriesParam = searchParams.get('categories');
+  const categoryFocus = useMemo(() => parseCategoryFocus(categoriesParam), [categoriesParam]);
+  const focused = categoryFocus !== null;
+
   const { confirm, alert } = useDialog();
   const { showError } = useToast();
 
@@ -50,6 +69,12 @@ export default function CashFlow() {
     queryKey: ['cashFlow', scopeAccountId ?? 'ALL', month, year],
     queryFn: () => CashFlowService.get(month, year, scopeAccountId),
     enabled: !!accountId,
+  });
+
+  const { data: cardItems = [] } = useQuery({
+    queryKey: ['cardItems', scopeAccountId ?? 'ALL', month, year],
+    queryFn: () => CreditCardsService.getMonthItems(month, year, scopeAccountId),
+    enabled: focused,
   });
 
   const { data: categories = [] } = useQuery({
@@ -91,7 +116,17 @@ export default function CashFlow() {
   const sections = useCollapsibleSections();
 
   // ── Filter state ─────────────────────────────────────────────────────────────
-  const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>('ALL');
+  const [typeFilter, setTypeFilter] = useState<CashFlowTypeFilter>(() => {
+    const type = searchParams.get('type');
+    return type === 'INCOME' || type === 'EXPENSE' ? type : 'ALL';
+  });
+  const clearCategoryFocus = () => {
+    setSearchParams({}, { replace: true });
+    setTypeFilter('ALL');
+  };
+  // Com filtro, o que foi pago é o principal da tela: Concluídos abre sempre,
+  // sem mexer na preferência guardada do grupo.
+  const [focusDoneCollapsed, setFocusDoneCollapsed] = useState(false);
   const [excludedCategoryIds, setExcludedCategoryIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState<Set<MovementTag>>(new Set());
@@ -309,21 +344,32 @@ export default function CashFlow() {
   const showIncome = typeFilter === 'ALL' || typeFilter === 'INCOME';
   const showExpense = typeFilter === 'ALL' || typeFilter === 'EXPENSE';
 
+  const passesCategoryFilters = useMemo(
+    () => (item: { categoryId: string | null }) =>
+      (!categoryFocus || matchesCategoryFocus(item.categoryId, categoryFocus)) &&
+      (!item.categoryId || !excludedCategoryIds.has(item.categoryId)),
+    [categoryFocus, excludedCategoryIds],
+  );
+
   const filteredEntries = useMemo(
-    () => (showIncome && data ? data.entries.filter((item) => !item.categoryId || !excludedCategoryIds.has(item.categoryId)) : []),
-    [showIncome, data, excludedCategoryIds],
+    () => (showIncome && data ? data.entries.filter(passesCategoryFilters) : []),
+    [showIncome, data, passesCategoryFilters],
   );
   const filteredPayments = useMemo(
-    () => (showExpense && data ? data.payments.filter((item) => !item.categoryId || !excludedCategoryIds.has(item.categoryId)) : []),
-    [showExpense, data, excludedCategoryIds],
+    () => (showExpense && data ? data.payments.filter(passesCategoryFilters) : []),
+    [showExpense, data, passesCategoryFilters],
   );
   const filteredExtraExpenses = useMemo(
-    () => (showExpense && data ? data.extraExpenses.filter((item) => !item.categoryId || !excludedCategoryIds.has(item.categoryId)) : []),
-    [showExpense, data, excludedCategoryIds],
+    () => (showExpense && data ? data.extraExpenses.filter(passesCategoryFilters) : []),
+    [showExpense, data, passesCategoryFilters],
   );
   const filteredCreditCards = useMemo(
-    () => (showExpense && data ? data.creditCards : []),
-    [showExpense, data],
+    () => (showExpense && data && !focused ? data.creditCards : []),
+    [showExpense, data, focused],
+  );
+  const filteredCardItems = useMemo(
+    () => (showExpense && focused ? cardItems.filter(passesCategoryFilters) : []),
+    [showExpense, focused, cardItems, passesCategoryFilters],
   );
 
   if (!accountId || isLoading || !data) return <PageLoading />;
@@ -475,14 +521,20 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
       entries: filteredEntries,
       payments: filteredPayments,
       extraExpenses: filteredExtraExpenses,
-      transfers: typeFilter === 'ALL' ? data.transfers : [],
+      transfers: typeFilter === 'ALL' && !focused ? data.transfers : [],
       creditCards: filteredCreditCards,
+      cardItems: filteredCardItems,
       cardNames,
       cardFallbackName: t('creditCardsGrid.cardFallbackName'),
       cardPayers,
     }), { search, tags: tagFilter, categoryNames }),
   );
-  const isFiltering = search.trim() !== '' || tagFilter.size > 0;
+  const isFiltering = search.trim() !== '' || tagFilter.size > 0 || focused;
+  const focusNames = categoryFocus
+    ? [...categoryFocus].map((id) =>
+        isNoCategory(id) ? t('movements.focus.noCategory') : categoryNames.get(id) ?? t('movements.focus.noCategory'),
+      )
+    : [];
 
   const PENDING_IDS: Record<MovementKind, { toggle: string | null; del: string | null }> = {
     income: { toggle: entriesPendingToggleId, del: entriesPendingDeleteId },
@@ -490,6 +542,7 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
     extra: { toggle: extrasPendingToggleId, del: extrasPendingDeleteId },
     transfer: { toggle: transfersPendingToggleId, del: transfersPendingDeleteId },
     invoice: { toggle: invoicesPendingRevertId, del: null },
+    cardItem: { toggle: null, del: null },
   };
   const rowBusy = (item: MovementItem): RowBusy => {
     const ids = PENDING_IDS[item.kind];
@@ -514,6 +567,8 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
         return settled
           ? revertInvoice.mutate({ cardId: source.item.creditCardId, invoiceId: source.item.id })
           : setInvoicePayTarget(source.item);
+      case 'cardItem':
+        return undefined;
     }
   }
 
@@ -526,6 +581,7 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
       case 'extra': return setModal({ type: 'extra-expense', mode: 'edit', item: source.item });
       case 'transfer': return setModal({ type: 'transfer', mode: 'edit', item: source.item });
       case 'invoice': return handleOpenInvoice(source.item);
+      case 'cardItem': return navigate('/credit-cards', { state: { cardId: source.item.creditCardId } });
     }
   }
 
@@ -535,7 +591,9 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
       case 'payment': return handleDeleteTransaction('payment', source.item);
       case 'extra': return handleDeleteTransaction('extra-expense', source.item);
       case 'transfer': return handleDeleteTransfer(source.item);
-      case 'invoice': return undefined;
+      case 'invoice':
+      case 'cardItem':
+        return undefined;
     }
   }
 
@@ -611,6 +669,10 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
           onClearTags={() => setTagFilter(new Set())}
         />
 
+        {focused && (
+          <CategoryFocusBar names={focusNames} total={settledTotal(movementGroups)} onClear={clearCategoryFocus} />
+        )}
+
         {/* Lista única (U10a): entradas, saídas, transferências e faturas
             agrupadas em Atrasados → A vencer → Concluídos */}
         <MovementsList
@@ -618,8 +680,10 @@ ${t('invoiceTax.clearAllSkipped', { count: skippedByInvoiceTax })}` : '';
           categoryNames={categoryNames}
           rowBusy={rowBusy}
           locked={clearingAll}
-          doneExpanded={sections.isExpanded('done', movementGroups.done.length > 0, false)}
-          onToggleDone={() => sections.toggle('done', movementGroups.done.length > 0, false)}
+          doneExpanded={focused ? !focusDoneCollapsed : sections.isExpanded('done', movementGroups.done.length > 0, false)}
+          onToggleDone={() =>
+            focused ? setFocusDoneCollapsed((c) => !c) : sections.toggle('done', movementGroups.done.length > 0, false)
+          }
           canTransfer={accounts.length > 1}
           onNew={handleNew}
           onToggle={handleToggle}

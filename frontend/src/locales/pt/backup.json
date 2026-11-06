@@ -37,6 +37,8 @@
     "tableAmount": "Valor",
     "tableType": "Tipo",
     "possibleDuplicate": "possível duplicata",
+    "possibleInvoicePayment": "parece fatura de cartão",
+    "possibleInvoicePaymentHint": "A fatura já entra pelo cartão. Importar esta linha contaria o gasto duas vezes; marque a fatura como paga na lista.",
     "toggleTypeTitle": "Clique para alternar entrada/saída",
     "typeIncome": "Entrada",
     "typeExpense": "Saída",

@@ -11,6 +11,8 @@ const audit = createAuditAction(auditLogService);
 
 // cards CRUD
 router.get('/', asyncHandler((req, res) => controller.findAll(req, res)));
+// compras das faturas do mês, de todos os cartões
+router.get('/items', asyncHandler((req, res) => controller.getMonthItems(req, res)));
 router.post('/', asyncHandler((req, res) => controller.create(req, res)));
 router.put('/:id', asyncHandler((req, res) => controller.update(req, res)));
 router.delete('/:id', asyncHandler((req, res) => controller.remove(req, res)));

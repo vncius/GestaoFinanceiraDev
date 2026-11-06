@@ -6,6 +6,7 @@ import {
   createCardEntrySchema,
   updateCardEntrySchema,
   cardFlowQuerySchema,
+  cardMonthItemsQuerySchema,
   payInvoiceSchema,
   deleteCardEntryQuerySchema,
   findCardsQuerySchema,
@@ -45,6 +46,12 @@ export class CreditCardsController {
     const { month, year } = cardFlowQuerySchema.parse(req.query);
     const flow = await this.service.getCardFlow(req.params.id, req.tenantId, month, year);
     res.json(flow);
+  }
+
+  async getMonthItems(req: Request, res: Response): Promise<void> {
+    const { month, year, accountId } = cardMonthItemsQuerySchema.parse(req.query);
+    const items = await this.service.getMonthItems(req.tenantId, month, year, accountId);
+    res.json(items);
   }
 
   // ─── Entries ──────────────────────────────────────────────────────────────────

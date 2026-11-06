@@ -161,7 +161,12 @@
       "invoiceLocked": "Imposto do mês já pago"
     },
     "invoiceOf": "Fatura {{card}}",
-    "noResults": "Nenhum lançamento encontrado com esses filtros"
+    "noResults": "Nenhum lançamento encontrado com esses filtros",
+    "focus": {
+      "total": "Total efetivado:",
+      "clear": "Limpar filtro",
+      "noCategory": "Sem categoria"
+    }
   },
   "movementForm": {
     "title": {

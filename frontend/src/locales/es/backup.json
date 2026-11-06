@@ -37,6 +37,8 @@
     "tableAmount": "Monto",
     "tableType": "Tipo",
     "possibleDuplicate": "posible duplicado",
+    "possibleInvoicePayment": "parece factura de tarjeta",
+    "possibleInvoicePaymentHint": "La factura ya entra por la tarjeta. Importar esta línea contaría el gasto dos veces; marca la factura como pagada en la lista.",
     "toggleTypeTitle": "Haga clic para alternar entrada/salida",
     "typeIncome": "Entrada",
     "typeExpense": "Salida",

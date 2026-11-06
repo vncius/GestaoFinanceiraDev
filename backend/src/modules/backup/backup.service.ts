@@ -266,6 +266,7 @@ export class BackupService {
       possibleDuplicate: existingKeys.has(
         `${entry.date}|${entry.amount}|${entry.description.trim().toLowerCase()}`,
       ),
+      possibleInvoicePayment: entry.type === 'EXPENSE' && INVOICE_PAYMENT_PATTERN.test(entry.description),
     }));
   }
 
@@ -301,6 +302,11 @@ export class BackupService {
     return { created: toCreate.length };
   }
 }
+
+// "Pagamento de fatura", "PGTO CARTAO", "PAG FATURA NUBANK", "Fatura Itaú".
+// Pega também conta de consumo ("Fatura Claro"): é só uma sugestão, a linha
+// vem desmarcada na prévia e o usuário pode marcar de volta.
+const INVOICE_PAYMENT_PATTERN = /\bfatura\b|\b(pag\w*|pgto)\.?\s+(d[eoa]\s+)?cart[aã]o/i;
 
 // ─── CSV helpers ──────────────────────────────────────────────────────────────
 
@@ -378,7 +384,7 @@ const CSV_HEADER_DATE = ['data', 'date'];
 const CSV_HEADER_DESC = ['descricao', 'descrição', 'description', 'historico', 'histórico'];
 const CSV_HEADER_AMOUNT = ['valor', 'amount', 'value'];
 
-function parseCsvStatement(content: string): ParsedStatementEntry[] {
+function parseCsvStatement(content: string): Omit<ParsedStatementEntry, 'possibleInvoicePayment'>[] {
   const rawLines = content.split(/\r\n|\n/).map((l) => l.trim()).filter(Boolean);
   if (rawLines.length === 0) return [];
 
@@ -406,7 +412,7 @@ function parseCsvStatement(content: string): ParsedStatementEntry[] {
   }
 
   return dataRows
-    .map((cols): ParsedStatementEntry | null => {
+    .map((cols): Omit<ParsedStatementEntry, 'possibleInvoicePayment'> | null => {
       const rawDate = cols[dateIdx]?.trim() ?? '';
       const description = cols[descIdx]?.trim() ?? '';
       const rawAmount = cols[amountIdx]?.trim() ?? '';
@@ -423,17 +429,17 @@ function parseCsvStatement(content: string): ParsedStatementEntry[] {
         possibleDuplicate: false,
       };
     })
-    .filter((e): e is ParsedStatementEntry => e !== null);
+    .filter((e): e is Omit<ParsedStatementEntry, 'possibleInvoicePayment'> => e !== null);
 }
 
 // Parser simples de OFX 1.x (SGML): os campos dentro de <STMTTRN> não têm
 // tag de fechamento própria, mas o bloco <STMTTRN>...</STMTTRN> em si
 // fecha corretamente — cobre a maioria dos extratos de bancos brasileiros.
-function parseOfxStatement(content: string): ParsedStatementEntry[] {
+function parseOfxStatement(content: string): Omit<ParsedStatementEntry, 'possibleInvoicePayment'>[] {
   const blocks = content.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) ?? [];
 
   return blocks
-    .map((block): ParsedStatementEntry | null => {
+    .map((block): Omit<ParsedStatementEntry, 'possibleInvoicePayment'> | null => {
       const dtPosted = block.match(/<DTPOSTED>([^\s<]+)/i)?.[1] ?? '';
       const trnAmt = block.match(/<TRNAMT>([^\s<]+)/i)?.[1] ?? '';
       const name = block.match(/<NAME>([^\r\n<]+)/i)?.[1]?.trim();
@@ -458,5 +464,5 @@ function parseOfxStatement(content: string): ParsedStatementEntry[] {
         possibleDuplicate: false,
       };
     })
-    .filter((e): e is ParsedStatementEntry => e !== null);
+    .filter((e): e is Omit<ParsedStatementEntry, 'possibleInvoicePayment'> => e !== null);
 }
