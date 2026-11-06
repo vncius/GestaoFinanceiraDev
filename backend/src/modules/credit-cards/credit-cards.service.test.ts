@@ -674,6 +674,58 @@ describe('CreditCardsService — invoice payment (PAYMENT entry)', () => {
   });
 });
 
+describe('CreditCardsService — getMonthItems', () => {
+  let ctx: ReturnType<typeof buildService>;
+  let category: Category;
+
+  beforeEach(async () => {
+    ctx = buildService();
+    category = await seedCategory(ctx.categoriesRepo);
+  });
+
+  const buy = (cardId: string, description: string, totalAmount: number, entryType = CardEntryType.CASH) =>
+    ctx.service.createEntry(cardId, TENANT_ID, {
+      description,
+      expenseCategoryId: category.id,
+      totalAmount,
+      purchaseDate: '2026-03-05',
+      entryType,
+    });
+
+  it('lista compras e estornos com a categoria, sem o crédito interno do pagamento', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
+    await buy(card.id, 'Mercado', 10000);
+    await buy(card.id, 'Estorno', -2000, CardEntryType.REFUND);
+    const invoice = (await ctx.invoicesRepo.findByCardId(TENANT_ID, card.id))[0];
+    await ctx.service.payInvoice(card.id, invoice.id, TENANT_ID, {});
+
+    const items = await ctx.service.getMonthItems(TENANT_ID, invoice.month, invoice.year);
+
+    expect(items.map((i) => [i.description, i.amount])).toEqual([['Mercado', 10000], ['Estorno', -2000]]);
+    expect(items[0]).toMatchObject({ categoryId: category.id, invoicePaid: true, creditCardId: card.id });
+  });
+
+  it('marca como não paga a compra de fatura em aberto', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10 });
+    await buy(card.id, 'Mercado', 10000);
+    const invoice = (await ctx.invoicesRepo.findByCardId(TENANT_ID, card.id))[0];
+
+    const [item] = await ctx.service.getMonthItems(TENANT_ID, invoice.month, invoice.year);
+
+    expect(item.invoicePaid).toBe(false);
+    expect(item.dueDate).toBe(invoice.dueDate);
+  });
+
+  it('filtra pela conta que paga a fatura', async () => {
+    const card = await seedCard(ctx.cardsRepo, { closingDay: 10, defaultPaymentAccountId: 'conta-a' });
+    await buy(card.id, 'Mercado', 10000);
+    const invoice = (await ctx.invoicesRepo.findByCardId(TENANT_ID, card.id))[0];
+
+    expect(await ctx.service.getMonthItems(TENANT_ID, invoice.month, invoice.year, 'conta-a')).toHaveLength(1);
+    expect(await ctx.service.getMonthItems(TENANT_ID, invoice.month, invoice.year, 'conta-b')).toHaveLength(0);
+  });
+});
+
 describe('CreditCardsService — installment deletion scoped to reference month', () => {
   let ctx: ReturnType<typeof buildService>;
   let category: Category;

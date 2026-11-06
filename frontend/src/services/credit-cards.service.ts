@@ -1,6 +1,7 @@
 import { api } from './api';
 import {
   CardFlowResponse,
+  CardMonthItem,
   CreditCard,
   CreditCardEntry,
   CreditCardInvoice,
@@ -43,6 +44,11 @@ export const CreditCardsService = {
 
   remove: (id: string): Promise<void> =>
     api.delete(`/credit-cards/${id}`).then(() => undefined),
+
+  getMonthItems: (month: number, year: number, accountId?: string | null): Promise<CardMonthItem[]> =>
+    api
+      .get<CardMonthItem[]>('/credit-cards/items', { params: { month, year, accountId: accountId ?? undefined } })
+      .then((r) => r.data),
 
   getFlow: (id: string, month: number, year: number): Promise<CardFlowResponse> =>
     api.get<CardFlowResponse>(`/credit-cards/${id}/flow`, { params: { month, year } }).then((r) => r.data),

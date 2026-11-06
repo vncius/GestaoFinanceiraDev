@@ -530,6 +530,19 @@ describe('BackupService — bank statement parsing', () => {
     expect(entries[1]).toMatchObject({ date: '2026-03-12', description: 'Transferência recebida', amount: 250000, type: 'INCOME' });
   });
 
+  it('marca saída com cara de pagamento de fatura, mas não entrada nem compra comum', async () => {
+    const csv = [
+      'Data;Descrição;Valor',
+      '01/03/2026;PGTO CARTAO CREDITO;-1000,00',
+      '02/03/2026;Pagamento de fatura;-2000,00',
+      '03/03/2026;Estorno de fatura;50,00',
+      '04/03/2026;Supermercado;-350,50',
+    ].join('\n');
+    const entries = await ctx.service.parseStatement(TENANT_ID, 'extrato.csv', csv);
+
+    expect(entries.map((e) => e.possibleInvoicePayment)).toEqual([true, true, false, false]);
+  });
+
   it('flags an entry as a possible duplicate when a matching transaction already exists', async () => {
     await ctx.transactionsRepo.create(makeTransaction(TENANT_ID, {
       description: 'Salário',

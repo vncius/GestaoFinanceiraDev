@@ -43,7 +43,7 @@ function Badge({ children, tone = 'gray' }: { children: React.ReactNode; tone?: 
 
 function KindIcon({ item }: { item: MovementItem }) {
   if (item.kind === 'transfer') return <ArrowLeftRight size={15} className="text-gray-400 dark:text-gray-500" />;
-  if (item.kind === 'invoice') return <CreditCard size={15} className="text-purple-500" />;
+  if (item.kind === 'invoice' || item.kind === 'cardItem') return <CreditCard size={15} className="text-purple-500" />;
   if (item.direction === 'in') return <TrendingUp size={15} className="text-green-500" />;
   return <TrendingDown size={15} className={item.kind === 'extra' ? 'text-orange-500' : 'text-red-500'} />;
 }
@@ -73,6 +73,8 @@ function MovementRow({
   const rowLocked = locked || busy !== null;
   const isTransfer = item.kind === 'transfer';
   const isInvoice = item.kind === 'invoice';
+  // Compra no cartão: só leitura aqui, quem a edita é a tela do cartão.
+  const isCardItem = item.kind === 'cardItem';
 
   const toggleTitles = isTransfer
     ? { paid: t('transferGrid.revert'), unpaid: t('transferGrid.settle') }
@@ -86,7 +88,7 @@ function MovementRow({
     ? 'text-gray-600 dark:text-gray-300'
     : item.direction === 'in'
     ? 'text-green-700 dark:text-green-400'
-    : isInvoice
+    : isInvoice || isCardItem
     ? 'text-purple-700 dark:text-purple-400'
     : 'text-red-600 dark:text-red-400';
 
@@ -98,15 +100,19 @@ function MovementRow({
       onClick={() => { if (!rowLocked) onEdit(); }}
     >
       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-        <PaidToggle
-          paid={item.settled}
-          urgent={overdue}
-          loading={busy === 'toggle'}
-          disabled={locked || busy === 'delete'}
-          onToggle={onToggle}
-          paidTitle={toggleTitles.paid}
-          unpaidTitle={toggleTitles.unpaid}
-        />
+        {isCardItem ? (
+          <span className="block w-[26px] sm:w-[30px]" aria-hidden />
+        ) : (
+          <PaidToggle
+            paid={item.settled}
+            urgent={overdue}
+            loading={busy === 'toggle'}
+            disabled={locked || busy === 'delete'}
+            onToggle={onToggle}
+            paidTitle={toggleTitles.paid}
+            unpaidTitle={toggleTitles.unpaid}
+          />
+        )}
       </div>
       <div className="shrink-0"><KindIcon item={item} /></div>
 
@@ -115,7 +121,7 @@ function MovementRow({
           {isInvoice ? t('movements.invoiceOf', { card: item.description }) : item.description}
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-          <span className={overdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}>{formatDate(item.date)}</span>
+          <span className={overdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}>{formatDate(item.displayDate ?? item.date)}</span>
           {accountName && <Badge tone="gray">{accountName}</Badge>}
           {categoryName && <span className="truncate max-w-[10rem]">{categoryName}</span>}
           {item.isFixed && (
@@ -123,6 +129,7 @@ function MovementRow({
           )}
           {item.kind === 'extra' && <Badge tone="orange">{t('movements.badges.extra')}</Badge>}
           {isInvoice && <Badge tone="purple">{t('movements.badges.card')}</Badge>}
+          {isCardItem && <Badge tone="purple"><CreditCard size={10} />{item.cardName}</Badge>}
           {isTransfer && (
             <Badge>
               {item.direction === 'in'
@@ -157,14 +164,14 @@ function MovementRow({
         }`}
       >
         <IconActionButton
-          title={isInvoice ? t('creditCardsGrid.actions.openInvoice') : t('grid.actions.edit')}
+          title={isInvoice || isCardItem ? t('creditCardsGrid.actions.openInvoice') : t('grid.actions.edit')}
           onClick={onEdit}
           disabled={rowLocked}
           className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
         >
           <Pencil size={14} />
         </IconActionButton>
-        {!isInvoice && !item.locked && (
+        {!isInvoice && !isCardItem && !item.locked && (
           <IconActionButton
             title={t('grid.actions.delete')}
             onClick={onDelete}

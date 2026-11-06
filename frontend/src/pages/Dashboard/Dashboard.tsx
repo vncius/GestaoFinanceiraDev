@@ -32,6 +32,7 @@ import { formatCurrency } from '../../utils/money';
 import { formatDate, formatMonthYear, formatMonthYearShort, lastDayOfMonthISO } from '../../utils/date';
 import { MonthSummaryView, projectionRange, summarizeMonth } from '../../utils/month-summary';
 import { getAdvancedDetails } from '../../hooks/useAdvancedDetails';
+import { categoryFocusHref } from '../CashFlow/movements';
 
 // Início (U8 do plano de UX). De cima para baixo, só o que responde
 // "quanto tenho / quanto entrou e saiu / o que ainda falta"; o resto fica
@@ -225,24 +226,34 @@ function StillThisMonth({ v, dues, month, year }: { v: MonthSummaryView; dues: U
 const CATEGORY_PALETTE = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 const TOP_CATEGORIES = 5;
 
-function CategoryBars({ items }: { items: CategoryBreakdownItem[] }) {
+// "Outros" soma várias categorias: guarda quais, para abrir todas de uma vez.
+type CategoryBar = CategoryBreakdownItem & { groupedIds?: (string | null)[] };
+
+function CategoryBars({ items, type }: { items: CategoryBar[]; type: 'INCOME' | 'EXPENSE' }) {
+  const { t } = useTranslation('dashboard');
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-1">
       {items.map((item, i) => (
         <li key={item.categoryId ?? `none-${i}`}>
-          <div className="flex items-center justify-between gap-2 text-xs mb-1">
-            <span className="text-gray-600 dark:text-gray-300 truncate">{item.categoryName}</span>
-            <span className="font-semibold text-gray-800 dark:text-gray-100 shrink-0">
-              {formatCurrency(item.amount)}{' '}
-              <span className="text-gray-400 dark:text-gray-500 font-normal">({item.percentage}%)</span>
-            </span>
-          </div>
-          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${item.percentage}%`, backgroundColor: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length] }}
-            />
-          </div>
+          <Link
+            to={categoryFocusHref(item.groupedIds ?? [item.categoryId], type)}
+            title={t('whereMoneyWent.seeItems', { category: item.categoryName })}
+            className="block -mx-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-2 text-xs mb-1">
+              <span className="text-gray-600 dark:text-gray-300 truncate">{item.categoryName}</span>
+              <span className="font-semibold text-gray-800 dark:text-gray-100 shrink-0">
+                {formatCurrency(item.amount)}{' '}
+                <span className="text-gray-400 dark:text-gray-500 font-normal">({item.percentage}%)</span>
+              </span>
+            </div>
+            <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${item.percentage}%`, backgroundColor: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length] }}
+              />
+            </div>
+          </Link>
         </li>
       ))}
     </ul>
@@ -250,7 +261,7 @@ function CategoryBars({ items }: { items: CategoryBreakdownItem[] }) {
 }
 
 // As N maiores + o resto somado em "Outros".
-function topWithOthers(items: CategoryBreakdownItem[], othersLabel: string): CategoryBreakdownItem[] {
+function topWithOthers(items: CategoryBreakdownItem[], othersLabel: string): CategoryBar[] {
   if (items.length <= TOP_CATEGORIES + 1) return items;
   const top = items.slice(0, TOP_CATEGORIES);
   const rest = items.slice(TOP_CATEGORIES);
@@ -261,6 +272,7 @@ function topWithOthers(items: CategoryBreakdownItem[], othersLabel: string): Cat
       categoryName: othersLabel,
       amount: rest.reduce((s, x) => s + x.amount, 0),
       percentage: rest.reduce((s, x) => s + x.percentage, 0),
+      groupedIds: rest.map((x) => x.categoryId),
     },
   ];
 }
@@ -273,7 +285,7 @@ function WhereMoneyWent({ items }: { items: CategoryBreakdownItem[] }) {
       {items.length === 0 ? (
         <EmptyState title={t('whereMoneyWent.empty')} />
       ) : (
-        <CategoryBars items={topWithOthers(items, t('whereMoneyWent.others'))} />
+        <CategoryBars items={topWithOthers(items, t('whereMoneyWent.others'))} type="EXPENSE" />
       )}
     </section>
   );
@@ -443,7 +455,7 @@ function FullAnalysis({
             {incomeByCategory.length === 0 ? (
               <EmptyState title={t('whereMoneyWent.empty')} />
             ) : (
-              <CategoryBars items={incomeByCategory} />
+              <CategoryBars items={incomeByCategory} type="INCOME" />
             )}
           </div>
 

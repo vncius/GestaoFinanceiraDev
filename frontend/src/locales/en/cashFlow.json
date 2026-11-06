@@ -161,7 +161,12 @@
       "invoiceLocked": "Month's tax already paid"
     },
     "invoiceOf": "{{card}} invoice",
-    "noResults": "No entries match these filters"
+    "noResults": "No entries match these filters",
+    "focus": {
+      "total": "Settled total:",
+      "clear": "Clear filter",
+      "noCategory": "No category"
+    }
   },
   "movementForm": {
     "title": {

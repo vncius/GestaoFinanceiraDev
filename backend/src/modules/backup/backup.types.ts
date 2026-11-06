@@ -34,4 +34,7 @@ export interface ParsedStatementEntry {
   amount: number; // centavos, sempre positivo
   type: StatementEntryType;
   possibleDuplicate: boolean;
+  // Saída com cara de pagamento de fatura: a fatura já entra no fluxo pelo
+  // cartão, então importar esta linha contaria o mesmo gasto duas vezes.
+  possibleInvoicePayment: boolean;
 }

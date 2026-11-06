@@ -255,7 +255,7 @@ export function StatementImportSection({
     try {
       const content = await readFileAsText(file);
       const { entries: parsed } = await BackupService.parseStatement(file.name, content);
-      setEntries(parsed.map((entry) => ({ ...entry, include: !entry.possibleDuplicate })));
+      setEntries(parsed.map((entry) => ({ ...entry, include: !entry.possibleDuplicate && !entry.possibleInvoicePayment })));
     } catch (err) {
       showError(err instanceof Error ? err.message : t('statementImport.readError'));
     } finally {
@@ -337,7 +337,7 @@ export function StatementImportSection({
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                 {entries.map((entry, i) => (
-                  <tr key={i} className={entry.possibleDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : ''}>
+                  <tr key={i} className={entry.possibleDuplicate || entry.possibleInvoicePayment ? 'bg-amber-50 dark:bg-amber-900/20' : ''}>
                     <td className="px-3 py-2">
                       <input type="checkbox" checked={entry.include} onChange={() => toggleInclude(i)} className="rounded" />
                     </td>
@@ -346,6 +346,11 @@ export function StatementImportSection({
                       {entry.description}
                       {entry.possibleDuplicate && (
                         <span className="ml-2 text-[10px] text-amber-600 dark:text-amber-400">{t('statementImport.possibleDuplicate')}</span>
+                      )}
+                      {entry.possibleInvoicePayment && (
+                        <span className="ml-2 text-[10px] text-amber-600 dark:text-amber-400" title={t('statementImport.possibleInvoicePaymentHint')}>
+                          {t('statementImport.possibleInvoicePayment')}
+                        </span>
                       )}
                     </td>
                     <td className={`px-3 py-2 text-right font-medium ${entry.type === 'INCOME' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>

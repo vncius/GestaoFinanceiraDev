@@ -6,6 +6,7 @@ export interface StatementEntry {
   amount: number;
   type: 'INCOME' | 'EXPENSE';
   possibleDuplicate: boolean;
+  possibleInvoicePayment: boolean;
 }
 
 export type CsvExportRange = { all: true } | { from: string; to: string };

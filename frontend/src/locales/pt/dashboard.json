@@ -38,7 +38,8 @@
   "whereMoneyWent": {
     "title": "Para onde foi o dinheiro",
     "empty": "Sem lançamentos no período",
-    "others": "Outros"
+    "others": "Outros",
+    "seeItems": "Ver os lançamentos de {{category}}"
   },
   "analysis": {
     "show": "Ver análise completa",

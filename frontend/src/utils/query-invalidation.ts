@@ -7,7 +7,8 @@ import { QueryClient } from '@tanstack/react-query';
 //     (cash-flow.service.ts:283 e :446) e resolve nomes de categoria/cartão;
 //   - `dashboard` agrega por categoria (dashboard.service.ts:326), soma
 //     faturas de cartão (:110) e usa `autoReserveTargetAccountId` (:155);
-//   - `creditCards` carrega os cartões e suas faturas.
+//   - `creditCards` carrega os cartões e suas faturas;
+//   - `cardItems` lista as compras das faturas do mês com a categoria.
 //
 // Sempre por PREFIXO: essas chaves carregam accountId/month/year e o cache
 // guarda uma entrada por combinação. Invalidar a chave completa da referência
@@ -16,4 +17,5 @@ export function invalidateDerivedData(qc: QueryClient): void {
   qc.invalidateQueries({ queryKey: ['cashFlow'] });
   qc.invalidateQueries({ queryKey: ['dashboard'] });
   qc.invalidateQueries({ queryKey: ['creditCards'] });
+  qc.invalidateQueries({ queryKey: ['cardItems'] });
 }

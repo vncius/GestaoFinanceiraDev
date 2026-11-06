@@ -79,6 +79,12 @@ describe('Início', () => {
     expect(screen.getByText('Salário')).toBeTruthy();
   });
 
+  it('cada categoria de "Para onde foi o dinheiro" leva a Movimentações filtrada', async () => {
+    renderDashboard();
+    const link = await screen.findByRole('link', { name: /Moradia/ });
+    expect(link.getAttribute('href')).toBe('/cash-flow?categories=c1&type=EXPENSE');
+  });
+
   it('análise completa começa recolhida e abre sob demanda', async () => {
     renderDashboard();
     fireEvent.click(await screen.findByText('Ver análise completa'));
@@ -92,6 +98,6 @@ describe('topWithOthers', () => {
     const items = Array.from({ length: 8 }, (_, i) => ({ categoryId: `c${i}`, categoryName: `C${i}`, amount: 100, percentage: 12 }));
     const out = topWithOthers(items, 'Outros');
     expect(out).toHaveLength(6);
-    expect(out[5]).toMatchObject({ categoryName: 'Outros', amount: 300, percentage: 36 });
+    expect(out[5]).toMatchObject({ categoryName: 'Outros', amount: 300, percentage: 36, groupedIds: ['c5', 'c6', 'c7'] });
   });
 });

@@ -1,16 +1,17 @@
-import { CreditCardInvoice, FinancialTransaction, isInvoiceTaxExpense, TransferFlowItem } from '../../types';
+import { CardMonthItem, CreditCardInvoice, FinancialTransaction, isInvoiceTaxExpense, TransferFlowItem } from '../../types';
 
 // Lista única de Movimentações (U10 do plano de UX, D8): entradas, pagamentos,
 // gastos fora do comum, transferências e faturas viram um único tipo de linha,
 // agrupado por situação. Os tipos internos continuam os mesmos (D6) — cada
 // item guarda a origem para despachar ações para o handler certo.
 
-export type MovementKind = 'income' | 'payment' | 'extra' | 'transfer' | 'invoice';
+export type MovementKind = 'income' | 'payment' | 'extra' | 'transfer' | 'invoice' | 'cardItem';
 
 export type MovementSource =
   | { kind: 'income' | 'payment' | 'extra'; item: FinancialTransaction }
   | { kind: 'transfer'; item: TransferFlowItem }
-  | { kind: 'invoice'; item: CreditCardInvoice };
+  | { kind: 'invoice'; item: CreditCardInvoice }
+  | { kind: 'cardItem'; item: CardMonthItem };
 
 export interface MovementItem {
   key: string;
@@ -21,6 +22,11 @@ export interface MovementItem {
   description: string;
   amount: number;
   date: string;
+  // Data mostrada na linha, quando difere da que ordena e define o grupo
+  // (compra no cartão: mostra a compra, agrupa pelo vencimento da fatura).
+  displayDate?: string;
+  // Só nas compras no cartão.
+  cardName?: string;
   settled: boolean;
   categoryId: string | null;
   isFixed: boolean;
@@ -46,6 +52,8 @@ export interface MovementsInput {
   extraExpenses: FinancialTransaction[];
   transfers: TransferFlowItem[];
   creditCards: CreditCardInvoice[];
+  // Compras das faturas: só entram com filtro de categoria aberto pelo Início.
+  cardItems?: CardMonthItem[];
   cardNames: Map<string, string>;
   cardFallbackName: string;
   // Conta pagadora padrão de cada cartão: fatura ainda não paga não tem
@@ -119,12 +127,38 @@ export function toMovements(input: MovementsInput): MovementItem[] {
       source: { kind: 'invoice', item: inv },
     }));
 
+  const cardItems: MovementItem[] = (input.cardItems ?? []).map((item) => ({
+    key: `cardItem:${item.id}`,
+    kind: 'cardItem',
+    // Estorno devolve dinheiro à categoria.
+    direction: item.amount < 0 ? 'in' : 'out',
+    description: item.totalInstallments > 1
+      ? `${item.description} ${item.installmentNumber}/${item.totalInstallments}`
+      : item.description,
+    amount: Math.abs(item.amount),
+    date: item.dueDate,
+    displayDate: item.purchaseDate,
+    cardName: input.cardNames.get(item.creditCardId) ?? input.cardFallbackName,
+    settled: item.invoicePaid,
+    categoryId: item.categoryId,
+    isFixed: false,
+    isAutoReserve: false,
+    counterpartAccountName: null,
+    taxRateBps: null,
+    invoiceTaxCount: null,
+    locked: true,
+    accountId: null,
+    actionId: item.id,
+    source: { kind: 'cardItem', item },
+  }));
+
   return [
     ...input.entries.map((t) => fromTransaction('income', t)),
     ...input.payments.map((t) => fromTransaction('payment', t)),
     ...input.extraExpenses.map((t) => fromTransaction('extra', t)),
     ...transfers,
     ...invoices,
+    ...cardItems,
   ];
 }
 
@@ -154,6 +188,37 @@ export function groupBySituation(items: MovementItem[], todayKey: string = local
   };
 }
 
+// ── Filtro por categoria vindo do Início ──────────────────────────────────────
+
+// Na URL (`/cash-flow?categories=a,b&type=EXPENSE`), "Sem categoria" vira esta
+// palavra: um clique no card precisa abrir só o que ele somou.
+const NO_CATEGORY = 'none';
+
+export function categoryFocusHref(ids: (string | null)[], type: 'INCOME' | 'EXPENSE'): string {
+  const params = new URLSearchParams({ categories: ids.map((id) => id ?? NO_CATEGORY).join(','), type });
+  return `/cash-flow?${params}`;
+}
+
+export function parseCategoryFocus(param: string | null): Set<string> | null {
+  const ids = param?.split(',').filter(Boolean) ?? [];
+  return ids.length > 0 ? new Set(ids) : null;
+}
+
+export function matchesCategoryFocus(categoryId: string | null, focus: Set<string>): boolean {
+  return focus.has(categoryId ?? NO_CATEGORY);
+}
+
+export function isNoCategory(id: string): boolean {
+  return id === NO_CATEGORY;
+}
+
+// Total efetivado do filtro: é o número que aparece no card do Início. Só o
+// que já foi pago ou recebido, porque o card não soma o que está pendente.
+export function settledTotal(groups: MovementGroups): number {
+  const signed = groups.done.reduce((s, i) => s + (i.direction === 'out' ? i.amount : -i.amount), 0);
+  return Math.abs(signed);
+}
+
 // ── Busca e filtro por tipo (U10b) ────────────────────────────────────────────
 
 export type MovementTag = 'fixed' | 'extra' | 'invoice' | 'transfer';
@@ -163,7 +228,7 @@ function hasTag(item: MovementItem, tag: MovementTag): boolean {
   switch (tag) {
     case 'fixed': return item.isFixed;
     case 'extra': return item.kind === 'extra';
-    case 'invoice': return item.kind === 'invoice';
+    case 'invoice': return item.kind === 'invoice' || item.kind === 'cardItem';
     case 'transfer': return item.kind === 'transfer';
   }
 }

@@ -160,6 +160,21 @@ export interface CreditCardInvoice {
   updatedAt: string;
 }
 
+// Compra de uma fatura do mês, listada por categoria em Movimentações.
+export interface CardMonthItem {
+  id: string;
+  creditCardId: string;
+  invoiceId: string;
+  description: string;
+  amount: number; // negativo em estorno
+  categoryId: string | null;
+  purchaseDate: string;
+  dueDate: string;
+  installmentNumber: number;
+  totalInstallments: number;
+  invoicePaid: boolean;
+}
+
 export interface CardFlowResponse {
   card: CreditCard;
   month: number;

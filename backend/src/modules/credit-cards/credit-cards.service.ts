@@ -20,6 +20,7 @@ import {
 } from './credit-cards.repository';
 import {
   CardEntryType,
+  CardMonthItem,
   CreditCard,
   CreditCardEntry,
   CreditCardInstallment,
@@ -270,6 +271,61 @@ export class CreditCardsService {
         openAmount: invoiceTotal - paidAmount,
       },
     };
+  }
+
+  // ─── Compras das faturas do mês ───────────────────────────────────────────────
+
+  // Compras de todas as faturas do mês, com a categoria de cada uma: é o que
+  // abre a fatura por categoria em Movimentações. Mesma regra do breakdown do
+  // Dashboard (dashboard.service.ts): sem o crédito interno PAYMENT e sem
+  // parcela cancelada; o escopo por conta segue quem paga a fatura.
+  async getMonthItems(
+    tenantId: string,
+    month: number,
+    year: number,
+    accountId?: string,
+  ): Promise<CardMonthItem[]> {
+    const [cards, invoices, installments, entries] = await Promise.all([
+      this.cardsRepo.findAll(tenantId),
+      this.invoicesRepo.findAll(tenantId),
+      this.installmentsRepo.findByMonth(tenantId, month, year),
+      this.entriesRepo.findAll(tenantId),
+    ]);
+    const cardMap = new Map(cards.map((c) => [c.id, c]));
+    const entryMap = new Map(entries.map((e) => [e.id, e]));
+    const invoiceMap = new Map(
+      invoices
+        .filter((inv) => {
+          if (inv.status === InvoiceStatus.CANCELED) return false;
+          if (inv.month !== month || inv.year !== year) return false;
+          if (!accountId) return true;
+          const payer = inv.paymentAccountId ?? cardMap.get(inv.creditCardId)?.defaultPaymentAccountId ?? null;
+          return payer === accountId;
+        })
+        .map((inv) => [inv.id, inv]),
+    );
+
+    const items: CardMonthItem[] = [];
+    for (const inst of installments) {
+      if (inst.status === InstallmentStatus.CANCELED || !inst.creditCardInvoiceId) continue;
+      const invoice = invoiceMap.get(inst.creditCardInvoiceId);
+      const entry = entryMap.get(inst.creditCardEntryId);
+      if (!invoice || !entry || entry.entryType === CardEntryType.PAYMENT) continue;
+      items.push({
+        id: inst.id,
+        creditCardId: invoice.creditCardId,
+        invoiceId: invoice.id,
+        description: entry.description,
+        amount: inst.amount,
+        categoryId: entry.expenseCategoryId || null,
+        purchaseDate: entry.purchaseDate,
+        dueDate: invoice.dueDate,
+        installmentNumber: inst.installmentNumber,
+        totalInstallments: inst.totalInstallments,
+        invoicePaid: invoice.status === InvoiceStatus.PAID,
+      });
+    }
+    return items;
   }
 
   // ─── Entries ──────────────────────────────────────────────────────────────────
