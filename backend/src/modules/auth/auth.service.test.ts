@@ -68,12 +68,12 @@ describe('AuthService — sessão', () => {
     await expect(service.verifySession(token)).resolves.toMatchObject({ sub: 'user-1', tenantId: 'tenant-1' });
   });
 
-  it('expira em 24h', async () => {
+  it('expira em 30 dias', async () => {
     const { repo } = makeRepo([baseUser]);
     const service = new AuthService(repo);
     const token = await issue(service, baseUser);
     const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
-    expect(payload.exp - payload.iat).toBe(24 * 60 * 60);
+    expect(payload.exp - payload.iat).toBe(30 * 24 * 60 * 60);
   });
 
   it('sair de todos os dispositivos invalida tokens já emitidos', async () => {

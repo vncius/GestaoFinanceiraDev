@@ -75,7 +75,7 @@
     {
       "title": "7. Seguridad",
       "paragraphs": [
-        "Usamos conexión cifrada (HTTPS), sesión que caduca en 24 horas y que se puede cerrar en todos los dispositivos, cifrado en la base de datos de descripciones, observaciones, mensajes del asistente y de tu correo, aislamiento de los datos de cada usuario, límites contra abusos y registro de las acciones sensibles.",
+        "Usamos conexión cifrada (HTTPS), sesión que caduca en 30 días y que se puede cerrar en todos los dispositivos, cifrado en la base de datos de descripciones, observaciones, mensajes del asistente y de tu correo, aislamiento de los datos de cada usuario, límites contra abusos y registro de las acciones sensibles.",
         "Ningún sistema es 100% seguro. Si ocurre un incidente que pueda causar un riesgo o daño relevante, te avisaremos a ti y a la ANPD, como exige la ley."
       ]
     },

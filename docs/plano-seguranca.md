@@ -33,7 +33,7 @@ Levar a aplicação de "projeto pessoal" para um patamar mínimo aceitável para
 ## Decisões tomadas
 
 ### D1 — Sessão de 1 dia, revogável
-JWT de sessão expira em **24h** (absoluto, sem renovação deslizante). Cada usuário tem `sessionVersion`; o token carrega a versão e o `authMiddleware` compara com a do banco (cache em memória de 60s, invalidado na hora em "sair de todos"/exclusão). "Sair" pergunta: **só deste dispositivo** ou **de todos os dispositivos** (incrementa `sessionVersion`).
+JWT de sessão expira em **30 dias** (absoluto, sem renovação deslizante; era 24h até 2026-11-12, ampliado a pedido do usuário). Cada usuário tem `sessionVersion`; o token carrega a versão e o `authMiddleware` compara com a do banco (cache em memória de 60s, invalidado na hora em "sair de todos"/exclusão). "Sair" pergunta: **só deste dispositivo** ou **de todos os dispositivos** (incrementa `sessionVersion`).
 
 ### D2 — CSRF sem quebrar iPhone
 Produção usa o proxy same-origin do Cloudflare Pages (`/api`), então o cookie é first-party: passa a ser `SameSite=Lax` (configurável por `COOKIE_SAME_SITE` para quem fizer deploy cross-site sem proxy). Toda requisição que altera estado exige o cabeçalho `X-Requested-With: XMLHttpRequest` — um site de terceiro não consegue enviá-lo sem passar pelo preflight CORS, que só libera `CORS_ORIGIN`. Não depende de cookie de terceiro, então funciona no Safari/iOS.

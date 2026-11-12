@@ -75,7 +75,7 @@
     {
       "title": "7. Security",
       "paragraphs": [
-        "We use encrypted connections (HTTPS), sessions that expire after 24 hours and can be ended on all devices, database encryption of descriptions, notes, assistant messages and your email, isolation of each user's data, abuse limits and logging of sensitive actions.",
+        "We use encrypted connections (HTTPS), sessions that expire after 30 days and can be ended on all devices, database encryption of descriptions, notes, assistant messages and your email, isolation of each user's data, abuse limits and logging of sensitive actions.",
         "No system is 100% secure. If an incident may cause relevant risk or harm, we will notify you and the ANPD as required by law."
       ]
     },

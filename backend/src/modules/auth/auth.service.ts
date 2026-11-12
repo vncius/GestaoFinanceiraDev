@@ -8,9 +8,9 @@ import { CURRENT_CONSENT_VERSION } from './consent';
 
 const googleJWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
 
-// Sessão curta (D1 do plano de segurança): um cookie roubado vale no máximo
-// um dia, e "sair de todos os dispositivos" derruba as demais na hora.
-export const SESSION_TTL_SECONDS = 24 * 60 * 60;
+// Sessão de 30 dias (revisão da D1 do plano de segurança, 2026-11-12): dura até
+// o logout manual; "sair de todos os dispositivos" derruba as demais na hora.
+export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 // Cache do usuário usado na checagem de sessão, que roda a cada requisição.
 // Processo único: revogações feitas aqui invalidam a entrada na hora; o TTL

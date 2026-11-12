@@ -75,7 +75,7 @@
     {
       "title": "7. Segurança",
       "paragraphs": [
-        "Usamos conexão criptografada (HTTPS), sessão que expira em 24 horas e pode ser encerrada em todos os dispositivos, criptografia das descrições, observações, mensagens do assistente e do seu e-mail no banco de dados, isolamento dos dados de cada usuário, limites contra abuso e registro das ações sensíveis.",
+        "Usamos conexão criptografada (HTTPS), sessão que expira em 30 dias e pode ser encerrada em todos os dispositivos, criptografia das descrições, observações, mensagens do assistente e do seu e-mail no banco de dados, isolamento dos dados de cada usuário, limites contra abuso e registro das ações sensíveis.",
         "Nenhum sistema é 100% seguro. Se houver um incidente que possa causar risco ou dano relevante, avisaremos você e a ANPD, como manda a lei."
       ]
     },
