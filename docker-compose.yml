@@ -1,9 +1,14 @@
 # App completo em containers, apontando para o banco de produção (Atlas).
 #
-#   1. Copie .env.docker.example para .env.docker e preencha com os valores
-#      de produção (os mesmos do Render).
-#   2. docker compose --env-file .env.docker up -d --build
+#   1. Preencha um arquivo de variáveis com os valores de produção (modelo em
+#      .env.docker.example). Pode ficar fora do projeto.
+#   2. docker compose --env-file CAMINHO/DO/ARQUIVO up -d --build
+#      (ou exporte as variáveis no shell antes de `docker compose up`).
 #   3. Abra http://localhost:8080 (ou a porta de APP_PORT).
+#
+# Todas as variáveis chegam por interpolação (${...}), então qualquer arquivo
+# passado em --env-file ou variável do shell vale; as obrigatórias param o
+# compose com erro se faltarem.
 #
 # Só o frontend (nginx) fica exposto, e só nesta máquina (127.0.0.1); o
 # backend é alcançado pela rede interna do compose via /api.
@@ -12,8 +17,15 @@ name: gestao-financeira
 services:
   backend:
     build: ./backend
-    env_file: .env.docker
     environment:
+      MONGODB_URI: ${MONGODB_URI:?defina MONGODB_URI}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-gestao_financeira}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET (o mesmo de produção)}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?defina ENCRYPTION_KEY (a mesma de produção)}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?defina GOOGLE_CLIENT_ID}
+      AI_PROVIDER: ${AI_PROVIDER:-fake}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
       NODE_ENV: production
       PORT: "3100"
       CORS_ORIGIN: http://localhost:${APP_PORT:-8080}
@@ -25,7 +37,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?defina GOOGLE_CLIENT_ID no .env.docker}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?defina GOOGLE_CLIENT_ID}
         VITE_LEGAL_CONTROLLER_NAME: ${VITE_LEGAL_CONTROLLER_NAME:-}
         VITE_LEGAL_CONTACT_EMAIL: ${VITE_LEGAL_CONTACT_EMAIL:-}
     ports:

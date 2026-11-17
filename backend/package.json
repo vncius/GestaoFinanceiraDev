@@ -16,6 +16,7 @@
     "migrate:mongo": "tsx src/scripts/migrate-json-to-mongo.ts",
     "migrate:card-payment-account": "tsx src/scripts/migrate-card-payment-account.ts",
     "audit:read": "tsx src/scripts/read-audit-log.ts",
+    "check:encryption-key": "tsx src/scripts/check-encryption-key.ts",
     "test": "vitest run"
   },
   "dependencies": {

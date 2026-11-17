@@ -19,6 +19,7 @@ Ideias para depois (fora do plano atual): [`docs/backlog.md`](docs/backlog.md).
 - Frontend: `cd frontend && npm run build` (inclui `tsc`) · `npm test`
 - Backend: `cd backend && npm run typecheck` · `npm test`
 - Dev servers: `.claude/launch.json` (`backend` :3100, `frontend` :3101)
+- Docker apontando para produção (http://localhost:8080): `docker compose --env-file <arquivo do usuário> up -d --build` — passo a passo no README ("Rodando com Docker"). O arquivo de variáveis de produção é do usuário e fica fora do projeto: nunca ler. Logs: `docker logs gestao-financeira-backend-1` (`docker compose logs` exige o `--env-file`).
 
 ## Convenções
 

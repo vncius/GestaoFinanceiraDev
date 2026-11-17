@@ -50,11 +50,11 @@
 | Backend | Node.js, TypeScript, Express, Zod, MongoDB Atlas (driver nativo) |
 | IA | Anthropic ou OpenAI atrás de uma abstração de provedor própria ([`ai-platform.md`](docs/architecture/ai-platform.md)) |
 | Testes | Vitest + Testing Library (≈100 testes no frontend, ≈280 no backend) |
-| Deploy | Cloudflare Pages (frontend + proxy `/api`) e Render (backend) |
+| Deploy | Cloudflare Pages (frontend + proxy `/api`) e Render (backend); ou Docker local (`docker-compose.yml`) |
 
 ## Rodando localmente
 
-Dois pacotes independentes (não é monorepo), cada um com seu `package.json`. Requer Node.js 18+ e uma base MongoDB.
+Dois pacotes independentes (não é monorepo), cada um com seu `package.json`. Requer Node.js 24 (`engines` fixa 24.22.1+) e uma base MongoDB.
 
 ```bash
 cd backend && npm install && cp .env.example .env    # preencha MONGODB_URI, JWT_SECRET, GOOGLE_CLIENT_ID
@@ -67,6 +67,34 @@ Em dois terminais:
 cd backend && npm run dev     # API em http://localhost:3100
 cd frontend && npm run dev    # app em http://localhost:3101
 ```
+
+### Rodando com Docker (apontando para produção)
+
+O `docker-compose.yml` sobe o app completo em modo produção: o backend e um nginx que serve o frontend e faz o papel do proxy `/api` do Cloudflare Pages. Fica só em `http://localhost:8080` (porta em `APP_PORT`), acessível apenas nesta máquina. Requer Docker Desktop.
+
+1. **Variáveis.** Copie [`.env.docker.example`](.env.docker.example) para um arquivo **fora do projeto** e preencha com os valores de produção. `JWT_SECRET` e `ENCRYPTION_KEY` têm de ser **os mesmos** do servidor de produção; sem `MONGODB_URI`, `JWT_SECRET`, `ENCRYPTION_KEY` ou `GOOGLE_CLIENT_ID` o compose nem sobe.
+2. **Google.** Inclua `http://localhost:8080` em "Origens JavaScript autorizadas" do Client ID (Google Cloud Console).
+3. **MongoDB Atlas.** O IP de casa muda; libere `0.0.0.0/0` em Network Access e use um usuário só com `readWrite` no banco de produção, com senha longa e aleatória.
+4. **Confira a chave antes do primeiro login.** Com a chave errada as telas quebram e o login criaria um usuário duplicado. Só lê o banco e imprime contagens; precisa de `falharam: 0`:
+   ```bash
+   cd backend && npx tsx --env-file=CAMINHO/DO/ARQUIVO src/scripts/check-encryption-key.ts
+   ```
+5. **Suba** (a primeira vez leva alguns minutos por causa do build):
+   ```bash
+   docker compose --env-file CAMINHO/DO/ARQUIVO up -d --build
+   ```
+
+No dia a dia não é preciso repetir o comando: os containers têm `restart: unless-stopped` e voltam sozinhos com o Docker Desktop (ative "Start Docker Desktop when you sign in"). Repita com `--build` depois de mudar o código, e sem ele depois de mudar alguma variável.
+
+Como o compose exige as variáveis, `docker compose ps/logs/down` também precisam do `--env-file`. Sem ele, use o Docker Desktop (grupo `gestao-financeira`) ou os comandos diretos:
+
+```bash
+docker logs -f gestao-financeira-backend-1
+docker stop gestao-financeira-backend-1 gestao-financeira-frontend-1
+docker start gestao-financeira-backend-1 gestao-financeira-frontend-1
+```
+
+O Atlas gratuito não faz backup automático: exporte o backup pelo próprio app (tela Backup) de tempos em tempos.
 
 ### Dados de demonstração
 
