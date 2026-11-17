@@ -80,6 +80,7 @@ Este arquivo começou a ser mantido nesta sessão; histórico anterior a ele só
 - Logo do projeto na aba do navegador (`frontend/public/favicon.svg`: barras crescentes sobre o azul do tema) e `theme-color` no `index.html`.
 
 ### Changed
+- Introdução guiada por IA desligada (`AI_ONBOARDING_ENABLED` em `frontend/src/config/features.ts`): quem entra cai direto no Início e cadastra contas e categorias por conta própria. Sem redirecionamento para `/onboarding` (o link leva ao Início), sem o banner no Início e sem a oferta do assistente depois de "Zerar conta". O código do onboarding continua no projeto para reativar depois.
 - O CSV de lançamentos sai do Fluxo de caixa e fica só no Backup, como "Exportar dados brutos (CSV)". O "Voltar" da página do relatório retorna à tela de origem.
 - U2: conta pagadora do cartão (`defaultPaymentAccountId`) passa a ser obrigatória e validada (ativa) na criação/edição; não é mais possível desativar uma conta que paga a fatura de um cartão ativo (`account.paysCreditCard`). Onboarding usa a conta principal quando o draft não indica pagadora; restauração de backup preenche a pagadora de cartões antigos. Rótulo no formulário: "Conta que paga a fatura".
 - `CashFlow.tsx` (1414 linhas, 14 mutations) dividido em componentes/hooks menores em `pages/CashFlow/`.

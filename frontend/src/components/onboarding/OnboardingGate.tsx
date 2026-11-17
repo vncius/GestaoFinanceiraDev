@@ -4,6 +4,7 @@ import {
   OnboardingService,
   OPEN_ONBOARDING_STATUSES,
 } from '../../services/onboarding.service';
+import { AI_ONBOARDING_ENABLED } from '../../config/features';
 
 // "Responder depois": suprime o redirecionamento pelo resto da sessão do
 // navegador; o banner no dashboard continua lembrando o usuário.
@@ -21,8 +22,15 @@ export function isOnboardingDeferred(): boolean {
  * Gate pós-login: novos tenants (onboarding em aberto) são levados para
  * /onboarding. Tenants pré-existentes recebem COMPLETED_MANUAL retroativo no
  * backend e nunca são redirecionados.
+ *
+ * Com AI_ONBOARDING_ENABLED desligado, não consulta o status nem redireciona.
  */
 export default function OnboardingGate() {
+  if (!AI_ONBOARDING_ENABLED) return <Outlet />;
+  return <ActiveOnboardingGate />;
+}
+
+function ActiveOnboardingGate() {
   const location = useLocation();
   const { data, isLoading } = useQuery({
     queryKey: ['onboarding', 'status'],

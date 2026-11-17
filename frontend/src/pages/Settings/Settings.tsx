@@ -28,6 +28,7 @@ import { invalidateDerivedData } from '../../utils/query-invalidation';
 import { sortByName } from '../../utils/sort';
 import { CardSettingsModal } from '../../components/credit-card/CardSettingsModal';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { AI_ONBOARDING_ENABLED } from '../../config/features';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAdvancedDetails } from '../../hooks/useAdvancedDetails';
 import { Language } from '../../i18n';
@@ -96,6 +97,7 @@ function ResetAccountModal({ open, onClose }: { open: boolean; onClose: () => vo
       await qc.invalidateQueries();
       showSuccess(t('general.resetSuccess'));
       onClose();
+      if (!AI_ONBOARDING_ENABLED) return;
       const wantsOnboarding = await confirm(t('general.resetOnboardingOfferMessage'), {
         title: t('general.resetOnboardingOfferTitle'),
         confirmLabel: t('general.resetOnboardingOfferConfirm'),

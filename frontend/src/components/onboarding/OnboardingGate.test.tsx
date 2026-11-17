@@ -5,6 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingGate, { deferOnboarding } from './OnboardingGate';
 import { OnboardingService } from '../../services/onboarding.service';
 
+// Os testes cobrem o gate ligado; desligado ele só renderiza o Outlet.
+vi.mock('../../config/features', () => ({ AI_ONBOARDING_ENABLED: true }));
+
 vi.mock('../../services/onboarding.service', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../services/onboarding.service')>();
   return {

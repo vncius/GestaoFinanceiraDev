@@ -15,6 +15,7 @@ import CreditCards from './pages/CreditCards/CreditCards';
 import Settings from './pages/Settings/Settings';
 import Report from './pages/Report/Report';
 import LegalPage from './pages/Legal/LegalPage';
+import { AI_ONBOARDING_ENABLED } from './config/features';
 
 export default function App() {
   return (
@@ -43,8 +44,14 @@ export default function App() {
                       </Route>
                       {/* Fora do Layout: página de relatório para impressão, sem sidebar/header. */}
                       <Route path="/report" element={<Report />} />
-                      {/* Fora do Layout: jornada de primeiro acesso, sem sidebar. */}
-                      <Route path="/onboarding" element={<Onboarding />} />
+                      {/* Fora do Layout: jornada de primeiro acesso, sem sidebar.
+                          Desligada (config/features.ts): o link cai no dashboard. */}
+                      <Route
+                        path="/onboarding"
+                        element={
+                          AI_ONBOARDING_ENABLED ? <Onboarding /> : <Navigate to="/dashboard" replace />
+                        }
+                      />
                     </Route>
                   </Route>
                 </Routes>

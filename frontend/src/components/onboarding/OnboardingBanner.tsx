@@ -6,9 +6,15 @@ import {
   OnboardingService,
   OPEN_ONBOARDING_STATUSES,
 } from '../../services/onboarding.service';
+import { AI_ONBOARDING_ENABLED } from '../../config/features';
 
 /** Lembrete no dashboard enquanto a configuração inicial estiver pendente. */
 export default function OnboardingBanner() {
+  if (!AI_ONBOARDING_ENABLED) return null;
+  return <ActiveOnboardingBanner />;
+}
+
+function ActiveOnboardingBanner() {
   const { t } = useTranslation('onboarding');
   const navigate = useNavigate();
   const { data } = useQuery({
