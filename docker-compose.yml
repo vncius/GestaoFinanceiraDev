@@ -1,0 +1,35 @@
+# App completo em containers, apontando para o banco de produção (Atlas).
+#
+#   1. Copie .env.docker.example para .env.docker e preencha com os valores
+#      de produção (os mesmos do Render).
+#   2. docker compose --env-file .env.docker up -d --build
+#   3. Abra http://localhost:8080 (ou a porta de APP_PORT).
+#
+# Só o frontend (nginx) fica exposto, e só nesta máquina (127.0.0.1); o
+# backend é alcançado pela rede interna do compose via /api.
+name: gestao-financeira
+
+services:
+  backend:
+    build: ./backend
+    env_file: .env.docker
+    environment:
+      NODE_ENV: production
+      PORT: "3100"
+      CORS_ORIGIN: http://localhost:${APP_PORT:-8080}
+      # Uma camada de proxy (o nginx) à frente do Express.
+      TRUST_PROXY_HOPS: "1"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?defina GOOGLE_CLIENT_ID no .env.docker}
+        VITE_LEGAL_CONTROLLER_NAME: ${VITE_LEGAL_CONTROLLER_NAME:-}
+        VITE_LEGAL_CONTACT_EMAIL: ${VITE_LEGAL_CONTACT_EMAIL:-}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

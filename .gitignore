@@ -2,6 +2,7 @@
 **/dist/
 backend/data/
 **/.env
+.env.docker
 **/*.tsbuildinfo
 frontend/.vite/
 .claude/settings.local.json
